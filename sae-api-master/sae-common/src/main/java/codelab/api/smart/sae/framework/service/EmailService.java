@@ -12,12 +12,15 @@ import org.springframework.stereotype.Service;
 
 import codelab.api.smart.sae.framework.exception.BusinessException;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+
 /**
  * 
  * @author Sacur Ibraimo
  *
  */
 @Service
+@ConditionalOnBean(JavaMailSender.class)
 public class EmailService {
 
 	@Autowired

@@ -8,7 +8,10 @@ import org.springframework.stereotype.Service;
 import codelab.api.smart.sae.user.model.UserEntity;
 import codelab.api.smart.sae.user.repository.UserRepository;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+
 @Service
+@ConditionalOnBean(UserRepository.class)
 public class CustomUserDetailsService implements UserDetailsService {
 
 	@Autowired
