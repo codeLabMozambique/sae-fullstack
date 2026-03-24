@@ -1,0 +1,12 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: sae-api-gateway
+  profiles:
+    active: dev
+        # - id: sae-ai-service
+        #   uri: http://localhost:8085
+        #   predicates:
+        #     - Path=/ai/**

@@ -1,0 +1,26 @@
+# CONFIGURAÇÃO DE PRODUÇÃO
+spring:
+  config:
+    activate:
+      on-profile: prod
+  
+  datasource:
+    jndi-name: java:jboss/datasources/PcpDS
+
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.Oracle12cDialect
+        format_sql: false
+
+# Configurações de Mail e SMS em Prod (conforme app-prod original)
+ozeki:
+  url: ${OZEKI_URL:10.2.133.136}
+  port: ${OZEKI_PORT:9500}
+
+# No ambiente de produção o Mail costuma usar o gateway interno
+# spring.mail.host=${MAIL_HOST:192.168.1.21}
+# spring.mail.username=${MAIL_USERNAME:\mrroteste}

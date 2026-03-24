@@ -1,0 +1,25 @@
+# CONFIGURAÇÃO DE DESENVOLVIMENTO (DEFAULT)
+spring:
+  config:
+    activate:
+      on-profile: dev
+  
+  datasource:
+    url: jdbc:mysql://localhost:3306/ecarta_hub?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: root123
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+
+# Configurações de Mail e SMS em Dev
+ozeki:
+  url: ${OZEKI_URL:10.2.133.136}
+  port: ${OZEKI_PORT:9500}

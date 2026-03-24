@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # Microservices Only (Using Host DB)
+  sae-auth-service:
+    build: ./sae-auth-service
+    container_name: sae-auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/ecarta_hub
+      - SPRING_DATASOURCE_PASSWORD=root123
+    networks:
+      - sae-network
+
+  sae-content-service:
+    build: ./sae-content-service
+    container_name: sae-content-service
+    ports:
+      - "8082:8082"
+    networks:
+      - sae-network
+
+  sae-forum-service:
+    build: ./sae-forum-service
+    container_name: sae-forum-service
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/ecarta_hub
+      - SPRING_DATASOURCE_PASSWORD=root123
+    networks:
+      - sae-network
+
+  sae-api-gateway:
+    build: ./sae-api-gateway
+    container_name: sae-api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - sae-auth-service
+    networks:
+      - sae-network
+
+networks:
+  sae-network:
+    driver: bridge

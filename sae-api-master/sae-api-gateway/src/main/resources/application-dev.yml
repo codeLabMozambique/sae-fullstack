@@ -1,0 +1,24 @@
+# GATEWAY DEV CONFIG
+spring:
+  config:
+    activate:
+      on-profile: dev
+  cloud:
+    gateway:
+      routes:
+        - id: sae-auth-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/auth/**
+        - id: sae-content-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/content/**
+        - id: sae-forum-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/forum/**
+        - id: sae-quiz-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/quiz/**

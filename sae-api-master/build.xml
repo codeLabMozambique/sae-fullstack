@@ -1,0 +1,122 @@
+<project name="smartSAE-api" default="dist" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
+	<description>
+		 smartSAE API BUILD FILE 
+    </description>
+
+	<property file="ant.properties" />
+	<property name="remote.deploy.dir" value="${remote.jbossapp.dir}/deploy" />
+	<property name="remote.delivery.dir" value="${remote.delivery.directory}" />
+	<property name="remote.ant.dir" value="${remote.jbossapp.dir}/ant" />
+	<property name="jboss.home" value="${remote.jbossapp.dir}/jboss" />
+	<property name="dist.label" value="smartSAE-api-${build.label}" />
+	<property name="lib.dir" location="lib" />
+	<property name="target.build.dir" location="target" />
+	
+	<!--==== Init. ============================================-->
+	<target name="init" description="Init.">
+	    <echo message="-------------------------------------------------------"/>
+		<echo message="-  Building  smartSAE API                               "/>
+		<echo message="-------------------------------------------------------"/>
+		<tstamp />
+	</target>
+	<target name="dist" depends="init" description="Generate the distribution.">
+		<echo message="-------------------------------------------------------" />
+		<echo message="-  Building the ZIP on ${ant.project.name} Builder Project            -" />
+		<echo message="-------------------------------------------------------" />
+		
+		<checksum todir="${target.build.dir}/" file="${target.build.dir}/${artifact.name}.war" />
+		
+		<echo message="Creating ZIP file of release: '${dist.label}' from version '${dist.version}'" />
+
+		<mkdir dir="${target.build.dir}/${dist.label}" />
+		<mkdir dir="${target.build.dir}/${dist.label}/deploy" />
+
+		<!-- Copy the war/md5 webapp files to deploy folder -->
+		<copy file="${target.build.dir}/${artifact.name}.war" tofile="${target.build.dir}/${dist.label}/deploy/${artifact.name}.war" />
+		<copy file="${target.build.dir}/${artifact.name}.war.MD5" tofile="${target.build.dir}/${dist.label}/deploy/${artifact.name}.war.MD5" />
+
+		<!-- Copy the installer build file to root folder -->
+		<copy file="${basedir}/etc/build-install.xml" tofile="${target.build.dir}/${dist.label}/build.xml" />
+		<copy file="${basedir}/etc/ant.properties" tofile="${target.build.dir}/${dist.label}/ant.properties" />
+
+		<!-- Zip the distribuition folder -->
+		<zip destfile="${target.build.dir}/${dist.label}.zip" basedir="${target.build.dir}" includes="${dist.label}/**" />
+
+		<!-- Checksum for zip file -->
+		<echo message="Creating the CHECKSUM file of release." />
+		<checksum file="${target.build.dir}/${dist.label}.zip" />
+
+		<!-- Remove the extract zip file -->
+		<delete dir="${target.build.dir}/${dist.label}" includeemptydirs="true" />
+
+	</target>
+
+	<target name="remote-deploy">
+
+		<!-- Build the applications -->
+			<antcall target="dist" />
+		
+		<echo message="Cleaning up deploy directory" />
+		<antcall target="remoteexec">
+			<param name="remote.command" value="rm -rf ${remote.deploy.dir}/*" />
+		</antcall>
+
+		<echo message="Transfering ZIP to remote deploy dir" />
+		<antcall target="remotescp">
+			<param name="local.file" value="${basedir}/target/${dist.label}.zip" />
+			<param name="remote.file" value="${remote.deploy.dir}" />
+		</antcall>
+
+		<echo message="Extracting ZIP in remote deploy dir" />
+		<antcall target="remoteexec">
+			<param name="remote.command" value="unzip ${remote.deploy.dir}/${dist.label}.zip -d ${remote.deploy.dir}" />
+		</antcall>
+
+		<echo message="Changing permissions of folder '${remote.deploy.dir}'" />
+		<antcall target="remoteexec">
+			<param name="remote.command" value="chmod -R 775 ${remote.deploy.dir}/*" />
+		</antcall>
+
+		<echo message="Installing application" />
+		<antcall target="remoteexec">
+			<param name="remote.command" value="source /etc/profile &amp;&amp; ${remote.ant.dir}/bin/ant -f ${remote.deploy.dir}/${dist.label}/build.xml -Dutrafe.home=${remote.jbossapp.dir} -Dserver.mode=${server.mode} -Dforce.install=yes" />
+		</antcall>
+
+	</target>
+
+	<target name="remote-delivery">
+
+		<!-- Build the applications -->
+		<antcall target="dist" />
+
+		<echo message="Transfering ZIP to remote delivery dir" />
+		<antcall target="remoteDeliveryScp">
+			<param name="local.file" value="${basedir}/target/${dist.label}.zip" />
+			<param name="remote.file" value="${remote.delivery.dir}" />
+		</antcall>
+
+	</target>
+
+	<!--=== Functions =======================================================-->
+	<target name="remoteexec">
+		<sshexec host="${remote.server}" username="${remote.username}" password="${remote.password}" command="/bin/bash -l -c '${remote.command}'" trust="true" />
+	</target>
+
+	<target name="remotescp">
+		<scp file="${local.file}" todir="${remote.username}:${remote.password}@${remote.server}:${remote.deploy.dir}" trust="true" />
+	</target>
+
+	<target name="remoteDeliveryScp">
+		<scp file="${basedir}/target/${dist.label}.zip" todir="${remote.delivery.username}:${remote.delivery.password}@${remote.delivery.server}:${remote.delivery.dir}" trust="true" />
+		<scp file="${basedir}/target/${dist.label}.zip.MD5" todir="${remote.delivery.username}:${remote.delivery.password}@${remote.delivery.server}:${remote.delivery.dir}" trust="true" />
+	</target>
+
+	<!--==== Deploy locallaly on Standalone Mode ==============================-->
+	<target name="local-deploy" description="Deploys the application locallaly on Standalone Mode">
+		<copy todir="/opt/jbossapp/wildfly/standalone/deployments" overwrite="true" verbose="true">
+			<fileset dir="${target.build.dir}" includes="${artifact.name}.war" />
+		</copy>
+
+	</target>
+
+</project>

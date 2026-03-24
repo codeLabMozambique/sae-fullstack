@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<project name="smartSAE-api-deployment" default="install" basedir=".">
+
+	<tstamp>
+		<format property="currentYear" pattern="yyyy" />
+		<format property="NOW" pattern="yyyyMMddHHmmss" />
+		<format property="deploymentTime" pattern="dd/MM/yyyy hh:mm:ss aa" />
+	</tstamp>
+
+	<property file="${basedir}/ant.properties" />
+
+	<property environment="env" />
+
+	<property name="install.dir" value="${env.UTRAFE_HOME}" />
+	<property name="wildfly.home" value="${env.WILDFLY_HOME}" />
+	<property name="distro.dir" value="${basedir}" />
+	<property name="artifact.name" value="smartSAE-api" />
+		
+	<fail unless="install.dir" message="UTRAFE_HOME not set." />
+	<fail unless="wildfly.home" message="WILDFLY_HOME not set." />
+	
+	<target name="init" description="Initalization">
+	    <echo message="-------------------------------------------------------------------"/>
+		<echo message="-  Application Deployment                                         -"/>
+		<echo message="-------------------------------------------------------------------"/>
+		<echo message="-                                                                 -"/>
+		<echo message="-   - ${artifact.name} install                              -"/>
+		<echo message="-                                                                 -"/>
+		<echo message="-------------------------------------------------------------------"/>
+		<echo message="-  Copyright (c) 2003-${currentYear} . All rights reserved.           -"/>
+		<echo message="-------------------------------------------------------------------"/>
+		<tstamp />
+	</target>
+	
+	<target name="install" depends="init">
+		<antcall target="install-${server.mode}" />
+	</target>
+
+	<target name="install-standalone" depends="wait-for-enter-standalone">
+
+		<echo>Using standalone mode</echo>
+
+		<echo>Using wildfly standalone deployment dir:/${wildfly.home}/standalone/deployments</echo>
+
+		<echo>Hora da instalacao: ${deploymentTime}</echo>
+
+		<echo>Copying artifacts to the deployments directory</echo>
+		<copy todir="${wildfly.home}/standalone/deployments" overwrite="true">
+			<fileset dir="${distro.dir}/deploy" includes="*.war" />
+		</copy>
+	</target>
+
+	<target name="install-standalone-test" depends="wait-for-enter-standalone-test">
+	
+		<echo>Using standalone mode in test environment</echo>
+	
+		<echo>Using wildfly standalone deployment dir:${wildfly.home}/standalone/deployments</echo>
+
+		<echo>Hora da instalacao: ${deploymentTime}</echo>
+
+		<antcall target="-stop-std-wildfly" />
+		
+		<antcall target="-clean-temp-files" />
+
+		<echo>Copying artifacts to the deployments directory</echo>
+
+		<copy todir="${wildfly.home}/standalone/deployments" overwrite="true">
+			<fileset dir="${distro.dir}/deploy" includes="*" />
+		</copy>
+
+		<antcall target="-start-std-wildfly" />
+
+	</target>
+
+	<target name="wait-for-enter-standalone" unless="force.install">
+		<echo message="ATENCAO:" />
+		<echo message="    1. As alteracoes serao feitas no directorio de instalacao: ${install.dir}." />
+		<echo message="Aperte [Enter] para continuar" />
+		<echo message="Aperte [Ctrl+C] para cancelar" />
+		<input />
+	</target>
+
+	<target name="wait-for-enter-standalone-test" unless="force.install">
+		<echo message="ATENCAO:" />
+		<echo message="    1. As alteracoes serao feitas no directorio de instalacao: ${install.dir}." />
+		<echo message="Aperte [Enter] para continuar" />
+		<echo message="Aperte [Ctrl+C] para cancelar" />
+		<input />
+	</target>
+
+	<target name="-start-std-wildfly">
+		<echo>Starting Wildfly</echo>
+		<exec executable="/bin/bash" failonerror="true">
+			<arg value="${install.dir}/start-wildfly.sh" />
+		</exec>
+	</target>
+
+	<target name="-stop-std-wildfly">
+		<echo>Stopping Wildfly</echo>
+		<exec executable="jps">
+			<arg value="-l" />
+			<redirector outputproperty="wildfly.pid">
+				<outputfilterchain>
+					<linecontains>
+						<contains value="/wildfly/jboss-modules.jar" />
+					</linecontains>
+					<replaceregex pattern="\s.*$" replace="" flags="g" />
+				</outputfilterchain>
+			</redirector>
+		</exec>
+
+		<antcall target="-kill-wildfly" />
+	</target>
+
+	<target name="-clean-temp-files">
+		<echo>Cleaning ${wildfly.home}/standalone/data/*</echo>
+		<delete includeemptydirs="true" failonerror="false">
+			<fileset dir="${wildfly.home}/standalone/data" includes="**/*" />
+		</delete>
+
+		<echo>Cleaning ${wildfly.home}/standalone/tmp/*</echo>
+		<delete includeemptydirs="true" failonerror="false">
+			<fileset dir="${wildfly.home}/standalone/tmp" includes="**/*" />
+		</delete>
+	</target>
+
+	<target name="-kill-wildfly" depends="-check-wildfly-running" if="${wildfly.running}">
+		<echo>Killing Wildfly process with PID ${wildfly.pid}</echo>
+		<exec executable="kill" osfamily="unix">
+			<arg value="-9" />
+			<arg value="${wildfly.pid}" />
+		</exec>
+	</target>
+
+	<target name="-check-wildfly-running">
+		<condition property="wildfly.running" else="false">
+			<not>
+				<equals arg1="${wildfly.pid}" arg2="" />
+			</not>
+		</condition>
+		<echo>Is Wildfly running?: ${wildfly.running}</echo>
+	</target>
+
+</project>

@@ -1,0 +1,135 @@
+/* =========================================================
+   DRIVING LICENSE – APP_TRANSACTION & ROLE_TRANSACTION
+   ========================================================= */
+
+START TRANSACTION;
+
+/* ---------------------------------------------------------
+   LIMPEZA (apenas módulo Driving License)
+   --------------------------------------------------------- */
+DELETE rt
+FROM ROLE_TRANSACTION rt
+JOIN APP_TRANSACTION atx ON atx.ID = rt.APP_TRANSACTION_ID
+WHERE atx.CODE LIKE 'DL_%';
+
+DELETE FROM APP_TRANSACTION
+WHERE CODE LIKE 'DL_%';
+
+
+/* ---------------------------------------------------------
+   APP TRANSACTIONS
+   --------------------------------------------------------- */
+
+-- HEADER
+INSERT INTO APP_TRANSACTION
+(CODE, LABEL, ROUTER_LINK, TYPE, PARENT_ID, POSITION, STATUS)
+VALUES
+('DL_HEADER', 'Driving License', NULL, 'HEADER', NULL, 200, 'ACTIVE');
+
+SET @DL_HEADER_ID = LAST_INSERT_ID();
+
+-- USER (me)
+INSERT INTO APP_TRANSACTION
+(CODE, LABEL, ROUTER_LINK, TYPE, PARENT_ID, POSITION, STATUS)
+VALUES
+('DL_MY_VIEW',   'Minha carta (ver)',   '/driving-licenses/me', 'MENU_ITEM', @DL_HEADER_ID, 201, 'ACTIVE'),
+('DL_MY_CREATE', 'Minha carta (criar)', '/driving-licenses/me', 'MENU_ITEM', @DL_HEADER_ID, 202, 'ACTIVE');
+
+-- ADMIN / ROOT
+INSERT INTO APP_TRANSACTION
+(CODE, LABEL, ROUTER_LINK, TYPE, PARENT_ID, POSITION, STATUS)
+VALUES
+('DL_ADMIN_LIST',        'Listar cartas',            '/driving-licenses',       'MENU_ITEM', @DL_HEADER_ID, 203, 'ACTIVE'),
+('DL_ADMIN_USER_VIEW',   'Ver carta por utilizador', '/driving-licenses/users', 'MENU_ITEM', @DL_HEADER_ID, 204, 'ACTIVE'),
+('DL_ADMIN_USER_CREATE', 'Criar carta p/ utilizador','/driving-licenses/users', 'MENU_ITEM', @DL_HEADER_ID, 205, 'ACTIVE');
+
+-- IDs
+SELECT ID INTO @DL_MY_VIEW_ID
+FROM APP_TRANSACTION WHERE CODE='DL_MY_VIEW';
+
+SELECT ID INTO @DL_MY_CREATE_ID
+FROM APP_TRANSACTION WHERE CODE='DL_MY_CREATE';
+
+SELECT ID INTO @DL_ADMIN_LIST_ID
+FROM APP_TRANSACTION WHERE CODE='DL_ADMIN_LIST';
+
+SELECT ID INTO @DL_ADMIN_USER_VIEW_ID
+FROM APP_TRANSACTION WHERE CODE='DL_ADMIN_USER_VIEW';
+
+SELECT ID INTO @DL_ADMIN_USER_CREATE_ID
+FROM APP_TRANSACTION WHERE CODE='DL_ADMIN_USER_CREATE';
+
+
+/* ---------------------------------------------------------
+   ROLE TRANSACTIONS
+   --------------------------------------------------------- */
+
+-- ROOT (acesso total)
+INSERT INTO ROLE_TRANSACTION (ROLE, APP_TRANSACTION_ID, STATUS) VALUES
+('ROOT', @DL_MY_VIEW_ID, 'ACTIVE'),
+('ROOT', @DL_MY_CREATE_ID, 'ACTIVE'),
+('ROOT', @DL_ADMIN_LIST_ID, 'ACTIVE'),
+('ROOT', @DL_ADMIN_USER_VIEW_ID, 'ACTIVE'),
+('ROOT', @DL_ADMIN_USER_CREATE_ID, 'ACTIVE');
+
+-- ADMIN (acesso total)
+INSERT INTO ROLE_TRANSACTION (ROLE, APP_TRANSACTION_ID, STATUS) VALUES
+('ADMIN', @DL_MY_VIEW_ID, 'ACTIVE'),
+('ADMIN', @DL_MY_CREATE_ID, 'ACTIVE'),
+('ADMIN', @DL_ADMIN_LIST_ID, 'ACTIVE'),
+('ADMIN', @DL_ADMIN_USER_VIEW_ID, 'ACTIVE'),
+('ADMIN', @DL_ADMIN_USER_CREATE_ID, 'ACTIVE');
+
+-- GESTOR_ECARTA
+INSERT INTO ROLE_TRANSACTION (ROLE, APP_TRANSACTION_ID, STATUS) VALUES
+('GESTOR_ECARTA', @DL_MY_VIEW_ID, 'ACTIVE'),
+('GESTOR_ECARTA', @DL_MY_CREATE_ID, 'ACTIVE');
+
+-- FUNCIONARIO_IMT
+INSERT INTO ROLE_TRANSACTION (ROLE, APP_TRANSACTION_ID, STATUS) VALUES
+('FUNCIONARIO_IMT', @DL_MY_VIEW_ID, 'ACTIVE'),
+('FUNCIONARIO_IMT', @DL_MY_CREATE_ID, 'ACTIVE');
+
+-- FUNCIONARIO_INATRO
+INSERT INTO ROLE_TRANSACTION (ROLE, APP_TRANSACTION_ID, STATUS) VALUES
+('FUNCIONARIO_INATRO', @DL_MY_VIEW_ID, 'ACTIVE');
+
+-- AGENTE_POLICIA
+INSERT INTO ROLE_TRANSACTION (ROLE, APP_TRANSACTION_ID, STATUS) VALUES
+('AGENTE_POLICIA', @DL_MY_VIEW_ID, 'ACTIVE');
+
+-- CONSULTA
+INSERT INTO ROLE_TRANSACTION (ROLE, APP_TRANSACTION_ID, STATUS) VALUES
+('CONSULTA', @DL_MY_VIEW_ID, 'ACTIVE');
+
+
+-- DL_HEADER tem id = 1 (confere antes se quiseres)
+SELECT id INTO @DL_HEADER_ID
+FROM app_transaction
+WHERE code = 'DL_HEADER'
+LIMIT 1;
+
+-- ROOT
+INSERT INTO role_transaction (role, app_transaction_id, status)
+SELECT 'ROOT', @DL_HEADER_ID, 1
+WHERE NOT EXISTS (
+  SELECT 1 FROM role_transaction
+  WHERE role='ROOT' AND app_transaction_id=@DL_HEADER_ID
+);
+
+-- ADMIN
+INSERT INTO role_transaction (role, app_transaction_id, status)
+SELECT 'ADMIN', @DL_HEADER_ID, 1
+WHERE NOT EXISTS (
+  SELECT 1 FROM role_transaction
+  WHERE role='ADMIN' AND app_transaction_id=@DL_HEADER_ID
+);
+
+-- CONSULTA (IMPORTANTE para signup)
+INSERT INTO role_transaction (role, app_transaction_id, status)
+SELECT 'CONSULTA', @DL_HEADER_ID, 1
+WHERE NOT EXISTS (
+  SELECT 1 FROM role_transaction
+  WHERE role='CONSULTA' AND app_transaction_id=@DL_HEADER_ID
+);
+COMMIT;

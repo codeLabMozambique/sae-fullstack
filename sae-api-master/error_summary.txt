@@ -1,0 +1,352 @@
+﻿
+> compile_error_3.log:78:[
+ERROR] COMPILATION ERROR 
+: 
+  compile_error_3.log:79:[
+INFO] --------------------
+--------------------------
+---------------
+> compile_error_3.log:80:[
+ERROR] /D:/sae-fullstack/s
+ae-api-master/sae-common/s
+rc/main/java/codelab/api/s
+mart/sae/framework/securit
+y/SecurityConfig.java:[13,
+72] cannot find symbol
+  compile_error_3.log:81: 
+ symbol:   class WebSecuri
+tyConfigurerAdapter
+  compile_error_3.log:82: 
+ location: package org.spr
+ingframework.security.conf
+ig.annotation.web.configur
+ation
+> compile_error_3.log:83:[
+ERROR] /D:/sae-fullstack/s
+ae-api-master/sae-common/s
+rc/main/java/codelab/api/s
+mart/sae/framework/securit
+y/SecurityConfig.java:[29,
+37] cannot find symbol
+  compile_error_3.log:84: 
+ symbol: class WebSecurity
+ConfigurerAdapter
+> compile_error_3.log:85:[
+ERROR] /D:/sae-fullstack/s
+ae-api-master/sae-common/s
+rc/main/java/codelab/api/s
+mart/sae/user/service/User
+Service.java:[12,31] 
+package 
+org.apache.commons.lang 
+does not exist
+> compile_error_3.log:86:[
+ERROR] /D:/sae-fullstack/s
+ae-api-master/sae-common/s
+rc/main/java/codelab/api/s
+mart/sae/framework/securit
+y/ApiGatewayService.java:[
+14,49] package org.springf
+ramework.web.reactive.func
+tion does not exist
+> compile_error_3.log:87:[
+ERROR] /D:/sae-fullstack/s
+ae-api-master/sae-common/s
+rc/main/java/codelab/api/s
+mart/sae/framework/securit
+y/ApiGatewayService.java:[
+15,56] package org.springf
+ramework.web.reactive.func
+tion.client does not exist
+> compile_error_3.log:88:[
+ERROR] /D:/sae-fullstack/s
+ae-api-master/sae-common/s
+rc/main/java/codelab/api/s
+mart/sae/framework/securit
+y/SecurityConfig.java:[43,
+9] method does not 
+override or implement a 
+method from a supertype
+> compile_error_3.log:89:[
+ERROR] /D:/sae-fullstack/s
+ae-api-master/sae-common/s
+rc/main/java/codelab/api/s
+mart/sae/framework/securit
+y/SecurityConfig.java:[48,
+9] method does not 
+override or implement a 
+method from a supertype
+> compile_error_3.log:90:[
+ERROR] /D:/sae-fullstack/s
+ae-api-master/sae-common/s
+rc/main/java/codelab/api/s
+mart/sae/framework/securit
+y/SecurityConfig.java:[59,
+17] cannot find symbol
+  compile_error_3.log:91: 
+ symbol:   method antMatch
+ers(java.lang.String)
+  compile_error_3.log:92: 
+ location: class org.sprin
+gframework.security.config
+.annotation.web.configurer
+s.ExpressionUrlAuthorizati
+onConfigurer<org.springfra
+mework.security.config.ann
+otation.web.builders.HttpS
+ecurity>.ExpressionInterce
+ptUrlRegistry
+> compile_error_3.log:93:[
+ERROR] /D:/sae-fullstack/s
+ae-api-master/sae-common/s
+rc/main/java/codelab/api/s
+mart/sae/framework/securit
+y/SecurityConfig.java:[108
+,9] method does not 
+override or implement a 
+method from a supertype
+> compile_error_3.log:94:[
+ERROR] /D:/sae-fullstack/s
+ae-api-master/sae-common/s
+rc/main/java/codelab/api/s
+mart/sae/framework/securit
+y/SecurityConfig.java:[110
+,24] cannot find symbol
+  compile_error_3.log:95: 
+ symbol:   variable super
+  compile_error_3.log:96: 
+ location: class codelab.a
+pi.smart.sae.framework.sec
+urity.SecurityConfig
+> compile_error_3.log:97:[
+ERROR] /D:/sae-fullstack/s
+ae-api-master/sae-common/s
+rc/main/java/codelab/api/s
+mart/sae/user/service/User
+Service.java:[153,35] 
+cannot find symbol
+  compile_error_3.log:98: 
+ symbol:   variable 
+RandomStringUtils
+  compile_error_3.log:99: 
+ location: class codelab.a
+pi.smart.sae.user.service.
+UserService
+> compile_error_3.log:100:
+[ERROR] /D:/sae-fullstack/
+sae-api-master/sae-common/
+src/main/java/codelab/api/
+smart/sae/user/service/Use
+rService.java:[154,35] 
+cannot find symbol
+  
+compile_error_3.log:101:  
+symbol:   variable 
+RandomStringUtils
+  
+compile_error_3.log:102:  
+location: class codelab.ap
+i.smart.sae.user.service.U
+serService
+> compile_error_3.log:103:
+[ERROR] /D:/sae-fullstack/
+sae-api-master/sae-common/
+src/main/java/codelab/api/
+smart/sae/user/service/Use
+rService.java:[155,26] 
+cannot find symbol
+  
+compile_error_3.log:104:  
+symbol:   variable 
+RandomStringUtils
+  
+compile_error_3.log:105:  
+location: class codelab.ap
+i.smart.sae.user.service.U
+serService
+> compile_error_3.log:106:
+[ERROR] /D:/sae-fullstack/
+sae-api-master/sae-common/
+src/main/java/codelab/api/
+smart/sae/user/service/Use
+rService.java:[156,30] 
+cannot find symbol
+  
+compile_error_3.log:107:  
+symbol:   variable 
+RandomStringUtils
+  
+compile_error_3.log:108:  
+location: class codelab.ap
+i.smart.sae.user.service.U
+serService
+> compile_error_3.log:109:
+[ERROR] /D:/sae-fullstack/
+sae-api-master/sae-common/
+src/main/java/codelab/api/
+smart/sae/user/service/Use
+rService.java:[157,29] 
+cannot find symbol
+  
+compile_error_3.log:110:  
+symbol:   variable 
+RandomStringUtils
+  
+compile_error_3.log:111:  
+location: class codelab.ap
+i.smart.sae.user.service.U
+serService
+> compile_error_3.log:112:
+[ERROR] /D:/sae-fullstack/
+sae-api-master/sae-common/
+src/main/java/codelab/api/
+smart/sae/framework/securi
+ty/ApiGatewayService.java:
+[79,48] cannot find symbol
+  
+compile_error_3.log:113:  
+symbol:   variable 
+WebClient
+  
+compile_error_3.log:114:  
+location: class codelab.ap
+i.smart.sae.framework.secu
+rity.ApiGatewayService
+> compile_error_3.log:115:
+[ERROR] /D:/sae-fullstack/
+sae-api-master/sae-common/
+src/main/java/codelab/api/
+smart/sae/framework/securi
+ty/ApiGatewayService.java:
+[85,31] cannot find symbol
+  
+compile_error_3.log:116:  
+symbol:   variable 
+BodyInserters
+  
+compile_error_3.log:117:  
+location: class codelab.ap
+i.smart.sae.framework.secu
+rity.ApiGatewayService
+  compile_error_3.log:118:
+[INFO] 17 errors 
+  compile_error_3.log:119:
+[INFO] -------------------
+--------------------------
+----------------
+  compile_error_3.log:120:
+[INFO] -------------------
+--------------------------
+--------------------------
+-
+  compile_error_3.log:121:
+[INFO] Reactor Summary 
+for smartSAE API Parent 
+0.0.1-SNAPSHOT:
+  compile_error_3.log:122:
+[INFO] 
+  compile_error_3.log:123:
+[INFO] smartSAE API 
+Parent ...................
+............. SUCCESS [  
+0.126 s]
+  compile_error_3.log:124:
+[INFO] SAE Common Shared 
+Library ..................
+........ FAILURE [  9.549 
+s]
+  compile_error_3.log:125:
+[INFO] -------------------
+--------------------------
+--------------------------
+-
+> compile_error_3.log:131:
+[ERROR] Failed to execute 
+goal org.apache.maven.plug
+ins:maven-compiler-plugin:
+3.11.0:compile 
+(default-compile) on 
+project sae-common: 
+Compilation failure: 
+Compilation failure: 
+> compile_error_3.log:132:
+[ERROR] /D:/sae-fullstack/
+sae-api-master/sae-common/
+src/main/java/codelab/api/
+smart/sae/framework/securi
+ty/SecurityConfig.java:[13
+,72] cannot find symbol
+> compile_error_3.log:133:
+[ERROR]   symbol:   class 
+WebSecurityConfigurerAdapt
+er
+> compile_error_3.log:134:
+[ERROR]   location: 
+package org.springframewor
+k.security.config.annotati
+on.web.configuration
+> compile_error_3.log:135:
+[ERROR] /D:/sae-fullstack/
+sae-api-master/sae-common/
+src/main/java/codelab/api/
+smart/sae/framework/securi
+ty/SecurityConfig.java:[29
+,37] cannot find symbol
+> compile_error_3.log:136:
+[ERROR]   symbol: class We
+bSecurityConfigurerAdapter
+> compile_error_3.log:137:
+[ERROR] /D:/sae-fullstack/
+sae-api-master/sae-common/
+src/main/java/codelab/api/
+smart/sae/user/service/Use
+rService.java:[12,31] 
+package 
+org.apache.commons.lang 
+does not exist
+> compile_error_3.log:138:
+[ERROR] /D:/sae-fullstack/
+sae-api-master/sae-common/
+src/main/java/codelab/api/
+smart/sae/framework/securi
+ty/ApiGatewayService.java:
+[14,49] package org.spring
+framework.web.reactive.fun
+ction does not exist
+> compile_error_3.log:139:
+[ERROR] /D:/sae-fullstack/
+sae-api-master/sae-common/
+src/main/java/codelab/api/
+smart/sae/framework/securi
+ty/ApiGatewayService.java:
+[15,56] package org.spring
+framework.web.reactive.fun
+ction.client does not 
+exist
+> compile_error_3.log:140:
+[ERROR] /D:/sae-fullstack/
+sae-api-master/sae-common/
+src/main/java/codelab/api/
+smart/sae/framework/securi
+ty/SecurityConfig.java:[43
+,9] method does not 
+override or implement a 
+method from a supertype
+> compile_error_3.log:141:
+[ERROR] /D:/sae-fullstack/
+sae-api-master/sae-common/
+src/main/java/codelab/api/
+smart/sae/framework/securi
+ty/SecurityConfig.java:[48
+,9] method does not 
+override or implement a 
+method from a supertype
+> compile_error_3.log:142:
+[ERROR] /D:/sae-fullstack/
+sae-api-master/sae-common/
+src/main/java/codelab/api/
+smart/sae/framework/securi
+ty/SecurityConfig.java:[59
+,17] cannot find symbol
+
+

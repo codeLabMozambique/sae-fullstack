@@ -1,0 +1,41 @@
+{
+        "tenderNumber": "CR37A000141AD00012020",
+        "ugbCode": "37A000141",
+        "ugbDescription": "CREATED BY GATEWAY",
+        "ugeCode": null,
+        "ugeDescription": null,
+        "provinceCode": "1100000000",
+        "provinceName": "Maputo Cidade",
+        "tenderStatus": "LAUNCHED",
+        "statusReason": null,
+        "modalityCode": "CP",
+        "modalityName": "Concurso Público",
+        "regime": "Normal",
+        "year": "2020",
+        "currencyCode": "MZN",
+        "totalValue": 347542.98,
+        "startDate": null,
+        "foreseenOpeningDate": "2020-01-20 08:30:00",
+        "foreseenAdjudicationDate": "2020-01-01 08:30:00",
+        "prePaid": false,
+        "items": [
+            {
+                "itemCode": "11030010530000003",
+                "itemDescription": "DISCO DURO INTERNO  - FINALIDADE: PC; TAMANHO: 2.5 POLEGADAS; CAPACIDADE: 146 GIGABYTE; INTERFACE: SAS, DMA; SEM SUPORTE; S.M.A.R.T: SUPORTE A SMART; BUFFER: 16 MEGABYTE; VELOCIDADE (RPM): 10000 RPM; TEMPO MEDIO BUSCA: 4 MEGABYTE/S; TAXA BUFFER-DISCO: 55 MBPS; TAXA BUFFER-PC: 300 MBPS; M.T.B.F: 1600000 HORAS; RUIDO: NAO APLICAVEL",
+                "contractingObjectCode": "1103",
+                "contractingObjectDescription": "TECNOLOGIAS DE INFORMACAO E COMUNICACAO",
+                "quantity": 20,
+                "referencePriceValue": null,
+                "totalValue": 234000
+            },
+            {
+                "itemCode": "11020010160000023",
+                "itemDescription": "AGENDA  - TIPO: DIARIA; APRESENTACAO DA FOLHA: PAUTADA; ESPIRAL: COM ESPIRAL; MATERIAL DA CAPA: NAPA; TAMANHO: A4",
+                "contractingObjectCode": "1102",
+                "contractingObjectDescription": "MATERIAL DE ESCRITORI",
+                "quantity": 200,
+                "referencePriceValue": null,
+                "totalValue": 234000
+            }
+        ]
+    }
