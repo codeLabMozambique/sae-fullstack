@@ -1,150 +1,161 @@
 import React, { useState } from 'react';
 import { 
-  Box, 
-  Drawer, 
-  AppBar, 
-  Toolbar, 
-  List, 
-  Typography, 
-  Divider, 
-  IconButton, 
-  ListItem, 
-  ListItemButton, 
-  ListItemIcon, 
-  ListItemText 
+  Box, Drawer, AppBar, Toolbar, List, Typography, Divider, IconButton, 
+  ListItem, ListItemButton, ListItemIcon, ListItemText, Avatar
 } from '@mui/material';
 import { 
-  Menu as MenuIcon, 
-  Dashboard as DashboardIcon, 
-  LibraryBooks as LibraryIcon, 
-  Chat as ChatIcon, 
-  AdminPanelSettings as AdminIcon 
+  Dashboard as DashboardIcon, LibraryBooks as LibraryIcon, Chat as ChatIcon, 
+  AdminPanelSettings as AdminIcon, Menu as MenuIcon, Logout as LogoutIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import OfflineIndicator from '../OfflineIndicator';
 
-const drawerWidth = 240;
+const drawerWidth = 260;
 
 interface Props {
   children: React.ReactNode;
 }
+
+const menuItems = [
+  { text: 'Dashboard', icon: <DashboardIcon />, path: '/app/dashboard' },
+  { text: 'Biblioteca Digital', icon: <LibraryIcon />, path: '/app/biblioteca' },
+  { text: 'Chat com IA', icon: <ChatIcon />, path: '/app/chat' },
+  { text: 'Painel Administrativo', icon: <AdminIcon />, path: '/app/admin' },
+];
 
 const MainLayout: React.FC<Props> = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
-
-  const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-    { text: 'Biblioteca Digital', icon: <LibraryIcon />, path: '/biblioteca' },
-    { text: 'Chat com IA', icon: <ChatIcon />, path: '/chat' },
-    { text: 'Painel Administrativo', icon: <AdminIcon />, path: '/admin' },
-  ];
+  const currentPage = menuItems.find(item => location.pathname.startsWith(item.path))?.text || 'SAE';
 
   const drawer = (
-    <div>
-      <Toolbar>
-        <Typography variant="h6" color="primary" sx={{ fontWeight: 700 }}>
-          SAE
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'linear-gradient(180deg, #001B33 0%, #002B50 100%)' }}>
+      {/* Logo */}
+      <Box sx={{ p: 3, pb: 2 }}>
+        <Typography variant="h5" fontWeight={800} color="white" letterSpacing={-0.5}>
+          smart<span style={{ color: '#00A651' }}>SAE</span>
         </Typography>
-      </Toolbar>
-      <Divider />
-      <List>
-        {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton 
-              onClick={() => navigate(item.path)}
-              selected={location.pathname === item.path}
-              sx={{
-                '&.Mui-selected': {
-                  backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                  borderRight: '4px solid #1976d2',
-                  '& .MuiListItemIcon-root': { color: '#1976d2' },
-                  '& .MuiListItemText-primary': { color: '#1976d2', fontWeight: 600 },
-                },
-              }}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          </ListItem>
-        ))}
+        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', letterSpacing: 1 }}>
+          PLATAFORMA EDUCACIONAL
+        </Typography>
+      </Box>
+
+      <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)' }} />
+
+      {/* Navigation */}
+      <List sx={{ flex: 1, px: 2, py: 2 }}>
+        {menuItems.map((item) => {
+          const isActive = location.pathname.startsWith(item.path);
+          return (
+            <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                onClick={() => navigate(item.path)}
+                sx={{
+                  borderRadius: 2.5,
+                  py: 1.2,
+                  bgcolor: isActive ? 'rgba(0,166,81,0.15)' : 'transparent',
+                  border: isActive ? '1px solid rgba(0,166,81,0.3)' : '1px solid transparent',
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.06)' },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 40, color: isActive ? '#00A651' : 'rgba(255,255,255,0.5)' }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText
+                  primary={item.text}
+                  primaryTypographyProps={{
+                    fontSize: '0.9rem',
+                    fontWeight: isActive ? 700 : 400,
+                    color: isActive ? '#ffffff' : 'rgba(255,255,255,0.6)',
+                  }}
+                />
+                {isActive && (
+                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#00A651', ml: 1 }} />
+                )}
+              </ListItemButton>
+            </ListItem>
+          );
+        })}
       </List>
-    </div>
+
+      {/* User section */}
+      <Box sx={{ p: 2 }}>
+        <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)', mb: 2 }} />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 1 }}>
+          <Avatar sx={{ bgcolor: '#00A651', width: 36, height: 36, fontSize: '0.85rem', fontWeight: 700 }}>AA</Avatar>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="body2" fontWeight={600} color="white">Alex Alfai</Typography>
+            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>Estudante</Typography>
+          </Box>
+          <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.4)', '&:hover': { color: '#f44336' } }}
+            onClick={() => navigate('/login')}>
+            <LogoutIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      </Box>
+    </Box>
   );
 
   return (
     <Box sx={{ display: 'flex' }}>
-      <AppBar
-        position="fixed"
-        sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
-          bgcolor: 'white',
-          color: 'primary.main',
-          boxShadow: 'none',
-          borderBottom: '1px solid #e0e0e0',
-        }}
-      >
+      {/* Top App Bar (mobile only) */}
+      <AppBar position="fixed" sx={{ display: { sm: 'none' }, bgcolor: '#001B33', boxShadow: 'none' }}>
         <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
-          >
+          <IconButton color="inherit" onClick={() => setMobileOpen(!mobileOpen)} sx={{ mr: 2 }}>
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 600 }}>
-            {menuItems.find(item => item.path === location.pathname)?.text || 'SAE'}
+          <Typography variant="h6" fontWeight={800}>
+            smart<span style={{ color: '#00A651' }}>SAE</span>
           </Typography>
         </Toolbar>
       </AppBar>
-      <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-      >
+
+      {/* Drawer */}
+      <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
         <Drawer
           variant="temporary"
           open={mobileOpen}
-          onClose={handleDrawerToggle}
+          onClose={() => setMobileOpen(false)}
           ModalProps={{ keepMounted: true }}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
+          sx={{ display: { xs: 'block', sm: 'none' }, '& .MuiDrawer-paper': { width: drawerWidth, border: 'none' } }}
         >
           {drawer}
         </Drawer>
         <Drawer
           variant="permanent"
-          sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
+          sx={{ display: { xs: 'none', sm: 'block' }, '& .MuiDrawer-paper': { width: drawerWidth, border: 'none' } }}
           open
         >
           {drawer}
         </Drawer>
       </Box>
+
+      {/* Main Content */}
       <Box
         component="main"
-        sx={{ 
-          flexGrow: 1, 
-          p: 3, 
-          width: { sm: `calc(100% - ${drawerWidth}px)` }, 
-          mt: '64px', 
-          minHeight: 'calc(100vh - 64px)', 
-          bgcolor: '#f4f6f8' 
+        sx={{
+          flexGrow: 1,
+          p: 4,
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          mt: { xs: '64px', sm: 0 },
+          minHeight: '100vh',
+          bgcolor: '#f0f2f5',
         }}
       >
+        {/* Top bar for desktop */}
+        <Box sx={{ display: { xs: 'none', sm: 'flex' }, justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+          <Box>
+            <Typography variant="h5" fontWeight={700} color="#0A1628">{currentPage}</Typography>
+            <Typography variant="caption" color="text.secondary">
+              Bem-vindo de volta, Alex Alfai
+            </Typography>
+          </Box>
+        </Box>
         {children}
       </Box>
+
       <OfflineIndicator />
     </Box>
   );
