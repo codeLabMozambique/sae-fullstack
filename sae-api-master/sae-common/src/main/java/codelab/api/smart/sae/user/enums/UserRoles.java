@@ -9,9 +9,10 @@ package codelab.api.smart.sae.user.enums;
  */
 public enum UserRoles {
     ADMIN,
+    STUDENT,
+    ALUNO,
+    PROFESSOR,
     GESTOR_ECARTA,
-    FUNCIONARIO_IMT,
-    AGENTE_POLICIA,
     FUNCIONARIO_INATRO,
     ROOT,
     CONSULTA

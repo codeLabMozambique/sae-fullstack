@@ -5,10 +5,10 @@ spring:
       on-profile: dev
   
   datasource:
-    url: jdbc:mysql://localhost:3306/ecarta_hub?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    username: root
-    password: root123
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:postgresql://localhost:5432/sae_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
 
   jpa:
     show-sql: true
@@ -16,7 +16,7 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
 # Configurações de Mail e SMS em Dev

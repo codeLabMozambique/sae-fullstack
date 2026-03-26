@@ -18,15 +18,25 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import codelab.api.smart.sae.academic.model.ClassroomEntity;
+import codelab.api.smart.sae.academic.model.SchoolEntity;
+import codelab.api.smart.sae.academic.repository.ClassroomRepository;
+import codelab.api.smart.sae.academic.repository.SchoolRepository;
 import codelab.api.smart.sae.framework.exception.BusinessException;
 import codelab.api.smart.sae.roleTransaction.model.RoleTransactionEntity;
 import codelab.api.smart.sae.roleTransaction.repository.RoleTransactionRepository;
 import codelab.api.smart.sae.user.dto.MenuDTO;
 import codelab.api.smart.sae.user.dto.MenuItemDTO;
+import codelab.api.smart.sae.user.dto.ProfessorRegisterDTO;
 import codelab.api.smart.sae.user.dto.RegisterRequestDTO;
+import codelab.api.smart.sae.user.dto.StudentRegisterDTO;
 import codelab.api.smart.sae.user.enums.MenuType;
 import codelab.api.smart.sae.user.enums.UserRoles;
+import codelab.api.smart.sae.user.model.ProfessorProfileEntity;
+import codelab.api.smart.sae.user.model.StudentProfileEntity;
 import codelab.api.smart.sae.user.model.UserEntity;
+import codelab.api.smart.sae.user.repository.ProfessorProfileRepository;
+import codelab.api.smart.sae.user.repository.StudentProfileRepository;
 import codelab.api.smart.sae.user.repository.UserRepository;
 
 /**
@@ -44,6 +54,18 @@ public class UserService {
     
     @Autowired
     private RoleTransactionRepository roleTransactionRepository;
+
+    @Autowired
+    private ProfessorProfileRepository professorProfileRepository;
+
+    @Autowired
+    private StudentProfileRepository studentProfileRepository;
+
+    @Autowired
+    private SchoolRepository schoolRepository;
+
+    @Autowired
+    private ClassroomRepository classroomRepository;
 
 
  
@@ -99,55 +121,97 @@ public class UserService {
     
 
     @Transactional
-public UserEntity createUser(RegisterRequestDTO request) {
-
+    public UserEntity createUser(RegisterRequestDTO request) {
     	 if (request.getNtelefone() == null || request.getNtelefone().trim().isEmpty()) {
     	        throw new BusinessException("Número de telefone é obrigatório");
     	    }
-
     	    if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
     	        throw new BusinessException("Password é obrigatória");
     	    }
-
     	    if (request.getPassword().length() < 6) {
     	        throw new BusinessException("Password deve ter no mínimo 6 caracteres");
     	    }
-
-    	    // username = nCarta
     	    if (userRepository.existsByUsername(request.getNtelefone())) {
     	        throw new BusinessException("Já existe uma conta com este número de telefone");
     	    }
 
-    UserEntity tmp_user = new UserEntity();
+        UserEntity tmp_user = new UserEntity();
+        List<RoleTransactionEntity> roleT = roleTransactionRepository
+                .findByRoleAndAppTransactionTypeOrderByAppTransactionCode(UserRoles.CONSULTA, MenuType.HEADER);
+        RoleTransactionEntity tmp_roleT = roleT.get(0);
 
-    // 🔹 Buscar o Role default (ADMIN)
-    List<RoleTransactionEntity> roleT = roleTransactionRepository
-            .findByRoleAndAppTransactionTypeOrderByAppTransactionCode(UserRoles.CONSULTA, MenuType.HEADER);
+        tmp_user.setFullname(request.getFullname());
+        tmp_user.setUsername(request.getNtelefone());
+        tmp_user.setPassword(passwordEncoder.encode(request.getPassword()));
+        tmp_user.setRole(tmp_roleT);
+        tmp_user.setEnabled(true); 
 
-    RoleTransactionEntity tmp_roleT = roleT.get(0);
+        LocalDateTime creationDate = LocalDateTime.now();
+        tmp_user.setCreatedDate(creationDate);
 
-     
+        return userRepository.save(tmp_user);
+    }
 
-    // 🔹 Gerar password random
-    String generatedPass = this.generateCommonLangPassword();
-    System.out.println( generatedPass);
-    
+    @Transactional
+    public ProfessorProfileEntity createProfessor(ProfessorRegisterDTO request) {
+        if (userRepository.existsByUsername(request.getNTelefone())) {
+            throw new BusinessException("Já existe uma conta com este número de telefone");
+        }
 
-    tmp_user.setFullname(request.getFullname());
-    tmp_user.setUsername(request.getNtelefone());
-    tmp_user.setPassword(passwordEncoder.encode(request.getPassword()));
-    tmp_user.setRole(tmp_roleT);
-    tmp_user.setEnabled(true); 
+        SchoolEntity school = schoolRepository.findById(request.getSchoolId())
+                .orElseThrow(() -> new BusinessException("Escola não encontrada"));
 
-    LocalDateTime creationDate = LocalDateTime.now();
-    tmp_user.setCreatedDate(creationDate);
+        UserEntity user = new UserEntity();
+        user.setFullname(request.getFullname());
+        user.setUsername(request.getNTelefone());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setEnabled(true);
+        user.setCreatedDate(LocalDateTime.now());
+        
+        List<RoleTransactionEntity> roles = roleTransactionRepository
+                .findByRoleAndAppTransactionTypeOrderByAppTransactionCode(UserRoles.PROFESSOR, MenuType.HEADER);
+        if (!roles.isEmpty()) user.setRole(roles.get(0));
 
-    userRepository.save(tmp_user);
+        userRepository.save(user);
 
-    // Se quiser enviar o email com credenciais, pode reativar aqui
+        ProfessorProfileEntity profile = new ProfessorProfileEntity();
+        profile.setUser(user);
+        profile.setSchool(school);
+        profile.setInstitutionalContact(request.getInstitutionalContact());
+        profile.setOnline(false);
 
-    return tmp_user;
-}
+        return professorProfileRepository.save(profile);
+    }
+
+    @Transactional
+    public StudentProfileEntity createStudent(StudentRegisterDTO request) {
+        if (userRepository.existsByUsername(request.getNTelefone())) {
+            throw new BusinessException("Já existe uma conta com este número de telefone");
+        }
+
+        ClassroomEntity classroom = classroomRepository.findById(request.getClassroomId())
+                .orElseThrow(() -> new BusinessException("Turma não encontrada"));
+
+        UserEntity user = new UserEntity();
+        user.setFullname(request.getFullname());
+        user.setUsername(request.getNTelefone());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setEnabled(true);
+        user.setCreatedDate(LocalDateTime.now());
+
+        List<RoleTransactionEntity> roles = roleTransactionRepository
+                .findByRoleAndAppTransactionTypeOrderByAppTransactionCode(UserRoles.STUDENT, MenuType.HEADER);
+        if (!roles.isEmpty()) user.setRole(roles.get(0));
+
+        userRepository.save(user);
+
+        StudentProfileEntity profile = new StudentProfileEntity();
+        profile.setUser(user);
+        profile.setClassroom(classroom);
+        profile.setAge(request.getAge());
+
+        return studentProfileRepository.save(profile);
+    }
      
     private String generateCommonLangPassword() {
         String upperCaseLetters = RandomStringUtils.random(2, 65, 90, true, true);

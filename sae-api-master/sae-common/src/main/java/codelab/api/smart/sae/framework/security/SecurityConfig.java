@@ -30,7 +30,7 @@ public class SecurityConfig {
 	@Autowired
 	private JwtRequestFilter jwtRequestFilter;
 	
-	@Value("${ecarta.security.allowed-origin:*}")
+	@Value("${smartSAE.security.allowed-origin:*}")
 	private String allowedOrigin;
 
 	@Bean

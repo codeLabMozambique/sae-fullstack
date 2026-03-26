@@ -1,0 +1,193 @@
+# Modelo de Entidade e Relacionamento (ER) - Gestão Académica
+
+Com base nos requisitos fornecidos, foi elaborado o seguinte modelo Entidade-Relacionamento no formato de diagrama para a plataforma do Hackathon da *Terre des Hommes*.
+
+Este diagrama reflete as seguintes necessidades:
+1. **Utilizadores base:** A tabela genérica (`USER`) já existente.
+2. **Perfis de Alunos e Professores:** Entidades (`STUDENT_PROFILE`, `PROFESSOR_PROFILE`) ligadas ao utilizador base com os seus detalhes adicionais.
+3. **Escolas e Disciplinas:** Tabelas independentes (`SCHOOL`, `SUBJECT`) para normalizar escolas de Nampula e áreas de atuação (matemática, física, etc).
+4. **Fórum de Dúvidas (Questions & Answers):** Para os alunos colocarem questões e os professores poderem "visualizar e responder de acordo com a sua área de especialidade".
+
+```mermaid
+erDiagram
+    %% Tabela Base de Utilizadores
+    USER {
+        Long id PK
+        String username "Ex: Telefone"
+        String password
+        String fullname
+        Boolean enabled
+        Long roleT_id FK
+    }
+
+    %% Dados do Professor
+    PROFESSOR_PROFILE {
+        Long id PK
+        Long user_id FK "Ligação para USER"
+        Long school_id FK "Escola Secundária Central"
+        String institutional_contact
+        Boolean is_online "Indica se está online/offline"
+    }
+
+    %% Dados do Aluno
+    STUDENT_PROFILE {
+        Long id PK
+        Long user_id FK "Ligação para USER"
+        Long school_id FK "Escola"
+        Long classroom_id FK "Qual a Turma"
+        Integer age "Idade"
+    }
+
+    %% Escolas
+    SCHOOL {
+        Long id PK
+        String name "Ex: Escola Secundária de Nampula"
+    }
+
+    %% Classe (Nível Académico)
+    CLASS_LEVEL {
+        Long id PK
+        String name "Ex: 10ª Classe, 12ª Classe"
+    }
+
+    %% Turma (Dentro de uma Escola e Classe)
+    CLASSROOM {
+        Long id PK
+        String name "Ex: Turma A"
+        Long school_id FK
+        Long class_level_id FK
+        String shift "Diurno / Noturno"
+    }
+
+    %% Disciplinas / Matérias base
+    SUBJECT {
+        Long id PK
+        String name "Ex: Matemática, Física"
+    }
+
+    %% Atribuição: O que o Professor leciona, onde e a quem
+    PROFESSOR_CLASSROOM_SUBJECT {
+        Long id PK
+        Long professor_id FK
+        Long classroom_id FK
+        Long subject_id FK
+    }
+
+    %% Materiais de Estudo
+    STUDY_MATERIAL {
+        Long id PK
+        Long professor_id FK
+        Long subject_id FK
+        Long class_level_id FK "Ex: Matemática para 10ª Classe"
+        String title
+        String description
+        String file_url
+        String material_type
+        DateTime created_at
+    }
+
+    %% Questões do Fórum (No Fórum Geral, Turma ou Individual)
+    QUESTION {
+        Long id PK
+        Long student_id FK
+        Long subject_id FK
+        Long classroom_id FK "Pergunta no contexto da Turma (Op)"
+        Long target_professor_id FK "Pergunta Individual (Op)"
+        String title
+        Text content
+        DateTime created_at
+        String status
+    }
+
+    %% Respostas (Professor ou IA)
+    ANSWER {
+        Long id PK
+        Long question_id FK
+        Long professor_id FK "Nulo caso a IA responda"
+        Boolean is_ai_generated "Respondida pela Inteligência Artificial"
+        Text content
+        DateTime created_at
+    }
+
+    %% Relacionamentos principais com numeração indicando a Ordem/Fluxo de Criação
+    
+    %% PASSO 1: Criação de Entidades Base e Definição da Turma
+    SCHOOL ||--o{ CLASSROOM : "(1) aloja"
+    CLASS_LEVEL ||--o{ CLASSROOM : "(2) define nível de"
+    
+    %% PASSO 2: Perfis Genéricos
+    USER ||--o| PROFESSOR_PROFILE : "(3) tem perfil de"
+    USER ||--o| STUDENT_PROFILE : "(4) tem perfil de"
+    SCHOOL ||--o{ PROFESSOR_PROFILE : "(5) emprega"
+    SCHOOL ||--o{ STUDENT_PROFILE : "(6) possui"
+    
+    %% PASSO 3: Alocação de Alunos na Turma
+    CLASSROOM ||--o{ STUDENT_PROFILE : "(7) é frequentada por"
+    
+    %% PASSO 4: Alocação de Professores na Turma e Disciplina
+    PROFESSOR_PROFILE ||--o{ PROFESSOR_CLASSROOM_SUBJECT : "(8) leciona"
+    CLASSROOM ||--o{ PROFESSOR_CLASSROOM_SUBJECT : "(9) tem as aulas de"
+    SUBJECT ||--o{ PROFESSOR_CLASSROOM_SUBJECT : "(10) é lecionada em"
+    
+    %% PASSO 5: Partilha de Materiais de Estudo
+    PROFESSOR_PROFILE ||--o{ STUDY_MATERIAL : "(11) publica"
+    SUBJECT ||--o{ STUDY_MATERIAL : "(12) possui o material"
+    CLASS_LEVEL ||--o{ STUDY_MATERIAL : "(13) direcionado à"
+    
+    %% PASSO 6: Criação de Dúvidas (Fórum / Turma / Individual)
+    STUDENT_PROFILE ||--o{ QUESTION : "(14) pergunta"
+    SUBJECT ||--o{ QUESTION : "(15a) categoriza"
+    CLASSROOM ||--o{ QUESTION : "(15b) contexto de turma"
+    PROFESSOR_PROFILE ||--o{ QUESTION : "(15c) direcionada a"
+    
+    %% PASSO 7: Respostas (Professor ou IA)
+    QUESTION ||--o{ ANSWER : "(16) recebe"
+    PROFESSOR_PROFILE ||--o{ ANSWER : "(17) responde"
+```
+
+## Explicação do Modelo Atualizado (IA e Turmas/Individual):
+Coloquei **números (1) a (17) por cima das setas (relacionamentos)** para guiar na ordem visual da inserção de dados:
+- **Passos 1 a 2 [(1) ao (6)](file:///c:/taskforce_01/sae-fullstack/sae-api-master/sae-common/src/main/java/codelab/api/smart/sae/user/model/UserEntity.java#75-78):** O sistema arranca gerando as Escolas, Classes, Turmas e inicializando os utilizadores (Professores e Alunos). Adicionou-se o campo `is_online` no Professor para o sistema saber se ele está ausente.
+- **Passo 3 [(7)](file:///c:/taskforce_01/sae-fullstack/sae-api-master/sae-common/src/main/java/codelab/api/smart/sae/user/model/UserEntity.java#75-78):**  Colocamos o Aluno matriculado dentro da sua *Turma*.
+- **Passo 4 [(8) ao (10)](file:///c:/taskforce_01/sae-fullstack/sae-api-master/sae-common/src/main/java/codelab/api/smart/sae/user/model/UserEntity.java#75-78):** O Professor é atribuído à Turma X para lecionar a Disciplina Y.
+- **Passo 5 [(11) ao (13)](file:///c:/taskforce_01/sae-fullstack/sae-api-master/sae-common/src/main/java/codelab/api/smart/sae/user/model/UserEntity.java#75-78):** Publicação de *Materiais*.
+- **Passo 6 [(14) ao (15c)](file:///c:/taskforce_01/sae-fullstack/sae-api-master/sae-common/src/main/java/codelab/api/smart/sae/user/model/UserEntity.java#75-78):** Quando o aluno faz uma *Questão*, ela pode ser de contexto geral (`subject_id`), contexto da turma (`classroom_id`), ou conversa individual para um professor (`target_professor_id`).
+- **Passo 7 [(16) e (17)](file:///c:/taskforce_01/sae-fullstack/sae-api-master/sae-common/src/main/java/codelab/api/smart/sae/user/model/UserEntity.java#75-78):** A *Resposta* (`ANSWER`) agora suporta a Inteligência Artificial através do boolean `is_ai_generated`. Se o professor estiver offline, a IA entra em ação e não precisa de associar o ID do professor.
+
+Dê uma vista de olhos! O que acha deste modelo? Podemos considerar as abordagens acima ou ajustar algum parâmetro?
+
+---
+
+## Fluxo e Hierarquia Escolar (Como as coisas se conectam)
+
+Para entender a ordem lógica e a dependência da informação dentro do sistema (de cima para baixo), criamos este diagrama de fluxo. Ele mostra por onde a inserção de dados deve começar e como se ramifica:
+
+```mermaid
+graph TD
+    %% Nós principais de catálogo (Devem existir primeiro)
+    A[ESCOLA <br> Ex: Secundária de Nampula] --> B[CLASSE / NÍVEL <br> Ex: 10ª Classe, 11ª Classe]
+    B --> C[TURMAS <br> Ex: Turma A, Turma B]
+    
+    %% Disciplinas podem ser dadas num nível específico ou global
+    B --> D[DISCIPLINAS / MATÉRIAS <br> Ex: Matemática, Física]
+    
+    %% Alunos e Professores juntam-se na Turma
+    C --> E[ALUNOS <br> Inscritos na Turma]
+    C --> F[PROFESSOR_CLASSROOM_SUBJECT <br> Prof X ensina Mat na Turma A]
+    D --> F
+    
+    %% Actividades finais do sistema (Aulas, fórum, materiais)
+    E --> G[FÓRUM <br> Questões e Respostas]
+    F --> G
+    D --> H[MATERIAIS DE ESTUDO]
+    F --> H
+```
+
+### O Fluxo na prática:
+1. **Definições Globais:** Primeiro, o sistema (ou o script inicial) regista as Escolas da cidade de Nampula, as Classes (8ª, 9ª, 10ª...) e as Disciplinas.
+2. **Criação da Turma:** Combina-se uma **Classe** ao abrigo de uma **Escola** para gerar a **Turma** (ex.: 10ª Classe, Turma A, Escola X).
+3. **Associação do Aluno:** Quando um aluno se cadastra, ele escolhe a sua Escola $\rightarrow$ Classe $\rightarrow$ Turma. O aluno fica logo "arrumado" no seu lugar.
+4. **Atribuição do Professor:** O professor associa-se a uma ou várias turmas, indicando qual a disciplina que está a lecionar nelas. (Isto diz ao sistema: *O Professor João é responsável pela disciplina de Física na Turma A e na Turma B*).
+5. **Colaboração Diária (O Hackathon):** Com as bases criadas, os professores colocam **Materiais de Estudo** para a sua disciplina/classe e os alunos publicam as suas **Dúvidas** com base na disciplina. Finalmente, o sistema direciona as dúvidas aos professores correspondentes.
+
+Verifique esta ramificação - A estrutura e a lógica de dependência refletem fielmente o que foi pedido nos vossos Termos de Referência?

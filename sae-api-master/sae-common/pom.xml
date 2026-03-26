@@ -45,9 +45,12 @@
             <version>0.9.1</version>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>
-        <!-- For Spring Boot 3 JWT, JAXB is needed in Java 17+, but since we're using JJWT 0.9.1 we leave it as is for now until we update the code -->
     </dependencies>
 </project>

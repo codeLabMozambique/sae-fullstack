@@ -18,7 +18,11 @@ import codelab.api.smart.sae.framework.security.SecurityService;
 import codelab.api.smart.sae.otp.OTPManager;
 import codelab.api.smart.sae.user.dto.AuthenticationRequestDTO;
 import codelab.api.smart.sae.user.dto.AuthenticationResponseDTO;
+import codelab.api.smart.sae.user.dto.ProfessorRegisterDTO;
 import codelab.api.smart.sae.user.dto.RegisterRequestDTO;
+import codelab.api.smart.sae.user.dto.StudentRegisterDTO;
+import codelab.api.smart.sae.user.model.ProfessorProfileEntity;
+import codelab.api.smart.sae.user.model.StudentProfileEntity;
 import codelab.api.smart.sae.user.model.UserEntity;
 import codelab.api.smart.sae.user.service.UserService;
 import codelab.api.smart.sae.user.validators.UserRoleValidator;
@@ -73,11 +77,20 @@ public class UserResouce {
        
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody RegisterRequestDTO registerRequest) throws Exception {
-
         UserEntity user = userService.createUser(registerRequest);
-        return new ResponseEntity<>(
-                 user.getPassword(),
-                HttpStatus.CREATED);
+        return new ResponseEntity<>(user, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/signup/professor")
+    public ResponseEntity<?> signupProfessor(@RequestBody ProfessorRegisterDTO registerRequest) throws Exception {
+        ProfessorProfileEntity profile = userService.createProfessor(registerRequest);
+        return new ResponseEntity<>(profile, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/signup/student")
+    public ResponseEntity<?> signupStudent(@RequestBody StudentRegisterDTO registerRequest) throws Exception {
+        StudentProfileEntity profile = userService.createStudent(registerRequest);
+        return new ResponseEntity<>(profile, HttpStatus.CREATED);
     }
     @PostMapping("/login")
     public ResponseEntity<?> signin(@RequestBody AuthenticationRequestDTO authenticationRequest) throws Exception {

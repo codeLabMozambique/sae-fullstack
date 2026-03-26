@@ -1,15 +1,55 @@
 version: '3.8'
 
 services:
-  # Microservices Only (Using Host DB)
+  # Base de Dados Relacional (PostgreSQL)
+  postgres:
+    image: postgres:15
+    container_name: sae-postgres
+    environment:
+      - POSTGRES_DB=sae_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - sae-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Base de Dados Documental (MongoDB)
+  mongodb:
+    image: mongo:latest
+    container_name: sae-mongodb
+    ports:
+      - "27017:27017"
+    networks:
+      - sae-network
+    volumes:
+      - mongodb_data:/data/db
+
+  # Camada de Cache (Redis)
+  redis:
+    image: redis:alpine
+    container_name: sae-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - sae-network
+
+  # Microserviços
   sae-auth-service:
     build: ./sae-auth-service
     container_name: sae-auth-service
     ports:
       - "8081:8081"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/ecarta_hub
-      - SPRING_DATASOURCE_PASSWORD=root123
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/sae_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_DATA_REDIS_HOST=redis
+    depends_on:
+      - postgres
+      - redis
     networks:
       - sae-network
 
@@ -18,6 +58,10 @@ services:
     container_name: sae-content-service
     ports:
       - "8082:8082"
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/sae_content
+    depends_on:
+      - mongodb
     networks:
       - sae-network
 
@@ -27,8 +71,11 @@ services:
     ports:
       - "8083:8083"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/ecarta_hub
-      - SPRING_DATASOURCE_PASSWORD=root123
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/sae_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+    depends_on:
+      - postgres
     networks:
       - sae-network
 
@@ -45,3 +92,7 @@ services:
 networks:
   sae-network:
     driver: bridge
+
+volumes:
+  postgres_data:
+  mongodb_data:
