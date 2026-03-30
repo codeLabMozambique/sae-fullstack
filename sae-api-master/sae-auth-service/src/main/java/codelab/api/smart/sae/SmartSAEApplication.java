@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 
-import codelab.api.smart.sae.framework.config.SmartSAEConfig; 
+import codelab.api.smart.sae.framework.config.SmartSAEConfig;
 
 /**
  * @author Shifu-Taishi Grand Master (shifu-taishi@grand.master.com)

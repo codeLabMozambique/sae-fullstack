@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <session version="1.0">
-<refactoring comment="Delete resource &apos;smartSAE-api-master.zip&apos;" deleteContents="false" description="Delete resource &apos;smartSAE-api-master.zip&apos;" element1="/smartSAE-api-master.zip" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1694597587307"/>
+<refactoring comment="Delete resource &apos;smartsae-api-master.zip&apos;" deleteContents="false" description="Delete resource &apos;smartsae-api-master.zip&apos;" element1="/smartsae-api-master.zip" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1694597587307"/>
 </session>

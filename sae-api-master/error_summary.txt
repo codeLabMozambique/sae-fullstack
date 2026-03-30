@@ -241,12 +241,12 @@ rity.ApiGatewayService
 -
   compile_error_3.log:121:
 [INFO] Reactor Summary 
-for smartSAE API Parent 
+for smartsae API Parent 
 0.0.1-SNAPSHOT:
   compile_error_3.log:122:
 [INFO] 
   compile_error_3.log:123:
-[INFO] smartSAE API 
+[INFO] smartsae API 
 Parent ...................
 ............. SUCCESS [  
 0.126 s]

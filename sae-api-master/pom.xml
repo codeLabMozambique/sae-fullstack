@@ -11,12 +11,12 @@
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	
-	<groupId>smartSAE</groupId>
-	<artifactId>smartSAE-api-parent</artifactId>
+	<groupId>smartsae</groupId>
+	<artifactId>smartsae-api-parent</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
-	<name>smartSAE API Parent</name>
-	<description>Back-end do smartSAE - Parent Project</description>
+	<name>smartsae API Parent</name>
+	<description>Back-end do smartsae - Parent Project</description>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
