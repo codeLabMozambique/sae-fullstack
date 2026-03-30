@@ -26,6 +26,6 @@ spring:
   jackson:
     date-format: yyyy-MM-dd
 
-smartSAE:
+smartsae:
   security:
     allowed-origin: "*"

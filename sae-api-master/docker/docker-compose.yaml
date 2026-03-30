@@ -2,12 +2,12 @@ version: "3.9"
 services:
   mysql:
     image: mysql:8.0 #trocar e colocar a base de dados conforme o documento de arquitetura
-    container_name: smartSAE-mysql-db
+    container_name: smartsae-mysql-db
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root123        # senha do usuário root
-      MYSQL_DATABASE: smartSAE_hub               # nome do banco inicial
-      MYSQL_USER: smartSAE_user                 # usuário adicional
+      MYSQL_DATABASE: smartsae_hub               # nome do banco inicial
+      MYSQL_USER: smartsae_user                 # usuário adicional
       MYSQL_PASSWORD: mypass             # senha do usuário adicional
     ports:
       - "3306:3306" #o mesmo serve para esta porta!

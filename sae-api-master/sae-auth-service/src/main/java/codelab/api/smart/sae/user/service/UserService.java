@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.RandomStringUtils; 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -45,13 +45,13 @@ import codelab.api.smart.sae.user.repository.UserRepository;
  */
 @Service
 public class UserService {
-    
+
     @Autowired
     private UserRepository userRepository;
-    
+
     @Autowired
     private PasswordEncoder passwordEncoder;
-    
+
     @Autowired
     private RoleTransactionRepository roleTransactionRepository;
 
@@ -67,73 +67,76 @@ public class UserService {
     @Autowired
     private ClassroomRepository classroomRepository;
 
-
- 
-    
     // @Autowired
     // private EmailService emailService;
-    
+
     // @Autowired
     // private OTPManager otpManager;
-    
+
     // @Transactional
     // public UserEntity createUser(RegisterRequestDTO request) {
-        
-    //     if (userRepository.existsByUsername(request.getUsername()) )
-    //         throw new BusinessException("Já existe uma conta com o email fornecido");
-        
-    //     UserEntity tmp_user = new UserEntity();
- 
-    //     List<RoleTransactionEntity> roleT = roleTransactionRepository.findByRoleAndAppTransactionTypeOrderByAppTransactionCode(UserRoles.ADMIN, MenuType.HEADER); 
-        
-    //     RoleTransactionEntity tmp_roleT = roleT.get(0);
-    //     System.out.println("role: "+ tmp_roleT.getRole()+ "status: "+ tmp_roleT.getId() );
-        
-    //     String generatedPass = this.generateCommonLangPassword();
-    //     System.out.println(generatedPass);
-        
-    //     tmp_user.setFullname(request.getFullname());
-    //     tmp_user.setUsername(request.getUsername());
-    //     tmp_user.setPassword(passwordEncoder.encode(generatedPass)); 
-    //     tmp_user.setRole(tmp_roleT); 
-    //     tmp_user.setEnabled(true); 
-        
-    //     LocalDateTime creationDate = LocalDateTime.now();
-    //     tmp_user.setCreatedDate(creationDate);
-    //     System.out.println("username: "+tmp_user.getUsername()+" fullname: "+tmp_user.getFullname());
-        
-    //     userRepository.save(tmp_user); 
-    //     // String message = "<p>Prezado(a) <strong>" + tmp_user.getFullname() + "</strong>,</p>" +
-    //     //         "<p>Esperamos que este e-mail o(a) encontre bem.</p>" +
-    //     //         "<p>Estamos entrando em contato para fornecer suas credenciais de acesso ao sistema smartSAE. Por favor, encontre abaixo suas informações de login:</p>" +
-    //     //         "<p><strong>Endereço de e-mail:</strong> " + tmp_user.getEmail() + "</p>" +
-    //     //         "<p><strong>Senha de acesso:</strong> " + generatedPass + "</p>" +
-    //     //         "<p> Acesse a partir do link: http://172.31.4.99:4200 </p>"+
-    //     //         "<p>Atenciosamente,<br>" +
-    //     //         "<strong> Equipe smartSAE </strong></p>";
- 
 
-    //     // String subject = "Credenciais de Acesso ao Sistema smartSAE";
-    //     // this.emailService.send(tmp_user.getEmail(), subject, message);
-    //     // System.out.println(message);
-    //     return tmp_user;
+    // if (userRepository.existsByUsername(request.getUsername()) )
+    // throw new BusinessException("Já existe uma conta com o email fornecido");
+
+    // UserEntity tmp_user = new UserEntity();
+
+    // List<RoleTransactionEntity> roleT =
+    // roleTransactionRepository.findByRoleAndAppTransactionTypeOrderByAppTransactionCode(UserRoles.ADMIN,
+    // MenuType.HEADER);
+
+    // RoleTransactionEntity tmp_roleT = roleT.get(0);
+    // System.out.println("role: "+ tmp_roleT.getRole()+ "status: "+
+    // tmp_roleT.getId() );
+
+    // String generatedPass = this.generateCommonLangPassword();
+    // System.out.println(generatedPass);
+
+    // tmp_user.setFullname(request.getFullname());
+    // tmp_user.setUsername(request.getUsername());
+    // tmp_user.setPassword(passwordEncoder.encode(generatedPass));
+    // tmp_user.setRole(tmp_roleT);
+    // tmp_user.setEnabled(true);
+
+    // LocalDateTime creationDate = LocalDateTime.now();
+    // tmp_user.setCreatedDate(creationDate);
+    // System.out.println("username: "+tmp_user.getUsername()+" fullname:
+    // "+tmp_user.getFullname());
+
+    // userRepository.save(tmp_user);
+    // // String message = "<p>Prezado(a) <strong>" + tmp_user.getFullname() +
+    // "</strong>,</p>" +
+    // // "<p>Esperamos que este e-mail o(a) encontre bem.</p>" +
+    // // "<p>Estamos entrando em contato para fornecer suas credenciais de acesso
+    // ao sistema smartsae. Por favor, encontre abaixo suas informações de
+    // login:</p>" +
+    // // "<p><strong>Endereço de e-mail:</strong> " + tmp_user.getEmail() + "</p>"
+    // +
+    // // "<p><strong>Senha de acesso:</strong> " + generatedPass + "</p>" +
+    // // "<p> Acesse a partir do link: http://172.31.4.99:4200 </p>"+
+    // // "<p>Atenciosamente,<br>" +
+    // // "<strong> Equipe smartsae </strong></p>";
+
+    // // String subject = "Credenciais de Acesso ao Sistema smartsae";
+    // // this.emailService.send(tmp_user.getEmail(), subject, message);
+    // // System.out.println(message);
+    // return tmp_user;
     // }
-    
 
     @Transactional
     public UserEntity createUser(RegisterRequestDTO request) {
-    	 if (request.getNtelefone() == null || request.getNtelefone().trim().isEmpty()) {
-    	        throw new BusinessException("Número de telefone é obrigatório");
-    	    }
-    	    if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
-    	        throw new BusinessException("Password é obrigatória");
-    	    }
-    	    if (request.getPassword().length() < 6) {
-    	        throw new BusinessException("Password deve ter no mínimo 6 caracteres");
-    	    }
-    	    if (userRepository.existsByUsername(request.getNtelefone())) {
-    	        throw new BusinessException("Já existe uma conta com este número de telefone");
-    	    }
+        if (request.getNtelefone() == null || request.getNtelefone().trim().isEmpty()) {
+            throw new BusinessException("Número de telefone é obrigatório");
+        }
+        if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+            throw new BusinessException("Password é obrigatória");
+        }
+        if (request.getPassword().length() < 6) {
+            throw new BusinessException("Password deve ter no mínimo 6 caracteres");
+        }
+        if (userRepository.existsByUsername(request.getNtelefone())) {
+            throw new BusinessException("Já existe uma conta com este número de telefone");
+        }
 
         UserEntity tmp_user = new UserEntity();
         List<RoleTransactionEntity> roleT = roleTransactionRepository
@@ -144,7 +147,7 @@ public class UserService {
         tmp_user.setUsername(request.getNtelefone());
         tmp_user.setPassword(passwordEncoder.encode(request.getPassword()));
         tmp_user.setRole(tmp_roleT);
-        tmp_user.setEnabled(true); 
+        tmp_user.setEnabled(true);
 
         LocalDateTime creationDate = LocalDateTime.now();
         tmp_user.setCreatedDate(creationDate);
@@ -167,10 +170,11 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setEnabled(true);
         user.setCreatedDate(LocalDateTime.now());
-        
+
         List<RoleTransactionEntity> roles = roleTransactionRepository
                 .findByRoleAndAppTransactionTypeOrderByAppTransactionCode(UserRoles.PROFESSOR, MenuType.HEADER);
-        if (!roles.isEmpty()) user.setRole(roles.get(0));
+        if (!roles.isEmpty())
+            user.setRole(roles.get(0));
 
         userRepository.save(user);
 
@@ -201,7 +205,8 @@ public class UserService {
 
         List<RoleTransactionEntity> roles = roleTransactionRepository
                 .findByRoleAndAppTransactionTypeOrderByAppTransactionCode(UserRoles.STUDENT, MenuType.HEADER);
-        if (!roles.isEmpty()) user.setRole(roles.get(0));
+        if (!roles.isEmpty())
+            user.setRole(roles.get(0));
 
         userRepository.save(user);
 
@@ -212,7 +217,7 @@ public class UserService {
 
         return studentProfileRepository.save(profile);
     }
-     
+
     private String generateCommonLangPassword() {
         String upperCaseLetters = RandomStringUtils.random(2, 65, 90, true, true);
         String lowerCaseLetters = RandomStringUtils.random(2, 97, 122, true, true);
@@ -227,72 +232,74 @@ public class UserService {
                 .toString();
         return password;
     }
-    
+
     public List<MenuDTO> findTransactionsByRole(UserEntity user) {
-        
-              List<MenuDTO> menus = new ArrayList<MenuDTO>();
-        
-              List<RoleTransactionEntity> headers = roleTransactionRepository
-                      .findByRoleAndAppTransactionTypeOrderByAppTransactionCode(user.getRole().getRole(), MenuType.HEADER);
-        
-              for (RoleTransactionEntity header : headers) {
-                  MenuDTO menu = new MenuDTO(header.getAppTransaction().getCode(), header.getAppTransaction().getLabel(),
-                          header.getAppTransaction().getRouterLink());
-        
-                  List<RoleTransactionEntity> items = roleTransactionRepository
-                          .findByRoleAndAppTransactionTypeAndAppTransactionParent(user.getRole().getRole(), MenuType.MENU_ITEM,
-                                  header.getAppTransaction());
-        
-                  for (RoleTransactionEntity item : items) {
-                      MenuItemDTO menuItem = new MenuItemDTO(item.getAppTransaction().getCode(),
-                              item.getAppTransaction().getLabel(), item.getAppTransaction().getRouterLink());
-                      menu.addItem(menuItem);
-                  }
-                  menus.add(menu);
-              }
-        
-              return menus;
-          }
+
+        List<MenuDTO> menus = new ArrayList<MenuDTO>();
+
+        List<RoleTransactionEntity> headers = roleTransactionRepository
+                .findByRoleAndAppTransactionTypeOrderByAppTransactionCode(user.getRole().getRole(), MenuType.HEADER);
+
+        for (RoleTransactionEntity header : headers) {
+            MenuDTO menu = new MenuDTO(header.getAppTransaction().getCode(), header.getAppTransaction().getLabel(),
+                    header.getAppTransaction().getRouterLink());
+
+            List<RoleTransactionEntity> items = roleTransactionRepository
+                    .findByRoleAndAppTransactionTypeAndAppTransactionParent(user.getRole().getRole(),
+                            MenuType.MENU_ITEM,
+                            header.getAppTransaction());
+
+            for (RoleTransactionEntity item : items) {
+                MenuItemDTO menuItem = new MenuItemDTO(item.getAppTransaction().getCode(),
+                        item.getAppTransaction().getLabel(), item.getAppTransaction().getRouterLink());
+                menu.addItem(menuItem);
+            }
+            menus.add(menu);
+        }
+
+        return menus;
+    }
 
     public UserEntity getLoggedUser() {
-        Authentication  authentication = SecurityContextHolder.getContext().getAuthentication();
-        if(authentication ==null || ! authentication.isAuthenticated()) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
             return null;
         }
         if (authentication.getPrincipal() instanceof UserDetails) {
             return ((UserEntity) authentication.getPrincipal());
-        }else {
-            return(UserEntity) authentication.getPrincipal();
+        } else {
+            return (UserEntity) authentication.getPrincipal();
         }
     }
-
 
     /**
      * 
      */
-    // public String  genOTP(String fullName, String email) {
-        
-    //     Boolean existingUser = this.userRepository.existsByEmail(email);
-    //      if(existingUser)
-    //         return ("Já existe um usuário com este email: " + email + ", tente com um email diferente!");
-      
-    //      else {
-    //     String otp = otpManager.generateAndStoreOTP(6);
-    //     String subject = "Código de Verificação da Conta";
-    //     // String emailBody = "<p>Prezado(a) <strong>" + fullName + "</strong>,</p>" +
-    //     //         "<p>Copie e volte ao sistema para inserir no campo <strong>CÓDIGO OTP</strong>: <strong>" + otp + "</strong></p>" +
-    //     //         "<p>O código é válido por 2 minutos.</p>" +
-    //     //         "<p> Acesse a partir do link: http://172.31.4.99/criar-conta </p>"+
-    //     //         "<p>Atenciosamente,<br>" +
-    //     //         "<strong> Equipe smartSAE </strong></p>";
-    //     // String response = this.emailService.send(email, subject, emailBody);
-    //     // System.out.println("resposta: "+ response);
-        
-    //     return  response;
-    //      }
-        
-        
-    //     // TODO Auto-generated method stub
-        
+    // public String genOTP(String fullName, String email) {
+
+    // Boolean existingUser = this.userRepository.existsByEmail(email);
+    // if(existingUser)
+    // return ("Já existe um usuário com este email: " + email + ", tente com um
+    // email diferente!");
+
+    // else {
+    // String otp = otpManager.generateAndStoreOTP(6);
+    // String subject = "Código de Verificação da Conta";
+    // // String emailBody = "<p>Prezado(a) <strong>" + fullName + "</strong>,</p>"
+    // +
+    // // "<p>Copie e volte ao sistema para inserir no campo <strong>CÓDIGO
+    // OTP</strong>: <strong>" + otp + "</strong></p>" +
+    // // "<p>O código é válido por 2 minutos.</p>" +
+    // // "<p> Acesse a partir do link: http://172.31.4.99/criar-conta </p>"+
+    // // "<p>Atenciosamente,<br>" +
+    // // "<strong> Equipe smartsae </strong></p>";
+    // // String response = this.emailService.send(email, subject, emailBody);
+    // // System.out.println("resposta: "+ response);
+
+    // return response;
+    // }
+
+    // // TODO Auto-generated method stub
+
     // }
 }

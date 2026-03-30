@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
-<project name="smartSAE-api-deployment" default="install" basedir=".">
+<project name="smartsae-api-deployment" default="install" basedir=".">
 
 	<tstamp>
 		<format property="currentYear" pattern="yyyy" />
@@ -15,7 +15,7 @@
 	<property name="install.dir" value="${env.UTRAFE_HOME}" />
 	<property name="wildfly.home" value="${env.WILDFLY_HOME}" />
 	<property name="distro.dir" value="${basedir}" />
-	<property name="artifact.name" value="smartSAE-api" />
+	<property name="artifact.name" value="smartsae-api" />
 		
 	<fail unless="install.dir" message="UTRAFE_HOME not set." />
 	<fail unless="wildfly.home" message="WILDFLY_HOME not set." />

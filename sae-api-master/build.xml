@@ -1,6 +1,6 @@
-<project name="smartSAE-api" default="dist" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
+<project name="smartsae-api" default="dist" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
 	<description>
-		 smartSAE API BUILD FILE 
+		 smartsae API BUILD FILE 
     </description>
 
 	<property file="ant.properties" />
@@ -8,14 +8,14 @@
 	<property name="remote.delivery.dir" value="${remote.delivery.directory}" />
 	<property name="remote.ant.dir" value="${remote.jbossapp.dir}/ant" />
 	<property name="jboss.home" value="${remote.jbossapp.dir}/jboss" />
-	<property name="dist.label" value="smartSAE-api-${build.label}" />
+	<property name="dist.label" value="smartsae-api-${build.label}" />
 	<property name="lib.dir" location="lib" />
 	<property name="target.build.dir" location="target" />
 	
 	<!--==== Init. ============================================-->
 	<target name="init" description="Init.">
 	    <echo message="-------------------------------------------------------"/>
-		<echo message="-  Building  smartSAE API                               "/>
+		<echo message="-  Building  smartsae API                               "/>
 		<echo message="-------------------------------------------------------"/>
 		<tstamp />
 	</target>

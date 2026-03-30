@@ -35,59 +35,58 @@ services:
       - "6379:6379"
     networks:
       - sae-network
-
   # Microserviços
-  sae-auth-service:
-    build: ./sae-auth-service
-    container_name: sae-auth-service
-    ports:
-      - "8081:8081"
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/sae_db
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=postgres
-      - SPRING_DATA_REDIS_HOST=redis
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - sae-network
+  # sae-auth-service:
+  #   build: ./sae-auth-service
+  #   container_name: sae-auth-service
+  #   ports:
+  #     - "8081:8081"
+  #   environment:
+  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/sae_db
+  #     - SPRING_DATASOURCE_USERNAME=postgres
+  #     - SPRING_DATASOURCE_PASSWORD=postgres
+  #     - SPRING_DATA_REDIS_HOST=redis
+  #   depends_on:
+  #     - postgres
+  #     - redis
+  #   networks:
+  #     - sae-network
 
-  sae-content-service:
-    build: ./sae-content-service
-    container_name: sae-content-service
-    ports:
-      - "8082:8082"
-    environment:
-      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/sae_content
-    depends_on:
-      - mongodb
-    networks:
-      - sae-network
+  # sae-content-service:
+  #   build: ./sae-content-service
+  #   container_name: sae-content-service
+  #   ports:
+  #     - "8082:8082"
+  #   environment:
+  #     - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/sae_content
+  #   depends_on:
+  #     - mongodb
+  #   networks:
+  #     - sae-network
 
-  sae-forum-service:
-    build: ./sae-forum-service
-    container_name: sae-forum-service
-    ports:
-      - "8083:8083"
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/sae_db
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=postgres
-    depends_on:
-      - postgres
-    networks:
-      - sae-network
+  # sae-forum-service:
+  #   build: ./sae-forum-service
+  #   container_name: sae-forum-service
+  #   ports:
+  #     - "8083:8083"
+  #   environment:
+  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/sae_db
+  #     - SPRING_DATASOURCE_USERNAME=postgres
+  #     - SPRING_DATASOURCE_PASSWORD=postgres
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - sae-network
 
-  sae-api-gateway:
-    build: ./sae-api-gateway
-    container_name: sae-api-gateway
-    ports:
-      - "8080:8080"
-    depends_on:
-      - sae-auth-service
-    networks:
-      - sae-network
+  # sae-api-gateway:
+  #   build: ./sae-api-gateway
+  #   container_name: sae-api-gateway
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     - sae-auth-service
+  #   networks:
+  #     - sae-network
 
 networks:
   sae-network:

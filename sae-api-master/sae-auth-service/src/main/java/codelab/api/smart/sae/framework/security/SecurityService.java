@@ -17,16 +17,11 @@ import codelab.api.smart.sae.user.model.UserEntity;
 @Service
 public class SecurityService {
 
-//	@Autowired
-//	private UserService userService;
-
 	@Autowired
 	private AuthenticationManager authenticationManager;
 
 	@Autowired
 	private JwtUtil jwtTokenUtil;
-
-	
 
 	public String authenticate(AuthenticationRequestDTO request) throws Exception {
 

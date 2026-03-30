@@ -30,8 +30,8 @@ import codelab.api.smart.sae.framework.config.SmartSAEConfig;
 public class CrossOriginRequestFilter implements Filter {
 
 	private static final String PREFLIGHT_REQUEST_METHOD = "OPTIONS";
-	
-	private Logger log=LoggerFactory.getLogger(CrossOriginRequestFilter.class);
+
+	private Logger log = LoggerFactory.getLogger(CrossOriginRequestFilter.class);
 
 	@Autowired
 	private SmartSAEConfig configuration;
@@ -73,12 +73,12 @@ public class CrossOriginRequestFilter implements Filter {
 
 		boolean trustedOrigin = configuration.getSecurity().getAllowedOrigin().equals(request.getHeader("Origin"));
 		boolean preflightRequest = PREFLIGHT_REQUEST_METHOD.equals(request.getMethod());
-		
-		log.info("INICIADA A LOGARIZACAO DOS HEADERS / TRUSTED ORIGIN {} ",trustedOrigin);
-		
-		log.info("INICIADA A LOGARIZACAO DOS HEADERS / PREFLIHT REQUEST {} ",preflightRequest);
-		
-		log.info("INICIADA A LOGARIZACAO DOS HEADERS / RESULT {} ",trustedOrigin && preflightRequest);
+
+		log.info("INICIADA A LOGARIZACAO DOS HEADERS / TRUSTED ORIGIN {} ", trustedOrigin);
+
+		log.info("INICIADA A LOGARIZACAO DOS HEADERS / PREFLIHT REQUEST {} ", preflightRequest);
+
+		log.info("INICIADA A LOGARIZACAO DOS HEADERS / RESULT {} ", trustedOrigin && preflightRequest);
 
 		return trustedOrigin && preflightRequest;
 	}

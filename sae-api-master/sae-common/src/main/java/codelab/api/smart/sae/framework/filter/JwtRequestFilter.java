@@ -15,14 +15,16 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import codelab.api.smart.sae.framework.security.SecurityService;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+
 import codelab.api.smart.sae.framework.util.JwtUtil;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
-
-	@Autowired
-	private SecurityService securityService;
 
 	@Autowired
 	private JwtUtil jwtUtil;
@@ -41,10 +43,14 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 			username = jwtUtil.extractUsername(jwt);
 		}
 		
-		// TODO: Review this. No need to go to the database
 		if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-			UserDetails userDetails = this.securityService.loadUserByUsername(username);
+			List<String> rolesList = jwtUtil.extractClaim(jwt, claims -> claims.get("roles", List.class));
+			List<SimpleGrantedAuthority> authorities = rolesList != null ? 
+					rolesList.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList()) : 
+					Collections.emptyList();
+			
+			UserDetails userDetails = new User(username, "", authorities);
 
 			if (jwtUtil.validateToken(jwt, userDetails)) {
 

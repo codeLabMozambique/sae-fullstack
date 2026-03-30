@@ -1,13 +1,15 @@
 package codelab.api.smart.sae.framework.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
 /**
  * Configuration Property Class
  * 
  * @author Shifu-Taishi Grand Master (shifu-taishi@grand.master.com)
  */
-@ConfigurationProperties("smartSAE")
+@Component
+@ConfigurationProperties("smartsae")
 public class SmartSAEConfig {
 
 	private Application application = new Application();

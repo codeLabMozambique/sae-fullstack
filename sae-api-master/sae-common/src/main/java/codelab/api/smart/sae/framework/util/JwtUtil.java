@@ -8,8 +8,12 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import org.springframework.security.core.GrantedAuthority;
 
 /**
  * @author Shifu-Taishi Grand Master (shifu-taishi@grand.master.com)
@@ -18,12 +22,12 @@ import java.util.function.Function;
 @Service
 public class JwtUtil {
 
-	public static final String JWT_HEADER = "Authorization";
-	
-	public static final String JWT_PREFIX = "Bearer ";
-	
-    private String SECRET_KEY = "#secretS@SmartSAE2026d!";
-    
+    public static final String JWT_HEADER = "Authorization";
+
+    public static final String JWT_PREFIX = "Bearer ";
+
+    private String SECRET_KEY = "#secretS@smartsae2026d!";
+
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -36,6 +40,7 @@ public class JwtUtil {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
+
     private Claims extractAllClaims(String token) {
         return Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token).getBody();
     }
@@ -46,13 +51,17 @@ public class JwtUtil {
 
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
+        List<String> roles = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+        claims.put("roles", roles);
         return createToken(claims, userDetails.getUsername());
     }
 
     private String createToken(Map<String, Object> claims, String subject) {
 
         return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + (15*3600000)))
+                .setExpiration(new Date(System.currentTimeMillis() + (15 * 3600000)))
                 .signWith(SignatureAlgorithm.HS256, SECRET_KEY).compact();
     }
 

@@ -1,71 +1,71 @@
 
-INSERT INTO smartSAE_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+INSERT INTO smartsae_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
 VALUES (1, '01', 'HEADER', 'Veículos', NULL, 1, NULL, 1);
 
-INSERT INTO smartSAE_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+INSERT INTO smartsae_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
 VALUES (2, '0101', 'MENU_ITEM', 'Cadastrar Veículo', '/admin/veiculos/cadastrar', 1, 1, 1);
 
-INSERT INTO smartSAE_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+INSERT INTO smartsae_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
 VALUES (3, '0102', 'MENU_ITEM', 'Consultar Veículos', '/admin/veiculos/consultar', 2, 1, 1);
 
-INSERT INTO smartSAE_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+INSERT INTO smartsae_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
 VALUES (4, '0103', 'MENU_ITEM', 'Eventos de Veículo', '/admin/veiculos/eventos', 3, 1, 1);
 
 -- DUA
-INSERT INTO smartSAE_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+INSERT INTO smartsae_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
 VALUES (5, '02', 'HEADER', 'Documentos (DUA)', NULL, 2, NULL, 1);
 
-INSERT INTO smartSAE_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
-VALUES (6, '0201', 'MENU_ITEM', 'Emitir DUA', '/admin/smartSAE/emitir', 1, 5, 1);
+INSERT INTO smartsae_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+VALUES (6, '0201', 'MENU_ITEM', 'Emitir DUA', '/admin/smartsae/emitir', 1, 5, 1);
 
-INSERT INTO smartSAE_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
-VALUES (7, '0202', 'MENU_ITEM', 'Consultar DUAs', '/admin/smartSAE/consultar', 2, 5, 1);
+INSERT INTO smartsae_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+VALUES (7, '0202', 'MENU_ITEM', 'Consultar DUAs', '/admin/smartsae/consultar', 2, 5, 1);
 
 -- Proprietários
-INSERT INTO smartSAE_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+INSERT INTO smartsae_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
 VALUES (8, '03', 'HEADER', 'Proprietários', NULL, 3, NULL, 1);
 
-INSERT INTO smartSAE_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+INSERT INTO smartsae_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
 VALUES (9, '0301', 'MENU_ITEM', 'Cadastrar Proprietário', '/admin/proprietarios/cadastrar', 1, 8, 1);
 
-INSERT INTO smartSAE_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+INSERT INTO smartsae_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
 VALUES (10, '0302', 'MENU_ITEM', 'Consultar Proprietários', '/admin/proprietarios/consultar', 2, 8, 1);
 
 -- Entidades
-INSERT INTO smartSAE_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+INSERT INTO smartsae_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
 VALUES (11, '04', 'HEADER', 'Entidades', NULL, 4, NULL, 1);
 
-INSERT INTO smartSAE_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+INSERT INTO smartsae_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
 VALUES (12, '0401', 'MENU_ITEM', 'Cadastrar Entidade', '/admin/entidades/cadastrar', 1, 11, 1);
 
-INSERT INTO smartSAE_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+INSERT INTO smartsae_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
 VALUES (13, '0402', 'MENU_ITEM', 'Consultar Entidades', '/admin/entidades/consultar', 2, 11, 1);
 
 -- Consentimentos
-INSERT INTO smartSAE_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+INSERT INTO smartsae_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
 VALUES (14, '05', 'HEADER', 'Consentimentos', NULL, 5, NULL, 1);
 
-INSERT INTO smartSAE_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+INSERT INTO smartsae_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
 VALUES (15, '0501', 'MENU_ITEM', 'Gerir Consentimentos', '/admin/consentimentos/gestao', 1, 14, 1);
 
 -- Utilizadores
-INSERT INTO smartSAE_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+INSERT INTO smartsae_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
 VALUES (16, '06', 'HEADER', 'Utilizadores', NULL, 6, NULL, 1);
 
-INSERT INTO smartSAE_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+INSERT INTO smartsae_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
 VALUES (17, '0601', 'MENU_ITEM', 'Consultar Utilizadores', '/admin/utilizadores/consultar', 1, 16, 1);
 
-INSERT INTO smartSAE_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+INSERT INTO smartsae_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
 VALUES (18, '0602', 'MENU_ITEM', 'Cadastrar Utilizador', '/admin/utilizadores/cadastrar', 2, 16, 1);
 
-INSERT INTO smartSAE_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+INSERT INTO smartsae_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
 VALUES (19, '0603', 'MENU_ITEM', 'Trocar Senha', '/admin/utilizadores/trocar-senha', 3, 16, 1);
 
 -- Logs
-INSERT INTO smartSAE_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+INSERT INTO smartsae_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
 VALUES (20, '07', 'HEADER', 'Logs & Auditoria', NULL, 7, NULL, 1);
 
-INSERT INTO smartSAE_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+INSERT INTO smartsae_hub.app_transaction(ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
 VALUES (21, '0701', 'MENU_ITEM', 'Consultar Logs', '/admin/logs', 1, 20, 1);
 
 -- ============================================
@@ -75,7 +75,7 @@ VALUES (21, '0701', 'MENU_ITEM', 'Consultar Logs', '/admin/logs', 1, 20, 1);
 -- ADMIN: acesso total
 -- ADMIN: acesso total
 -- ADMIN: acesso total
-INSERT INTO smartSAE_hub.role_transaction (ID, ROLE, APP_TRANSACTION_ID, STATUS)
+INSERT INTO smartsae_hub.role_transaction (ID, ROLE, APP_TRANSACTION_ID, STATUS)
 VALUES 
 (1, 'ADMIN', 1, 1),
 (2, 'ADMIN', 2, 1),
@@ -100,7 +100,7 @@ VALUES
 (21, 'ADMIN', 21, 1);
 
 -- OPERADOR_CONSERVATORIA
-INSERT INTO smartSAE_hub.role_transaction (ID, ROLE, APP_TRANSACTION_ID, STATUS)
+INSERT INTO smartsae_hub.role_transaction (ID, ROLE, APP_TRANSACTION_ID, STATUS)
 VALUES
 (22, 'OPERADOR_CONSERVATORIA', 1, 1),
 (23, 'OPERADOR_CONSERVATORIA', 2, 1),
@@ -108,7 +108,7 @@ VALUES
 (25, 'OPERADOR_CONSERVATORIA', 4, 1);
 
 -- GESTOR_DUA
-INSERT INTO smartSAE_hub.role_transaction (ID, ROLE, APP_TRANSACTION_ID, STATUS)
+INSERT INTO smartsae_hub.role_transaction (ID, ROLE, APP_TRANSACTION_ID, STATUS)
 VALUES
 (26, 'GESTOR_DUA', 4, 1),
 (27, 'GESTOR_DUA', 5, 1),
@@ -120,7 +120,7 @@ VALUES
 (33, 'GESTOR_DUA', 16, 1);
 
 -- FUNCIONARIO_IMT
-INSERT INTO smartSAE_hub.role_transaction (ID, ROLE, APP_TRANSACTION_ID, STATUS)
+INSERT INTO smartsae_hub.role_transaction (ID, ROLE, APP_TRANSACTION_ID, STATUS)
 VALUES
 (34, 'FUNCIONARIO_IMT', 3, 1),
 (35, 'FUNCIONARIO_IMT', 7, 1),
@@ -130,7 +130,7 @@ VALUES
 (39, 'FUNCIONARIO_IMT', 20, 1);
 
 -- USER
-INSERT INTO smartSAE_hub.role_transaction (ID, ROLE, APP_TRANSACTION_ID, STATUS)
+INSERT INTO smartsae_hub.role_transaction (ID, ROLE, APP_TRANSACTION_ID, STATUS)
 VALUES
 (40, 'USER', 16, 1),
 (41, 'USER', 18, 1);
@@ -170,7 +170,7 @@ INSERT INTO entidade (status, created_date, nome, nuit, email, telefone, morada,
 (1, NOW(), 'IMT - Direcção Nacional', '200000001', 'imt.dn@imt.gov.mz', '+25821300000', 'Av. Acordos de Lusaka, Maputo', 'https://www.imt.gov.mz', 2),
 (1, NOW(), 'IMT - Delegação de Maputo', '200000002', 'imt.maputo@imt.gov.mz', '+25821300100', 'Av. 25 de Setembro, Maputo', 'https://www.imt.gov.mz', 2),
 (1, NOW(), 'IMT - Delegação da Beira', '200000003', 'imt.beira@imt.gov.mz', '+25823300100', 'Av. Pungué, Beira', 'https://www.imt.gov.mz', 2),
-(1, NOW(), 'IMT - Delegação de Nampula', '200000004', 'imt.nampula@imt.gov.mz', '+25826200100', 'Av. EsmartSAErdo Mondlane, Nampula', 'https://www.imt.gov.mz', 2),
+(1, NOW(), 'IMT - Delegação de Nampula', '200000004', 'imt.nampula@imt.gov.mz', '+25826200100', 'Av. Esmartsaerdo Mondlane, Nampula', 'https://www.imt.gov.mz', 2),
 (1, NOW(), 'IMT - Centro de Inspecções Técnicas Maputo', '200000005', 'cit.maputo@imt.gov.mz', '+25821300200', 'Zona Verde, Maputo', 'https://www.imt.gov.mz', 2);
 
 -- POLÍCIA DE TRÂNSITO
@@ -179,7 +179,7 @@ INSERT INTO entidade (status, created_date, nome, nuit, email, telefone, morada,
 (1, NOW(), 'Destacamento de Trânsito de Maputo', '300000002', 'transito.maputo@prm.gov.mz', '+25821310100', 'Av. 25 de Setembro, Maputo', 'https://www.prm.gov.mz', 3),
 (1, NOW(), 'Destacamento de Trânsito da Matola', '300000003', 'transito.matola@prm.gov.mz', '+25821410100', 'Av. da Matola, Matola', 'https://www.prm.gov.mz', 3),
 (1, NOW(), 'Destacamento de Trânsito da Beira', '300000004', 'transito.beira@prm.gov.mz', '+25823310100', 'Av. Pungué, Beira', 'https://www.prm.gov.mz', 3),
-(1, NOW(), 'Destacamento de Trânsito de Nampula', '300000005', 'transito.nampula@prm.gov.mz', '+25826210100', 'Av. EsmartSAErdo Mondlane, Nampula', 'https://www.prm.gov.mz', 3);
+(1, NOW(), 'Destacamento de Trânsito de Nampula', '300000005', 'transito.nampula@prm.gov.mz', '+25826210100', 'Av. Esmartsaerdo Mondlane, Nampula', 'https://www.prm.gov.mz', 3);
 
 -- POLÍCIA DA REPÚBLICA DE MOÇAMBIQUE (PRM)
 INSERT INTO entidade (status, created_date, nome, nuit, email, telefone, morada, portal_url, tipo_entidade_id) VALUES
@@ -199,7 +199,7 @@ INSERT INTO entidade (status, created_date, nome, nuit, email, telefone, morada,
 (1, NOW(), 'Câmara Municipal de Maputo', '600000001', 'transito.cmm@maputo.gov.mz', '+25821340000', 'Av. Julius Nyerere, Maputo', 'https://www.cmm.gov.mz', 6),
 (1, NOW(), 'Câmara Municipal da Matola', '600000002', 'transito.matola@matola.gov.mz', '+25821440000', 'Av. da Matola, Matola', 'https://www.cmmatola.gov.mz', 6),
 (1, NOW(), 'Câmara Municipal da Beira', '600000003', 'transito.beira@beira.gov.mz', '+25823340000', 'Av. Pungué, Beira', 'https://www.cmbeira.gov.mz', 6),
-(1, NOW(), 'Câmara Municipal de Nampula', '600000004', 'transito.nampula@nampula.gov.mz', '+25826240000', 'Av. EsmartSAErdo Mondlane, Nampula', 'https://www.cmnampula.gov.mz', 6);
+(1, NOW(), 'Câmara Municipal de Nampula', '600000004', 'transito.nampula@nampula.gov.mz', '+25826240000', 'Av. Esmartsaerdo Mondlane, Nampula', 'https://www.cmnampula.gov.mz', 6);
 
 -- SEGURANÇA PRIVADA
 INSERT INTO entidade (status, created_date, nome, nuit, email, telefone, morada, portal_url, tipo_entidade_id) VALUES
@@ -224,9 +224,9 @@ INSERT INTO entidade (status, created_date, nome, nuit, email, telefone, morada,
 (1, NOW(), 'Grémio dos Transportadores', '1000000002', 'gremio@transportadores.co.mz', '+25821380001', 'Av. Kenneth Kaunda, Maputo', 'https://www.gremiotransportadores.co.mz', 10);
 
 -- only for root
--- ALTER TABLE smartSAE_user MODIFY created_by BIGINT NULL;
+-- ALTER TABLE smartsae_user MODIFY created_by BIGINT NULL;
 
 
 -- pode nao funcionar:
 -- OPERADOR_CONSERVATORIA - atribuir a uma conservatória
-UPDATE smartSAE_user SET entidade_id = 1 WHERE username LIKE 'shifu.taishi%';
+UPDATE smartsae_user SET entidade_id = 1 WHERE username LIKE 'shifu.taishi%';
