@@ -11,17 +11,26 @@ import codelab.api.smart.sae.user.enums.UserRoles;
  */
 public class RegisterRequestDTO {
 
-    private String nTelefone; // <-- novo (username = nCarta)
+    private String username; // <-- novo (username)
+    private String email;
     private String password; // <-- o user define
     private String fullname;
     private UserRoles role; // opcional (podes ignorar no backend)
 
-    public String getNtelefone() {
-        return nTelefone;
+    public String getEmail() {
+        return email;
     }
 
-    public void setNtelefone(String nTelefone) {
-        this.nTelefone = nTelefone;
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getPassword() {

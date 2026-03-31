@@ -40,6 +40,7 @@
 	<modules>
 		<module>sae-common</module>
 		<module>sae-auth-service</module>
+		<module>sae-academic-service</module>
 		<module>sae-api-gateway</module>
 		<module>sae-content-service</module>
 		<module>sae-forum-service</module>

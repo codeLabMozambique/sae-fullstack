@@ -95,8 +95,6 @@ public class UserResouce {
     @PostMapping("/login")
     public ResponseEntity<?> signin(@RequestBody AuthenticationRequestDTO authenticationRequest) throws Exception {
 
-        System.out.println("aaa");
-
         String jwt = this.securityService.authenticate(authenticationRequest);
 
         UserEntity principal = securityService.getPrincipal();

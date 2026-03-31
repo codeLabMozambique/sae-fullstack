@@ -18,10 +18,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import codelab.api.smart.sae.academic.model.ClassroomEntity;
-import codelab.api.smart.sae.academic.model.SchoolEntity;
-import codelab.api.smart.sae.academic.repository.ClassroomRepository;
-import codelab.api.smart.sae.academic.repository.SchoolRepository;
 import codelab.api.smart.sae.framework.exception.BusinessException;
 import codelab.api.smart.sae.roleTransaction.model.RoleTransactionEntity;
 import codelab.api.smart.sae.roleTransaction.repository.RoleTransactionRepository;
@@ -60,12 +56,6 @@ public class UserService {
 
     @Autowired
     private StudentProfileRepository studentProfileRepository;
-
-    @Autowired
-    private SchoolRepository schoolRepository;
-
-    @Autowired
-    private ClassroomRepository classroomRepository;
 
     // @Autowired
     // private EmailService emailService;
@@ -125,7 +115,7 @@ public class UserService {
 
     @Transactional
     public UserEntity createUser(RegisterRequestDTO request) {
-        if (request.getNtelefone() == null || request.getNtelefone().trim().isEmpty()) {
+        if (request.getUsername() == null || request.getUsername().trim().isEmpty()) {
             throw new BusinessException("Número de telefone é obrigatório");
         }
         if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
@@ -134,17 +124,18 @@ public class UserService {
         if (request.getPassword().length() < 6) {
             throw new BusinessException("Password deve ter no mínimo 6 caracteres");
         }
-        if (userRepository.existsByUsername(request.getNtelefone())) {
+        if (userRepository.existsByUsername(request.getUsername())) {
             throw new BusinessException("Já existe uma conta com este número de telefone");
         }
 
         UserEntity tmp_user = new UserEntity();
         List<RoleTransactionEntity> roleT = roleTransactionRepository
-                .findByRoleAndAppTransactionTypeOrderByAppTransactionCode(UserRoles.CONSULTA, MenuType.HEADER);
+                .findByRoleAndAppTransactionTypeOrderByAppTransactionCode(UserRoles.GUEST, MenuType.HEADER);
         RoleTransactionEntity tmp_roleT = roleT.get(0);
 
         tmp_user.setFullname(request.getFullname());
-        tmp_user.setUsername(request.getNtelefone());
+        tmp_user.setUsername(request.getUsername());
+        tmp_user.setEmail(request.getEmail());
         tmp_user.setPassword(passwordEncoder.encode(request.getPassword()));
         tmp_user.setRole(tmp_roleT);
         tmp_user.setEnabled(true);
@@ -161,12 +152,10 @@ public class UserService {
             throw new BusinessException("Já existe uma conta com este número de telefone");
         }
 
-        SchoolEntity school = schoolRepository.findById(request.getSchoolId())
-                .orElseThrow(() -> new BusinessException("Escola não encontrada"));
-
         UserEntity user = new UserEntity();
         user.setFullname(request.getFullname());
         user.setUsername(request.getNTelefone());
+        user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setEnabled(true);
         user.setCreatedDate(LocalDateTime.now());
@@ -180,7 +169,9 @@ public class UserService {
 
         ProfessorProfileEntity profile = new ProfessorProfileEntity();
         profile.setUser(user);
-        profile.setSchool(school);
+        profile.setSchoolId(request.getSchoolId());
+        profile.setDepartment(request.getDepartment());
+        profile.setSpecialization(request.getSpecialization());
         profile.setInstitutionalContact(request.getInstitutionalContact());
         profile.setOnline(false);
 
@@ -193,12 +184,10 @@ public class UserService {
             throw new BusinessException("Já existe uma conta com este número de telefone");
         }
 
-        ClassroomEntity classroom = classroomRepository.findById(request.getClassroomId())
-                .orElseThrow(() -> new BusinessException("Turma não encontrada"));
-
         UserEntity user = new UserEntity();
         user.setFullname(request.getFullname());
         user.setUsername(request.getNTelefone());
+        user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setEnabled(true);
         user.setCreatedDate(LocalDateTime.now());
@@ -212,25 +201,13 @@ public class UserService {
 
         StudentProfileEntity profile = new StudentProfileEntity();
         profile.setUser(user);
-        profile.setClassroom(classroom);
+        profile.setSchoolId(request.getSchoolId());
+        profile.setClassroomId(request.getClassroomId());
+        profile.setGrade(request.getGrade());
+        profile.setEnrollmentDate(java.time.LocalDate.now());
         profile.setAge(request.getAge());
 
         return studentProfileRepository.save(profile);
-    }
-
-    private String generateCommonLangPassword() {
-        String upperCaseLetters = RandomStringUtils.random(2, 65, 90, true, true);
-        String lowerCaseLetters = RandomStringUtils.random(2, 97, 122, true, true);
-        String numbers = RandomStringUtils.randomNumeric(2);
-        String specialChar = RandomStringUtils.random(2, 33, 47, false, false);
-        String totalChars = RandomStringUtils.randomAlphanumeric(2);
-        String combinedChars = upperCaseLetters.concat(lowerCaseLetters).concat(numbers).concat(specialChar)
-                .concat(totalChars);
-        List<Character> pwdChars = combinedChars.chars().mapToObj(c -> (char) c).collect(Collectors.toList());
-        Collections.shuffle(pwdChars);
-        String password = pwdChars.stream().collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                .toString();
-        return password;
     }
 
     public List<MenuDTO> findTransactionsByRole(UserEntity user) {

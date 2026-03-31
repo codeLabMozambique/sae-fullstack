@@ -3,7 +3,12 @@ package codelab.api.smart.sae.framework.jpa;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
+
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -13,19 +18,18 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * @author Shifu-Taishi Grand Master (shifu-taishi@grand.master.com)
  */
 @MappedSuperclass
-//@EntityListeners(AuditingEntityListener.class)
-//@JsonIgnoreProperties(value = { "lastModifiedBy", "lastModifiedDate" })
+@EntityListeners(AuditingEntityListener.class)
 public abstract class UpdatableEntity extends CreatableEntity<Long> {
 
 	private static final long serialVersionUID = 869537210288928366L;
 	
 	@JsonIgnore
-	//@LastModifiedBy
+	@LastModifiedBy
 	@Column(name = "LAST_MODIFIED_BY")
 	private Long lastModifiedBy;
 
 	@JsonIgnore
-	//@LastModifiedDate
+	@LastModifiedDate
 	@Column(name = "LAST_MODIFIED_DATE")
 	private LocalDateTime lastModifiedDate;
 

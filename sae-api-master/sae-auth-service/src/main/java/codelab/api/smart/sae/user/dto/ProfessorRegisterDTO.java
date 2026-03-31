@@ -8,6 +8,9 @@ public class ProfessorRegisterDTO {
     @NotBlank(message = "Número de telefone é obrigatório")
     private String nTelefone;
 
+    @NotBlank(message = "Email é obrigatório")
+    private String email;
+
     @NotBlank(message = "Password é obrigatória")
     private String password;
 
@@ -17,7 +20,18 @@ public class ProfessorRegisterDTO {
     @NotNull(message = "Escola é obrigatória")
     private Long schoolId;
 
+    private String department;
+    private String specialization;
     private String institutionalContact;
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getDepartment() { return department; }
+    public void setDepartment(String department) { this.department = department; }
+
+    public String getSpecialization() { return specialization; }
+    public void setSpecialization(String specialization) { this.specialization = specialization; }
 
     public ProfessorRegisterDTO() {}
 

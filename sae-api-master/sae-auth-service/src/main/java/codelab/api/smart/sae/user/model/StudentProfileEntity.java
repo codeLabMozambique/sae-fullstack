@@ -1,6 +1,7 @@
 package codelab.api.smart.sae.user.model;
 
-import codelab.api.smart.sae.academic.model.ClassroomEntity;
+import java.time.LocalDate;
+
 import codelab.api.smart.sae.framework.jpa.UpdatableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,7 +9,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
@@ -18,33 +18,73 @@ public class StudentProfileEntity extends UpdatableEntity {
 
     private static final long serialVersionUID = 1L;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID")
-    private Long id;
-
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
-    @ManyToOne
-    @JoinColumn(name = "classroom_id", nullable = false)
-    private ClassroomEntity classroom;
+    @Column(name = "school_id", nullable = false)
+    private Long schoolId;
+
+    @Column(name = "classroom_id", nullable = false)
+    private Long classroomId;
+
+    @Column(name = "GRADE")
+    private String grade;
+
+    @Column(name = "ENROLLMENT_DATE")
+    private LocalDate enrollmentDate;
 
     @Column(name = "AGE")
     private Integer age;
 
-    public StudentProfileEntity() {}
+    public StudentProfileEntity() {
+    }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public UserEntity getUser() {
+        return user;
+    }
 
-    public UserEntity getUser() { return user; }
-    public void setUser(UserEntity user) { this.user = user; }
+    public void setUser(UserEntity user) {
+        this.user = user;
+    }
 
-    public ClassroomEntity getClassroom() { return classroom; }
-    public void setClassroom(ClassroomEntity classroom) { this.classroom = classroom; }
+    public Long getSchoolId() {
+        return schoolId;
+    }
 
-    public Integer getAge() { return age; }
-    public void setAge(Integer age) { this.age = age; }
+    public void setSchoolId(Long schoolId) {
+        this.schoolId = schoolId;
+    }
+
+    public Long getClassroomId() {
+        return classroomId;
+    }
+
+    public void setClassroomId(Long classroomId) {
+        this.classroomId = classroomId;
+    }
+
+    public String getGrade() {
+        return grade;
+    }
+
+    public void setGrade(String grade) {
+        this.grade = grade;
+    }
+
+    public LocalDate getEnrollmentDate() {
+        return enrollmentDate;
+    }
+
+    public void setEnrollmentDate(LocalDate enrollmentDate) {
+        this.enrollmentDate = enrollmentDate;
+    }
+
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
+    }
 }

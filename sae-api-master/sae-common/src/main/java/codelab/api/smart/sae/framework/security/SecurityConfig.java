@@ -36,8 +36,7 @@ public class SecurityConfig {
 						.permitAll()
 						.requestMatchers(HttpMethod.GET, "/users/**").hasAnyAuthority(UserRoles.ADMIN.name())
 						.requestMatchers("/users/change-password")
-						.hasAnyAuthority(UserRoles.ADMIN.name(), UserRoles.GESTOR_ECARTA.name(),
-								UserRoles.FUNCIONARIO_INATRO.name())
+						.hasAnyAuthority(UserRoles.ADMIN.name())
 						.requestMatchers(HttpMethod.POST, "/driving-licenses/me").authenticated()
 						.requestMatchers(HttpMethod.GET, "/driving-licenses/me").authenticated()
 						.requestMatchers(HttpMethod.POST, "/driving-licenses/users/**")

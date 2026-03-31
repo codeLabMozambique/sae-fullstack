@@ -28,20 +28,22 @@ import codelab.api.smart.sae.roleTransaction.model.RoleTransactionEntity;
  * @email shifu-taishi@grand.master.com
  */
 @Entity
-@Table(name = "ecarta_USER", uniqueConstraints = { @UniqueConstraint(columnNames = "USERNAME") })
+@Table(name = "sae_USER", uniqueConstraints = { @UniqueConstraint(columnNames = "USERNAME") })
 public class UserEntity extends UpdatableEntity implements UserDetails {
 
     private static final long serialVersionUID = -3509283733349027740L;
 
-    // ⚠️ O ID já vem herdado de UpdatableEntity (BaseEntity) e usa IDENTITY no MySQL
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID")
-    private Long id;
+    // @Id
+    // @GeneratedValue(strategy = GenerationType.IDENTITY)
+    // @Column(name = "ID")
+    // private Long id;
 
     @NotNull
     @Column(name = "USERNAME", nullable = false, unique = true)
     private String username;
+
+    @Column(name = "EMAIL", nullable = true, unique = true)
+    private String email;
 
     @Column(name = "PASSWORD", nullable = false)
     private String password;
@@ -56,9 +58,15 @@ public class UserEntity extends UpdatableEntity implements UserDetails {
     @JoinColumn(name = "roleT_id")
     private RoleTransactionEntity role;
 
-    
-
     public UserEntity() {
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public UserEntity(String fullName, String username, String password) {
@@ -68,21 +76,14 @@ public class UserEntity extends UpdatableEntity implements UserDetails {
         this.password = password;
     }
 
-    public Long getId() {
-        return id;
-    }
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public RoleTransactionEntity getRole() {
         return role;
     }
+
     public void setRole(RoleTransactionEntity role) {
         this.role = role;
     }
 
-   
     public void setUsername(String username) {
         this.username = username;
     }
@@ -90,6 +91,7 @@ public class UserEntity extends UpdatableEntity implements UserDetails {
     public String getPassword() {
         return password;
     }
+
     public void setPassword(String password) {
         this.password = password;
     }
@@ -97,6 +99,7 @@ public class UserEntity extends UpdatableEntity implements UserDetails {
     public String getFullname() {
         return fullname;
     }
+
     public void setFullname(String fullname) {
         this.fullname = fullname;
     }
@@ -105,18 +108,22 @@ public class UserEntity extends UpdatableEntity implements UserDetails {
     public boolean isAccountNonExpired() {
         return true;
     }
+
     @Override
     public boolean isAccountNonLocked() {
         return true;
     }
+
     @Override
     public boolean isCredentialsNonExpired() {
         return true;
     }
+
     @Override
     public boolean isEnabled() {
         return enabled;
     }
+
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
@@ -144,13 +151,18 @@ public class UserEntity extends UpdatableEntity implements UserDetails {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!super.equals(obj)) return false;
-        if (getClass() != obj.getClass()) return false;
+        if (this == obj)
+            return true;
+        if (!super.equals(obj))
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
         UserEntity other = (UserEntity) obj;
         if (username == null) {
-            if (other.username != null) return false;
-        } else if (!username.equals(other.username)) return false;
+            if (other.username != null)
+                return false;
+        } else if (!username.equals(other.username))
+            return false;
         return true;
     }
 

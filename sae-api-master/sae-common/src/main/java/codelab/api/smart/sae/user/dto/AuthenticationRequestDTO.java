@@ -12,30 +12,30 @@ import java.io.Serializable;
 public class AuthenticationRequestDTO implements Serializable {
     private static final long serialVersionUID = -1250867815652061380L;
 
-    private String nTelefone;
+    private String username;
     private String password;
-    
+
     public AuthenticationRequestDTO() {
 
     }
 
-    public AuthenticationRequestDTO(String nTelefone, String password) {
-        this.setNtelefone(password);
+    public AuthenticationRequestDTO(String username, String password) {
+        this.setUsername(username);
         this.setPassword(password);
     }
 
     /**
      * @return the email
      */
-    public String getNtelefone() {
-        return nTelefone;
+    public String getUsername() {
+        return username;
     }
 
     /**
      * @param email the email to set
      */
-    public void setNtelefone(String username) {
-        this.nTelefone = username;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     /**
@@ -51,5 +51,5 @@ public class AuthenticationRequestDTO implements Serializable {
     public void setPassword(String password) {
         this.password = password;
     }
-    
+
 }

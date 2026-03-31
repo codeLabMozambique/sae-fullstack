@@ -6,7 +6,6 @@ package codelab.api.smart.sae.user.dto;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
- 
 
 /**
  * @author Shifu-Taishi Grand Master
@@ -20,36 +19,27 @@ public class AuthenticationResponseDTO implements Serializable {
     private String username;
     private String token;
     private String role;
-    private List<MenuDTO> menus = new ArrayList<>(); 
-    
+    private List<MenuDTO> menus = new ArrayList<>();
+
     public AuthenticationResponseDTO() {
 
     }
-    
-    public AuthenticationResponseDTO (String fullName, String username, String token) {
+
+    public AuthenticationResponseDTO(String fullName, String username, String token) {
         this.setUsername(username);
         this.setFullName(fullName);
         this.setToken(token);
-        
-        
+
     }
-    public AuthenticationResponseDTO (String fullName, String username, String token, List<MenuDTO> menus, String role) {
+
+    public AuthenticationResponseDTO(String fullName, String username, String token, List<MenuDTO> menus, String role) {
         this.setUsername(username);
         this.setFullName(fullName);
         this.setToken(token);
         this.setMenus(menus);
         this.setRole(role);
-        
-        
+
     }
-
-
-
-
-   
-
-
-
 
     /**
      * @return the role
@@ -120,6 +110,5 @@ public class AuthenticationResponseDTO implements Serializable {
     public void setMenus(List<MenuDTO> menus) {
         this.menus = menus;
     }
-    
-    
+
 }

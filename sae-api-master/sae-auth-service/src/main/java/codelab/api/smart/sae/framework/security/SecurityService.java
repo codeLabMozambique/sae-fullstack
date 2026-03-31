@@ -26,11 +26,11 @@ public class SecurityService {
 	public String authenticate(AuthenticationRequestDTO request) throws Exception {
 
 		try {
-		    System.out.println("requisicao: "+request.getNtelefone());
+			System.out.println("requisicao: " + request.getUsername());
 			Authentication authenticate = authenticationManager.authenticate(
-					new UsernamePasswordAuthenticationToken(request.getNtelefone(), request.getPassword()));
+					new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 			System.out.println("Authorities: " + authenticate.getAuthorities());
-			
+
 			SecurityContextHolder.getContext().setAuthentication(authenticate);
 
 			return jwtTokenUtil.generateToken((UserDetails) authenticate.getPrincipal());
@@ -39,7 +39,7 @@ public class SecurityService {
 			throw new BusinessException("Username ou senha invalidos");
 		}
 	}
-	
+
 	public UserEntity getPrincipal() {
 		return (UserEntity) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 	}
