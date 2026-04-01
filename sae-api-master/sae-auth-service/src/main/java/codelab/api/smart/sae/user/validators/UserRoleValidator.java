@@ -15,7 +15,7 @@ public class UserRoleValidator {
 
     static {
         roleTranslations.put("PROFESSOR", "Professor");
-        roleTranslations.put("GUEST", "Estudante Visitante");
+        roleTranslations.put("GUEST", "Visitante");
         roleTranslations.put("ADMIN", "Administrador");
         roleTranslations.put("STUDENT", "Estudante");
         roleTranslations.put("ROOT", "Root");

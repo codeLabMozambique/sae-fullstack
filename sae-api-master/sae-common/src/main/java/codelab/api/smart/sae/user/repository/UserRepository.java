@@ -1,25 +1,22 @@
-/**
- * 
- */
-package codelab.api.smart.sae.user.repository;
+// /**
+// *
+// */
+// package codelab.api.smart.sae.user.repository;
 
-import java.util.Optional;
+// import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+// import org.springframework.data.jpa.repository.JpaRepository;
 
-import codelab.api.smart.sae.user.model.UserEntity;
+// import codelab.api.smart.sae.user.model.UserEntity;
 
- 
+// /**
+// * @author Shifu-Taishi Grand Master
+// * @email shifu-taishi@grand.master.com
+// */
+// public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
-/**
- * @author Shifu-Taishi Grand Master
- * @email shifu-taishi@grand.master.com
- */
-public interface UserRepository extends JpaRepository<UserEntity, Long> {
-  
-    Optional<UserEntity> findByUsername(String username); 
+// Optional<UserEntity> findByUsername(String username);
 
-    Boolean existsByUsername(String username); 
-    
+// Boolean existsByUsername(String username);
 
-}
+// }

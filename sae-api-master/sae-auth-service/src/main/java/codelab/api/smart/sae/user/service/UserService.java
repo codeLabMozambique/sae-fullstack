@@ -31,6 +31,7 @@ import codelab.api.smart.sae.user.enums.UserRoles;
 import codelab.api.smart.sae.user.model.ProfessorProfileEntity;
 import codelab.api.smart.sae.user.model.StudentProfileEntity;
 import codelab.api.smart.sae.user.model.UserEntity;
+// import codelab.api.smart.sae.user.model.UserEntity;
 import codelab.api.smart.sae.user.repository.ProfessorProfileRepository;
 import codelab.api.smart.sae.user.repository.StudentProfileRepository;
 import codelab.api.smart.sae.user.repository.UserRepository;

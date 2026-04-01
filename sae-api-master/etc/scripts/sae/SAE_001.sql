@@ -1,0 +1,114 @@
+-- -----------------------------------------------------------------------------
+-- SCHEMA ADJUSTMENTS
+-- -----------------------------------------------------------------------------
+-- Drop and recreate the check constraint to include 'GUEST' and other roles
+ALTER TABLE ROLE_TRANSACTION DROP CONSTRAINT IF EXISTS role_transaction_role_check;
+ALTER TABLE ROLE_TRANSACTION ADD CONSTRAINT role_transaction_role_check 
+CHECK (ROLE IN ('ADMIN', 'STUDENT', 'PROFESSOR', 'ROOT', 'GUEST'));
+
+-- -----------------------------------------------------------------------------
+-- HEADER: SISTEMA (ROOT)
+-- -----------------------------------------------------------------------------
+INSERT INTO APP_TRANSACTION (ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+VALUES (1, '01', 'HEADER', 'Sistema (Root)', NULL, 1, NULL, 1);
+
+INSERT INTO APP_TRANSACTION (ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+VALUES (2, '0101', 'MENU_ITEM', 'Configurações de Rede', '/root/settings', 1, 1, 1);
+
+INSERT INTO APP_TRANSACTION (ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+VALUES (3, '0102', 'MENU_ITEM', 'Gestão de Administradores', '/root/admins', 2, 1, 1);
+
+-- -----------------------------------------------------------------------------
+-- HEADER: GESTÃO ACADÉMICA (ADMIN)
+-- -----------------------------------------------------------------------------
+INSERT INTO APP_TRANSACTION (ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+VALUES (10, '02', 'HEADER', 'Gestão Académica', NULL, 2, NULL, 1);
+
+INSERT INTO APP_TRANSACTION (ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+VALUES (11, '0201', 'MENU_ITEM', 'Escolas', '/admin/schools', 1, 10, 1);
+
+INSERT INTO APP_TRANSACTION (ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+VALUES (12, '0202', 'MENU_ITEM', 'Turmas e Grades', '/admin/classrooms', 2, 10, 1);
+
+INSERT INTO APP_TRANSACTION (ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+VALUES (13, '0203', 'MENU_ITEM', 'Disciplinas', '/admin/subjects', 3, 10, 1);
+
+INSERT INTO APP_TRANSACTION (ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+VALUES (14, '0204', 'MENU_ITEM', 'Utilizadores', '/admin/users', 4, 10, 1);
+
+-- -----------------------------------------------------------------------------
+-- HEADER: ÁREA DO PROFESSOR (PROFESSOR)
+-- -----------------------------------------------------------------------------
+INSERT INTO APP_TRANSACTION (ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+VALUES (20, '03', 'HEADER', 'Área do Professor', NULL, 3, NULL, 1);
+
+INSERT INTO APP_TRANSACTION (ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+VALUES (21, '0301', 'MENU_ITEM', 'Painel de Respostas', '/professor/dashboard', 1, 20, 1);
+
+INSERT INTO APP_TRANSACTION (ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+VALUES (22, '0302', 'MENU_ITEM', 'Minhas Turmas', '/professor/my-classes', 2, 20, 1);
+
+INSERT INTO APP_TRANSACTION (ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+VALUES (23, '0303', 'MENU_ITEM', 'Meus Alunos', '/professor/students', 3, 20, 1);
+
+-- -----------------------------------------------------------------------------
+-- HEADER: ÁREA DO ALUNO (STUDENT)
+-- -----------------------------------------------------------------------------
+INSERT INTO APP_TRANSACTION (ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+VALUES (30, '04', 'HEADER', 'Área do Aluno', NULL, 4, NULL, 1);
+
+INSERT INTO APP_TRANSACTION (ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+VALUES (31, '0401', 'MENU_ITEM', 'Meus Estudos', '/student/dashboard', 1, 30, 1);
+
+INSERT INTO APP_TRANSACTION (ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+VALUES (32, '0402', 'MENU_ITEM', 'Dúvidas e Perguntas', '/student/questions', 2, 30, 1);
+
+INSERT INTO APP_TRANSACTION (ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+VALUES (33, '0403', 'MENU_ITEM', 'Biblioteca Digital', '/student/library', 3, 30, 1);
+
+-- -----------------------------------------------------------------------------
+-- HEADER: PORTAL (GUEST)
+-- -----------------------------------------------------------------------------
+INSERT INTO APP_TRANSACTION (ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+VALUES (40, '05', 'HEADER', 'Início', NULL, 5, NULL, 1);
+
+INSERT INTO APP_TRANSACTION (ID, CODE, TYPE, LABEL, ROUTER_LINK, POSITION, PARENT_ID, STATUS)
+VALUES (41, '0501', 'MENU_ITEM', 'Biblioteca Digital', '/student/library', 1, 40, 1);
+
+-- -----------------------------------------------------------------------------
+-- ROLE_TRANSACTION (Mapping Roles to Menus)
+-- -----------------------------------------------------------------------------
+
+
+ALTER TABLE ROLE_TRANSACTION DROP CONSTRAINT IF EXISTS role_transaction_role_check;
+ALTER TABLE ROLE_TRANSACTION ADD CONSTRAINT role_transaction_role_check 
+CHECK (ROLE IN ('ADMIN', 'STUDENT', 'PROFESSOR', 'ROOT', 'GUEST'));
+
+
+-- ROOT Access
+INSERT INTO ROLE_TRANSACTION (ID, ROLE, APP_TRANSACTION_ID, STATUS) VALUES (1, 'ROOT', 1, 1);
+INSERT INTO ROLE_TRANSACTION (ID, ROLE, APP_TRANSACTION_ID, STATUS) VALUES (2, 'ROOT', 2, 1);
+INSERT INTO ROLE_TRANSACTION (ID, ROLE, APP_TRANSACTION_ID, STATUS) VALUES (3, 'ROOT', 3, 1);
+
+-- ADMIN Access
+INSERT INTO ROLE_TRANSACTION (ID, ROLE, APP_TRANSACTION_ID, STATUS) VALUES (10, 'ADMIN', 10, 1);
+INSERT INTO ROLE_TRANSACTION (ID, ROLE, APP_TRANSACTION_ID, STATUS) VALUES (11, 'ADMIN', 11, 1);
+INSERT INTO ROLE_TRANSACTION (ID, ROLE, APP_TRANSACTION_ID, STATUS) VALUES (12, 'ADMIN', 12, 1);
+INSERT INTO ROLE_TRANSACTION (ID, ROLE, APP_TRANSACTION_ID, STATUS) VALUES (13, 'ADMIN', 13, 1);
+INSERT INTO ROLE_TRANSACTION (ID, ROLE, APP_TRANSACTION_ID, STATUS) VALUES (14, 'ADMIN', 14, 1);
+
+-- PROFESSOR Access
+INSERT INTO ROLE_TRANSACTION (ID, ROLE, APP_TRANSACTION_ID, STATUS) VALUES (20, 'PROFESSOR', 20, 1);
+INSERT INTO ROLE_TRANSACTION (ID, ROLE, APP_TRANSACTION_ID, STATUS) VALUES (21, 'PROFESSOR', 21, 1);
+INSERT INTO ROLE_TRANSACTION (ID, ROLE, APP_TRANSACTION_ID, STATUS) VALUES (22, 'PROFESSOR', 22, 1);
+INSERT INTO ROLE_TRANSACTION (ID, ROLE, APP_TRANSACTION_ID, STATUS) VALUES (23, 'PROFESSOR', 23, 1);
+
+-- STUDENT Access
+INSERT INTO ROLE_TRANSACTION (ID, ROLE, APP_TRANSACTION_ID, STATUS) VALUES (30, 'STUDENT', 30, 1);
+INSERT INTO ROLE_TRANSACTION (ID, ROLE, APP_TRANSACTION_ID, STATUS) VALUES (31, 'STUDENT', 31, 1);
+INSERT INTO ROLE_TRANSACTION (ID, ROLE, APP_TRANSACTION_ID, STATUS) VALUES (32, 'STUDENT', 32, 1);
+INSERT INTO ROLE_TRANSACTION (ID, ROLE, APP_TRANSACTION_ID, STATUS) VALUES (33, 'STUDENT', 33, 1);
+
+-- GUEST Access
+INSERT INTO ROLE_TRANSACTION (ID, ROLE, APP_TRANSACTION_ID, STATUS) VALUES (40, 'GUEST', 40, 1);
+INSERT INTO ROLE_TRANSACTION (ID, ROLE, APP_TRANSACTION_ID, STATUS) VALUES (41, 'GUEST', 41, 1);
