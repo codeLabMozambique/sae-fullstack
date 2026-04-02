@@ -31,9 +31,9 @@ public class SecurityConfig {
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/users/signup", "/users/login", "/users/authenticate",
-								"/users/otpGen",
-								"/users/otpValidation")
+						.requestMatchers("/users/signup/**", "/users/login", "/users/authenticate",
+								"/users/otpGen/**",
+								"/users/otpValidation/**")
 						.permitAll()
 						.requestMatchers(HttpMethod.GET, "/users/**").hasAnyAuthority(UserRoles.ADMIN.name())
 						.requestMatchers("/users/change-password")

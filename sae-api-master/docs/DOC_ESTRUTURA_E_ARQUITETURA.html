@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartSAE - Documentação do Projecto</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Mermaid CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+        h1, h2, h3 {
+            font-family: 'Outfit', sans-serif;
+            color: #0f172a;
+        }
+        .prose h2 {
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+            margin-top: 2rem;
+        }
+        .card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        pre {
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+        }
+        code {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9em;
+        }
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid #e2e8f0;
+            margin: 1.5rem 0;
+        }
+        .table-auto {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table-auto th, .table-auto td {
+            border: 1px solid #e2e8f0;
+            padding: 0.75rem;
+            text-align: left;
+        }
+        .table-auto th {
+            background-color: #f1f5f9;
+        }
+        @media print {
+            .no-print { display: none; }
+            body { background: white; }
+            .card { box-shadow: none; border: 1px solid #eee; }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-12">
+    <div class="max-w-4xl mx-auto">
+        
+        <header class="mb-12 text-center no-print">
+            <h1 class="text-4xl md:text-5xl font-bold text-indigo-600 mb-4">🚀 SmartSAE</h1>
+            <p class="text-lg text-gray-600 italic">Ecossistema de Microserviços - Documentação Técnica</p>
+            <div class="mt-6 flex justify-center gap-4">
+                <button onclick="window.print()" class="bg-indigo-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-indigo-700 transition">
+                    📄 Salvar como PDF
+                </button>
+            </div>
+        </header>
+
+        <div class="card prose max-w-none">
+            <h1 class="text-3xl font-bold mb-6">Documentação do Projecto (API Ecosystem)</h1>
+            <p>O <strong>SmartSAE</strong> é uma plataforma modular de apoio ao estudante baseada em uma arquitetura de microserviços desacoplados.</p>
+
+            <h2 class="text-2xl font-semibold mt-8 mb-4">🏗️ Arquitetura do Sistema</h2>
+            <div class="mermaid">
+                graph TD
+                    Client["Client (Browser/Mobile/Postman)"]
+                    Gateway["sae-api-gateway :8080"]
+                    Auth["sae-auth-service :8081"]
+                    Content["sae-content-service :8082"]
+                    Forum["sae-forum-service :8083"]
+                    Quiz["sae-quiz-service :8084"]
+                    Academic["sae-academic-service :8085"]
+                    AI["sae-ai-service :8086"]
+
+                    Client --> Gateway
+                    Gateway --> Auth
+                    Gateway --> Content
+                    Gateway --> Forum
+                    Gateway --> Quiz
+                    Gateway --> Academic
+                    Gateway --> AI
+
+                    Auth --> PG[("PostgreSQL (sae_db)")]
+                    Content --> MG[("MongoDB (sae_content)")]
+                    Forum --> PG
+                    Quiz --> PG
+                    Academic --> PG
+                    Auth --> RD[("Redis (Cache/Tokens)")]
+            </div>
+
+            <h2 class="text-2xl font-semibold mt-8 mb-4">🧩 Componentes e Responsabilidades</h2>
+            <table class="table-auto mb-8">
+                <thead>
+                    <tr>
+                        <th class="font-bold">Módulo</th>
+                        <th class="font-bold">Porta</th>
+                        <th class="font-bold">Descrição</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>sae-api-gateway</td><td>8080</td><td>API Gateway centralizado. Gerencia o roteamento e filtros.</td></tr>
+                    <tr><td>sae-common</td><td>-</td><td>Biblioteca partilhada (Segurança, JWT, Modelos).</td></tr>
+                    <tr><td>sae-auth-service</td><td>8081</td><td>Gestão de utilizadores, autenticação JWT e OTP.</td></tr>
+                    <tr><td>sae-content-service</td><td>8082</td><td>Materiais de estudo. Utiliza MongoDB.</td></tr>
+                    <tr><td>sae-forum-service</td><td>8083</td><td>Fóruns de discussão e perguntas.</td></tr>
+                    <tr><td>sae-quiz-service</td><td>8084</td><td>Questionários e avaliações.</td></tr>
+                    <tr><td>sae-academic-service</td><td>8085</td><td>Gestão académica (turmas, notas, alunos).</td></tr>
+                    <tr><td>sae-ai-service</td><td>8086</td><td>Assistente Virtual inteligente.</td></tr>
+                </tbody>
+            </table>
+
+            <h2 class="text-2xl font-semibold mt-8 mb-4">📂 Estrutura de Directorios</h2>
+            <pre><code>sae-fullstack/
+├── sae-api-master/           # Raiz do projecto Maven
+│   ├── sae-common/           # Biblioteca Partilhada
+│   ├── sae-api-gateway/      # Spring Cloud Gateway
+│   ├── sae-auth-service/     # Autenticação e Users (Postgre + Redis)
+│   ├── sae-content-service/  # Materiais de Estudo (MongoDB)
+│   ├── sae-forum-service/    # Fórum/Comunidade (Postgre)
+│   ├── sae-quiz-service/     # Questionários (Postgre)
+│   ├── sae-academic-service/ # Gestão Académica (Postgre)
+│   └── docker-compose.yml    # Infraestrutura
+</code></pre>
+
+            <h2 class="text-2xl font-semibold mt-8 mb-4">🛠️ Como Correr o Projecto</h2>
+            <ol class="list-decimal pl-6 space-y-2">
+                <li><strong>Infraestrutura:</strong> Execute <code>docker-compose up -d</code> para subir os bancos de dados.</li>
+                <li><strong>Compilação:</strong> Execute <code>mvn clean install -DskipTests</code> na raiz.</li>
+                <li><strong>Execução:</strong> Inicie primeiro o <code>sae-auth-service</code> e depois o <code>sae-api-gateway</code>.</li>
+            </ol>
+
+            <h2 class="text-2xl font-semibold mt-8 mb-4">🔒 Segurança</h2>
+            <p>Toda a segurança é centralizada no <code>sae-common</code>. Endpoints como <code>/users/signup/**</code> e <code>/users/login</code> estão abertos por padrão no Gateway.</p>
+        </div>
+
+        <footer class="mt-12 text-center text-gray-500 text-sm no-print">
+            <p>Gerado automaticamente pela Antigravity AI - 2026</p>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+    </script>
+</body>
+</html>
