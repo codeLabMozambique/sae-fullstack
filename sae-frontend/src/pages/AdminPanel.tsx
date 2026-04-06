@@ -22,12 +22,14 @@ const AdminPanel: React.FC = () => {
         <Button variant="outlined" startIcon={<SettingsIcon />}>Configurações</Button>
       </Box>
 
-      <Card>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>Utilizadores Recentes</Typography>
-          <TableContainer component={Paper} elevation={0}>
+      <Card className="animate-fade-in" sx={{ borderRadius: 4, overflow: 'hidden' }}>
+        <CardContent sx={{ p: 0 }}>
+          <Box sx={{ p: 3, borderBottom: '1px solid #f1f5f9' }}>
+            <Typography variant="h6">Utilizadores Recentes</Typography>
+          </Box>
+          <TableContainer component={Paper} elevation={0} sx={{ borderRadius: 0 }}>
             <Table sx={{ minWidth: 650 }}>
-              <TableHead sx={{ bgcolor: '#f4f6f8' }}>
+              <TableHead sx={{ bgcolor: '#f8fafc' }}>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 600 }}>Nome</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>

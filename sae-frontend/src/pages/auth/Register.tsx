@@ -27,7 +27,7 @@ const Register: React.FC = () => {
           flexDirection: 'column',
           justifyContent: 'space-between',
           color: 'white',
-          minHeight: 700,
+          py: 4, px: 5
         }}>
           <Box>
             <Typography variant="h5" fontWeight={800} letterSpacing={-0.5}>
@@ -56,7 +56,7 @@ const Register: React.FC = () => {
         </Box>
 
         {/* Right Panel */}
-        <Box sx={{ flex: 1, bgcolor: '#f8f9fa', p: { xs: 3, md: 6 }, overflowY: 'auto' }}>
+        <Box sx={{ flex: 1, bgcolor: '#f8f9fa', p: { xs: 2.5, md: 3.5 } }}>
           <Typography variant="h4" fontWeight={800} color="#0A1628" gutterBottom>
             Criar conta
           </Typography>

@@ -36,11 +36,16 @@ const Biblioteca: React.FC = () => {
             <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <CardMedia
                 component="img"
-                height="200"
                 image={book.image}
                 alt={book.title}
+                sx={{
+                  aspectRatio: '4/5',
+                  objectFit: 'cover',
+                  boxShadow: 'inset 6px 0 12px rgba(0,0,0,0.15)',
+                  borderLeft: '4px solid rgba(0,0,0,0.06)'
+                }}
               />
-              <CardContent sx={{ flexGrow: 1 }}>
+              <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                 <Typography gutterBottom variant="h6" component="div" sx={{ fontWeight: 600 }}>
                   {book.title}
                 </Typography>

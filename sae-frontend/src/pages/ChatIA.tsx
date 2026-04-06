@@ -43,12 +43,14 @@ const ChatIA: React.FC = () => {
               </Avatar>
               <Paper 
                 elevation={0}
+                className="animate-fade-in"
                 sx={{ 
-                  p: 2, 
-                  bgcolor: msg.isBot ? '#f0f4f8' : 'primary.main',
+                  p: 2.5, 
+                  bgcolor: msg.isBot ? '#f4f6f8' : 'primary.main',
                   color: msg.isBot ? 'text.primary' : 'white',
-                  borderRadius: msg.isBot ? '0 12px 12px 12px' : '12px 0 12px 12px',
-                  maxWidth: '70%'
+                  borderRadius: msg.isBot ? '16px 16px 16px 4px' : '16px 16px 4px 16px',
+                  maxWidth: '75%',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.04)'
                 }}
               >
                 <Typography variant="body1">{msg.text}</Typography>
@@ -58,16 +60,45 @@ const ChatIA: React.FC = () => {
         </List>
       </Paper>
 
-      <Box sx={{ display: 'flex', gap: 1 }}>
+      <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-end', bgcolor: 'white', p: 1.5, borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
         <TextField
           fullWidth
-          placeholder="Digite sua dúvida ou peça ajuda com os estudos..."
+          multiline
+          minRows={2}
+          maxRows={6}
+          placeholder="Digite sua dúvida, insira fragmentos de código ou peça soluções detalhadas..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-          sx={{ bgcolor: 'white' }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
+          sx={{ 
+            bgcolor: 'transparent', 
+            '& .MuiOutlinedInput-root': { 
+              bgcolor: 'transparent',
+              '& fieldset': { border: 'none' },
+              p: 1
+            } 
+          }}
         />
-        <IconButton color="primary" onClick={handleSend} sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } }}>
+        <IconButton 
+          color="primary" 
+          onClick={handleSend} 
+          sx={{ 
+            bgcolor: 'primary.main', 
+            color: 'white', 
+            borderRadius: '12px',
+            width: 48,
+            height: 48,
+            mb: 0.5,
+            transition: 'all 0.2s',
+            boxShadow: '0 4px 12px rgba(25, 118, 210, 0.4)',
+            '&:hover': { bgcolor: 'primary.dark', transform: 'translateY(-2px)' } 
+          }}
+        >
           <SendIcon />
         </IconButton>
       </Box>

@@ -26,7 +26,7 @@ const Login: React.FC = () => {
           flexDirection: 'column',
           justifyContent: 'space-between',
           color: 'white',
-          minHeight: 620,
+          py: 4, px: 5
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Box sx={{ width: 36, height: 36, bgcolor: '#00A651', borderRadius: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -61,7 +61,7 @@ const Login: React.FC = () => {
         </Box>
 
         {/* Right Panel */}
-        <Box sx={{ flex: 1, bgcolor: '#f8f9fa', p: { xs: 3, md: 6 }, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <Box sx={{ flex: 1, bgcolor: '#f8f9fa', p: { xs: 3, md: 4 }, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <Typography variant="h4" fontWeight={800} color="#0A1628" gutterBottom>
             Acesso ao Portal
           </Typography>
