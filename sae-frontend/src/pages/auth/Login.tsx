@@ -1,11 +1,40 @@
 import React, { useState } from 'react';
-import { Box, Typography, TextField, Button, InputAdornment, IconButton, Link } from '@mui/material';
+import { Box, Typography, TextField, Button, InputAdornment, IconButton, Link, Alert, CircularProgress } from '@mui/material';
 import { Phone as PhoneIcon, Lock as LockIcon, Visibility, VisibilityOff, ArrowForward as ArrowIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { login } from '../../services/auth';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleLogin = async () => {
+    setError(null);
+    if (!phone.trim() || !password) {
+      setError('Por favor preencha o contacto e a palavra-passe.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await login({ username: phone, password });
+      navigate('/app');
+    } catch (err: any) {
+      const status = err?.response?.status;
+      if (status === 401 || status === 403) {
+        setError('Credenciais inválidas. Verifique o contacto e a palavra-passe.');
+      } else {
+        const backendMsg = err?.response?.data?.message || err?.response?.data || err?.message;
+        setError(typeof backendMsg === 'string' ? backendMsg : 'Falha ao iniciar sessão. Tente novamente.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f0f2f5', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
@@ -69,6 +98,10 @@ const Login: React.FC = () => {
             Bem-vindo, Professor. Por favor, introduza as suas credenciais institucionais.
           </Typography>
 
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
+          )}
+
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             <Box>
               <Typography variant="body2" fontWeight={600} color="#0A1628" sx={{ mb: 1 }}>
@@ -78,6 +111,9 @@ const Login: React.FC = () => {
                 fullWidth
                 placeholder="+(258) 8X XXX XXXX"
                 variant="outlined"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(); }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -99,6 +135,9 @@ const Login: React.FC = () => {
                 placeholder="••••••••"
                 type={showPassword ? 'text' : 'password'}
                 variant="outlined"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(); }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -120,20 +159,21 @@ const Login: React.FC = () => {
             <Button
               fullWidth
               variant="contained"
-              endIcon={<ArrowIcon />}
-              onClick={() => navigate('/app')}
+              endIcon={submitting ? <CircularProgress size={18} sx={{ color: 'white' }} /> : <ArrowIcon />}
+              onClick={handleLogin}
+              disabled={submitting}
               sx={{
                 mt: 1, py: 1.8, bgcolor: '#0A1628', color: 'white', borderRadius: 2.5, fontWeight: 700, fontSize: '1rem',
                 '&:hover': { bgcolor: '#00A651' }, transition: 'background-color 0.3s',
               }}
             >
-              Entrar no Painel
+              {submitting ? 'A entrar...' : 'Entrar no Painel'}
             </Button>
 
             <Typography variant="body2" align="center" color="text.secondary">
-              Problemas de acesso?{' '}
-              <Link sx={{ color: '#00A651', cursor: 'pointer', fontWeight: 600 }}>
-                Suporte Técnico Regional
+              Não tem conta?{' '}
+              <Link onClick={() => navigate('/register')} sx={{ color: '#00A651', cursor: 'pointer', fontWeight: 600 }}>
+                Criar conta
               </Link>
             </Typography>
 

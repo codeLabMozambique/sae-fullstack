@@ -1,5 +1,8 @@
 import axios from 'axios';
 
+const TOKEN_KEY = 'sae_token';
+const USER_KEY = 'sae_user';
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080',
   timeout: 10000,
@@ -8,25 +11,38 @@ const api = axios.create({
   },
 });
 
-// Interceptor for Offline support (simplified)
 api.interceptors.request.use(async (config) => {
   if (!navigator.onLine) {
-    // Logic to check local cache could go here
     console.warn('Offline mode: Using cached data if available');
+  }
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      if (typeof window !== 'undefined' && window.location.pathname.startsWith('/app')) {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const testBackendConnection = async () => {
   try {
-    // Attempt to hit the auth service through the api gateway.
-    // Even if it returns 404 or 401, a status code response means the gateway is running and connected!
     const response = await api.get('/auth/health');
     console.log('%c✅ BACKEND E FRONT CONECTADOS!', 'color: #4CAF50; font-weight: bold; font-size: 14px', '\nGateway repondeu com status:', response.status);
     return true;
   } catch (error: any) {
     if (error.response) {
-      // The gateway responded but with an error status code... STILL SUCCESS in terms of connection!
       console.log('%c✅ BACKEND E FRONT CONECTADOS!', 'color: #4CAF50; font-weight: bold; font-size: 14px', '\nGateway repondeu com status:', error.response.status);
       return true;
     } else if (error.request) {
@@ -37,6 +53,6 @@ export const testBackendConnection = async () => {
       return false;
     }
   }
-}
+};
 
 export default api;

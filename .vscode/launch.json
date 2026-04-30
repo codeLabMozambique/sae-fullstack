@@ -1,0 +1,34 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-AcademicServiceApplication<sae-academic-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "codelab.api.smart.sae.AcademicServiceApplication",
+            "projectName": "sae-academic-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-GatewayApplication<sae-api-gateway>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "codelab.api.smart.sae.GatewayApplication",
+            "projectName": "sae-api-gateway",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-SmartSAEApplication<sae-auth-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "codelab.api.smart.sae.SmartSAEApplication",
+            "projectName": "sae-auth-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

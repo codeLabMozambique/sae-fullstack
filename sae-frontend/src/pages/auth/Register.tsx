@@ -1,12 +1,75 @@
 import React, { useState } from 'react';
-import { Box, Typography, TextField, Button, Card, CardActionArea, Select, MenuItem, InputAdornment, IconButton, Link } from '@mui/material';
+import { Box, Typography, TextField, Button, Card, CardActionArea, Select, MenuItem, InputAdornment, IconButton, Link, Alert, CircularProgress } from '@mui/material';
 import { School as SchoolIcon, Edit as EditIcon, Visibility, VisibilityOff, Check as CheckIcon, ArrowForward as ArrowIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { signupStudent, signupProfessor } from '../../services/auth';
+
+const INSTITUTIONS: { value: string; label: string; schoolId: number }[] = [
+  { value: 'ue', label: 'Universidade Eduardo Mondlane', schoolId: 1 },
+  { value: 'uem', label: 'Universidade Politécnica', schoolId: 2 },
+  { value: 'ucm', label: 'Universidade Católica de Moçambique', schoolId: 3 },
+];
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
   const [role, setRole] = useState<'student' | 'professor'>('student');
   const [showPassword, setShowPassword] = useState(false);
+
+  const [fullname, setFullname] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [institution, setInstitution] = useState('');
+  const [password, setPassword] = useState('');
+
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async () => {
+    setError(null);
+
+    if (!fullname.trim() || !phone.trim() || !email.trim() || !institution || !password) {
+      setError('Por favor preencha todos os campos.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('A senha deve ter no mínimo 6 caracteres.');
+      return;
+    }
+
+    const inst = INSTITUTIONS.find((i) => i.value === institution);
+    if (!inst) {
+      setError('Selecione uma instituição válida.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      if (role === 'student') {
+        await signupStudent({
+          nTelefone: phone,
+          email,
+          password,
+          fullname,
+          schoolId: inst.schoolId,
+          classroomId: 1,
+        });
+      } else {
+        await signupProfessor({
+          nTelefone: phone,
+          email,
+          password,
+          fullname,
+          schoolId: inst.schoolId,
+        });
+      }
+      navigate('/login');
+    } catch (err: any) {
+      const backendMsg = err?.response?.data?.message || err?.response?.data || err?.message;
+      setError(typeof backendMsg === 'string' ? backendMsg : 'Falha ao criar conta. Tente novamente.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f0f2f5', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
@@ -107,6 +170,10 @@ const Register: React.FC = () => {
             </Card>
           </Box>
 
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
+          )}
+
           {/* Form Fields */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             <Box>
@@ -117,6 +184,8 @@ const Register: React.FC = () => {
                 fullWidth
                 placeholder="Ex: Alex Alfai"
                 variant="outlined"
+                value={fullname}
+                onChange={(e) => setFullname(e.target.value)}
                 sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#eaecef', borderRadius: 2.5, '& fieldset': { border: 'none' } } }}
               />
             </Box>
@@ -127,8 +196,25 @@ const Register: React.FC = () => {
               </Typography>
               <TextField
                 fullWidth
-                placeholder="+(256) 8X XXX XXXX"
+                placeholder="+(258) 8X XXX XXXX"
                 variant="outlined"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#eaecef', borderRadius: 2.5, '& fieldset': { border: 'none' } } }}
+              />
+            </Box>
+
+            <Box>
+              <Typography variant="caption" fontWeight={700} letterSpacing={1} color="#5c6870" sx={{ textTransform: 'uppercase', display: 'block', mb: 1 }}>
+                Email
+              </Typography>
+              <TextField
+                fullWidth
+                type="email"
+                placeholder="seu.email@exemplo.com"
+                variant="outlined"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#eaecef', borderRadius: 2.5, '& fieldset': { border: 'none' } } }}
               />
             </Box>
@@ -140,13 +226,14 @@ const Register: React.FC = () => {
               <Select
                 fullWidth
                 displayEmpty
-                defaultValue=""
+                value={institution}
+                onChange={(e) => setInstitution(e.target.value as string)}
                 sx={{ bgcolor: '#eaecef', borderRadius: 2.5, '& .MuiOutlinedInput-notchedOutline': { border: 'none' } }}
               >
                 <MenuItem value="" disabled>Selecione sua instituição</MenuItem>
-                <MenuItem value="ue">Universidade Eduardo Mondlane</MenuItem>
-                <MenuItem value="uem">Universidade Politécnica</MenuItem>
-                <MenuItem value="ucm">Universidade Católica de Moçambique</MenuItem>
+                {INSTITUTIONS.map((i) => (
+                  <MenuItem key={i.value} value={i.value}>{i.label}</MenuItem>
+                ))}
               </Select>
             </Box>
 
@@ -156,9 +243,11 @@ const Register: React.FC = () => {
               </Typography>
               <TextField
                 fullWidth
-                placeholder="Mínimo 8 caracteres"
+                placeholder="Mínimo 6 caracteres"
                 type={showPassword ? 'text' : 'password'}
                 variant="outlined"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -175,14 +264,15 @@ const Register: React.FC = () => {
             <Button
               fullWidth
               variant="contained"
-              endIcon={<ArrowIcon />}
-              onClick={() => navigate('/app')}
+              endIcon={submitting ? <CircularProgress size={18} sx={{ color: 'white' }} /> : <ArrowIcon />}
+              onClick={handleSubmit}
+              disabled={submitting}
               sx={{
                 mt: 1, py: 1.8, bgcolor: '#0A1628', color: 'white', borderRadius: 2.5, fontWeight: 700, fontSize: '1rem',
                 '&:hover': { bgcolor: '#00A651' }, transition: 'background-color 0.3s',
               }}
             >
-              Criar conta
+              {submitting ? 'A criar conta...' : 'Criar conta'}
             </Button>
 
             <Typography variant="body2" align="center" color="text.secondary">
@@ -198,7 +288,6 @@ const Register: React.FC = () => {
   );
 };
 
-// Temporary helper
 const Check = ({ sx }: any) => <CheckIcon sx={sx} />;
 
 export default Register;
