@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem \"$env:USERPROFILE\\\\.m2\\\\repository\\\\smartsae\\\\sae-common\\\\0.0.1-SNAPSHOT\\\\\" | Select-Object Name, LastWriteTime)"
+    ]
+  }
+}

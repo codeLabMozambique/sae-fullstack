@@ -1,0 +1,36 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-GatewayApplication<sae-api-gateway>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "codelab.api.smart.sae.GatewayApplication",
+            "projectName": "sae-api-gateway",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env",
+            "vmArgs": " -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=64100 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=sae-api-gateway"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-SmartSAEApplication<sae-auth-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "codelab.api.smart.sae.SmartSAEApplication",
+            "projectName": "sae-auth-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env",
+            "vmArgs": " -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=49705 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=sae-auth-service"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-PasswordGenerator<sae-common>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "codelab.api.smart.sae.framework.util.PasswordGenerator",
+            "projectName": "sae-common",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

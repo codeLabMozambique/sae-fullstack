@@ -48,7 +48,16 @@ public class CrossOriginRequestFilter implements Filter {
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) resp;
 
-		response.setHeader("Access-Control-Allow-Origin", configuration.getSecurity().getAllowedOrigin());
+		String configuredOrigin = configuration.getSecurity().getAllowedOrigin();
+		String requestOrigin = request.getHeader("Origin");
+
+		// When configured as "*", reflect the request origin back so that
+		// Access-Control-Allow-Credentials: true remains valid (spec forbids "*" + credentials)
+		String allowOriginValue = "*".equals(configuredOrigin) && requestOrigin != null
+				? requestOrigin
+				: configuredOrigin;
+
+		response.setHeader("Access-Control-Allow-Origin", allowOriginValue);
 		response.setHeader("Access-Control-Allow-Credentials", "true");
 
 		if (isPreFlightRequestFromAllowedOrigin(request)) {
@@ -71,7 +80,10 @@ public class CrossOriginRequestFilter implements Filter {
 
 	private boolean isPreFlightRequestFromAllowedOrigin(HttpServletRequest request) {
 
-		boolean trustedOrigin = configuration.getSecurity().getAllowedOrigin().equals(request.getHeader("Origin"));
+		String configuredOrigin = configuration.getSecurity().getAllowedOrigin();
+		String requestOrigin = request.getHeader("Origin");
+		// "*" means allow all origins; otherwise require exact match
+		boolean trustedOrigin = "*".equals(configuredOrigin) || configuredOrigin.equals(requestOrigin);
 		boolean preflightRequest = PREFLIGHT_REQUEST_METHOD.equals(request.getMethod());
 
 		log.info("INICIADA A LOGARIZACAO DOS HEADERS / TRUSTED ORIGIN {} ", trustedOrigin);

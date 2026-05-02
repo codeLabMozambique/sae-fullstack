@@ -15,6 +15,12 @@
     <description>Serviço de Autenticação e Gestão de Utilizadores para o SAE</description>
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>smartsae</groupId>
             <artifactId>sae-common</artifactId>

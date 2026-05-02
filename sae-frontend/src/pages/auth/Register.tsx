@@ -1,12 +1,87 @@
 import React, { useState } from 'react';
-import { Box, Typography, TextField, Button, Card, CardActionArea, Select, MenuItem, InputAdornment, IconButton, Link } from '@mui/material';
-import { School as SchoolIcon, Edit as EditIcon, Visibility, VisibilityOff, Check as CheckIcon, ArrowForward as ArrowIcon } from '@mui/icons-material';
+import {
+  Box, Typography, TextField, Button, Card, CardActionArea,
+  Select, MenuItem, InputAdornment, IconButton, Link, Alert, CircularProgress
+} from '@mui/material';
+import {
+  School as SchoolIcon, Edit as EditIcon,
+  Visibility, VisibilityOff, Check as CheckIcon, ArrowForward as ArrowIcon
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+
+const SCHOOLS = [
+  { id: 1, label: 'Universidade Eduardo Mondlane' },
+  { id: 2, label: 'Universidade Politécnica' },
+  { id: 3, label: 'Universidade Católica de Moçambique' },
+];
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
+  const { signupStudent, signupProfessor } = useAuth();
+
   const [role, setRole] = useState<'student' | 'professor'>('student');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const [fullname, setFullname] = useState('');
+  const [nTelefone, setNTelefone] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [schoolId, setSchoolId] = useState<number | ''>('');
+
+  // Student-specific
+  const [classroomId, setClassroomId] = useState<number | ''>('');
+  const [grade, setGrade] = useState('');
+  const [age, setAge] = useState<number | ''>('');
+
+  // Professor-specific
+  const [department, setDepartment] = useState('');
+  const [specialization, setSpecialization] = useState('');
+
+  const handleRegister = async () => {
+    if (!fullname.trim() || !nTelefone.trim() || !email.trim() || !password.trim() || schoolId === '') {
+      setError('Por favor, preencha todos os campos obrigatórios.');
+      return;
+    }
+    if (role === 'student' && classroomId === '') {
+      setError('Por favor, introduza o ID da turma.');
+      return;
+    }
+    setError('');
+    setLoading(true);
+    try {
+      if (role === 'student') {
+        await signupStudent({
+          nTelefone,
+          email,
+          password,
+          fullname,
+          schoolId: schoolId as number,
+          classroomId: classroomId as number,
+          grade: grade || undefined,
+          age: age !== '' ? (age as number) : undefined,
+        });
+      } else {
+        await signupProfessor({
+          nTelefone,
+          email,
+          password,
+          fullname,
+          schoolId: schoolId as number,
+          department: department || undefined,
+          specialization: specialization || undefined,
+        });
+      }
+      navigate('/login');
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.response?.data || 'Erro ao criar conta. Tente novamente.';
+      setError(typeof msg === 'string' ? msg : 'Erro ao criar conta. Verifique os dados introduzidos.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f0f2f5', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
@@ -56,27 +131,29 @@ const Register: React.FC = () => {
         </Box>
 
         {/* Right Panel */}
-        <Box sx={{ flex: 1, bgcolor: '#f8f9fa', p: { xs: 3, md: 6 }, overflowY: 'auto' }}>
+        <Box sx={{ flex: 1, bgcolor: '#f8f9fa', p: { xs: 3, md: 5 }, overflowY: 'auto' }}>
           <Typography variant="h4" fontWeight={800} color="#0A1628" gutterBottom>
             Criar conta
           </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
             Junte-se à nova era da educação.
           </Typography>
 
           {/* Role Selection */}
-          <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
-            {/* Student Card */}
+          <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
             <Card
               onClick={() => setRole('student')}
               sx={{
-                flex: 1, cursor: 'pointer', border: role === 'student' ? '2px solid #00A651' : '2px solid #e0e0e0',
-                bgcolor: 'white', borderRadius: 3, boxShadow: role === 'student' ? '0 4px 20px rgba(0,166,81,0.15)' : 'none', transition: 'all 0.2s',
+                flex: 1, cursor: 'pointer',
+                border: role === 'student' ? '2px solid #00A651' : '2px solid #e0e0e0',
+                bgcolor: 'white', borderRadius: 3,
+                boxShadow: role === 'student' ? '0 4px 20px rgba(0,166,81,0.15)' : 'none',
+                transition: 'all 0.2s', position: 'relative',
               }}
             >
               <CardActionArea sx={{ p: 2.5 }}>
                 {role === 'student' && (
-                  <Check sx={{ position: 'absolute', top: 12, right: 12, color: '#00A651', fontSize: 20 }} />
+                  <CheckIcon sx={{ position: 'absolute', top: 12, right: 12, color: '#00A651', fontSize: 20 }} />
                 )}
                 <Box sx={{ width: 48, height: 48, bgcolor: '#e8f5e9', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1.5 }}>
                   <SchoolIcon sx={{ color: '#00A651', fontSize: 28 }} />
@@ -86,12 +163,14 @@ const Register: React.FC = () => {
               </CardActionArea>
             </Card>
 
-            {/* Professor Card */}
             <Card
               onClick={() => setRole('professor')}
               sx={{
-                flex: 1, cursor: 'pointer', border: role === 'professor' ? '2px solid #00A651' : '2px solid #e0e0e0',
-                bgcolor: 'white', borderRadius: 3, boxShadow: role === 'professor' ? '0 4px 20px rgba(0,166,81,0.15)' : 'none', transition: 'all 0.2s',
+                flex: 1, cursor: 'pointer',
+                border: role === 'professor' ? '2px solid #00A651' : '2px solid #e0e0e0',
+                bgcolor: 'white', borderRadius: 3,
+                boxShadow: role === 'professor' ? '0 4px 20px rgba(0,166,81,0.15)' : 'none',
+                transition: 'all 0.2s', position: 'relative',
               }}
             >
               <CardActionArea sx={{ p: 2.5 }}>
@@ -107,82 +186,150 @@ const Register: React.FC = () => {
             </Card>
           </Box>
 
-          {/* Form Fields */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            <Box>
-              <Typography variant="caption" fontWeight={700} letterSpacing={1} color="#5c6870" sx={{ textTransform: 'uppercase', display: 'block', mb: 1 }}>
-                Nome Completo
-              </Typography>
-              <TextField
-                fullWidth
-                placeholder="Ex: Alex Alfai"
-                variant="outlined"
-                sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#eaecef', borderRadius: 2.5, '& fieldset': { border: 'none' } } }}
-              />
-            </Box>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
+              {error}
+            </Alert>
+          )}
 
-            <Box>
-              <Typography variant="caption" fontWeight={700} letterSpacing={1} color="#5c6870" sx={{ textTransform: 'uppercase', display: 'block', mb: 1 }}>
-                Número do Telefone
-              </Typography>
+          {/* Common Fields */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <FieldLabel label="Nome Completo">
               <TextField
-                fullWidth
-                placeholder="+(256) 8X XXX XXXX"
-                variant="outlined"
-                sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#eaecef', borderRadius: 2.5, '& fieldset': { border: 'none' } } }}
+                fullWidth placeholder="Ex: Alex Alfai"
+                value={fullname} onChange={(e) => setFullname(e.target.value)}
+                disabled={loading}
+                sx={fieldStyle}
               />
-            </Box>
+            </FieldLabel>
 
-            <Box>
-              <Typography variant="caption" fontWeight={700} letterSpacing={1} color="#5c6870" sx={{ textTransform: 'uppercase', display: 'block', mb: 1 }}>
-                Instituição de Ensino
-              </Typography>
+            <FieldLabel label="Número de Telefone">
+              <TextField
+                fullWidth placeholder="+(258) 8X XXX XXXX"
+                value={nTelefone} onChange={(e) => setNTelefone(e.target.value)}
+                disabled={loading}
+                sx={fieldStyle}
+              />
+            </FieldLabel>
+
+            <FieldLabel label="Email">
+              <TextField
+                fullWidth placeholder="exemplo@email.com"
+                type="email"
+                value={email} onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                sx={fieldStyle}
+              />
+            </FieldLabel>
+
+            <FieldLabel label="Instituição de Ensino">
               <Select
-                fullWidth
-                displayEmpty
-                defaultValue=""
+                fullWidth displayEmpty
+                value={schoolId}
+                onChange={(e) => setSchoolId(e.target.value as number)}
+                disabled={loading}
                 sx={{ bgcolor: '#eaecef', borderRadius: 2.5, '& .MuiOutlinedInput-notchedOutline': { border: 'none' } }}
               >
-                <MenuItem value="" disabled>Selecione sua instituição</MenuItem>
-                <MenuItem value="ue">Universidade Eduardo Mondlane</MenuItem>
-                <MenuItem value="uem">Universidade Politécnica</MenuItem>
-                <MenuItem value="ucm">Universidade Católica de Moçambique</MenuItem>
+                <MenuItem value="" disabled>Selecione a instituição</MenuItem>
+                {SCHOOLS.map((s) => (
+                  <MenuItem key={s.id} value={s.id}>{s.label}</MenuItem>
+                ))}
               </Select>
-            </Box>
+            </FieldLabel>
 
-            <Box>
-              <Typography variant="caption" fontWeight={700} letterSpacing={1} color="#5c6870" sx={{ textTransform: 'uppercase', display: 'block', mb: 1 }}>
-                Senha
-              </Typography>
+            {/* Student-specific fields */}
+            {role === 'student' && (
+              <>
+                <FieldLabel label="ID da Turma">
+                  <TextField
+                    fullWidth placeholder="Ex: 1"
+                    type="number"
+                    value={classroomId}
+                    onChange={(e) => setClassroomId(e.target.value ? Number(e.target.value) : '')}
+                    disabled={loading}
+                    sx={fieldStyle}
+                  />
+                </FieldLabel>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Box sx={{ flex: 1 }}>
+                    <FieldLabel label="Ano/Classe (opcional)">
+                      <TextField
+                        fullWidth placeholder="Ex: 12ª"
+                        value={grade} onChange={(e) => setGrade(e.target.value)}
+                        disabled={loading}
+                        sx={fieldStyle}
+                      />
+                    </FieldLabel>
+                  </Box>
+                  <Box sx={{ flex: 1 }}>
+                    <FieldLabel label="Idade (opcional)">
+                      <TextField
+                        fullWidth placeholder="Ex: 20"
+                        type="number"
+                        value={age}
+                        onChange={(e) => setAge(e.target.value ? Number(e.target.value) : '')}
+                        disabled={loading}
+                        sx={fieldStyle}
+                      />
+                    </FieldLabel>
+                  </Box>
+                </Box>
+              </>
+            )}
+
+            {/* Professor-specific fields */}
+            {role === 'professor' && (
+              <>
+                <FieldLabel label="Departamento (opcional)">
+                  <TextField
+                    fullWidth placeholder="Ex: Matemática"
+                    value={department} onChange={(e) => setDepartment(e.target.value)}
+                    disabled={loading}
+                    sx={fieldStyle}
+                  />
+                </FieldLabel>
+                <FieldLabel label="Especialização (opcional)">
+                  <TextField
+                    fullWidth placeholder="Ex: Álgebra Linear"
+                    value={specialization} onChange={(e) => setSpecialization(e.target.value)}
+                    disabled={loading}
+                    sx={fieldStyle}
+                  />
+                </FieldLabel>
+              </>
+            )}
+
+            <FieldLabel label="Senha">
               <TextField
-                fullWidth
-                placeholder="Mínimo 8 caracteres"
+                fullWidth placeholder="Mínimo 6 caracteres"
                 type={showPassword ? 'text' : 'password'}
-                variant="outlined"
+                value={password} onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                      <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" disabled={loading}>
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>
                   ),
                 }}
-                sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#eaecef', borderRadius: 2.5, '& fieldset': { border: 'none' } } }}
+                sx={fieldStyle}
               />
-            </Box>
+            </FieldLabel>
 
             <Button
-              fullWidth
-              variant="contained"
-              endIcon={<ArrowIcon />}
-              onClick={() => navigate('/app')}
+              fullWidth variant="contained"
+              endIcon={loading ? <CircularProgress size={18} color="inherit" /> : <ArrowIcon />}
+              onClick={handleRegister}
+              disabled={loading}
               sx={{
-                mt: 1, py: 1.8, bgcolor: '#0A1628', color: 'white', borderRadius: 2.5, fontWeight: 700, fontSize: '1rem',
+                mt: 1, py: 1.8, bgcolor: '#0A1628', color: 'white', borderRadius: 2.5,
+                fontWeight: 700, fontSize: '1rem',
                 '&:hover': { bgcolor: '#00A651' }, transition: 'background-color 0.3s',
               }}
             >
-              Criar conta
+              {loading ? 'A criar conta...' : 'Criar conta'}
             </Button>
 
             <Typography variant="body2" align="center" color="text.secondary">
@@ -198,7 +345,20 @@ const Register: React.FC = () => {
   );
 };
 
-// Temporary helper
-const Check = ({ sx }: any) => <CheckIcon sx={sx} />;
+const fieldStyle = {
+  '& .MuiOutlinedInput-root': { bgcolor: '#eaecef', borderRadius: 2.5, '& fieldset': { border: 'none' } }
+};
+
+function FieldLabel({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <Box>
+      <Typography variant="caption" fontWeight={700} letterSpacing={1} color="#5c6870"
+        sx={{ textTransform: 'uppercase', display: 'block', mb: 1 }}>
+        {label}
+      </Typography>
+      {children}
+    </Box>
+  );
+}
 
 export default Register;

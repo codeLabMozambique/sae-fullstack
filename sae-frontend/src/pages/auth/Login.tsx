@@ -1,11 +1,40 @@
 import React, { useState } from 'react';
-import { Box, Typography, TextField, Button, InputAdornment, IconButton, Link } from '@mui/material';
+import { Box, Typography, TextField, Button, InputAdornment, IconButton, Link, Alert, CircularProgress } from '@mui/material';
 import { Phone as PhoneIcon, Lock as LockIcon, Visibility, VisibilityOff, ArrowForward as ArrowIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
+
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleLogin = async () => {
+    if (!username.trim() || !password.trim()) {
+      setError('Por favor, preencha todos os campos.');
+      return;
+    }
+    setError('');
+    setLoading(true);
+    try {
+      await login({ username, password });
+      navigate('/app');
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.response?.data || 'Credenciais inválidas. Tente novamente.';
+      setError(typeof msg === 'string' ? msg : 'Erro ao autenticar. Verifique as suas credenciais.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleLogin();
+  };
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f0f2f5', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
@@ -46,7 +75,6 @@ const Login: React.FC = () => {
             </Typography>
           </Box>
 
-          {/* Testimonial Card */}
           <Box sx={{ bgcolor: 'rgba(255,255,255,0.07)', borderRadius: 3, p: 3, border: '1px solid rgba(255,255,255,0.1)' }}>
             <Typography variant="body2" sx={{ opacity: 0.85, fontStyle: 'italic', mb: 2 }}>
               "Uma revolução na forma como organizamos o currículo nacional."
@@ -65,19 +93,28 @@ const Login: React.FC = () => {
           <Typography variant="h4" fontWeight={800} color="#0A1628" gutterBottom>
             Acesso ao Portal
           </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 5 }}>
-            Bem-vindo, Professor. Por favor, introduza as suas credenciais institucionais.
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+            Bem-vindo. Por favor, introduza as suas credenciais.
           </Typography>
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {error && (
+            <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }} onKeyDown={handleKeyDown}>
             <Box>
               <Typography variant="body2" fontWeight={600} color="#0A1628" sx={{ mb: 1 }}>
-                Contacto
+                Contacto (Número de Telefone)
               </Typography>
               <TextField
                 fullWidth
                 placeholder="+(258) 8X XXX XXXX"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 variant="outlined"
+                disabled={loading}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -98,7 +135,10 @@ const Login: React.FC = () => {
                 fullWidth
                 placeholder="••••••••"
                 type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 variant="outlined"
+                disabled={loading}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -107,7 +147,7 @@ const Login: React.FC = () => {
                   ),
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                      <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" disabled={loading}>
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>
@@ -120,20 +160,21 @@ const Login: React.FC = () => {
             <Button
               fullWidth
               variant="contained"
-              endIcon={<ArrowIcon />}
-              onClick={() => navigate('/app')}
+              endIcon={loading ? <CircularProgress size={18} color="inherit" /> : <ArrowIcon />}
+              onClick={handleLogin}
+              disabled={loading}
               sx={{
                 mt: 1, py: 1.8, bgcolor: '#0A1628', color: 'white', borderRadius: 2.5, fontWeight: 700, fontSize: '1rem',
                 '&:hover': { bgcolor: '#00A651' }, transition: 'background-color 0.3s',
               }}
             >
-              Entrar no Painel
+              {loading ? 'A autenticar...' : 'Entrar no Painel'}
             </Button>
 
             <Typography variant="body2" align="center" color="text.secondary">
-              Problemas de acesso?{' '}
-              <Link sx={{ color: '#00A651', cursor: 'pointer', fontWeight: 600 }}>
-                Suporte Técnico Regional
+              Não tem conta?{' '}
+              <Link onClick={() => navigate('/register')} sx={{ color: '#00A651', cursor: 'pointer', fontWeight: 600 }}>
+                Criar conta
               </Link>
             </Typography>
 
@@ -144,7 +185,6 @@ const Login: React.FC = () => {
             </Box>
           </Box>
 
-          {/* PT/EN Switcher */}
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3, gap: 1 }}>
             <Box sx={{ bgcolor: '#0A1628', color: 'white', px: 2, py: 0.5, borderRadius: 3, fontSize: '0.8rem', fontWeight: 700 }}>PT</Box>
             <Box sx={{ bgcolor: '#e0e0e0', color: '#9e9e9e', px: 2, py: 0.5, borderRadius: 3, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}>EN</Box>

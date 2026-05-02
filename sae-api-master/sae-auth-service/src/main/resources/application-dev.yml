@@ -19,6 +19,14 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
+smartsae:
+  security:
+    allowed-origin: "*"
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+
 # Configurações de Mail e SMS em Dev
 ozeki:
   url: ${OZEKI_URL:10.2.133.136}

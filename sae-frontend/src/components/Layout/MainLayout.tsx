@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { 
-  Box, Drawer, AppBar, Toolbar, List, Typography, Divider, IconButton, 
+import {
+  Box, Drawer, AppBar, Toolbar, List, Typography, Divider, IconButton,
   ListItem, ListItemButton, ListItemIcon, ListItemText, Avatar
 } from '@mui/material';
-import { 
-  Dashboard as DashboardIcon, LibraryBooks as LibraryIcon, Chat as ChatIcon, 
+import {
+  Dashboard as DashboardIcon, LibraryBooks as LibraryIcon, Chat as ChatIcon,
   AdminPanelSettings as AdminIcon, Menu as MenuIcon, Logout as LogoutIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import OfflineIndicator from '../OfflineIndicator';
+import { useAuth } from '../../context/AuthContext';
 
 const drawerWidth = 260;
 
@@ -27,6 +28,16 @@ const MainLayout: React.FC<Props> = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
+
+  const userInitials = user?.fullName
+    ? user.fullName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+    : '?';
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const currentPage = menuItems.find(item => location.pathname.startsWith(item.path))?.text || 'SAE';
 
@@ -84,13 +95,13 @@ const MainLayout: React.FC<Props> = ({ children }) => {
       <Box sx={{ p: 2 }}>
         <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)', mb: 2 }} />
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 1 }}>
-          <Avatar sx={{ bgcolor: '#00A651', width: 36, height: 36, fontSize: '0.85rem', fontWeight: 700 }}>AA</Avatar>
+          <Avatar sx={{ bgcolor: '#00A651', width: 36, height: 36, fontSize: '0.85rem', fontWeight: 700 }}>{userInitials}</Avatar>
           <Box sx={{ flex: 1 }}>
-            <Typography variant="body2" fontWeight={600} color="white">Alex Alfai</Typography>
-            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>Estudante</Typography>
+            <Typography variant="body2" fontWeight={600} color="white">{user?.fullName || user?.username}</Typography>
+            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>{user?.role || 'GUEST'}</Typography>
           </Box>
           <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.4)', '&:hover': { color: '#f44336' } }}
-            onClick={() => navigate('/login')}>
+            onClick={handleLogout}>
             <LogoutIcon fontSize="small" />
           </IconButton>
         </Box>
@@ -149,7 +160,7 @@ const MainLayout: React.FC<Props> = ({ children }) => {
           <Box>
             <Typography variant="h5" fontWeight={700} color="#0A1628">{currentPage}</Typography>
             <Typography variant="caption" color="text.secondary">
-              Bem-vindo de volta, Alex Alfai
+              Bem-vindo de volta, {user?.fullName || user?.username}
             </Typography>
           </Box>
         </Box>

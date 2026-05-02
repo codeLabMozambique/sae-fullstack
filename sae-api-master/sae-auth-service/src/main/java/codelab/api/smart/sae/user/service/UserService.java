@@ -215,6 +215,10 @@ public class UserService {
 
         List<MenuDTO> menus = new ArrayList<MenuDTO>();
 
+        if (user.getRole() == null || user.getRole().getRole() == null) {
+            return menus;
+        }
+
         List<RoleTransactionEntity> headers = roleTransactionRepository
                 .findByRoleAndAppTransactionTypeOrderByAppTransactionCode(user.getRole().getRole(), MenuType.HEADER);
 
