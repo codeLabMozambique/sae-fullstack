@@ -132,6 +132,10 @@ public class UserService {
         UserEntity tmp_user = new UserEntity();
         List<RoleTransactionEntity> roleT = roleTransactionRepository
                 .findByRoleAndAppTransactionTypeOrderByAppTransactionCode(UserRoles.GUEST, MenuType.HEADER);
+        
+        if (roleT.isEmpty()) {
+            throw new BusinessException("Erro de configuração do sistema: Role GUEST não encontrada.");
+        }
         RoleTransactionEntity tmp_roleT = roleT.get(0);
 
         tmp_user.setFullname(request.getFullname());
@@ -163,8 +167,11 @@ public class UserService {
 
         List<RoleTransactionEntity> roles = roleTransactionRepository
                 .findByRoleAndAppTransactionTypeOrderByAppTransactionCode(UserRoles.PROFESSOR, MenuType.HEADER);
-        if (!roles.isEmpty())
-            user.setRole(roles.get(0));
+        
+        if (roles.isEmpty()) {
+            throw new BusinessException("Erro de configuração do sistema: Role PROFESSOR não encontrada.");
+        }
+        user.setRole(roles.get(0));
 
         userRepository.save(user);
 
@@ -195,8 +202,11 @@ public class UserService {
 
         List<RoleTransactionEntity> roles = roleTransactionRepository
                 .findByRoleAndAppTransactionTypeOrderByAppTransactionCode(UserRoles.STUDENT, MenuType.HEADER);
-        if (!roles.isEmpty())
-            user.setRole(roles.get(0));
+        
+        if (roles.isEmpty()) {
+            throw new BusinessException("Erro de configuração do sistema: Role STUDENT não encontrada.");
+        }
+        user.setRole(roles.get(0));
 
         userRepository.save(user);
 
