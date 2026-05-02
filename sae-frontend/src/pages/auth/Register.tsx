@@ -102,7 +102,7 @@ const Register: React.FC = () => {
           flexDirection: 'column',
           justifyContent: 'space-between',
           color: 'white',
-          minHeight: 700,
+          py: 4, px: 5
         }}>
           <Box>
             <Typography variant="h5" fontWeight={800} letterSpacing={-0.5}>

@@ -8,27 +8,32 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const [username, setUsername] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async () => {
-    if (!username.trim() || !password.trim()) {
-      setError('Por favor, preencha todos os campos.');
+    setError(null);
+    if (!phone.trim() || !password) {
+      setError('Por favor preencha o contacto e a palavra-passe.');
       return;
     }
-    setError('');
-    setLoading(true);
+    setSubmitting(true);
     try {
-      await login({ username, password });
+      await login({ username: phone, password });
       navigate('/app');
     } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.response?.data || 'Credenciais inválidas. Tente novamente.';
-      setError(typeof msg === 'string' ? msg : 'Erro ao autenticar. Verifique as suas credenciais.');
+      const status = err?.response?.status;
+      if (status === 401 || status === 403) {
+        setError('Credenciais inválidas. Verifique o contacto e a palavra-passe.');
+      } else {
+        const backendMsg = err?.response?.data?.message || err?.response?.data || err?.message;
+        setError(typeof backendMsg === 'string' ? backendMsg : 'Falha ao iniciar sessão. Tente novamente.');
+      }
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -55,7 +60,7 @@ const Login: React.FC = () => {
           flexDirection: 'column',
           justifyContent: 'space-between',
           color: 'white',
-          minHeight: 620,
+          py: 4, px: 5
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Box sx={{ width: 36, height: 36, bgcolor: '#00A651', borderRadius: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -89,7 +94,7 @@ const Login: React.FC = () => {
         </Box>
 
         {/* Right Panel */}
-        <Box sx={{ flex: 1, bgcolor: '#f8f9fa', p: { xs: 3, md: 6 }, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <Box sx={{ flex: 1, bgcolor: '#f8f9fa', p: { xs: 3, md: 4 }, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <Typography variant="h4" fontWeight={800} color="#0A1628" gutterBottom>
             Acesso ao Portal
           </Typography>
@@ -111,10 +116,10 @@ const Login: React.FC = () => {
               <TextField
                 fullWidth
                 placeholder="+(258) 8X XXX XXXX"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 variant="outlined"
-                disabled={loading}
+                disabled={submitting}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -138,7 +143,7 @@ const Login: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 variant="outlined"
-                disabled={loading}
+                disabled={submitting}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -147,7 +152,7 @@ const Login: React.FC = () => {
                   ),
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" disabled={loading}>
+                      <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" disabled={submitting}>
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>
@@ -160,15 +165,15 @@ const Login: React.FC = () => {
             <Button
               fullWidth
               variant="contained"
-              endIcon={loading ? <CircularProgress size={18} color="inherit" /> : <ArrowIcon />}
+              endIcon={submitting ? <CircularProgress size={18} color="inherit" /> : <ArrowIcon />}
               onClick={handleLogin}
-              disabled={loading}
+              disabled={submitting}
               sx={{
                 mt: 1, py: 1.8, bgcolor: '#0A1628', color: 'white', borderRadius: 2.5, fontWeight: 700, fontSize: '1rem',
                 '&:hover': { bgcolor: '#00A651' }, transition: 'background-color 0.3s',
               }}
             >
-              {loading ? 'A autenticar...' : 'Entrar no Painel'}
+              {submitting ? 'A autenticar...' : 'Entrar no Painel'}
             </Button>
 
             <Typography variant="body2" align="center" color="text.secondary">

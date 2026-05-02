@@ -2,27 +2,21 @@ import { createTheme } from '@mui/material/styles';
 
 const theme = createTheme({
   palette: {
-    primary: {
-      main: '#1976d2', // Blue
-      light: '#42a5f5',
-      dark: '#1565c0',
-      contrastText: '#fff',
-    },
-    secondary: {
-      main: '#ffffff', // White
-      contrastText: '#1976d2',
-    },
-    background: {
-      default: '#f4f6f8',
-      paper: '#ffffff',
-    },
+    primary: { main: '#1976d2', light: '#42a5f5', dark: '#1565c0', contrastText: '#fff' },
+    secondary: { main: '#ffffff', contrastText: '#1976d2' },
+    background: { default: '#f8fafc', paper: '#ffffff' },
+    text: { primary: '#1e293b', secondary: '#64748b' },
   },
   typography: {
-    fontFamily: '"Roboto", "Inter", "Helvetica", "Arial", sans-serif',
-    h1: { fontSize: '2.5rem', fontWeight: 600 },
-    h2: { fontSize: '2rem', fontWeight: 600 },
-    h3: { fontSize: '1.75rem', fontWeight: 600 },
+    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    h1: { fontSize: '2.5rem', fontWeight: 700, letterSpacing: '-0.02em' },
+    h2: { fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.02em' },
+    h3: { fontSize: '1.75rem', fontWeight: 600, letterSpacing: '-0.015em' },
+    h4: { fontSize: '1.5rem', fontWeight: 600, letterSpacing: '-0.01em' },
+    h6: { fontSize: '1.125rem', fontWeight: 600 },
+    body1: { fontSize: '1rem', letterSpacing: '-0.01em' },
   },
+  shape: { borderRadius: 12 },
   components: {
     MuiButton: {
       styleOverrides: {
@@ -30,17 +24,25 @@ const theme = createTheme({
           borderRadius: 8,
           textTransform: 'none',
           fontWeight: 600,
+          boxShadow: 'none',
+          '&:hover': { boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+          borderRadius: 16,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+          border: '1px solid rgba(0,0,0,0.04)',
         },
       },
     },
+    MuiPaper: {
+      styleOverrides: {
+        root: { backgroundImage: 'none' }
+      }
+    }
   },
 });
 

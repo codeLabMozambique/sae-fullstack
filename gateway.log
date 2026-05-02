@@ -1,0 +1,59 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------------< smartsae:sae-api-gateway >----------------------
+[INFO] Building SAE API Gateway 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.2.3:run (default-cli) > test-compile @ sae-api-gateway >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sae-api-gateway ---
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ sae-api-gateway ---
+[INFO] Changes detected - recompiling the module! :input tree
+[INFO] Compiling 1 source file with javac [debug release 17] to target\classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ sae-api-gateway ---
+[INFO] skip non existing resourceDirectory D:\sae-fullstack\sae-api-master\sae-api-gateway\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ sae-api-gateway ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] <<< spring-boot:3.2.3:run (default-cli) < test-compile @ sae-api-gateway <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.2.3:run (default-cli) @ sae-api-gateway ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.3)
+
+2026-04-30T15:36:40.840+02:00  INFO 7396 --- [sae-api-gateway] [           main] c.api.smart.sae.GatewayApplication       : Starting GatewayApplication using Java 17.0.12 with PID 7396 (D:\sae-fullstack\sae-api-master\sae-api-gateway\target\classes started by Omen2 in D:\sae-fullstack\sae-api-master\sae-api-gateway)
+2026-04-30T15:36:40.842+02:00  INFO 7396 --- [sae-api-gateway] [           main] c.api.smart.sae.GatewayApplication       : The following 1 profile is active: "dev"
+2026-04-30T15:36:41.399+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=8bc2d601-8205-3ce5-beb9-45e253a05e81
+2026-04-30T15:36:42.817+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.cloud.commons.util.InetUtils         : Cannot determine local hostname
+2026-04-30T15:36:43.031+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [After]
+2026-04-30T15:36:43.032+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Before]
+2026-04-30T15:36:43.032+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Between]
+2026-04-30T15:36:43.032+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Cookie]
+2026-04-30T15:36:43.033+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Header]
+2026-04-30T15:36:43.033+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Host]
+2026-04-30T15:36:43.033+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Method]
+2026-04-30T15:36:43.033+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Path]
+2026-04-30T15:36:43.033+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Query]
+2026-04-30T15:36:43.033+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [ReadBody]
+2026-04-30T15:36:43.034+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [RemoteAddr]
+2026-04-30T15:36:43.034+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [XForwardedRemoteAddr]
+2026-04-30T15:36:43.034+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [Weight]
+2026-04-30T15:36:43.034+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [CloudFoundryRouteService]
+2026-04-30T15:36:44.304+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.cloud.commons.util.InetUtils         : Cannot determine local hostname
+2026-04-30T15:36:44.335+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint(s) beneath base path '/actuator'
+2026-04-30T15:36:44.591+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.b.web.embedded.netty.NettyWebServer  : Netty started on port 8080
+2026-04-30T15:36:45.827+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.cloud.commons.util.InetUtils         : Cannot determine local hostname

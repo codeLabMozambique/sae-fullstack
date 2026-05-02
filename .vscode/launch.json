@@ -2,6 +2,16 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Spring Boot-AcademicServiceApplication<sae-academic-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "codelab.api.smart.sae.AcademicServiceApplication",
+            "projectName": "sae-academic-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
             "name": "Spring Boot-GatewayApplication<sae-api-gateway>",
             "request": "launch",
             "cwd": "${workspaceFolder}",
