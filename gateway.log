@@ -57,3 +57,5 @@
 2026-04-30T15:36:44.335+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint(s) beneath base path '/actuator'
 2026-04-30T15:36:44.591+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.b.web.embedded.netty.NettyWebServer  : Netty started on port 8080
 2026-04-30T15:36:45.827+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.cloud.commons.util.InetUtils         : Cannot determine local hostname
+2026-04-30T15:36:47.050+02:00  INFO 7396 --- [sae-api-gateway] [           main] o.s.cloud.commons.util.InetUtils         : Cannot determine local hostname
+2026-04-30T15:36:47.091+02:00  INFO 7396 --- [sae-api-gateway] [           main] c.api.smart.sae.GatewayApplication       : Started GatewayApplication in 7.7 seconds (process running for 7.906)
