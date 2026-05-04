@@ -7,3 +7,7 @@ spring:
   data:
     mongodb:
       uri: mongodb://localhost:27017/sae_content
+
+smartsae:
+  security:
+    allowed-origin: "*"
