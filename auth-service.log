@@ -35,79 +35,40 @@
  =========|_|==============|___/=/_/_/_/
  :: Spring Boot ::                (v3.2.3)
 
-2026-04-30T15:34:45.969+02:00  INFO 23548 --- [sae-auth-service] [           main] c.api.smart.sae.SmartSAEApplication      : Starting SmartSAEApplication using Java 17.0.12 with PID 23548 (D:\sae-fullstack\sae-api-master\sae-auth-service\target\classes started by Omen2 in D:\sae-fullstack\sae-api-master\sae-auth-service)
-2026-04-30T15:34:45.971+02:00  INFO 23548 --- [sae-auth-service] [           main] c.api.smart.sae.SmartSAEApplication      : The following 1 profile is active: "dev"
-2026-04-30T15:34:46.449+02:00  INFO 23548 --- [sae-auth-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-2026-04-30T15:34:46.548+02:00  INFO 23548 --- [sae-auth-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 84 ms. Found 8 JPA repository interfaces.
-2026-04-30T15:34:46.962+02:00  INFO 23548 --- [sae-auth-service] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8081 (http)
-2026-04-30T15:34:46.969+02:00  INFO 23548 --- [sae-auth-service] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
-2026-04-30T15:34:46.970+02:00  INFO 23548 --- [sae-auth-service] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
-2026-04-30T15:34:47.009+02:00  INFO 23548 --- [sae-auth-service] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
-2026-04-30T15:34:47.010+02:00  INFO 23548 --- [sae-auth-service] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1010 ms
-2026-04-30T15:34:47.105+02:00  INFO 23548 --- [sae-auth-service] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
-2026-04-30T15:34:47.138+02:00  INFO 23548 --- [sae-auth-service] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.4.Final
-2026-04-30T15:34:47.159+02:00  INFO 23548 --- [sae-auth-service] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
-2026-04-30T15:34:47.310+02:00  INFO 23548 --- [sae-auth-service] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
-2026-04-30T15:34:47.327+02:00  INFO 23548 --- [sae-auth-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
-2026-04-30T15:34:47.424+02:00  INFO 23548 --- [sae-auth-service] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@503556cb
-2026-04-30T15:34:47.427+02:00  INFO 23548 --- [sae-auth-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
-2026-04-30T15:34:47.446+02:00  WARN 23548 --- [sae-auth-service] [           main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-2026-04-30T15:34:48.124+02:00  INFO 23548 --- [sae-auth-service] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
-2026-04-30T15:34:48.238+02:00  INFO 23548 --- [sae-auth-service] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
-2026-04-30T15:34:48.537+02:00  WARN 23548 --- [sae-auth-service] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2026-04-30T15:34:48.697+02:00  INFO 23548 --- [sae-auth-service] [           main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@66978c15, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@6c96dc5c, org.springframework.security.web.context.SecurityContextHolderFilter@7b897456, org.springframework.security.web.header.HeaderWriterFilter@421c057a, org.springframework.web.filter.CorsFilter@61b6f287, org.springframework.security.web.authentication.logout.LogoutFilter@232899d1, codelab.api.smart.sae.framework.filter.JwtRequestFilter@59845579, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@7fecc26f, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@402adc9c, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@6ca9ec77, org.springframework.security.web.session.SessionManagementFilter@2943e61c, org.springframework.security.web.access.ExceptionTranslationFilter@74597c37, org.springframework.security.web.access.intercept.AuthorizationFilter@2735a7dc]
-2026-04-30T15:34:48.896+02:00  INFO 23548 --- [sae-auth-service] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8081 (http) with context path ''
-2026-04-30T15:34:48.903+02:00  INFO 23548 --- [sae-auth-service] [           main] c.api.smart.sae.SmartSAEApplication      : Started SmartSAEApplication in 3.169 seconds (process running for 3.408)
-2026-04-30T15:34:59.296+02:00  INFO 23548 --- [sae-auth-service] [nio-8081-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
-2026-04-30T15:34:59.307+02:00  INFO 23548 --- [sae-auth-service] [nio-8081-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
-2026-04-30T15:34:59.308+02:00  INFO 23548 --- [sae-auth-service] [nio-8081-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
-2026-04-30T15:34:59.310+02:00  INFO 23548 --- [sae-auth-service] [nio-8081-exec-1] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / TRUSTED ORIGIN false 
-2026-04-30T15:34:59.310+02:00  INFO 23548 --- [sae-auth-service] [nio-8081-exec-1] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / PREFLIHT REQUEST false 
-2026-04-30T15:34:59.311+02:00  INFO 23548 --- [sae-auth-service] [nio-8081-exec-1] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / RESULT false 
-Hibernate: 
-    select
-        ue1_0.id 
-    from
-        sae_user ue1_0 
-    where
-        ue1_0.username=? 
-    fetch
-        first ? rows only
-Hibernate: 
-    select
-        rte1_0.id,
-        rte1_0.app_transaction_id,
-        rte1_0.role,
-        rte1_0.status 
-    from
-        role_transaction rte1_0 
-    left join
-        app_transaction at1_0 
-            on at1_0.id=rte1_0.app_transaction_id 
-    where
-        rte1_0.role=? 
-        and at1_0.type=? 
-    order by
-        at1_0.code
-Hibernate: 
-    insert 
-    into
-        sae_user
-        (created_by, created_date, email, enabled, full_name, last_modified_by, last_modified_date, password, rolet_id, status, username) 
-    values
-        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-Hibernate: 
-    insert 
-    into
-        student_profile
-        (age, classroom_id, created_by, created_date, enrollment_date, grade, last_modified_by, last_modified_date, school_id, status, user_id) 
-    values
-        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-Role ou RoleName está nulo para o usuário: +258840000333
-2026-04-30T15:34:59.755+02:00  INFO 23548 --- [sae-auth-service] [nio-8081-exec-4] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / TRUSTED ORIGIN false 
-2026-04-30T15:34:59.755+02:00  INFO 23548 --- [sae-auth-service] [nio-8081-exec-4] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / PREFLIHT REQUEST false 
-2026-04-30T15:34:59.756+02:00  INFO 23548 --- [sae-auth-service] [nio-8081-exec-4] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / RESULT false 
-requisicao: +258840000333
+2026-05-04T12:18:03.020+02:00  INFO 15780 --- [sae-auth-service] [           main] c.api.smart.sae.SmartSAEApplication      : Starting SmartSAEApplication using Java 17.0.12 with PID 15780 (D:\sae-fullstack\sae-api-master\sae-auth-service\target\classes started by Omen2 in D:\sae-fullstack\sae-api-master\sae-auth-service)
+2026-05-04T12:18:03.023+02:00  INFO 15780 --- [sae-auth-service] [           main] c.api.smart.sae.SmartSAEApplication      : The following 1 profile is active: "dev"
+2026-05-04T12:18:04.018+02:00  INFO 15780 --- [sae-auth-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-04T12:18:04.173+02:00  INFO 15780 --- [sae-auth-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 148 ms. Found 8 JPA repository interfaces.
+2026-05-04T12:18:05.028+02:00  INFO 15780 --- [sae-auth-service] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8081 (http)
+2026-05-04T12:18:05.039+02:00  INFO 15780 --- [sae-auth-service] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-05-04T12:18:05.040+02:00  INFO 15780 --- [sae-auth-service] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2026-05-04T12:18:05.113+02:00  INFO 15780 --- [sae-auth-service] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-05-04T12:18:05.114+02:00  INFO 15780 --- [sae-auth-service] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 2044 ms
+2026-05-04T12:18:05.426+02:00  INFO 15780 --- [sae-auth-service] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-05-04T12:18:05.483+02:00  INFO 15780 --- [sae-auth-service] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.4.Final
+2026-05-04T12:18:05.522+02:00  INFO 15780 --- [sae-auth-service] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-05-04T12:18:05.755+02:00  INFO 15780 --- [sae-auth-service] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-04T12:18:05.777+02:00  INFO 15780 --- [sae-auth-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-05-04T12:18:05.952+02:00  INFO 15780 --- [sae-auth-service] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@4cf5d999
+2026-05-04T12:18:05.953+02:00  INFO 15780 --- [sae-auth-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-05-04T12:18:05.993+02:00  WARN 15780 --- [sae-auth-service] [           main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-05-04T12:18:07.252+02:00  INFO 15780 --- [sae-auth-service] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-04T12:18:07.432+02:00  INFO 15780 --- [sae-auth-service] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-04T12:18:07.987+02:00  WARN 15780 --- [sae-auth-service] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-05-04T12:18:08.503+02:00  INFO 15780 --- [sae-auth-service] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint(s) beneath base path '/actuator'
+2026-05-04T12:18:08.611+02:00  INFO 15780 --- [sae-auth-service] [           main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@7cc8fd4b, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@5c516cab, org.springframework.security.web.context.SecurityContextHolderFilter@43815bc, org.springframework.security.web.header.HeaderWriterFilter@765ccc7a, org.springframework.web.filter.CorsFilter@21f8aa9c, org.springframework.security.web.authentication.logout.LogoutFilter@1895f7fe, codelab.api.smart.sae.framework.filter.JwtRequestFilter@7b7068d8, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@234421ca, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@438fcca3, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@7a1587e8, org.springframework.security.web.session.SessionManagementFilter@4b158e16, org.springframework.security.web.access.ExceptionTranslationFilter@407956a5, org.springframework.security.web.access.intercept.AuthorizationFilter@2ab91b65]
+2026-05-04T12:18:09.103+02:00  INFO 15780 --- [sae-auth-service] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8081 (http) with context path ''
+2026-05-04T12:18:09.117+02:00  INFO 15780 --- [sae-auth-service] [           main] c.api.smart.sae.SmartSAEApplication      : Started SmartSAEApplication in 6.512 seconds (process running for 6.896)
+2026-05-04T12:18:31.676+02:00  INFO 15780 --- [sae-auth-service] [nio-8081-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-05-04T12:18:31.677+02:00  INFO 15780 --- [sae-auth-service] [nio-8081-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-05-04T12:18:31.680+02:00  INFO 15780 --- [sae-auth-service] [nio-8081-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 3 ms
+2026-05-04T12:18:31.681+02:00  INFO 15780 --- [sae-auth-service] [nio-8081-exec-1] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / TRUSTED ORIGIN true 
+2026-05-04T12:18:31.683+02:00  INFO 15780 --- [sae-auth-service] [nio-8081-exec-1] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / PREFLIHT REQUEST false 
+2026-05-04T12:18:31.683+02:00  INFO 15780 --- [sae-auth-service] [nio-8081-exec-1] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / RESULT false 
+2026-05-04T12:18:31.699+02:00 DEBUG 15780 --- [sae-auth-service] [nio-8081-exec-1] o.s.security.web.FilterChainProxy        : Securing POST /users/login
+2026-05-04T12:18:31.712+02:00 DEBUG 15780 --- [sae-auth-service] [nio-8081-exec-1] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2026-05-04T12:18:31.718+02:00 DEBUG 15780 --- [sae-auth-service] [nio-8081-exec-1] o.s.security.web.FilterChainProxy        : Secured POST /users/login
+requisicao: +258840000444
 Hibernate: 
     select
         ue1_0.id,
@@ -126,12 +87,39 @@ Hibernate:
         sae_user ue1_0 
     where
         ue1_0.username=?
-Role ou RoleName está nulo para o usuário: +258840000333
-Authorities: []
-Role ou RoleName está nulo para o usuário: +258840000333
-2026-04-30T15:35:41.513+02:00  INFO 23548 --- [sae-auth-service] [nio-8081-exec-3] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / TRUSTED ORIGIN false 
-2026-04-30T15:35:41.513+02:00  INFO 23548 --- [sae-auth-service] [nio-8081-exec-3] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / PREFLIHT REQUEST false 
-2026-04-30T15:35:41.514+02:00  INFO 23548 --- [sae-auth-service] [nio-8081-exec-3] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / RESULT false 
+2026-05-04T12:18:32.098+02:00 DEBUG 15780 --- [sae-auth-service] [nio-8081-exec-1] o.s.s.a.dao.DaoAuthenticationProvider    : Failed to authenticate since password does not match stored value
+2026-05-04T12:18:32.240+02:00  INFO 15780 --- [sae-auth-service] [nio-8081-exec-6] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / TRUSTED ORIGIN true 
+2026-05-04T12:18:32.243+02:00  INFO 15780 --- [sae-auth-service] [nio-8081-exec-6] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / PREFLIHT REQUEST false 
+2026-05-04T12:18:32.243+02:00  INFO 15780 --- [sae-auth-service] [nio-8081-exec-6] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / RESULT false 
+2026-05-04T12:18:32.244+02:00 DEBUG 15780 --- [sae-auth-service] [nio-8081-exec-6] o.s.security.web.FilterChainProxy        : Securing POST /users/login
+2026-05-04T12:18:32.245+02:00 DEBUG 15780 --- [sae-auth-service] [nio-8081-exec-6] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2026-05-04T12:18:32.246+02:00 DEBUG 15780 --- [sae-auth-service] [nio-8081-exec-6] o.s.security.web.FilterChainProxy        : Secured POST /users/login
+requisicao: +258999999999
+Hibernate: 
+    select
+        ue1_0.id,
+        ue1_0.created_by,
+        ue1_0.created_date,
+        ue1_0.email,
+        ue1_0.enabled,
+        ue1_0.full_name,
+        ue1_0.last_modified_by,
+        ue1_0.last_modified_date,
+        ue1_0.password,
+        ue1_0.rolet_id,
+        ue1_0.status,
+        ue1_0.username 
+    from
+        sae_user ue1_0 
+    where
+        ue1_0.username=?
+2026-05-04T12:18:32.342+02:00 DEBUG 15780 --- [sae-auth-service] [nio-8081-exec-6] o.s.s.a.dao.DaoAuthenticationProvider    : Failed to find user '+258999999999'
+2026-05-04T12:18:32.455+02:00  INFO 15780 --- [sae-auth-service] [nio-8081-exec-4] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / TRUSTED ORIGIN true 
+2026-05-04T12:18:32.457+02:00  INFO 15780 --- [sae-auth-service] [nio-8081-exec-4] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / PREFLIHT REQUEST false 
+2026-05-04T12:18:32.457+02:00  INFO 15780 --- [sae-auth-service] [nio-8081-exec-4] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / RESULT false 
+2026-05-04T12:18:32.458+02:00 DEBUG 15780 --- [sae-auth-service] [nio-8081-exec-4] o.s.security.web.FilterChainProxy        : Securing POST /users/signup/student
+2026-05-04T12:18:32.459+02:00 DEBUG 15780 --- [sae-auth-service] [nio-8081-exec-4] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2026-05-04T12:18:32.460+02:00 DEBUG 15780 --- [sae-auth-service] [nio-8081-exec-4] o.s.security.web.FilterChainProxy        : Secured POST /users/signup/student
 Hibernate: 
     select
         ue1_0.id 
@@ -141,40 +129,12 @@ Hibernate:
         ue1_0.username=? 
     fetch
         first ? rows only
-Hibernate: 
-    select
-        rte1_0.id,
-        rte1_0.app_transaction_id,
-        rte1_0.role,
-        rte1_0.status 
-    from
-        role_transaction rte1_0 
-    left join
-        app_transaction at1_0 
-            on at1_0.id=rte1_0.app_transaction_id 
-    where
-        rte1_0.role=? 
-        and at1_0.type=? 
-    order by
-        at1_0.code
-Hibernate: 
-    insert 
-    into
-        sae_user
-        (created_by, created_date, email, enabled, full_name, last_modified_by, last_modified_date, password, rolet_id, status, username) 
-    values
-        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-Hibernate: 
-    insert 
-    into
-        student_profile
-        (age, classroom_id, created_by, created_date, enrollment_date, grade, last_modified_by, last_modified_date, school_id, status, user_id) 
-    values
-        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-Role ou RoleName está nulo para o usuário: +258840000444
-2026-04-30T15:35:41.727+02:00  INFO 23548 --- [sae-auth-service] [nio-8081-exec-7] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / TRUSTED ORIGIN false 
-2026-04-30T15:35:41.727+02:00  INFO 23548 --- [sae-auth-service] [nio-8081-exec-7] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / PREFLIHT REQUEST false 
-2026-04-30T15:35:41.727+02:00  INFO 23548 --- [sae-auth-service] [nio-8081-exec-7] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / RESULT false 
+2026-05-04T12:18:32.638+02:00  INFO 15780 --- [sae-auth-service] [nio-8081-exec-2] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / TRUSTED ORIGIN true 
+2026-05-04T12:18:32.639+02:00  INFO 15780 --- [sae-auth-service] [nio-8081-exec-2] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / PREFLIHT REQUEST false 
+2026-05-04T12:18:32.639+02:00  INFO 15780 --- [sae-auth-service] [nio-8081-exec-2] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / RESULT false 
+2026-05-04T12:18:32.641+02:00 DEBUG 15780 --- [sae-auth-service] [nio-8081-exec-2] o.s.security.web.FilterChainProxy        : Securing POST /users/login
+2026-05-04T12:18:32.642+02:00 DEBUG 15780 --- [sae-auth-service] [nio-8081-exec-2] o.s.s.w.a.AnonymousAuthenticationFilter  : Set SecurityContextHolder to anonymous SecurityContext
+2026-05-04T12:18:32.643+02:00 DEBUG 15780 --- [sae-auth-service] [nio-8081-exec-2] o.s.security.web.FilterChainProxy        : Secured POST /users/login
 requisicao: +258840000444
 Hibernate: 
     select
@@ -195,33 +155,19 @@ Hibernate:
     where
         ue1_0.username=?
 Role ou RoleName está nulo para o usuário: +258840000444
+2026-05-04T12:18:32.742+02:00 DEBUG 15780 --- [sae-auth-service] [nio-8081-exec-2] o.s.s.a.dao.DaoAuthenticationProvider    : Authenticated user
 Authorities: []
 Role ou RoleName está nulo para o usuário: +258840000444
-2026-04-30T15:36:13.947+02:00  INFO 23548 --- [sae-auth-service] [nio-8081-exec-5] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / TRUSTED ORIGIN false 
-2026-04-30T15:36:13.948+02:00  INFO 23548 --- [sae-auth-service] [nio-8081-exec-5] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / PREFLIHT REQUEST true 
-2026-04-30T15:36:13.948+02:00  INFO 23548 --- [sae-auth-service] [nio-8081-exec-5] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / RESULT false 
-2026-04-30T15:36:56.403+02:00  INFO 23548 --- [sae-auth-service] [nio-8081-exec-8] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / TRUSTED ORIGIN false 
-2026-04-30T15:36:56.403+02:00  INFO 23548 --- [sae-auth-service] [nio-8081-exec-8] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / PREFLIHT REQUEST false 
-2026-04-30T15:36:56.404+02:00  INFO 23548 --- [sae-auth-service] [nio-8081-exec-8] c.a.s.s.f.s.CrossOriginRequestFilter     : INICIADA A LOGARIZACAO DOS HEADERS / RESULT false 
-requisicao: +258840000444
-Hibernate: 
-    select
-        ue1_0.id,
-        ue1_0.created_by,
-        ue1_0.created_date,
-        ue1_0.email,
-        ue1_0.enabled,
-        ue1_0.full_name,
-        ue1_0.last_modified_by,
-        ue1_0.last_modified_date,
-        ue1_0.password,
-        ue1_0.rolet_id,
-        ue1_0.status,
-        ue1_0.username 
-    from
-        sae_user ue1_0 
-    where
-        ue1_0.username=?
-Role ou RoleName está nulo para o usuário: +258840000444
-Authorities: []
-Role ou RoleName está nulo para o usuário: +258840000444
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  03:18 min
+[INFO] Finished at: 2026-05-04T12:21:10+02:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:3.2.3:run (default-cli) on project sae-auth-service: Process terminated with exit code: -1 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
