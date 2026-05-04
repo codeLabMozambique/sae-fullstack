@@ -25,7 +25,7 @@ public class StudentProfileEntity extends UpdatableEntity {
     @Column(name = "school_id", nullable = false)
     private Long schoolId;
 
-    @Column(name = "classroom_id", nullable = false)
+    @Column(name = "classroom_id", nullable = true)
     private Long classroomId;
 
     @Column(name = "GRADE")
