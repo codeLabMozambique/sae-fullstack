@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ProfessorProfileRepository extends JpaRepository<ProfessorProfileEntity, Long> {
+    java.util.Optional<ProfessorProfileEntity> findByUserUsername(String username);
 }

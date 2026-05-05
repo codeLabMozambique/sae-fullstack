@@ -58,7 +58,7 @@ public class ExpertAnswerService {
 
         ForumQuestionEntity question = questionService.getEntityById(answer.getQuestionId());
 
-        if (!question.getCreatedBy().equals(studentUsername)) {
+        if (!studentUsername.equals(question.getCreatedBy())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                 "Apenas o autor da pergunta pode aceitar respostas");
         }

@@ -264,6 +264,12 @@ public class UserService {
         }
     }
 
+    public String[] getProfessorSpecializations(String username) {
+        return professorProfileRepository.findByUserUsername(username)
+            .map(profile -> new String[]{profile.getSpecialization()})
+            .orElse(new String[]{});
+    }
+
     /**
      * 
      */

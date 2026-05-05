@@ -24,6 +24,7 @@ public class CollaborativeAnswerService {
     @Autowired private CollaborativeAnswerRepository answerRepository;
     @Autowired private ForumQuestionService questionService;
     @Autowired private NotificationService notificationService;
+    @Autowired private AuthServiceClient authServiceClient;
 
     @Transactional
     public CollaborativeAnswerResponseDTO create(Long questionId,
@@ -64,6 +65,13 @@ public class CollaborativeAnswerService {
     @Transactional
     public CollaborativeAnswerResponseDTO validate(Long answerId, String professorUsername) {
         CollaborativeAnswerEntity answer = findById(answerId);
+        ForumQuestionEntity question = questionService.getEntityById(answer.getQuestionId());
+
+        boolean canValidate = authServiceClient.canProfessorAnswerArea(professorUsername, question.getArea());
+        if (!canValidate) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                "A sua especialização não permite validar respostas na área: " + question.getArea());
+        }
 
         // Idempotent: already validated
         if (ValidationStatus.VALIDADA.equals(answer.getValidationStatus())) {
@@ -83,6 +91,13 @@ public class CollaborativeAnswerService {
     @Transactional
     public CollaborativeAnswerResponseDTO reject(Long answerId, String professorUsername) {
         CollaborativeAnswerEntity answer = findById(answerId);
+        ForumQuestionEntity question = questionService.getEntityById(answer.getQuestionId());
+
+        boolean canReject = authServiceClient.canProfessorAnswerArea(professorUsername, question.getArea());
+        if (!canReject) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                "A sua especialização não permite rejeitar respostas na área: " + question.getArea());
+        }
 
         // Idempotent: already rejected by this professor
         if (professorUsername.equals(answer.getRejectedBy())) {

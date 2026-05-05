@@ -91,4 +91,10 @@ public class UserResource {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/professor/{username}/specializations")
+    public ResponseEntity<String[]> getProfessorSpecializations(@PathVariable String username) {
+        String[] specializations = userService.getProfessorSpecializations(username);
+        return ResponseEntity.ok(specializations);
+    }
+
 }

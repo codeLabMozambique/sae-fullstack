@@ -17,7 +17,6 @@ public class CreateQuestionRequestDTO {
     @Size(max = 500, message = "Tags não podem exceder 500 caracteres")
     private String tags;
 
-    @NotNull(message = "Tipo de pergunta é obrigatório")
     private QuestionType questionType;
 
     public String getTitulo() { return titulo; }

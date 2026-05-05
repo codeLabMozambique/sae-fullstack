@@ -61,4 +61,12 @@ public class ForumQuestionResource {
         QuestionResponseDTO dto = questionService.create(request, auth.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
+
+    // EP-11: Fechar Pergunta (Somente o Autor)
+    @PutMapping("/{id}/close")
+    @PreAuthorize("hasAuthority('STUDENT')")
+    public ResponseEntity<Void> closeQuestion(@PathVariable Long id, Authentication auth) {
+        questionService.closeQuestionByUser(id, auth.getName());
+        return ResponseEntity.noContent().build();
+    }
 }

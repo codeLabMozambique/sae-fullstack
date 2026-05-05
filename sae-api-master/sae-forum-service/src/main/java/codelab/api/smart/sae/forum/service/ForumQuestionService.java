@@ -86,4 +86,16 @@ public class ForumQuestionService {
         question.setStatus(QuestionStatus.FECHADA);
         questionRepository.save(question);
     }
+
+    @Transactional
+    public void closeQuestionByUser(Long id, String username) {
+        ForumQuestionEntity question = getEntityById(id);
+        
+        if (!question.getCreatedBy().equals(username)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Apenas o autor pode fechar esta pergunta.");
+        }
+        
+        question.setStatus(QuestionStatus.FECHADA);
+        questionRepository.save(question);
+    }
 }
