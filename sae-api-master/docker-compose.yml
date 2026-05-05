@@ -35,6 +35,22 @@ services:
       - "6379:6379"
     networks:
       - sae-network
+
+  # Object Storage (MinIO)
+  minio:
+    image: minio/minio
+    container_name: sae-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=admin123
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - sae-network
   # Microserviços
   # sae-auth-service:
   #   build: ./sae-auth-service
@@ -95,3 +111,4 @@ networks:
 volumes:
   postgres_data:
   mongodb_data:
+  minio_data:

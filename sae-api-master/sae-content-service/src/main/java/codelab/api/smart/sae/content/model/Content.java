@@ -54,6 +54,22 @@ public class Content {
     @Field("category_id")
     private String categoryId;
 
+    @Indexed
+    @Field("uploaded_by")
+    private String uploadedBy;
+
+    @Field("uploaded_by_role")
+    private String uploadedByRole;
+
+    @Field("uploaded_by_name")
+    private String uploadedByName;
+
+    @Field("target_classroom_ids")
+    private List<Long> targetClassroomIds;
+
+    @Field("target_forum_ids")
+    private List<String> targetForumIds;
+
     @CreatedDate
     @Field("created_at")
     private LocalDateTime createdAt;
@@ -108,4 +124,19 @@ public class Content {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public String getUploadedBy() { return uploadedBy; }
+    public void setUploadedBy(String uploadedBy) { this.uploadedBy = uploadedBy; }
+
+    public String getUploadedByRole() { return uploadedByRole; }
+    public void setUploadedByRole(String uploadedByRole) { this.uploadedByRole = uploadedByRole; }
+
+    public String getUploadedByName() { return uploadedByName; }
+    public void setUploadedByName(String uploadedByName) { this.uploadedByName = uploadedByName; }
+
+    public List<Long> getTargetClassroomIds() { return targetClassroomIds; }
+    public void setTargetClassroomIds(List<Long> targetClassroomIds) { this.targetClassroomIds = targetClassroomIds; }
+
+    public List<String> getTargetForumIds() { return targetForumIds; }
+    public void setTargetForumIds(List<String> targetForumIds) { this.targetForumIds = targetForumIds; }
 }

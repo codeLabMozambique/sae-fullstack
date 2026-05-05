@@ -19,17 +19,33 @@ public class ContentResource {
     @Autowired
     private ContentService contentService;
 
+    @Autowired
+    private codelab.api.smart.sae.content.service.FileStorageService fileStorageService;
+
     @GetMapping
     public ResponseEntity<Page<Content>> list(
             @RequestParam(required = false) String discipline,
             @RequestParam(required = false) String level,
+            @RequestParam(required = false) Long classroomId,
+            @RequestParam(required = false) String uploadedBy,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(contentService.list(discipline, level, page, size));
+        return ResponseEntity.ok(contentService.list(discipline, level, classroomId, uploadedBy, page, size));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Content> getById(@PathVariable String id) {
         return ResponseEntity.ok(contentService.getById(id));
+    }
+
+    @GetMapping("/{id}/file")
+    public ResponseEntity<org.springframework.core.io.InputStreamResource> downloadFile(@PathVariable String id) {
+        Content content = contentService.getById(id);
+        String fileName = content.getFileUrl().substring(content.getFileUrl().lastIndexOf("/") + 1);
+        java.io.InputStream is = fileStorageService.getFile(fileName);
+        
+        return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                .body(new org.springframework.core.io.InputStreamResource(is));
     }
 }

@@ -11,3 +11,10 @@ spring:
 smartsae:
   security:
     allowed-origin: "*"
+  minio:
+    endpoint: http://localhost:9000
+    access-key: admin
+    secret-key: admin123
+    bucket: sae-contents
+  pdfbox:
+    temp-dir: ${java.io.tmpdir}/pdfbox

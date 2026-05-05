@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import codelab.api.smart.sae.content.model.Content;
 
 @Repository
-public interface ContentRepository extends MongoRepository<Content, String> {
+public interface ContentRepository extends MongoRepository<Content, String>, CustomContentRepository {
 
     Page<Content> findByDiscipline(String discipline, Pageable pageable);
 

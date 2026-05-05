@@ -18,21 +18,27 @@ public class ContentService {
     @Autowired
     private ContentRepository contentRepository;
 
+    @Autowired
+    private FileStorageService fileStorageService;
+
     public Content getById(String id) {
         return contentRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conteúdo não encontrado"));
     }
 
-    public Page<Content> list(String discipline, String level, int page, int size) {
+    public Page<Content> list(String discipline, String level, Long classroomId, String uploadedBy, int page, int size) {
         Pageable pageable = PageRequest.of(Math.max(page, 0), size <= 0 ? 20 : Math.min(size, 100),
-                Sort.by(Sort.Direction.DESC, "created_at"));
-        boolean hasDiscipline = discipline != null && !discipline.isBlank();
-        boolean hasLevel = level != null && !level.isBlank();
-        if (hasDiscipline && hasLevel) {
-            return contentRepository.findByDisciplineAndLevel(discipline, level, pageable);
+                Sort.by(Sort.Direction.DESC, "createdAt"));
+        
+        return contentRepository.findWithFilters(discipline, level, classroomId, uploadedBy, pageable);
+    }
+
+    public void delete(String id) {
+        Content content = getById(id);
+        if (content.getFileUrl() != null && content.getFileUrl().contains("/")) {
+            String fileName = content.getFileUrl().substring(content.getFileUrl().lastIndexOf("/") + 1);
+            fileStorageService.deleteFile(fileName);
         }
-        if (hasDiscipline) return contentRepository.findByDiscipline(discipline, pageable);
-        if (hasLevel) return contentRepository.findByLevel(level, pageable);
-        return contentRepository.findAll(pageable);
+        contentRepository.deleteById(id);
     }
 }
