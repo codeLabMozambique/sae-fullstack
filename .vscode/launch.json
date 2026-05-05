@@ -8,7 +8,8 @@
             "mainClass": "codelab.api.smart.sae.AcademicServiceApplication",
             "projectName": "sae-academic-service",
             "args": "",
-            "envFile": "${workspaceFolder}/.env"
+            "envFile": "${workspaceFolder}/.env",
+            "vmArgs": " -Dcom.sun.management.jmxremote"
         },
         {
             "type": "java",
@@ -39,6 +40,47 @@
             "cwd": "${workspaceFolder}",
             "mainClass": "codelab.api.smart.sae.framework.util.PasswordGenerator",
             "projectName": "sae-common",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env",
+            "vmArgs": " -Dcom.sun.management.jmxremote"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-AiServiceApplication<sae-ai-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "codelab.api.smart.sae.AiServiceApplication",
+            "projectName": "sae-ai-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-ContentServiceApplication<sae-content-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "codelab.api.smart.sae.ContentServiceApplication",
+            "projectName": "sae-content-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-ForumServiceApplication<sae-forum-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "codelab.api.smart.sae.ForumServiceApplication",
+            "projectName": "sae-forum-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-QuizServiceApplication<sae-quiz-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "codelab.api.smart.sae.QuizServiceApplication",
+            "projectName": "sae-quiz-service",
             "args": "",
             "envFile": "${workspaceFolder}/.env"
         }

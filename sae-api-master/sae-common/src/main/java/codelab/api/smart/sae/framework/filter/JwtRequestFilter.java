@@ -40,7 +40,13 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
 		if (authorizationHeader != null && authorizationHeader.startsWith(JwtUtil.JWT_PREFIX)) {
 			jwt = authorizationHeader.substring(7);
-			username = jwtUtil.extractUsername(jwt);
+			try {
+				username = jwtUtil.extractUsername(jwt);
+			} catch (io.jsonwebtoken.ExpiredJwtException e) {
+				logger.warn("JWT Token has expired");
+			} catch (Exception e) {
+				logger.warn("Unable to extract JWT Token");
+			}
 		}
 		
 		if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {

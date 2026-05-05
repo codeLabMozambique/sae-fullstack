@@ -5,6 +5,10 @@ import Dashboard from '../Dashboard';
 import Biblioteca from '../Biblioteca';
 import ChatIA from '../ChatIA';
 import AdminPanel from '../AdminPanel';
+import ForumList from '../forum/ForumList';
+import QuestionDetail from '../forum/QuestionDetail';
+import NewQuestion from '../forum/NewQuestion';
+import Validations from '../forum/Validations';
 
 const MainApp: React.FC = () => {
   return (
@@ -15,6 +19,10 @@ const MainApp: React.FC = () => {
         <Route path="biblioteca" element={<Biblioteca />} />
         <Route path="chat" element={<ChatIA />} />
         <Route path="admin" element={<AdminPanel />} />
+        <Route path="forum" element={<ForumList />} />
+        <Route path="forum/questions/:id" element={<QuestionDetail />} />
+        <Route path="forum/new" element={<NewQuestion />} />
+        <Route path="forum/validations" element={<Validations />} />
       </Routes>
     </MainLayout>
   );

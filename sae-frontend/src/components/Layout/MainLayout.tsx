@@ -5,7 +5,8 @@ import {
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon, LibraryBooks as LibraryIcon, Chat as ChatIcon,
-  AdminPanelSettings as AdminIcon, Menu as MenuIcon, Logout as LogoutIcon
+  AdminPanelSettings as AdminIcon, Menu as MenuIcon, Logout as LogoutIcon,
+  Forum as ForumIcon, FactCheck as ValidationsIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import OfflineIndicator from '../OfflineIndicator';
@@ -20,7 +21,9 @@ interface Props {
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/app/dashboard' },
   { text: 'Biblioteca Digital', icon: <LibraryIcon />, path: '/app/biblioteca' },
+  { text: 'Fórum', icon: <ForumIcon />, path: '/app/forum' },
   { text: 'Chat com IA', icon: <ChatIcon />, path: '/app/chat' },
+  { text: 'Validações', icon: <ValidationsIcon />, path: '/app/forum/validations' },
   { text: 'Painel Administrativo', icon: <AdminIcon />, path: '/app/admin' },
 ];
 
@@ -39,7 +42,9 @@ const MainLayout: React.FC<Props> = ({ children }) => {
     navigate('/login');
   };
 
-  const currentPage = menuItems.find(item => location.pathname.startsWith(item.path))?.text || 'SAE';
+  const currentPage = [...menuItems]
+    .sort((a, b) => b.path.length - a.path.length)
+    .find(item => location.pathname.startsWith(item.path))?.text || 'SAE';
 
   const drawer = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'linear-gradient(180deg, #001B33 0%, #002B50 100%)' }}>
