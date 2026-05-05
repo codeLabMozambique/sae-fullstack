@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
 
 import codelab.api.smart.sae.framework.config.SmartSAEConfig;
 
@@ -25,7 +24,8 @@ import codelab.api.smart.sae.framework.config.SmartSAEConfig;
  * 
  * @author Nelson Magalhaes (nelsonmagas@gmail.com)
  */
-@Component
+// CORS is handled by the API Gateway; this filter is disabled to prevent duplicate headers
+// @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class CrossOriginRequestFilter implements Filter {
 

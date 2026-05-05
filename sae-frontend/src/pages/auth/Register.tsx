@@ -45,10 +45,6 @@ const Register: React.FC = () => {
       setError('Por favor, preencha todos os campos obrigatórios.');
       return;
     }
-    if (role === 'student' && classroomId === '') {
-      setError('Por favor, introduza o ID da turma.');
-      return;
-    }
     setError('');
     setLoading(true);
     try {
@@ -59,7 +55,7 @@ const Register: React.FC = () => {
           password,
           fullname,
           schoolId: schoolId as number,
-          classroomId: classroomId as number,
+          classroomId: classroomId !== '' ? (classroomId as number) : null,
           grade: grade || undefined,
           age: age !== '' ? (age as number) : undefined,
         });
@@ -240,16 +236,6 @@ const Register: React.FC = () => {
             {/* Student-specific fields */}
             {role === 'student' && (
               <>
-                <FieldLabel label="ID da Turma">
-                  <TextField
-                    fullWidth placeholder="Ex: 1"
-                    type="number"
-                    value={classroomId}
-                    onChange={(e) => setClassroomId(e.target.value ? Number(e.target.value) : '')}
-                    disabled={loading}
-                    sx={fieldStyle}
-                  />
-                </FieldLabel>
                 <Box sx={{ display: 'flex', gap: 2 }}>
                   <Box sx={{ flex: 1 }}>
                     <FieldLabel label="Ano/Classe (opcional)">

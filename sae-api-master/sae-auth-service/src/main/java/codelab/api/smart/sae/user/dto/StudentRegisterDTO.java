@@ -22,7 +22,6 @@ public class StudentRegisterDTO {
 
     private String grade;
 
-    @NotNull(message = "Turma é obrigatória")
     private Long classroomId;
 
     @NotNull(message = "Escola é obrigatória")

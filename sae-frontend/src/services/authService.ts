@@ -11,7 +11,7 @@ export interface StudentRegisterRequest {
   password: string;
   fullname: string;
   schoolId: number;
-  classroomId: number;
+  classroomId?: number | null;
   grade?: string;
   age?: number;
 }
