@@ -38,9 +38,6 @@ public class ClassroomEntity extends UpdatableEntity {
     @Column(name = "ACADEMIC_YEAR")
     private String academicYear;
 
-    @Column(name = "IS_ACTIVE")
-    private boolean active = true;
-
     public ClassroomEntity() {}
 
     public Long getId() { return id; }
@@ -60,7 +57,4 @@ public class ClassroomEntity extends UpdatableEntity {
 
     public String getAcademicYear() { return academicYear; }
     public void setAcademicYear(String academicYear) { this.academicYear = academicYear; }
-
-    public boolean isActive() { return active; }
-    public void setActive(boolean active) { this.active = active; }
 }
