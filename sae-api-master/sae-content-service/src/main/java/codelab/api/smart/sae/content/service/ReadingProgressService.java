@@ -27,6 +27,9 @@ public class ReadingProgressService {
     @Autowired
     private ContentRepository contentRepository;
 
+    @Autowired
+    private EventPublisherService eventPublisherService;
+
     public ReadingProgressView upsert(String userId, String contentId, ReadingProgressUpsertDTO request) {
         Content content = contentRepository.findById(contentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conteúdo não encontrado"));
@@ -65,6 +68,10 @@ public class ReadingProgressService {
         progress.setLastReadAt(LocalDateTime.now());
 
         ReadingProgress saved = progressRepository.save(progress);
+        
+        // Publicar Evento de Progresso
+        eventPublisherService.publishReadingProgress(userId, contentId, saved.getCurrentPage());
+        
         return ReadingProgressView.of(saved, content);
     }
 

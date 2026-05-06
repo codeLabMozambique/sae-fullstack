@@ -9,10 +9,17 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 
-@SpringBootApplication(exclude = { DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class })
-@EntityScan(basePackages = {"codelab.api.smart.sae"})
+@SpringBootApplication
+@EntityScan(basePackages = {"codelab.api.smart.sae.content.model.jpa"})
 @ComponentScan(basePackages = {"codelab.api.smart.sae"})
-@EnableMongoRepositories(basePackages = {"codelab.api.smart.sae.content.repository"})
+@EnableMongoRepositories(
+    basePackages = {"codelab.api.smart.sae.content.repository"},
+    excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(
+        type = org.springframework.context.annotation.FilterType.REGEX,
+        pattern = "codelab\\.api\\.smart\\.sae\\.content\\.repository\\.jpa\\..*"
+    )
+)
+@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = {"codelab.api.smart.sae.content.repository.jpa"})
 public class ContentServiceApplication {
     public static void main(String[] args) {
         SpringApplication.run(ContentServiceApplication.class, args);

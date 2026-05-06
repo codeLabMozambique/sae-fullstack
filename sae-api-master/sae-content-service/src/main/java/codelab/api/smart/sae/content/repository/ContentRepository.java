@@ -15,4 +15,6 @@ public interface ContentRepository extends MongoRepository<Content, String>, Cus
     Page<Content> findByLevel(String level, Pageable pageable);
 
     Page<Content> findByDisciplineAndLevel(String discipline, String level, Pageable pageable);
+
+    Page<Content> findBy(org.springframework.data.mongodb.core.query.TextCriteria criteria, Pageable pageable);
 }

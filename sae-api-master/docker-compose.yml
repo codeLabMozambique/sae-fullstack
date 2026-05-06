@@ -51,6 +51,19 @@ services:
     command: server /data --console-address ":9001"
     networks:
       - sae-network
+
+  # Message Broker (RabbitMQ)
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: sae-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    networks:
+      - sae-network
   # Microserviços
   # sae-auth-service:
   #   build: ./sae-auth-service

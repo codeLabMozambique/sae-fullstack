@@ -8,6 +8,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 import codelab.api.smart.sae.content.model.Content;
 import codelab.api.smart.sae.content.repository.ContentRepository;
@@ -21,6 +23,10 @@ public class ContentService {
     @Autowired
     private FileStorageService fileStorageService;
 
+    @Autowired
+    private codelab.api.smart.sae.content.repository.jpa.ContentLogRepository contentLogRepository;
+
+    @Cacheable(value = "contents", key = "#id")
     public Content getById(String id) {
         return contentRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conteúdo não encontrado"));
@@ -33,12 +39,28 @@ public class ContentService {
         return contentRepository.findWithFilters(discipline, level, classroomId, uploadedBy, pageable);
     }
 
-    public void delete(String id) {
+    public Page<Content> search(String query, Pageable pageable) {
+        org.springframework.data.mongodb.core.query.TextCriteria criteria = org.springframework.data.mongodb.core.query.TextCriteria
+                .forDefaultLanguage()
+                .matchingAny(query.split(" "));
+        return contentRepository.findBy(criteria, pageable);
+    }
+
+    @CacheEvict(value = "contents", key = "#id")
+    public void delete(String id, String username) {
         Content content = getById(id);
         if (content.getFileUrl() != null && content.getFileUrl().contains("/")) {
-            String fileName = content.getFileUrl().substring(content.getFileUrl().lastIndexOf("/") + 1);
+            String url = content.getFileUrl();
+            String fileName = url.replace("/api/contents/", "").replace("/read", "").replace("/file", "");
             fileStorageService.deleteFile(fileName);
         }
         contentRepository.deleteById(id);
+
+        // Log de Auditoria
+        codelab.api.smart.sae.content.model.jpa.ContentLog log = new codelab.api.smart.sae.content.model.jpa.ContentLog();
+        log.setContentId(id);
+        log.setAction("DELETE");
+        log.setUserUsername(username);
+        contentLogRepository.save(log);
     }
 }

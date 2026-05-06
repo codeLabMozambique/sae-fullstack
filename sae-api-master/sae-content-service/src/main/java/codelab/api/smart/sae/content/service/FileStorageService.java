@@ -28,14 +28,22 @@ public class FileStorageService {
     }
 
     public String saveFile(MultipartFile file) {
-        String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+        try {
+            return saveFile(file.getBytes(), file.getOriginalFilename(), file.getContentType());
+        } catch (Exception e) {
+            throw new RuntimeException("Falha ao ler bytes do MultipartFile", e);
+        }
+    }
+
+    public String saveFile(byte[] fileBytes, String originalName, String contentType) {
+        String fileName = UUID.randomUUID().toString() + "_" + originalName;
         try {
             minioClient.putObject(
                 PutObjectArgs.builder()
                     .bucket(bucketName)
                     .object(fileName)
-                    .stream(file.getInputStream(), file.getSize(), -1)
-                    .contentType(file.getContentType())
+                    .stream(new java.io.ByteArrayInputStream(fileBytes), fileBytes.length, -1)
+                    .contentType(contentType)
                     .build()
             );
             return fileName;
