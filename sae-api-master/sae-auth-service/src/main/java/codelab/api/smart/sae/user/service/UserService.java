@@ -23,6 +23,7 @@ import codelab.api.smart.sae.roleTransaction.model.RoleTransactionEntity;
 import codelab.api.smart.sae.roleTransaction.repository.RoleTransactionRepository;
 import codelab.api.smart.sae.user.dto.MenuDTO;
 import codelab.api.smart.sae.user.dto.MenuItemDTO;
+import codelab.api.smart.sae.user.dto.ProfessorProfileDTO;
 import codelab.api.smart.sae.user.dto.ProfessorRegisterDTO;
 import codelab.api.smart.sae.user.dto.RegisterRequestDTO;
 import codelab.api.smart.sae.user.dto.StudentRegisterDTO;
@@ -183,6 +184,7 @@ public class UserService {
         profile.setSpecialization(request.getSpecialization());
         profile.setInstitutionalContact(request.getInstitutionalContact());
         profile.setOnline(false);
+        System.out.println(profile.getUser());
 
         return professorProfileRepository.save(profile);
     }
@@ -251,6 +253,21 @@ public class UserService {
         }
 
         return menus;
+    }
+
+    public List<ProfessorProfileDTO> findAllProfessors() {
+        return professorProfileRepository.findAll().stream()
+                .map(p -> new ProfessorProfileDTO(
+                        p.getUser().getId(),
+                        p.getUser().getFullname(),
+                        p.getUser().getUsername(),
+                        p.getUser().getEmail(),
+                        p.getSchoolId(),
+                        p.getDepartment(),
+                        p.getSpecialization(),
+                        p.getInstitutionalContact(),
+                        p.isOnline()))
+                .collect(Collectors.toList());
     }
 
     public UserEntity getLoggedUser() {
