@@ -86,12 +86,78 @@ public class ForumQuestionService {
     @Transactional
     public void closeQuestionByUser(Long id, String username) {
         ForumQuestionEntity question = getEntityById(id);
-        
+
         if (!question.getCreatedBy().equals(username)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Apenas o autor pode fechar esta pergunta.");
         }
-        
+
         question.setStatus(QuestionStatus.FECHADA);
         questionRepository.save(question);
+    }
+
+    @Transactional
+    public QuestionResponseDTO getOrCreateCollaborativeRoom(codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina) {
+        return questionRepository
+            .findFirstByDisciplinaAndQuestionTypeOrderByCreatedAtAsc(disciplina, QuestionType.COLABORATIVO)
+            .map(QuestionResponseDTO::from)
+            .orElseGet(() -> {
+                ForumQuestionEntity room = new ForumQuestionEntity();
+                room.setTitulo("Chat da Turma - " + displayName(disciplina));
+                room.setDescricao("Sala de chat colaborativo para " + displayName(disciplina));
+                room.setDisciplina(disciplina);
+                room.setQuestionType(QuestionType.COLABORATIVO);
+                room.setStatus(QuestionStatus.ABERTA);
+                room.setCreatedBy("system");
+                return QuestionResponseDTO.from(questionRepository.save(room));
+            });
+    }
+
+    @Transactional
+    public QuestionResponseDTO getOrCreateExpertRoom(codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina, String studentUsername) {
+        return questionRepository
+            .findFirstByDisciplinaAndQuestionTypeAndCreatedByOrderByCreatedAtAsc(disciplina, QuestionType.ESPECIALIZADO, studentUsername)
+            .map(QuestionResponseDTO::from)
+            .orElseGet(() -> {
+                ForumQuestionEntity room = new ForumQuestionEntity();
+                room.setTitulo("Chat com Professor - " + displayName(disciplina));
+                room.setDescricao("_");
+                room.setDisciplina(disciplina);
+                room.setQuestionType(QuestionType.ESPECIALIZADO);
+                room.setStatus(QuestionStatus.ABERTA);
+                room.setCreatedBy(studentUsername);
+                return QuestionResponseDTO.from(questionRepository.save(room));
+            });
+    }
+
+    @Transactional
+    public void updateFirstMessage(Long id, String descricao, String username) {
+        ForumQuestionEntity question = getEntityById(id);
+        if (!question.getCreatedBy().equals(username)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Apenas o autor pode editar esta mensagem.");
+        }
+        if (!"_".equals(question.getDescricao())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mensagem inicial já foi definida.");
+        }
+        if (descricao == null || descricao.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mensagem não pode estar vazia.");
+        }
+        question.setDescricao(descricao.trim());
+        questionRepository.save(question);
+    }
+
+    private String displayName(codelab.api.smart.sae.forum.enums.DisciplinaEnum d) {
+        return switch (d) {
+            case MATEMATICA -> "Matemática";
+            case FISICA -> "Física";
+            case QUIMICA -> "Química";
+            case BIOLOGIA -> "Biologia";
+            case PORTUGUES -> "Português";
+            case HISTORIA -> "História";
+            case GEOGRAFIA -> "Geografia";
+            case INGLES -> "Inglês";
+            case FILOSOFIA -> "Filosofia";
+            case INFORMATICA -> "Informática";
+            case GERAL -> "Geral";
+        };
     }
 }

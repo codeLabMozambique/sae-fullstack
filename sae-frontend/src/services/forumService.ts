@@ -2,13 +2,13 @@ import api from './api';
 import type {
   ForumQuestion, ExpertAnswer, CollaborativeAnswer,
   PageResponse, CreateQuestionRequest, CreateAnswerRequest,
-  QuestionType, QuestionStatus,
+  QuestionType, QuestionStatus, DisciplinaEnum,
 } from '../types/forum';
 
 const BASE = '/forum';
 
 export const forumService = {
-  // EP-1 / EP-6: Criar pergunta
+  // EP-1 / EP-6: Criar pergunta manualmente (compatibilidade)
   createQuestion: (data: CreateQuestionRequest): Promise<ForumQuestion> => {
     const endpoint = data.questionType === 'COLABORATIVO'
       ? `${BASE}/questions/collaborative`
@@ -23,6 +23,7 @@ export const forumService = {
     status?: QuestionStatus;
     page?: number;
     size?: number;
+    disciplina?: DisciplinaEnum;
   }): Promise<PageResponse<ForumQuestion>> =>
     api.get<PageResponse<ForumQuestion>>(`${BASE}/questions`, { params }).then(r => r.data),
 
@@ -30,27 +31,49 @@ export const forumService = {
   getQuestion: (id: number): Promise<ForumQuestion> =>
     api.get<ForumQuestion>(`${BASE}/questions/${id}`).then(r => r.data),
 
-  // EP-4: Resposta de especialista
+  // EP-4: Resposta de especialista (professor)
   createExpertAnswer: (questionId: number, data: CreateAnswerRequest): Promise<ExpertAnswer> =>
     api.post<ExpertAnswer>(`${BASE}/questions/${questionId}/expert-answers`, data).then(r => r.data),
 
-  // EP-5: Aceitar resposta
+  // EP-5: Aceitar resposta (aluno)
   acceptAnswer: (answerId: number): Promise<ExpertAnswer> =>
     api.put<ExpertAnswer>(`${BASE}/expert-answers/${answerId}/accept`).then(r => r.data),
 
-  // EP-7: Resposta colaborativa
+  // EP-7: Resposta colaborativa (qualquer utilizador autenticado)
   createCollaborativeAnswer: (questionId: number, data: CreateAnswerRequest): Promise<CollaborativeAnswer> =>
     api.post<CollaborativeAnswer>(`${BASE}/collaborative/questions/${questionId}/answers`, data).then(r => r.data),
 
-  // EP-8: Listar pendentes
+  // EP-8: Listar pendentes (professor)
   listPendingAnswers: (params?: { page?: number; size?: number }): Promise<PageResponse<CollaborativeAnswer>> =>
     api.get<PageResponse<CollaborativeAnswer>>(`${BASE}/collaborative/answers/pending`, { params }).then(r => r.data),
 
-  // EP-9: Validar resposta
+  // EP-9: Validar resposta colaborativa
   validateAnswer: (answerId: number): Promise<CollaborativeAnswer> =>
     api.put<CollaborativeAnswer>(`${BASE}/collaborative/answers/${answerId}/validate`).then(r => r.data),
 
-  // EP-10: Rejeitar resposta
+  // EP-10: Rejeitar resposta colaborativa
   rejectAnswer: (answerId: number): Promise<CollaborativeAnswer> =>
     api.put<CollaborativeAnswer>(`${BASE}/collaborative/answers/${answerId}/reject`).then(r => r.data),
+
+  // EP-12: Obter ou criar sala colaborativa da turma (1 sala por disciplina)
+  getCollaborativeRoom: (disciplina: DisciplinaEnum): Promise<ForumQuestion> =>
+    api.get<ForumQuestion>(`${BASE}/questions/rooms/collaborative/${disciplina}`).then(r => r.data),
+
+  // EP-13: Obter ou criar sala privada com professor (1 sala por aluno+disciplina)
+  getExpertRoom: (disciplina: DisciplinaEnum): Promise<ForumQuestion> =>
+    api.get<ForumQuestion>(`${BASE}/questions/rooms/expert/${disciplina}`).then(r => r.data),
+
+  // EP-14: Definir primeira mensagem numa sala expert
+  updateFirstMessage: (id: number, descricao: string): Promise<void> =>
+    api.patch(`${BASE}/questions/${id}/message`, { descricao }).then(() => {}),
+
+  // Listar questões abertas para professor (caixa de entrada)
+  listProfessorInbox: (params?: {
+    disciplina?: DisciplinaEnum;
+    page?: number;
+    size?: number;
+  }): Promise<PageResponse<ForumQuestion>> =>
+    api.get<PageResponse<ForumQuestion>>(`${BASE}/questions`, {
+      params: { questionType: 'ESPECIALIZADO', status: 'ABERTA', ...params },
+    }).then(r => r.data),
 };

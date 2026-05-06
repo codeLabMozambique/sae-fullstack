@@ -7,6 +7,7 @@ import ChatIA from '../ChatIA';
 import AdminPanel from '../AdminPanel';
 import ForumList from '../forum/ForumList';
 import QuestionDetail from '../forum/QuestionDetail';
+import ChatRoom from '../forum/ChatRoom';
 import Validations from '../forum/Validations';
 
 const MainApp: React.FC = () => {
@@ -19,6 +20,7 @@ const MainApp: React.FC = () => {
         <Route path="chat" element={<ChatIA />} />
         <Route path="admin" element={<AdminPanel />} />
         <Route path="forum" element={<ForumList />} />
+        <Route path="forum/room/:id" element={<ChatRoom />} />
         <Route path="forum/questions/:id" element={<QuestionDetail />} />
         <Route path="forum/new" element={<Navigate to="/app/forum" replace />} />
         <Route path="forum/validations" element={<Validations />} />

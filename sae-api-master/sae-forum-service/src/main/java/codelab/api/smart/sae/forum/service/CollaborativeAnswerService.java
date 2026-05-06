@@ -39,7 +39,7 @@ public class CollaborativeAnswerService {
         if (QuestionStatus.FECHADA.equals(question.getStatus())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Pergunta já está fechada");
         }
-        if (question.getCreatedBy().equals(studentUsername)) {
+        if (!"system".equals(question.getCreatedBy()) && question.getCreatedBy().equals(studentUsername)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                 "Não é possível responder à sua própria pergunta");
         }

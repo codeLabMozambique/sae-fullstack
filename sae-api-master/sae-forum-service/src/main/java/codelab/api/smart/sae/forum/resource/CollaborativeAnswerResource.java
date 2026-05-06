@@ -22,9 +22,9 @@ public class CollaborativeAnswerResource {
     @Autowired
     private CollaborativeAnswerService collaborativeAnswerService;
 
-    // EP-7: Criar resposta colaborativa
+    // EP-7: Criar resposta colaborativa (qualquer utilizador autenticado pode participar)
     @PostMapping("/questions/{id}/answers")
-    @PreAuthorize("hasAuthority('STUDENT')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CollaborativeAnswerResponseDTO> createAnswer(
             @PathVariable Long id,
             @Valid @RequestBody CreateCollaborativeAnswerRequestDTO request,

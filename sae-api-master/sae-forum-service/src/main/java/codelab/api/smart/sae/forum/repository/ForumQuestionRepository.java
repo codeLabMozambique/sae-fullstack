@@ -30,4 +30,10 @@ public interface ForumQuestionRepository extends JpaRepository<ForumQuestionEnti
     );
 
     List<ForumQuestionEntity> findByDisciplina(codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina);
+
+    java.util.Optional<ForumQuestionEntity> findFirstByDisciplinaAndQuestionTypeOrderByCreatedAtAsc(
+        codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina, QuestionType type);
+
+    java.util.Optional<ForumQuestionEntity> findFirstByDisciplinaAndQuestionTypeAndCreatedByOrderByCreatedAtAsc(
+        codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina, QuestionType type, String createdBy);
 }

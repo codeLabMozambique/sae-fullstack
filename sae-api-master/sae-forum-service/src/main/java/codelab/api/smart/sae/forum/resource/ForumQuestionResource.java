@@ -2,6 +2,7 @@ package codelab.api.smart.sae.forum.resource;
 
 import codelab.api.smart.sae.forum.dto.request.CreateQuestionRequestDTO;
 import codelab.api.smart.sae.forum.dto.response.QuestionResponseDTO;
+import codelab.api.smart.sae.forum.enums.DisciplinaEnum;
 import codelab.api.smart.sae.forum.enums.QuestionStatus;
 import codelab.api.smart.sae.forum.enums.QuestionType;
 import codelab.api.smart.sae.forum.service.ForumQuestionService;
@@ -16,6 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/questions")
@@ -67,6 +70,31 @@ public class ForumQuestionResource {
     @PreAuthorize("hasAuthority('STUDENT')")
     public ResponseEntity<Void> closeQuestion(@PathVariable Long id, Authentication auth) {
         questionService.closeQuestionByUser(id, auth.getName());
+        return ResponseEntity.noContent().build();
+    }
+
+    // EP-12: Obter ou criar sala colaborativa da turma (por disciplina)
+    @GetMapping("/rooms/collaborative/{disciplina}")
+    public ResponseEntity<QuestionResponseDTO> getCollaborativeRoom(@PathVariable DisciplinaEnum disciplina) {
+        return ResponseEntity.ok(questionService.getOrCreateCollaborativeRoom(disciplina));
+    }
+
+    // EP-13: Obter ou criar sala privada com professor (por disciplina, específica do aluno)
+    @GetMapping("/rooms/expert/{disciplina}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<QuestionResponseDTO> getExpertRoom(
+            @PathVariable DisciplinaEnum disciplina, Authentication auth) {
+        return ResponseEntity.ok(questionService.getOrCreateExpertRoom(disciplina, auth.getName()));
+    }
+
+    // EP-14: Definir primeira mensagem de uma sala expert (aluno)
+    @PatchMapping("/{id}/message")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> updateFirstMessage(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body,
+            Authentication auth) {
+        questionService.updateFirstMessage(id, body.getOrDefault("descricao", ""), auth.getName());
         return ResponseEntity.noContent().build();
     }
 }

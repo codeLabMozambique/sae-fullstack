@@ -24,18 +24,65 @@ export interface CollaborativeAnswer {
   createdAt: string;
 }
 
-export type DisciplinaEnum = 
-  | 'MATEMATICA' 
-  | 'FISICA' 
-  | 'QUIMICA' 
-  | 'BIOLOGIA' 
-  | 'PORTUGUES' 
-  | 'HISTORIA' 
-  | 'GEOGRAFIA' 
-  | 'INGLES' 
-  | 'FILOSOFIA' 
-  | 'INFORMATICA' 
+export type DisciplinaEnum =
+  | 'MATEMATICA'
+  | 'FISICA'
+  | 'QUIMICA'
+  | 'BIOLOGIA'
+  | 'PORTUGUES'
+  | 'HISTORIA'
+  | 'GEOGRAFIA'
+  | 'INGLES'
+  | 'FILOSOFIA'
+  | 'INFORMATICA'
   | 'GERAL';
+
+export const DISCIPLINA_LABELS: Record<DisciplinaEnum, string> = {
+  MATEMATICA: 'Matemática',
+  FISICA: 'Física',
+  QUIMICA: 'Química',
+  BIOLOGIA: 'Biologia',
+  PORTUGUES: 'Português',
+  HISTORIA: 'História',
+  GEOGRAFIA: 'Geografia',
+  INGLES: 'Inglês',
+  FILOSOFIA: 'Filosofia',
+  INFORMATICA: 'Informática',
+  GERAL: 'Geral',
+};
+
+export const DISCIPLINA_EMOJI: Record<DisciplinaEnum, string> = {
+  MATEMATICA: '📐',
+  FISICA: '⚗️',
+  QUIMICA: '🧪',
+  BIOLOGIA: '🌿',
+  PORTUGUES: '📖',
+  HISTORIA: '📜',
+  GEOGRAFIA: '🌍',
+  INGLES: '🇬🇧',
+  FILOSOFIA: '🤔',
+  INFORMATICA: '💻',
+  GERAL: '💬',
+};
+
+export const DISCIPLINA_COLOR: Record<DisciplinaEnum, string> = {
+  MATEMATICA: '#2563EB',
+  FISICA: '#7C3AED',
+  QUIMICA: '#059669',
+  BIOLOGIA: '#16A34A',
+  PORTUGUES: '#DC2626',
+  HISTORIA: '#B45309',
+  GEOGRAFIA: '#0891B2',
+  INGLES: '#4F46E5',
+  FILOSOFIA: '#6B7280',
+  INFORMATICA: '#EA580C',
+  GERAL: '#374151',
+};
+
+export const ALL_DISCIPLINAS: DisciplinaEnum[] = [
+  'MATEMATICA', 'FISICA', 'QUIMICA', 'BIOLOGIA', 'PORTUGUES',
+  'HISTORIA', 'GEOGRAFIA', 'INGLES', 'FILOSOFIA', 'INFORMATICA', 'GERAL',
+];
 
 export interface ForumQuestion {
   id: number;
