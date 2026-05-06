@@ -32,13 +32,13 @@ spring:
           predicates:
             - Path=/content/**
 
-         # SERVIÇO DE FÓRUM (8083)
+        # SERVIÇO DE FÓRUM (8083)
         - id: sae-forum-service
           uri: http://localhost:8083
           predicates:
             - Path=/forum/**
           filters:
-            - RewritePath=/forum/(?<segment>.*), /api/forum/$\{segment}
+            - StripPrefix=1
             
         # SERVIÇO DE QUIZZES E TESTES (8084)
         - id: sae-quiz-service

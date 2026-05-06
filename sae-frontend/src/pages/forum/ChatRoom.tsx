@@ -276,6 +276,29 @@ const ChatRoom: React.FC = () => {
         </Box>
       </Box>
 
+      {/* ── Context bar ── */}
+      <Box
+        sx={{
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          px: 2.5,
+          py: 0.75,
+          bgcolor: accentLight,
+          borderBottom: `1px solid ${accent}25`,
+        }}
+      >
+        {isCollab
+          ? <GroupsIcon sx={{ fontSize: 13, color: accent }} />
+          : <SchoolIcon sx={{ fontSize: 13, color: accent }} />}
+        <Typography variant="caption" sx={{ color: accentDark, fontWeight: 600, lineHeight: 1.3 }}>
+          {isCollab
+            ? `Chat da Turma · ${disciplinaLabel} · O professor será notificado ao enviar uma mensagem`
+            : `Chat Privado com Prof. de ${disciplinaLabel} · A mensagem chegará directamente ao professor`}
+        </Typography>
+      </Box>
+
       {/* ── Messages area ── */}
       <Box sx={{ flex: 1, overflowY: 'auto', px: { xs: 2, sm: 3 }, py: 2.5, bgcolor: '#F8FAFC' }}>
         {error && (
@@ -324,40 +347,54 @@ const ChatRoom: React.FC = () => {
 
         {/* Expert room: student hasn't sent first message yet */}
         {isSpec && isFirstMsgPending && isOwner && (
-          <Box
-            sx={{
-              bgcolor: '#fff',
-              borderRadius: 3,
-              p: 3,
-              mb: 3,
-              boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
-              border: '1px dashed #BFDBFE',
-            }}
-          >
-            <Typography variant="body2" fontWeight={600} color="#374151" mb={1.5}>
-              Escreve a tua dúvida ao professor de {disciplinaLabel}:
-            </Typography>
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              placeholder="Descreve a tua dúvida com o máximo detalhe..."
-              value={firstMsg}
-              onChange={e => setFirstMsg(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); handleSendFirstMessage(); }
-              }}
-              sx={{ mb: 1.5, '& .MuiOutlinedInput-root': { borderRadius: 2, '&.Mui-focused fieldset': { borderColor: accent } } }}
-            />
-            <Button
-              variant="contained"
-              endIcon={settingFirst ? <CircularProgress size={14} sx={{ color: '#fff' }} /> : <SendIcon fontSize="small" />}
-              disabled={settingFirst || !firstMsg.trim()}
-              onClick={handleSendFirstMessage}
-              sx={{ bgcolor: accent, textTransform: 'none', fontWeight: 700, borderRadius: 2, '&:hover': { bgcolor: accentDark } }}
-            >
-              Enviar ao Professor
-            </Button>
+          <Box sx={{ bgcolor: '#fff', borderRadius: 3, overflow: 'hidden', mb: 3, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: `1px solid ${accent}30` }}>
+            {/* Professor mention header */}
+            <Box sx={{ bgcolor: accentLight, px: 2.5, py: 1.5, display: 'flex', alignItems: 'center', gap: 1.5, borderBottom: `1px solid ${accent}20` }}>
+              <Avatar sx={{ bgcolor: accent, width: 32, height: 32, fontSize: '0.75rem' }}>
+                <SchoolIcon sx={{ fontSize: 18 }} />
+              </Avatar>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="body2" fontWeight={700} color={accentDark}>
+                  @Prof. de {disciplinaLabel}
+                </Typography>
+                <Typography variant="caption" color={accent} fontWeight={500}>
+                  O professor será notificado imediatamente após o envio
+                </Typography>
+              </Box>
+              <Chip
+                icon={<CheckCircleIcon sx={{ fontSize: '11px !important', color: `${accent} !important` }} />}
+                label="Notificação automática"
+                size="small"
+                sx={{ bgcolor: '#fff', color: accent, fontWeight: 700, fontSize: '0.6rem', height: 18, border: `1px solid ${accent}40`, '& .MuiChip-label': { px: 0.75 } }}
+              />
+            </Box>
+            <Box sx={{ p: 2.5 }}>
+              <TextField
+                fullWidth
+                multiline
+                rows={4}
+                autoFocus
+                placeholder={`Descreve a tua dúvida em detalhe ao professor de ${disciplinaLabel}...`}
+                value={firstMsg}
+                onChange={e => setFirstMsg(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); handleSendFirstMessage(); }
+                }}
+                sx={{ mb: 1.5, '& .MuiOutlinedInput-root': { borderRadius: 2, '&.Mui-focused fieldset': { borderColor: accent } } }}
+              />
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="caption" color="text.secondary">Ctrl+Enter para enviar rapidamente</Typography>
+                <Button
+                  variant="contained"
+                  endIcon={settingFirst ? <CircularProgress size={14} sx={{ color: '#fff' }} /> : <SendIcon fontSize="small" />}
+                  disabled={settingFirst || !firstMsg.trim()}
+                  onClick={handleSendFirstMessage}
+                  sx={{ bgcolor: accent, textTransform: 'none', fontWeight: 700, borderRadius: 2, px: 2.5, '&:hover': { bgcolor: accentDark } }}
+                >
+                  {settingFirst ? 'A enviar...' : 'Enviar ao Professor'}
+                </Button>
+              </Box>
+            </Box>
           </Box>
         )}
 
@@ -370,10 +407,28 @@ const ChatRoom: React.FC = () => {
 
         {/* No messages yet */}
         {messages.length === 0 && !isFirstMsgPending && (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography variant="body2" color="text.secondary">
-              {isCollab ? 'Sê o primeiro a participar nesta conversa...' : 'Aguarda a resposta do professor...'}
-            </Typography>
+          <Box sx={{ textAlign: 'center', py: 6 }}>
+            {isCollab ? (
+              <>
+                <GroupsIcon sx={{ fontSize: 44, color: `${accent}35`, mb: 1.5, display: 'block', mx: 'auto' }} />
+                <Typography variant="body2" fontWeight={600} color="text.secondary" gutterBottom>
+                  Sê o primeiro a participar!
+                </Typography>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  O professor de {disciplinaLabel} receberá notificação da tua primeira mensagem
+                </Typography>
+              </>
+            ) : (
+              <>
+                <SchoolIcon sx={{ fontSize: 44, color: `${accent}35`, mb: 1.5, display: 'block', mx: 'auto' }} />
+                <Typography variant="body2" fontWeight={600} color="text.secondary" gutterBottom>
+                  Aguarda a resposta do professor...
+                </Typography>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  O professor foi notificado da tua dúvida
+                </Typography>
+              </>
+            )}
           </Box>
         )}
 

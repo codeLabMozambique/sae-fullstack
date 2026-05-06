@@ -15,6 +15,12 @@
     <description>Fórum Especializado e Colaborativo do SAE</description>
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>smartsae</groupId>
             <artifactId>sae-common</artifactId>

@@ -172,6 +172,26 @@ INSERT INTO ac_subject (id, status, created_by, created_date, last_modified_by, 
 SELECT setval(pg_get_serial_sequence('ac_subject', 'id'), 20);
 
 -- ============================================================
+-- 7. UTILIZADOR DE TESTE (DEV ONLY)
+-- Login: +258849997777 / prof12345
+-- ============================================================
+INSERT INTO sae_user (
+    status, created_by, created_date, last_modified_by, last_modified_date,
+    username, email, password, full_name, enabled, rolet_id
+)
+SELECT
+    0, 0, NOW(), 0, NOW(),
+    '+258849997777',
+    'prof@sae.test',
+    '$2b$10$KKJUhQcHnzzjMs4M.fZDd.US/9swMTv7nU3A9ADQ4RAcMpjI1IQzO',
+    'Professor Teste',
+    true,
+    (SELECT id FROM role_transaction WHERE role = 'PROFESSOR' ORDER BY id LIMIT 1)
+WHERE NOT EXISTS (
+    SELECT 1 FROM sae_user WHERE username = '+258849997777'
+);
+
+-- ============================================================
 -- VERIFICAÇÃO FINAL
 -- ============================================================
 SELECT 'app_transaction' AS tabela, COUNT(*) AS total FROM app_transaction
@@ -184,4 +204,6 @@ SELECT 'ac_class_level',            COUNT(*) FROM ac_class_level
 UNION ALL
 SELECT 'ac_classroom',              COUNT(*) FROM ac_classroom
 UNION ALL
-SELECT 'ac_subject',                COUNT(*) FROM ac_subject;
+SELECT 'ac_subject',                COUNT(*) FROM ac_subject
+UNION ALL
+SELECT 'sae_user',                  COUNT(*) FROM sae_user;

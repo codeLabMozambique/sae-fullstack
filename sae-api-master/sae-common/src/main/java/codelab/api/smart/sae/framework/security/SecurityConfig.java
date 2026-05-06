@@ -30,6 +30,7 @@ public class SecurityConfig {
 						.requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.OPTIONS, "/**")).permitAll()
 						.requestMatchers(
 								AntPathRequestMatcher.antMatcher("/error"),
+								AntPathRequestMatcher.antMatcher("/health"),
 								AntPathRequestMatcher.antMatcher("/users/signup/**"),
 								AntPathRequestMatcher.antMatcher("/users/signup"),
 								AntPathRequestMatcher.antMatcher("/users/login"),
@@ -46,7 +47,8 @@ public class SecurityConfig {
 						.authenticated()
 						.requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/driving-licenses/me"))
 						.authenticated()
-						.requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/driving-licenses/users/**"))
+						.requestMatchers(
+								AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/driving-licenses/users/**"))
 						.hasAuthority(UserRoles.ADMIN.name())
 						.requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/driving-licenses/users/**"))
 						.hasAuthority(UserRoles.ADMIN.name())
