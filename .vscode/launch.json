@@ -41,6 +41,16 @@
             "projectName": "sae-common",
             "args": "",
             "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-ContentServiceApplication<sae-content-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "codelab.api.smart.sae.ContentServiceApplication",
+            "projectName": "sae-content-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
         }
     ]
 }

@@ -46,7 +46,7 @@ public class ProfessorContentResource {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Não tem permissão para apagar este conteúdo");
         }
         
-        contentService.delete(id);
+        contentService.delete(id, principal.getName());
         return ResponseEntity.noContent().build();
     }
 }

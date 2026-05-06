@@ -16,9 +16,11 @@ public class Content {
     @Id
     private String id;
 
+    @org.springframework.data.mongodb.core.index.TextIndexed(weight = 3)
     @Field("title")
     private String title;
 
+    @org.springframework.data.mongodb.core.index.TextIndexed(weight = 1)
     @Field("description")
     private String description;
 
@@ -48,6 +50,7 @@ public class Content {
     @Field("total_pages")
     private Integer totalPages;
 
+    @org.springframework.data.mongodb.core.index.TextIndexed(weight = 2)
     @Field("tags")
     private List<String> tags;
 

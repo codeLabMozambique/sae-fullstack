@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.security.Principal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/contents")
@@ -22,17 +23,26 @@ public class AdminContentResource {
     private ContentService contentService;
 
     @PostMapping(consumes = "multipart/form-data")
-    public ResponseEntity<Content> upload(@RequestPart("file") MultipartFile file,
-                                          @RequestPart("metadata") Content metadata,
-                                          Principal principal) {
+    public ResponseEntity<Content> upload(
+            @RequestPart("file") MultipartFile file,
+            @RequestPart("metadata") Content metadata,
+            Principal principal) {
         String adminUser = (principal != null) ? principal.getName() : "admin";
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(adminContentService.uploadContent(file, metadata, adminUser));
+        return ResponseEntity.status(HttpStatus.CREATED).body(adminContentService.uploadContent(file, metadata, adminUser));
+    }
+
+    @PostMapping(value = "/batch", consumes = "multipart/form-data")
+    public ResponseEntity<List<Content>> batchUpload(
+            @RequestPart("files") List<MultipartFile> files,
+            Principal principal) {
+        String adminUser = (principal != null) ? principal.getName() : "admin";
+        return ResponseEntity.status(HttpStatus.CREATED).body(adminContentService.batchUpload(files, adminUser));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
-        contentService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable String id, Principal principal) {
+        String username = (principal != null) ? principal.getName() : "admin";
+        contentService.delete(id, username);
         return ResponseEntity.noContent().build();
     }
 }
