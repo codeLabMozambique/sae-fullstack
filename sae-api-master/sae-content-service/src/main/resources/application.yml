@@ -7,3 +7,32 @@ spring:
   data:
     mongodb:
       uri: mongodb://localhost:27017/sae_content
+      auto-index-creation: true
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sae_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+smartsae:
+  security:
+    allowed-origin: "*"
+  minio:
+    endpoint: http://localhost:9000
+    access-key: admin
+    secret-key: admin123
+    bucket: sae-contents
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+  pdfbox:
+    temp-dir: ${java.io.tmpdir}/pdfbox

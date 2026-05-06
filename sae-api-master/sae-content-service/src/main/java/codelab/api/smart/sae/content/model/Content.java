@@ -1,0 +1,145 @@
+package codelab.api.smart.sae.content.model;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
+
+@Document(collection = "contents")
+public class Content {
+
+    @Id
+    private String id;
+
+    @org.springframework.data.mongodb.core.index.TextIndexed(weight = 3)
+    @Field("title")
+    private String title;
+
+    @org.springframework.data.mongodb.core.index.TextIndexed(weight = 1)
+    @Field("description")
+    private String description;
+
+    @Indexed
+    @Field("discipline")
+    private String discipline;
+
+    @Indexed
+    @Field("level")
+    private String level;
+
+    @Field("year")
+    private Integer year;
+
+    @Field("isbn")
+    private String isbn;
+
+    @Field("publisher")
+    private String publisher;
+
+    @Field("file_url")
+    private String fileUrl;
+
+    @Field("thumbnail_url")
+    private String thumbnailUrl;
+
+    @Field("total_pages")
+    private Integer totalPages;
+
+    @org.springframework.data.mongodb.core.index.TextIndexed(weight = 2)
+    @Field("tags")
+    private List<String> tags;
+
+    @Field("category_id")
+    private String categoryId;
+
+    @Indexed
+    @Field("uploaded_by")
+    private String uploadedBy;
+
+    @Field("uploaded_by_role")
+    private String uploadedByRole;
+
+    @Field("uploaded_by_name")
+    private String uploadedByName;
+
+    @Field("target_classroom_ids")
+    private List<Long> targetClassroomIds;
+
+    @Field("target_forum_ids")
+    private List<String> targetForumIds;
+
+    @CreatedDate
+    @Field("created_at")
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Field("updated_at")
+    private LocalDateTime updatedAt;
+
+    public Content() {}
+
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public String getDiscipline() { return discipline; }
+    public void setDiscipline(String discipline) { this.discipline = discipline; }
+
+    public String getLevel() { return level; }
+    public void setLevel(String level) { this.level = level; }
+
+    public Integer getYear() { return year; }
+    public void setYear(Integer year) { this.year = year; }
+
+    public String getIsbn() { return isbn; }
+    public void setIsbn(String isbn) { this.isbn = isbn; }
+
+    public String getPublisher() { return publisher; }
+    public void setPublisher(String publisher) { this.publisher = publisher; }
+
+    public String getFileUrl() { return fileUrl; }
+    public void setFileUrl(String fileUrl) { this.fileUrl = fileUrl; }
+
+    public String getThumbnailUrl() { return thumbnailUrl; }
+    public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
+
+    public Integer getTotalPages() { return totalPages; }
+    public void setTotalPages(Integer totalPages) { this.totalPages = totalPages; }
+
+    public List<String> getTags() { return tags; }
+    public void setTags(List<String> tags) { this.tags = tags; }
+
+    public String getCategoryId() { return categoryId; }
+    public void setCategoryId(String categoryId) { this.categoryId = categoryId; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public String getUploadedBy() { return uploadedBy; }
+    public void setUploadedBy(String uploadedBy) { this.uploadedBy = uploadedBy; }
+
+    public String getUploadedByRole() { return uploadedByRole; }
+    public void setUploadedByRole(String uploadedByRole) { this.uploadedByRole = uploadedByRole; }
+
+    public String getUploadedByName() { return uploadedByName; }
+    public void setUploadedByName(String uploadedByName) { this.uploadedByName = uploadedByName; }
+
+    public List<Long> getTargetClassroomIds() { return targetClassroomIds; }
+    public void setTargetClassroomIds(List<Long> targetClassroomIds) { this.targetClassroomIds = targetClassroomIds; }
+
+    public List<String> getTargetForumIds() { return targetForumIds; }
+    public void setTargetForumIds(List<String> targetForumIds) { this.targetForumIds = targetForumIds; }
+}

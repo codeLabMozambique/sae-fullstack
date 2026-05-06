@@ -1,0 +1,229 @@
+{
+	"info": {
+		"_postman_id": "89a3f3b4-5c7d-4b8a-9e2f-1a2b3c4d5e6f",
+		"name": "SAE Content Service",
+		"description": "Collection for testing the SAE Content Service endpoints.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Public",
+			"item": [
+				{
+					"name": "List Contents",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/contents?discipline=&level=&classroomId=&uploadedBy=&page=0&size=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"contents"
+							],
+							"query": [
+								{ "key": "discipline", "value": "" },
+								{ "key": "level", "value": "" },
+								{ "key": "classroomId", "value": "" },
+								{ "key": "uploadedBy", "value": "" },
+								{ "key": "page", "value": "0" },
+								{ "key": "size", "value": "20" }
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search Contents",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/contents/search?q=matematica&page=0&size=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"contents",
+								"search"
+							],
+							"query": [
+								{ "key": "q", "value": "matematica" },
+								{ "key": "page", "value": "0" },
+								{ "key": "size", "value": "20" }
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Content by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/contents/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"contents",
+								":id"
+							],
+							"variable": [
+								{ "key": "id", "value": "content-id-here" }
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "User (Authenticated)",
+			"item": [
+				{
+					"name": "Favorites",
+					"item": [
+						{
+							"name": "List Favorites",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/user/favorites",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"user",
+										"favorites"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add Favorite",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/user/favorites/:contentId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"user",
+										"favorites",
+										":contentId"
+									],
+									"variable": [
+										{ "key": "contentId", "value": "content-id-here" }
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Reading Progress",
+					"item": [
+						{
+							"name": "Update Progress",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"currentPage\": 5,\n  \"totalPages\": 20,\n  \"percentage\": 25.0\n}",
+									"options": { "raw": { "language": "json" } }
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/user/progress/:contentId",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"user",
+										"progress",
+										":contentId"
+									],
+									"variable": [
+										{ "key": "contentId", "value": "content-id-here" }
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{ "key": "token", "value": "{{token}}", "type": "string" }
+				]
+			}
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Upload Content",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{ "key": "file", "type": "file", "src": [] },
+								{ "key": "metadata", "value": "{\n  \"title\": \"Aula de Teste\",\n  \"description\": \"Descrição do conteúdo\",\n  \"discipline\": \"Matemática\",\n  \"level\": \"SECUNDARIO\",\n  \"type\": \"PDF\"\n}", "type": "text" }
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/contents",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"contents"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{ "key": "token", "value": "{{token}}", "type": "string" }
+				]
+			}
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": { "type": "text/javascript", "exec": [ "" ] }
+		},
+		{
+			"listen": "test",
+			"script": { "type": "text/javascript", "exec": [ "" ] }
+		}
+	],
+	"variable": [
+		{ "key": "baseUrl", "value": "http://localhost:8082", "type": "string" },
+		{ "key": "token", "value": "your-jwt-token-here", "type": "string" }
+	]
+}
