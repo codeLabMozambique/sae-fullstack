@@ -1,0 +1,5 @@
+$kind: http-request
+name: Login Aluno
+url: ""
+method: GET
+order: 4440689445671473

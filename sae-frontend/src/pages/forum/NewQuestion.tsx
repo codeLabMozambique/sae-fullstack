@@ -1,146 +1,324 @@
 import React, { useState } from 'react';
 import {
-  Box, Typography, TextField, Button, CircularProgress,
-  Chip, Stack, Alert, Paper,
+  Dialog, DialogContent, Box, Typography, TextField, Button,
+  CircularProgress, Stack, Alert, Avatar, IconButton, Divider,
 } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import CloseIcon from '@mui/icons-material/Close';
+import AddCommentIcon from '@mui/icons-material/AddComment';
 import { useNavigate } from 'react-router-dom';
 import { forumService } from '../../services/forumService';
-import type { QuestionType } from '../../types/forum';
+import MenuItem from '@mui/material/MenuItem';
+import type { QuestionType, DisciplinaEnum } from '../../types/forum';
 
-const AREAS = ['Matematica', 'Portugues', 'Ciencias', 'Historia', 'Ingles', 'Informatica'];
-
-const QUESTION_TYPES: { value: QuestionType; label: string; desc: string; color: string }[] = [
-  { value: 'ESPECIALIZADO', label: 'Fórum Especializado', desc: 'Respondido por professores com especialização na área', color: '#2563EB' },
-  { value: 'COLABORATIVO', label: 'Fórum Colaborativo', desc: 'Respondido por outros estudantes e validado por professores', color: '#16A34A' },
+const DISCIPLINAS: DisciplinaEnum[] = [
+  'MATEMATICA', 'FISICA', 'QUIMICA', 'BIOLOGIA', 'PORTUGUES',
+  'HISTORIA', 'GEOGRAFIA', 'INGLES', 'FILOSOFIA', 'INFORMATICA', 'GERAL'
 ];
 
-const NewQuestion: React.FC = () => {
+const TYPES: {
+  value: QuestionType;
+  label: string;
+  desc: string;
+  color: string;
+  lightBg: string;
+}[] = [
+  {
+    value: 'ESPECIALIZADO',
+    label: 'Especializado',
+    desc: 'Respondido por professores',
+    color: '#2563EB',
+    lightBg: '#DBEAFE',
+  },
+  {
+    value: 'COLABORATIVO',
+    label: 'Colaborativo',
+    desc: 'Respondido pela comunidade',
+    color: '#16A34A',
+    lightBg: '#DCFCE7',
+  },
+];
+
+interface Props {
+  open: boolean;
+  onClose: () => void;
+}
+
+const NewQuestion: React.FC<Props> = ({ open, onClose }) => {
   const navigate = useNavigate();
   const [titulo, setTitulo] = useState('');
   const [descricao, setDescricao] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
+  const [disciplina, setDisciplina] = useState<DisciplinaEnum>('GERAL');
   const [questionType, setQuestionType] = useState<QuestionType>('ESPECIALIZADO');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const addTag = () => {
-    const t = tagInput.trim().toLowerCase();
-    if (t && !tags.includes(t) && tags.length < 10) {
-      setTags([...tags, t]);
-      setTagInput('');
-    }
+  const selected = TYPES.find(t => t.value === questionType)!;
+
+  const reset = () => {
+    setTitulo('');
+    setDescricao('');
+    setDisciplina('GERAL');
+    setQuestionType('ESPECIALIZADO');
+    setError('');
   };
 
-  const removeTag = (tag: string) => setTags(tags.filter(t => t !== tag));
+  const handleClose = () => {
+    reset();
+    onClose();
+  };
 
   const handleSubmit = async () => {
     setError('');
-    if (!titulo.trim() || !descricao.trim()) { setError('Título e descrição são obrigatórios'); return; }
+    if (!titulo.trim() || !descricao.trim()) {
+      setError('Título e mensagem são obrigatórios');
+      return;
+    }
     setSubmitting(true);
     try {
       const q = await forumService.createQuestion({
         titulo: titulo.trim(),
         descricao: descricao.trim(),
-        tags: tags.join(',') || undefined,
+        disciplina,
         questionType,
       });
+      reset();
+      onClose();
       navigate(`/app/forum/questions/${q.id}`);
     } catch (e: any) {
-      setError(e?.response?.data?.message || 'Erro ao criar pergunta');
+      setError(e?.response?.data?.message || 'Erro ao criar conversa');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const selectedType = QUESTION_TYPES.find(t => t.value === questionType)!;
-
   return (
-    <Box>
-      <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/app/forum')}
-        sx={{ mb: 2, textTransform: 'none', color: '#6B7280' }}>
-        Voltar ao Fórum
-      </Button>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          overflow: 'hidden',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.16)',
+        },
+      }}
+    >
+      {/* Dialog header */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          px: 2.5,
+          py: 2,
+          borderBottom: `3px solid ${selected.color}`,
+        }}
+      >
+        <Avatar
+          sx={{
+            bgcolor: selected.lightBg,
+            color: selected.color,
+            fontWeight: 700,
+            width: 38,
+            height: 38,
+          }}
+        >
+          <AddCommentIcon fontSize="small" />
+        </Avatar>
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="body1" fontWeight={700} color="#111827">
+            Nova Conversa
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Inicia uma nova discussão no fórum
+          </Typography>
+        </Box>
+        <IconButton size="small" onClick={handleClose} sx={{ color: '#9CA3AF' }}>
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      </Box>
 
-      <Typography variant="h5" fontWeight={700} color="#0A1628" sx={{ mb: 3 }}>Nova Pergunta</Typography>
+      <DialogContent sx={{ p: 3 }}>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2.5 }}>
+            {error}
+          </Alert>
+        )}
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
-      <Paper sx={{ p: 3, borderRadius: 2 }}>
-        {/* Forum type selection */}
-        <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5 }}>Tipo de Fórum</Typography>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }}>
-          {QUESTION_TYPES.map(type => (
+        {/* Type selection */}
+        <Typography
+          variant="caption"
+          fontWeight={700}
+          color="#9CA3AF"
+          sx={{ mb: 1, display: 'block', textTransform: 'uppercase', letterSpacing: 0.5 }}
+        >
+          Tipo de Fórum
+        </Typography>
+        <Stack direction="row" spacing={1.5} sx={{ mb: 3 }}>
+          {TYPES.map(type => (
             <Box
               key={type.value}
               onClick={() => setQuestionType(type.value)}
               sx={{
-                flex: 1, p: 2, borderRadius: 2, cursor: 'pointer',
-                border: questionType === type.value ? `2px solid ${type.color}` : '2px solid #E5E7EB',
-                bgcolor: questionType === type.value ? `${type.color}08` : '#fff',
-                transition: 'all 0.2s',
+                flex: 1,
+                p: 1.5,
+                borderRadius: 2.5,
+                cursor: 'pointer',
+                border:
+                  questionType === type.value
+                    ? `2px solid ${type.color}`
+                    : '2px solid #F3F4F6',
+                bgcolor:
+                  questionType === type.value ? `${type.color}08` : '#FAFAFA',
+                transition: 'all 0.18s',
+                '&:hover': { borderColor: type.color, bgcolor: `${type.color}05` },
               }}
             >
-              <Typography fontWeight={700} color={questionType === type.value ? type.color : '#374151'}>
-                {type.label}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.25 }}>
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    bgcolor:
+                      questionType === type.value ? type.color : '#D1D5DB',
+                    transition: 'background-color 0.18s',
+                  }}
+                />
+                <Typography
+                  variant="body2"
+                  fontWeight={700}
+                  color={questionType === type.value ? type.color : '#374151'}
+                >
+                  {type.label}
+                </Typography>
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ pl: 2.25 }}>
+                {type.desc}
               </Typography>
-              <Typography variant="caption" color="text.secondary">{type.desc}</Typography>
             </Box>
           ))}
         </Stack>
 
         {/* Title */}
-        <TextField fullWidth label="Título da pergunta" value={titulo}
-          onChange={e => setTitulo(e.target.value)} sx={{ mb: 2 }}
-          inputProps={{ maxLength: 200 }}
+        <Typography
+          variant="caption"
+          fontWeight={700}
+          color="#9CA3AF"
+          sx={{ mb: 1, display: 'block', textTransform: 'uppercase', letterSpacing: 0.5 }}
+        >
+          Título
+        </Typography>
+        <TextField
+          fullWidth
+          placeholder="De que se trata a tua pergunta?"
+          value={titulo}
+          onChange={e => setTitulo(e.target.value)}
+          slotProps={{ htmlInput: { maxLength: 200 } }}
           helperText={`${titulo.length}/200`}
+          sx={{
+            mb: 2.5,
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 2,
+              '&.Mui-focused fieldset': { borderColor: selected.color },
+            },
+          }}
         />
 
         {/* Description */}
-        <TextField fullWidth multiline rows={5} label="Descrição detalhada"
-          value={descricao} onChange={e => setDescricao(e.target.value)} sx={{ mb: 2 }}
-          placeholder="Explica a tua dúvida com o máximo de detalhe possível..."
-        />
-
-        {/* Tags */}
-        <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>Tags (opcional)</Typography>
-        <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-          <TextField size="small" placeholder="Adicionar tag..."
-            value={tagInput} onChange={e => setTagInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag())}
-            sx={{ flex: 1 }}
+        <Typography
+          variant="caption"
+          fontWeight={700}
+          color="#9CA3AF"
+          sx={{ mb: 1, display: 'block', textTransform: 'uppercase', letterSpacing: 0.5 }}
+        >
+          Mensagem
+        </Typography>
+        <Box
+          sx={{
+            border: '1px solid #E5E7EB',
+            borderRadius: 2,
+            overflow: 'hidden',
+            mb: 2.5,
+            '&:focus-within': {
+              borderColor: selected.color,
+              boxShadow: `0 0 0 2px ${selected.color}18`,
+            },
+          }}
+        >
+          <TextField
+            fullWidth
+            multiline
+            rows={4}
+            placeholder="Explica a tua dúvida com o máximo detalhe..."
+            value={descricao}
+            onChange={e => setDescricao(e.target.value)}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': { border: 'none' },
+              },
+            }}
           />
-          <Button variant="outlined" size="small" onClick={addTag}
-            sx={{ textTransform: 'none', borderColor: selectedType.color, color: selectedType.color }}>
-            Adicionar
-          </Button>
         </Box>
-        <Box sx={{ mb: 1 }}>
-          {AREAS.map(a => (
-            <Chip key={a} label={a} size="small" clickable variant="outlined"
-              onClick={() => !tags.includes(a.toLowerCase()) && setTags([...tags, a.toLowerCase()])}
-              sx={{ mr: 0.5, mb: 0.5, fontSize: '0.7rem' }}
-            />
-          ))}
-        </Box>
-        {tags.length > 0 && (
-          <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 2 }}>
-            {tags.map(t => (
-              <Chip key={t} label={t} onDelete={() => removeTag(t)} size="small"
-                sx={{ bgcolor: `${selectedType.color}15`, color: selectedType.color, fontWeight: 600 }}
-              />
-            ))}
-          </Stack>
-        )}
 
-        <Button fullWidth variant="contained" size="large" onClick={handleSubmit}
+        {/* Disciplina Select */}
+        <Typography
+          variant="caption"
+          fontWeight={700}
+          color="#9CA3AF"
+          sx={{ mb: 1, display: 'block', textTransform: 'uppercase', letterSpacing: 0.5 }}
+        >
+          Disciplina
+        </Typography>
+        <TextField
+          select
+          fullWidth
+          value={disciplina}
+          onChange={e => setDisciplina(e.target.value as DisciplinaEnum)}
+          sx={{
+            mb: 2.5,
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 2,
+              '&.Mui-focused fieldset': { borderColor: selected.color },
+            },
+          }}
+        >
+          {DISCIPLINAS.map((disc) => (
+            <MenuItem key={disc} value={disc}>
+              {disc}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <Divider sx={{ mt: 2, mb: 2.5 }} />
+
+        {/* Submit */}
+        <Button
+          fullWidth
+          variant="contained"
+          size="large"
+          onClick={handleSubmit}
           disabled={submitting || !titulo.trim() || !descricao.trim()}
-          sx={{ mt: 1, bgcolor: selectedType.color, '&:hover': { filter: 'brightness(0.9)' }, textTransform: 'none', fontWeight: 700 }}>
-          {submitting ? <CircularProgress size={22} sx={{ color: '#fff' }} /> : 'Publicar Pergunta'}
+          sx={{
+            bgcolor: selected.color,
+            borderRadius: 2.5,
+            '&:hover': { filter: 'brightness(0.92)' },
+            textTransform: 'none',
+            fontWeight: 700,
+            py: 1.25,
+            boxShadow: `0 4px 14px ${selected.color}35`,
+          }}
+        >
+          {submitting ? (
+            <CircularProgress size={22} sx={{ color: '#fff' }} />
+          ) : (
+            'Iniciar Conversa'
+          )}
         </Button>
-      </Paper>
-    </Box>
+      </DialogContent>
+    </Dialog>
   );
 };
 

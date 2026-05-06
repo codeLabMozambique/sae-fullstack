@@ -1,13 +1,33 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Box, Typography, Card, CardContent, Button, CircularProgress,
-  Alert, Stack, Divider, Chip, Pagination,
+  Box, Typography, Button, CircularProgress,
+  Alert, Stack, Chip, Pagination, Avatar,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { forumService } from '../../services/forumService';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import type { CollaborativeAnswer } from '../../types/forum';
+
+function initials(name: string): string {
+  return name
+    .split(/[\s._@-]+/)
+    .map(w => w[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase() || '?';
+}
+
+function formatTime(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('pt-PT', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
 const Validations: React.FC = () => {
   const { subscribe } = useWebSocket();
@@ -65,82 +85,196 @@ const Validations: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h5" fontWeight={700} color="#0A1628" sx={{ mb: 0.5 }}>
-        Painel de Validação
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Respostas colaborativas a aguardar validação
-      </Typography>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h5" fontWeight={700} color="#0A1628">
+          Painel de Validação
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Respostas colaborativas a aguardar a tua aprovação
+        </Typography>
+      </Box>
 
       {feedback && (
-        <Alert severity={feedback.type} sx={{ mb: 2 }} onClose={() => setFeedback(null)}>
+        <Alert
+          severity={feedback.type}
+          sx={{ mb: 2.5 }}
+          onClose={() => setFeedback(null)}
+        >
           {feedback.msg}
         </Alert>
       )}
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress sx={{ color: '#16A34A' }} />
+          <CircularProgress sx={{ color: '#16A34A' }} size={28} />
         </Box>
       ) : answers.length === 0 ? (
-        <Box sx={{ textAlign: 'center', py: 8 }}>
-          <CheckCircleIcon sx={{ fontSize: 48, color: '#16A34A', mb: 2 }} />
-          <Typography color="text.secondary">Sem respostas pendentes de validação.</Typography>
+        <Box
+          sx={{
+            textAlign: 'center',
+            py: 10,
+            bgcolor: '#fff',
+            borderRadius: 3,
+            boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+          }}
+        >
+          <CheckCircleIcon sx={{ fontSize: 52, color: '#DCFCE7', mb: 1.5 }} />
+          <Typography fontWeight={600} color="text.secondary">
+            Sem respostas pendentes
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+            Todas as respostas foram processadas
+          </Typography>
         </Box>
       ) : (
-        <Stack spacing={2}>
-          {answers.map(answer => (
-            <Card key={answer.id} sx={{ border: '1px solid #E5E7EB', borderRadius: 2 }}>
-              <CardContent sx={{ p: 2.5 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                  <Chip label="Pendente" size="small"
-                    sx={{ bgcolor: '#FEF9C3', color: '#A16207', fontWeight: 600 }} />
-                  <Typography variant="caption" color="text.secondary">
-                    Pergunta #{answer.questionId}
+        <Box
+          sx={{
+            bgcolor: '#fff',
+            borderRadius: 3,
+            overflow: 'hidden',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+          }}
+        >
+          {answers.map((answer, idx) => (
+            <Box
+              key={answer.id}
+              sx={{
+                display: 'flex',
+                gap: 2,
+                px: 2.5,
+                py: 2,
+                borderBottom: idx < answers.length - 1 ? '1px solid #F3F4F6' : 'none',
+                '&:hover': { bgcolor: '#FAFAFA' },
+                transition: 'background-color 0.15s',
+              }}
+            >
+              {/* Avatar */}
+              <Avatar
+                sx={{
+                  bgcolor: '#FEF9C3',
+                  color: '#A16207',
+                  fontWeight: 700,
+                  width: 40,
+                  height: 40,
+                  fontSize: '0.82rem',
+                  flexShrink: 0,
+                  mt: 0.25,
+                }}
+              >
+                {initials(answer.answeredBy)}
+              </Avatar>
+
+              {/* Content */}
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                {/* Header row */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 0.75,
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2" fontWeight={700} color="#111827">
+                      {answer.answeredBy}
+                    </Typography>
+                    <Chip
+                      icon={<AccessTimeIcon sx={{ fontSize: '10px !important' }} />}
+                      label="Pendente"
+                      size="small"
+                      sx={{
+                        bgcolor: '#FEF9C3',
+                        color: '#A16207',
+                        fontWeight: 600,
+                        fontSize: '0.62rem',
+                        height: 18,
+                        '& .MuiChip-label': { px: 0.75 },
+                        '& .MuiChip-icon': { ml: 0.5 },
+                      }}
+                    />
+                  </Box>
+                  <Typography variant="caption" color="#9CA3AF" sx={{ fontSize: '0.72rem' }}>
+                    Pergunta #{answer.questionId} · {formatTime(answer.createdAt)}
                   </Typography>
                 </Box>
 
-                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mb: 2, color: '#1F2937' }}>
-                  {answer.conteudo}
-                </Typography>
-
-                <Divider sx={{ mb: 2 }} />
-
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="caption" color="text.secondary">
-                    Por {answer.answeredBy} · {new Date(answer.createdAt).toLocaleDateString('pt-PT')}
+                {/* Answer content bubble */}
+                <Box
+                  sx={{
+                    bgcolor: '#F9FAFB',
+                    borderRadius: '4px 12px 12px 12px',
+                    px: 1.75,
+                    py: 1.25,
+                    borderLeft: '3px solid #FCD34D',
+                    mb: 1.25,
+                  }}
+                >
+                  <Typography
+                    variant="body2"
+                    color="#1F2937"
+                    sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.65 }}
+                  >
+                    {answer.conteudo}
                   </Typography>
-                  <Stack direction="row" spacing={1}>
-                    <Button
-                      size="small" variant="outlined" startIcon={<CancelIcon />}
-                      disabled={processing === answer.id}
-                      onClick={() => handleReject(answer.id)}
-                      sx={{ textTransform: 'none', borderColor: '#EF4444', color: '#EF4444',
-                        '&:hover': { bgcolor: '#FEF2F2', borderColor: '#EF4444' } }}
-                    >
-                      Rejeitar
-                    </Button>
-                    <Button
-                      size="small" variant="contained" startIcon={<CheckCircleIcon />}
-                      disabled={processing === answer.id}
-                      onClick={() => handleValidate(answer.id)}
-                      sx={{ textTransform: 'none', bgcolor: '#16A34A', '&:hover': { bgcolor: '#15803D' } }}
-                    >
-                      {processing === answer.id
-                        ? <CircularProgress size={16} sx={{ color: '#fff' }} />
-                        : 'Validar'}
-                    </Button>
-                  </Stack>
                 </Box>
-              </CardContent>
-            </Card>
+
+                {/* Action buttons */}
+                <Stack direction="row" spacing={1} justifyContent="flex-end">
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    disabled={processing === answer.id}
+                    startIcon={<CancelIcon sx={{ fontSize: '13px !important' }} />}
+                    onClick={() => handleReject(answer.id)}
+                    sx={{
+                      textTransform: 'none',
+                      borderColor: '#EF4444',
+                      color: '#EF4444',
+                      fontWeight: 600,
+                      fontSize: '0.78rem',
+                      borderRadius: 2,
+                      '&:hover': { bgcolor: '#FEF2F2', borderColor: '#EF4444' },
+                    }}
+                  >
+                    Rejeitar
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    disabled={processing === answer.id}
+                    startIcon={<CheckCircleIcon sx={{ fontSize: '13px !important' }} />}
+                    onClick={() => handleValidate(answer.id)}
+                    sx={{
+                      textTransform: 'none',
+                      bgcolor: '#16A34A',
+                      fontWeight: 600,
+                      fontSize: '0.78rem',
+                      borderRadius: 2,
+                      '&:hover': { bgcolor: '#15803D' },
+                    }}
+                  >
+                    {processing === answer.id ? (
+                      <CircularProgress size={14} sx={{ color: '#fff' }} />
+                    ) : (
+                      'Validar'
+                    )}
+                  </Button>
+                </Stack>
+              </Box>
+            </Box>
           ))}
-        </Stack>
+        </Box>
       )}
 
       {totalPages > 1 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-          <Pagination count={totalPages} page={page} onChange={(_, p) => setPage(p)} color="primary" />
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+          <Pagination
+            count={totalPages}
+            page={page}
+            onChange={(_, p) => setPage(p)}
+            color="primary"
+          />
         </Box>
       )}
     </Box>

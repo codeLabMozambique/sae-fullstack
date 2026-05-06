@@ -33,10 +33,16 @@ public class ExpertAnswerService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Pergunta já está fechada");
         }
 
-        boolean canAnswer = authServiceClient.canProfessorAnswerArea(professorUsername, question.getArea());
+        boolean canAnswer = authServiceClient.canProfessorAnswerArea(professorUsername, question.getDisciplina());
         if (!canAnswer) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "A sua especialização não corresponde à área desta pergunta: " + question.getArea());
+                String.format("A sua especialização não corresponde à área desta pergunta (%s). Áreas permitidas para si: %s", 
+                question.getDisciplina().name(), 
+                java.util.Arrays.toString(authServiceClient.getProfessorSpecializations(professorUsername))));
+        }
+
+        if (request.getConteudo() == null || request.getConteudo().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Conteúdo da resposta é obrigatório");
         }
 
         ExpertAnswerEntity answer = new ExpertAnswerEntity();

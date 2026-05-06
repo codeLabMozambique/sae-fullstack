@@ -18,13 +18,14 @@ interface Props {
   children: React.ReactNode;
 }
 
-const menuItems = [
-  { text: 'Dashboard', icon: <DashboardIcon />, path: '/app/dashboard' },
-  { text: 'Biblioteca Digital', icon: <LibraryIcon />, path: '/app/biblioteca' },
-  { text: 'Fórum', icon: <ForumIcon />, path: '/app/forum' },
-  { text: 'Chat com IA', icon: <ChatIcon />, path: '/app/chat' },
-  { text: 'Validações', icon: <ValidationsIcon />, path: '/app/forum/validations' },
-  { text: 'Painel Administrativo', icon: <AdminIcon />, path: '/app/admin' },
+// roles that can see each item — undefined means all authenticated users
+const ALL_MENU_ITEMS = [
+  { text: 'Dashboard',             icon: <DashboardIcon />,   path: '/app/dashboard' },
+  { text: 'Biblioteca Digital',    icon: <LibraryIcon />,     path: '/app/biblioteca' },
+  { text: 'Fórum',                 icon: <ForumIcon />,       path: '/app/forum' },
+  { text: 'Chat com IA',           icon: <ChatIcon />,        path: '/app/chat' },
+  { text: 'Validações',            icon: <ValidationsIcon />, path: '/app/forum/validations', roles: ['Professor', 'Administrador', 'Root'] },
+  { text: 'Painel Administrativo', icon: <AdminIcon />,       path: '/app/admin',              roles: ['Administrador', 'Root'] },
 ];
 
 const MainLayout: React.FC<Props> = ({ children }) => {
@@ -41,6 +42,10 @@ const MainLayout: React.FC<Props> = ({ children }) => {
     logout();
     navigate('/login');
   };
+
+  const menuItems = ALL_MENU_ITEMS.filter(
+    item => !item.roles || item.roles.includes(user?.role ?? ''),
+  );
 
   const currentPage = [...menuItems]
     .sort((a, b) => b.path.length - a.path.length)

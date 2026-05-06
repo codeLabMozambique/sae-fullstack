@@ -24,12 +24,25 @@ export interface CollaborativeAnswer {
   createdAt: string;
 }
 
+export type DisciplinaEnum = 
+  | 'MATEMATICA' 
+  | 'FISICA' 
+  | 'QUIMICA' 
+  | 'BIOLOGIA' 
+  | 'PORTUGUES' 
+  | 'HISTORIA' 
+  | 'GEOGRAFIA' 
+  | 'INGLES' 
+  | 'FILOSOFIA' 
+  | 'INFORMATICA' 
+  | 'GERAL';
+
 export interface ForumQuestion {
   id: number;
   titulo: string;
   descricao: string;
   tags: string | null;
-  area: string;
+  disciplina: DisciplinaEnum;
   questionType: QuestionType;
   status: QuestionStatus;
   createdBy: string;
@@ -60,7 +73,7 @@ export interface NotificationPayload {
 export interface CreateQuestionRequest {
   titulo: string;
   descricao: string;
-  tags?: string;
+  disciplina: DisciplinaEnum;
   questionType: QuestionType;
 }
 

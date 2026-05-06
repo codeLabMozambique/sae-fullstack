@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box, Typography, Tabs, Tab, TextField, MenuItem, Button,
-  Grid, CircularProgress, Pagination, Stack, InputAdornment,
+  CircularProgress, InputAdornment, Stack, Pagination,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import AddIcon from '@mui/icons-material/Add';
-import { useNavigate } from 'react-router-dom';
-import QuestionCard from '../../components/forum/QuestionCard';
+import AddCommentIcon from '@mui/icons-material/AddComment';
+import ForumIcon from '@mui/icons-material/Forum';
+import ChatConversationRow from '../../components/forum/ChatConversationRow';
+import NewQuestion from './NewQuestion';
 import { forumService } from '../../services/forumService';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import type { ForumQuestion, QuestionType, QuestionStatus } from '../../types/forum';
@@ -18,9 +19,9 @@ const STATUS_OPTIONS: { label: string; value: QuestionStatus | '' }[] = [
 ];
 
 const ForumList: React.FC = () => {
-  const navigate = useNavigate();
   const { subscribe } = useWebSocket();
 
+  const [newOpen, setNewOpen] = useState(false);
   const [tab, setTab] = useState<0 | 1>(0);
   const [questions, setQuestions] = useState<ForumQuestion[]>([]);
   const [loading, setLoading] = useState(false);
@@ -30,6 +31,8 @@ const ForumList: React.FC = () => {
   const [status, setStatus] = useState<QuestionStatus | ''>('');
 
   const questionType: QuestionType = tab === 0 ? 'ESPECIALIZADO' : 'COLABORATIVO';
+  const accent = tab === 0 ? '#2563EB' : '#16A34A';
+  const accentDark = tab === 0 ? '#1D4ED8' : '#15803D';
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -39,7 +42,7 @@ const ForumList: React.FC = () => {
         area: area || undefined,
         status: status || undefined,
         page: page - 1,
-        size: 10,
+        size: 15,
       });
       setQuestions(res.content);
       setTotalPages(res.totalPages || 1);
@@ -50,82 +53,178 @@ const ForumList: React.FC = () => {
 
   useEffect(() => { load(); }, [load]);
 
-  // Real-time: insert new question at top when notified
   useEffect(() => {
-    const topic = `/topic/questions/${area || '*'}`;
-    subscribe(topic, () => load());
+    subscribe(`/topic/questions/${area || '*'}`, () => load());
   }, [subscribe, area, load]);
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      {/* Page header */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 3,
+        }}
+      >
         <Box>
-          <Typography variant="h5" fontWeight={700} color="#0A1628">Fórum</Typography>
+          <Typography variant="h5" fontWeight={700} color="#0A1628">
+            Fórum
+          </Typography>
           <Typography variant="body2" color="text.secondary">
-            Coloca dúvidas e colabora com outros estudantes
+            Conversas e dúvidas da comunidade
           </Typography>
         </Box>
         <Button
           variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => navigate('/app/forum/new')}
-          sx={{ bgcolor: '#2563EB', '&:hover': { bgcolor: '#1D4ED8' }, textTransform: 'none', fontWeight: 700 }}
+          startIcon={<AddCommentIcon />}
+          onClick={() => setNewOpen(true)}
+          sx={{
+            bgcolor: accent,
+            '&:hover': { bgcolor: accentDark },
+            textTransform: 'none',
+            fontWeight: 700,
+            borderRadius: 2.5,
+            px: 2.5,
+            boxShadow: `0 4px 14px ${accent}40`,
+          }}
         >
-          Nova Pergunta
+          Nova Conversa
         </Button>
       </Box>
 
-      <Tabs
-        value={tab}
-        onChange={(_, v) => { setTab(v); setPage(1); }}
-        sx={{ mb: 2, borderBottom: '1px solid #E5E7EB' }}
+      {/* Main card */}
+      <Box
+        sx={{
+          bgcolor: '#fff',
+          borderRadius: 3,
+          overflow: 'hidden',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+        }}
       >
-        <Tab label="Fórum Especializado" sx={{ color: tab === 0 ? '#2563EB' : undefined, fontWeight: tab === 0 ? 700 : 400 }} />
-        <Tab label="Fórum Colaborativo"  sx={{ color: tab === 1 ? '#16A34A' : undefined, fontWeight: tab === 1 ? 700 : 400 }} />
-      </Tabs>
+        {/* Tab bar */}
+        <Box sx={{ borderBottom: '1px solid #F3F4F6', px: 2 }}>
+          <Tabs
+            value={tab}
+            onChange={(_, v) => { setTab(v); setPage(1); }}
+            slotProps={{
+              indicator: {
+                style: {
+                  backgroundColor: accent,
+                  height: 3,
+                  borderRadius: '3px 3px 0 0',
+                },
+              },
+            }}
+            sx={{ minHeight: 48 }}
+          >
+            <Tab
+              label="Especializado"
+              sx={{
+                textTransform: 'none',
+                fontWeight: tab === 0 ? 700 : 400,
+                color: tab === 0 ? '#2563EB' : '#6B7280',
+                minHeight: 48,
+                fontSize: '0.9rem',
+              }}
+            />
+            <Tab
+              label="Colaborativo"
+              sx={{
+                textTransform: 'none',
+                fontWeight: tab === 1 ? 700 : 400,
+                color: tab === 1 ? '#16A34A' : '#6B7280',
+                minHeight: 48,
+                fontSize: '0.9rem',
+              }}
+            />
+          </Tabs>
+        </Box>
 
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }}>
-        <TextField
-          size="small"
-          placeholder="Filtrar por área..."
-          value={area}
-          onChange={e => { setArea(e.target.value); setPage(1); }}
-          InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }}
-          sx={{ minWidth: 200 }}
-        />
-        <TextField
-          select size="small" value={status}
-          onChange={e => { setStatus(e.target.value as QuestionStatus | ''); setPage(1); }}
-          sx={{ minWidth: 140 }}
+        {/* Filter bar */}
+        <Box
+          sx={{
+            px: 2.5,
+            py: 1.5,
+            borderBottom: '1px solid #F3F4F6',
+            bgcolor: '#FAFAFA',
+          }}
         >
-          {STATUS_OPTIONS.map(o => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
-        </TextField>
-      </Stack>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+            <TextField
+              size="small"
+              placeholder="Pesquisar por área..."
+              value={area}
+              onChange={e => { setArea(e.target.value); setPage(1); }}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" sx={{ color: '#9CA3AF' }} />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+              sx={{
+                minWidth: 220,
+                '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: '#fff' },
+              }}
+            />
+            <TextField
+              select
+              size="small"
+              value={status}
+              onChange={e => { setStatus(e.target.value as QuestionStatus | ''); setPage(1); }}
+              sx={{
+                minWidth: 140,
+                '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: '#fff' },
+              }}
+            >
+              {STATUS_OPTIONS.map(o => (
+                <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
+              ))}
+            </TextField>
+          </Stack>
+        </Box>
 
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-          <CircularProgress sx={{ color: tab === 0 ? '#2563EB' : '#16A34A' }} />
-        </Box>
-      ) : questions.length === 0 ? (
-        <Box sx={{ textAlign: 'center', py: 8 }}>
-          <Typography color="text.secondary">Nenhuma pergunta encontrada.</Typography>
-        </Box>
-      ) : (
-        <Grid container spacing={2}>
-          {questions.map(q => (
-            <Grid size={{ xs: 12 }} key={q.id}>
-              <QuestionCard question={q} />
-            </Grid>
-          ))}
-        </Grid>
-      )}
+        {/* Conversation list */}
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <CircularProgress sx={{ color: accent }} size={28} />
+          </Box>
+        ) : questions.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 10 }}>
+            <ForumIcon sx={{ fontSize: 52, color: '#E5E7EB', mb: 1.5 }} />
+            <Typography fontWeight={600} color="text.secondary">
+              Nenhuma conversa encontrada
+            </Typography>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              display="block"
+              sx={{ mt: 0.5 }}
+            >
+              Clica em "Nova Conversa" para iniciar a primeira
+            </Typography>
+          </Box>
+        ) : (
+          questions.map(q => <ChatConversationRow key={q.id} question={q} />)
+        )}
+      </Box>
 
       {totalPages > 1 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-          <Pagination count={totalPages} page={page} onChange={(_, p) => setPage(p)}
-            color="primary" />
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+          <Pagination
+            count={totalPages}
+            page={page}
+            onChange={(_, p) => setPage(p)}
+            color="primary"
+          />
         </Box>
       )}
+
+      <NewQuestion open={newOpen} onClose={() => { setNewOpen(false); load(); }} />
     </Box>
   );
 };

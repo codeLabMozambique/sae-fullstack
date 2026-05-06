@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Table(
     name = "FORUM_QUESTION",
     indexes = {
-        @Index(name = "idx_question_area",   columnList = "area"),
+        @Index(name = "idx_question_area",   columnList = "AREA"),
         @Index(name = "idx_question_status", columnList = "status"),
         @Index(name = "idx_question_type",   columnList = "questionType")
     }
@@ -33,8 +33,9 @@ public class ForumQuestionEntity implements Serializable {
     @Column(name = "TAGS", length = 500)
     private String tags;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "AREA", length = 100)
-    private String area;
+    private codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "QUESTION_TYPE", nullable = false)
@@ -76,8 +77,8 @@ public class ForumQuestionEntity implements Serializable {
     public String getTags() { return tags; }
     public void setTags(String tags) { this.tags = tags; }
 
-    public String getArea() { return area; }
-    public void setArea(String area) { this.area = area; }
+    public codelab.api.smart.sae.forum.enums.DisciplinaEnum getDisciplina() { return disciplina; }
+    public void setDisciplina(codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina) { this.disciplina = disciplina; }
 
     public QuestionType getQuestionType() { return questionType; }
     public void setQuestionType(QuestionType questionType) { this.questionType = questionType; }

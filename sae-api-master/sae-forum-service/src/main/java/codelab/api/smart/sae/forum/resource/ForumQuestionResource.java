@@ -38,11 +38,11 @@ public class ForumQuestionResource {
     // EP-2: Listar perguntas com filtros e paginação
     @GetMapping
     public ResponseEntity<Page<QuestionResponseDTO>> list(
-            @RequestParam(required = false) String area,
+            @RequestParam(required = false) codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina,
             @RequestParam(required = false) QuestionType questionType,
             @RequestParam(required = false) QuestionStatus status,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(questionService.list(area, questionType, status, pageable));
+        return ResponseEntity.ok(questionService.list(disciplina, questionType, status, pageable));
     }
 
     // EP-3: Detalhe de uma pergunta com respostas

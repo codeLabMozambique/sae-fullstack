@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import codelab.api.smart.sae.forum.service.AuthServiceClient;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -28,6 +29,7 @@ class CollaborativeAnswerServiceTest {
     @Mock private CollaborativeAnswerRepository answerRepository;
     @Mock private ForumQuestionService questionService;
     @Mock private NotificationService notificationService;
+    @Mock private AuthServiceClient authServiceClient;
 
     @InjectMocks
     private CollaborativeAnswerService collaborativeAnswerService;
@@ -42,7 +44,7 @@ class CollaborativeAnswerServiceTest {
         collaborativeQuestion.setQuestionType(QuestionType.COLABORATIVO);
         collaborativeQuestion.setStatus(QuestionStatus.ABERTA);
         collaborativeQuestion.setCreatedBy("student1");
-        collaborativeQuestion.setArea("Matematica");
+        collaborativeQuestion.setDisciplina(codelab.api.smart.sae.forum.enums.DisciplinaEnum.MATEMATICA);
 
         request = new CreateCollaborativeAnswerRequestDTO();
         request.setConteudo("Resposta colaborativa de teste");
@@ -95,6 +97,8 @@ class CollaborativeAnswerServiceTest {
     void validate_pendingAnswer_setsValidatedFields() {
         CollaborativeAnswerEntity answer = buildAnswer(1L, ValidationStatus.PENDENTE);
         when(answerRepository.findById(1L)).thenReturn(Optional.of(answer));
+        when(questionService.getEntityById(1L)).thenReturn(collaborativeQuestion);
+        when(authServiceClient.canProfessorAnswerArea("prof1", codelab.api.smart.sae.forum.enums.DisciplinaEnum.MATEMATICA)).thenReturn(true);
         when(answerRepository.save(any())).thenReturn(answer);
 
         CollaborativeAnswerResponseDTO result = collaborativeAnswerService.validate(1L, "prof1");
@@ -110,6 +114,8 @@ class CollaborativeAnswerServiceTest {
         CollaborativeAnswerEntity answer = buildAnswer(1L, ValidationStatus.VALIDADA);
         answer.setValidatedBy("prof1");
         when(answerRepository.findById(1L)).thenReturn(Optional.of(answer));
+        when(questionService.getEntityById(1L)).thenReturn(collaborativeQuestion);
+        when(authServiceClient.canProfessorAnswerArea("prof1", codelab.api.smart.sae.forum.enums.DisciplinaEnum.MATEMATICA)).thenReturn(true);
 
         CollaborativeAnswerResponseDTO result = collaborativeAnswerService.validate(1L, "prof1");
 
@@ -122,6 +128,8 @@ class CollaborativeAnswerServiceTest {
     void reject_pendingAnswer_setsRejectedFields() {
         CollaborativeAnswerEntity answer = buildAnswer(1L, ValidationStatus.PENDENTE);
         when(answerRepository.findById(1L)).thenReturn(Optional.of(answer));
+        when(questionService.getEntityById(1L)).thenReturn(collaborativeQuestion);
+        when(authServiceClient.canProfessorAnswerArea("prof1", codelab.api.smart.sae.forum.enums.DisciplinaEnum.MATEMATICA)).thenReturn(true);
         when(answerRepository.save(any())).thenReturn(answer);
 
         CollaborativeAnswerResponseDTO result = collaborativeAnswerService.reject(1L, "prof1");
@@ -135,6 +143,8 @@ class CollaborativeAnswerServiceTest {
         CollaborativeAnswerEntity answer = buildAnswer(1L, ValidationStatus.PENDENTE);
         answer.setRejectedBy("prof1");
         when(answerRepository.findById(1L)).thenReturn(Optional.of(answer));
+        when(questionService.getEntityById(1L)).thenReturn(collaborativeQuestion);
+        when(authServiceClient.canProfessorAnswerArea("prof1", codelab.api.smart.sae.forum.enums.DisciplinaEnum.MATEMATICA)).thenReturn(true);
 
         collaborativeAnswerService.reject(1L, "prof1");
 

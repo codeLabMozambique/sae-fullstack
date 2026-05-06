@@ -14,8 +14,8 @@ public class CreateQuestionRequestDTO {
     @NotBlank(message = "Descrição é obrigatória")
     private String descricao;
 
-    @Size(max = 500, message = "Tags não podem exceder 500 caracteres")
-    private String tags;
+    @NotNull(message = "Disciplina é obrigatória")
+    private codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina;
 
     private QuestionType questionType;
 
@@ -25,8 +25,8 @@ public class CreateQuestionRequestDTO {
     public String getDescricao() { return descricao; }
     public void setDescricao(String descricao) { this.descricao = descricao; }
 
-    public String getTags() { return tags; }
-    public void setTags(String tags) { this.tags = tags; }
+    public codelab.api.smart.sae.forum.enums.DisciplinaEnum getDisciplina() { return disciplina; }
+    public void setDisciplina(codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina) { this.disciplina = disciplina; }
 
     public QuestionType getQuestionType() { return questionType; }
     public void setQuestionType(QuestionType questionType) { this.questionType = questionType; }

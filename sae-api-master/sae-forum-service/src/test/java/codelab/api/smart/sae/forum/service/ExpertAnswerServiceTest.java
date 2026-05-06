@@ -42,7 +42,7 @@ class ExpertAnswerServiceTest {
         openQuestion.setTitulo("Pergunta de Matemática");
         openQuestion.setQuestionType(QuestionType.ESPECIALIZADO);
         openQuestion.setStatus(QuestionStatus.ABERTA);
-        openQuestion.setArea("Matematica");
+        openQuestion.setDisciplina(codelab.api.smart.sae.forum.enums.DisciplinaEnum.MATEMATICA);
         openQuestion.setCreatedBy("student1");
 
         request = new CreateExpertAnswerRequestDTO();
@@ -52,7 +52,7 @@ class ExpertAnswerServiceTest {
     @Test
     void createAnswer_authorizedProfessor_succeeds() {
         when(questionService.getEntityById(1L)).thenReturn(openQuestion);
-        when(authServiceClient.canProfessorAnswerArea("prof1", "Matematica")).thenReturn(true);
+        when(authServiceClient.canProfessorAnswerArea("prof1", codelab.api.smart.sae.forum.enums.DisciplinaEnum.MATEMATICA)).thenReturn(true);
 
         ExpertAnswerEntity saved = new ExpertAnswerEntity();
         saved.setId(10L);
@@ -72,7 +72,7 @@ class ExpertAnswerServiceTest {
     @Test
     void createAnswer_unauthorizedProfessor_throwsForbidden() {
         when(questionService.getEntityById(1L)).thenReturn(openQuestion);
-        when(authServiceClient.canProfessorAnswerArea("prof2", "Matematica")).thenReturn(false);
+        when(authServiceClient.canProfessorAnswerArea("prof2", codelab.api.smart.sae.forum.enums.DisciplinaEnum.MATEMATICA)).thenReturn(false);
 
         assertThatThrownBy(() -> expertAnswerService.create(1L, request, "prof2"))
             .isInstanceOf(ResponseStatusException.class)

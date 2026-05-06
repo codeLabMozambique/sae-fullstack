@@ -17,17 +17,17 @@ public interface ForumQuestionRepository extends JpaRepository<ForumQuestionEnti
 
     @Query("""
         SELECT q FROM ForumQuestionEntity q
-        WHERE (:area IS NULL OR q.area = :area)
+        WHERE (:disciplina IS NULL OR q.disciplina = :disciplina)
           AND (:questionType IS NULL OR q.questionType = :questionType)
           AND (:status IS NULL OR q.status = :status)
         ORDER BY q.createdAt DESC
     """)
     Page<ForumQuestionEntity> findWithFilters(
-        @Param("area") String area,
+        @Param("disciplina") codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina,
         @Param("questionType") QuestionType questionType,
         @Param("status") QuestionStatus status,
         Pageable pageable
     );
 
-    List<ForumQuestionEntity> findByArea(String area);
+    List<ForumQuestionEntity> findByDisciplina(codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina);
 }

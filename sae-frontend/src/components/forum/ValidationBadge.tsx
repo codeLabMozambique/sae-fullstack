@@ -10,6 +10,14 @@ interface Props {
   rejectedBy?: string | null;
 }
 
+const CHIP_SX = {
+  height: 20,
+  fontSize: '0.62rem',
+  fontWeight: 600,
+  '& .MuiChip-label': { px: 0.75 },
+  '& .MuiChip-icon': { fontSize: '11px !important', ml: 0.5 },
+};
+
 const ValidationBadge: React.FC<Props> = ({ status, rejectedBy }) => {
   if (rejectedBy) {
     return (
@@ -17,7 +25,7 @@ const ValidationBadge: React.FC<Props> = ({ status, rejectedBy }) => {
         icon={<CancelIcon />}
         label="Rejeitada"
         size="small"
-        sx={{ bgcolor: '#F3F4F6', color: '#6B7280', fontWeight: 600 }}
+        sx={{ ...CHIP_SX, bgcolor: '#F3F4F6', color: '#6B7280' }}
       />
     );
   }
@@ -25,18 +33,18 @@ const ValidationBadge: React.FC<Props> = ({ status, rejectedBy }) => {
     return (
       <Chip
         icon={<CheckCircleIcon />}
-        label="Validado por Docente"
+        label="Validado"
         size="small"
-        sx={{ bgcolor: '#DCFCE7', color: '#15803D', fontWeight: 600 }}
+        sx={{ ...CHIP_SX, bgcolor: '#DCFCE7', color: '#15803D' }}
       />
     );
   }
   return (
     <Chip
       icon={<AccessTimeIcon />}
-      label="A aguardar validação"
+      label="Pendente"
       size="small"
-      sx={{ bgcolor: '#FEF9C3', color: '#A16207', fontWeight: 600 }}
+      sx={{ ...CHIP_SX, bgcolor: '#FEF9C3', color: '#A16207' }}
     />
   );
 };

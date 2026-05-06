@@ -44,6 +44,10 @@ public class CollaborativeAnswerService {
                 "Não é possível responder à sua própria pergunta");
         }
 
+        if (request.getConteudo() == null || request.getConteudo().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Conteúdo da resposta é obrigatório");
+        }
+
         CollaborativeAnswerEntity answer = new CollaborativeAnswerEntity();
         answer.setConteudo(request.getConteudo().trim());
         answer.setQuestionId(questionId);
@@ -67,10 +71,10 @@ public class CollaborativeAnswerService {
         CollaborativeAnswerEntity answer = findById(answerId);
         ForumQuestionEntity question = questionService.getEntityById(answer.getQuestionId());
 
-        boolean canValidate = authServiceClient.canProfessorAnswerArea(professorUsername, question.getArea());
+        boolean canValidate = authServiceClient.canProfessorAnswerArea(professorUsername, question.getDisciplina());
         if (!canValidate) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "A sua especialização não permite validar respostas na área: " + question.getArea());
+                "A sua especialização não permite validar respostas na área: " + question.getDisciplina());
         }
 
         // Idempotent: already validated
@@ -93,10 +97,10 @@ public class CollaborativeAnswerService {
         CollaborativeAnswerEntity answer = findById(answerId);
         ForumQuestionEntity question = questionService.getEntityById(answer.getQuestionId());
 
-        boolean canReject = authServiceClient.canProfessorAnswerArea(professorUsername, question.getArea());
+        boolean canReject = authServiceClient.canProfessorAnswerArea(professorUsername, question.getDisciplina());
         if (!canReject) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "A sua especialização não permite rejeitar respostas na área: " + question.getArea());
+                "A sua especialização não permite rejeitar respostas na área: " + question.getDisciplina());
         }
 
         // Idempotent: already rejected by this professor

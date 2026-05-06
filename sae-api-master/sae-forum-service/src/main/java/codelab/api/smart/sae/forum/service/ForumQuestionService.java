@@ -24,7 +24,6 @@ public class ForumQuestionService {
     @Autowired private ForumQuestionRepository questionRepository;
     @Autowired private ExpertAnswerRepository expertAnswerRepository;
     @Autowired private CollaborativeAnswerRepository collaborativeAnswerRepository;
-    @Autowired private AreaMatchingService areaMatchingService;
     @Autowired private NotificationService notificationService;
 
     @Transactional
@@ -32,25 +31,22 @@ public class ForumQuestionService {
         ForumQuestionEntity question = new ForumQuestionEntity();
         question.setTitulo(request.getTitulo().trim());
         question.setDescricao(request.getDescricao().trim());
-        question.setTags(request.getTags() != null ? request.getTags().trim() : null);
         question.setQuestionType(request.getQuestionType());
         question.setStatus(QuestionStatus.ABERTA);
         question.setCreatedBy(authorUsername);
-
-        String area = areaMatchingService.determineArea(request.getTags());
-        question.setArea(area);
+        question.setDisciplina(request.getDisciplina());
 
         question = questionRepository.save(question);
 
         if (QuestionType.ESPECIALIZADO.equals(request.getQuestionType())) {
-            notificationService.notifyNewQuestion(question.getId(), area, question.getTitulo());
+            notificationService.notifyNewQuestion(question.getId(), question.getDisciplina().name(), question.getTitulo());
         }
 
         return QuestionResponseDTO.from(question);
     }
 
-    public Page<QuestionResponseDTO> list(String area, QuestionType questionType, QuestionStatus status, Pageable pageable) {
-        return questionRepository.findWithFilters(area, questionType, status, pageable)
+    public Page<QuestionResponseDTO> list(codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina, QuestionType questionType, QuestionStatus status, Pageable pageable) {
+        return questionRepository.findWithFilters(disciplina, questionType, status, pageable)
             .map(QuestionResponseDTO::from);
     }
 

@@ -62,7 +62,7 @@ public class PendingAnswersScheduler {
         byQuestion.forEach((questionId, answers) -> {
             questionRepository.findById(questionId).ifPresent(q -> {
                 body.append("Pergunta: ").append(q.getTitulo()).append("\n");
-                body.append("Área: ").append(q.getArea()).append("\n");
+                body.append("Área: ").append(q.getDisciplina()).append("\n");
                 answers.forEach(a ->
                     body.append("  • ").append(a.getAnsweredBy())
                         .append(" — ").append(baseUrl).append("/app/forum/questions/").append(questionId)

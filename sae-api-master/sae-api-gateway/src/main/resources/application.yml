@@ -16,7 +16,31 @@ spring:
             allowedHeaders: "*"
             allowCredentials: true
             maxAge: 3600
-        # - id: sae-ai-service
-        #   uri: http://localhost:8085
-        #   predicates:
-        #     - Path=/ai/**
+      routes:
+        # SERVIÇO DE FÓRUM (8083)
+        - id: sae-forum-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/forum/**
+          filters:
+            - PrefixPath=/api
+            
+        # SERVIÇO DE AUTENTICAÇÃO E UTILIZADORES (8081)
+        - id: sae-auth-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/auth/**
+          filters:
+            - StripPrefix=1
+            
+        # SERVIÇO DE CONTEÚDOS (8082)
+        - id: sae-content-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/content/**
+            
+        # SERVIÇO DE QUIZZES E TESTES (8084)
+        - id: sae-quiz-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/quiz/**

@@ -49,7 +49,7 @@ class ForumQuestionControllerTest {
                 .content(objectMapper.writeValueAsString(Map.of(
                     "titulo", "Como resolver equações?",
                     "descricao", "Preciso de ajuda com equações do 2º grau",
-                    "tags", "matematica,algebra",
+                    "disciplina", "MATEMATICA",
                     "questionType", "ESPECIALIZADO"
                 ))))
             .andExpect(status().isCreated());
@@ -102,12 +102,12 @@ class ForumQuestionControllerTest {
 
     @Test
     void listQuestions_withFilters_returns200() throws Exception {
-        when(questionService.list(eq("Matematica"), eq(QuestionType.ESPECIALIZADO),
+        when(questionService.list(eq(codelab.api.smart.sae.forum.enums.DisciplinaEnum.MATEMATICA), eq(QuestionType.ESPECIALIZADO),
                 eq(QuestionStatus.ABERTA), any(Pageable.class)))
             .thenReturn(new PageImpl<>(List.of()));
 
         mockMvc.perform(get("/questions")
-                .param("area", "Matematica")
+                .param("disciplina", "MATEMATICA")
                 .param("questionType", "ESPECIALIZADO")
                 .param("status", "ABERTA"))
             .andExpect(status().isOk());

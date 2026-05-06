@@ -13,7 +13,7 @@ public class QuestionResponseDTO {
     private String titulo;
     private String descricao;
     private String tags;
-    private String area;
+    private codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina;
     private QuestionType questionType;
     private QuestionStatus status;
     private String createdBy;
@@ -28,7 +28,7 @@ public class QuestionResponseDTO {
         dto.titulo = e.getTitulo();
         dto.descricao = e.getDescricao();
         dto.tags = e.getTags();
-        dto.area = e.getArea();
+        dto.disciplina = e.getDisciplina();
         dto.questionType = e.getQuestionType();
         dto.status = e.getStatus();
         dto.createdBy = e.getCreatedBy();
@@ -41,7 +41,7 @@ public class QuestionResponseDTO {
     public String getTitulo() { return titulo; }
     public String getDescricao() { return descricao; }
     public String getTags() { return tags; }
-    public String getArea() { return area; }
+    public codelab.api.smart.sae.forum.enums.DisciplinaEnum getDisciplina() { return disciplina; }
     public QuestionType getQuestionType() { return questionType; }
     public QuestionStatus getStatus() { return status; }
     public String getCreatedBy() { return createdBy; }
