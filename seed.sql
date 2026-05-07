@@ -2,43 +2,134 @@
 -- SAE - SEED DE DADOS PARA DESENVOLVIMENTO
 -- Base de Dados: sae_db (PostgreSQL 5432)
 -- Executar com: psql -U postgres -d sae_db -f seed.sql
+-- Seguro para re-execução: ON CONFLICT DO NOTHING em todos os INSERTs
 -- ============================================================
 -- Ordem obrigatória (FKs):
 --   app_transaction → role_transaction
 --   ac_school → ac_class_level → ac_classroom
 --   ac_subject (independente)
+--   role_transaction → sae_user
 -- ============================================================
 
--- Corrigir schema: Hibernate update não remove NOT NULL automaticamente
+-- ============================================================
+-- 0. CRIAR TABELAS (caso não existam)
+--    As tabelas JPA (ac_*, sae_user, etc.) são normalmente
+--    criadas pelo Hibernate ao arrancar a aplicação.
+--    Definimo-las aqui para que o seed possa correr de forma
+--    autónoma, antes ou depois de iniciar o Spring Boot.
+-- ============================================================
 
+CREATE TABLE IF NOT EXISTS app_transaction (
+    ID          BIGSERIAL PRIMARY KEY,
+    STATUS      SMALLINT     NOT NULL DEFAULT 1,
+    CODE        VARCHAR(64)  NOT NULL UNIQUE,
+    TYPE        VARCHAR(64)  NOT NULL,
+    LABEL       VARCHAR(256) NOT NULL,
+    ROUTER_LINK VARCHAR(256),
+    POSITION    BIGINT       NOT NULL,
+    PARENT_ID   BIGINT REFERENCES app_transaction(ID)
+);
+
+CREATE TABLE IF NOT EXISTS role_transaction (
+    ID                 BIGSERIAL PRIMARY KEY,
+    STATUS             SMALLINT    NOT NULL DEFAULT 1,
+    ROLE               VARCHAR(64) NOT NULL,
+    APP_TRANSACTION_ID BIGINT REFERENCES app_transaction(ID)
+);
+
+CREATE TABLE IF NOT EXISTS ac_school (
+    ID                 BIGSERIAL PRIMARY KEY,
+    STATUS             SMALLINT DEFAULT 1,
+    CREATED_BY         BIGINT,
+    CREATED_DATE       TIMESTAMP,
+    LAST_MODIFIED_BY   BIGINT,
+    LAST_MODIFIED_DATE TIMESTAMP,
+    NAME               VARCHAR(255) NOT NULL,
+    CITY               VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS ac_class_level (
+    ID                 BIGSERIAL PRIMARY KEY,
+    STATUS             SMALLINT DEFAULT 1,
+    CREATED_BY         BIGINT,
+    CREATED_DATE       TIMESTAMP,
+    LAST_MODIFIED_BY   BIGINT,
+    LAST_MODIFIED_DATE TIMESTAMP,
+    NAME               VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ac_classroom (
+    ID                 BIGSERIAL PRIMARY KEY,
+    STATUS             SMALLINT DEFAULT 1,
+    CREATED_BY         BIGINT,
+    CREATED_DATE       TIMESTAMP,
+    LAST_MODIFIED_BY   BIGINT,
+    LAST_MODIFIED_DATE TIMESTAMP,
+    NAME               VARCHAR(255) NOT NULL,
+    SCHOOL_ID          BIGINT REFERENCES ac_school(ID),
+    CLASS_LEVEL_ID     BIGINT REFERENCES ac_class_level(ID),
+    SHIFT              VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS ac_subject (
+    ID                 BIGSERIAL PRIMARY KEY,
+    STATUS             SMALLINT DEFAULT 1,
+    CREATED_BY         BIGINT,
+    CREATED_DATE       TIMESTAMP,
+    LAST_MODIFIED_BY   BIGINT,
+    LAST_MODIFIED_DATE TIMESTAMP,
+    NAME               VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS sae_user (
+    ID                 BIGSERIAL PRIMARY KEY,
+    STATUS             SMALLINT DEFAULT 1,
+    CREATED_BY         BIGINT,
+    CREATED_DATE       TIMESTAMP,
+    LAST_MODIFIED_BY   BIGINT,
+    LAST_MODIFIED_DATE TIMESTAMP,
+    USERNAME           VARCHAR(255) NOT NULL UNIQUE,
+    EMAIL              VARCHAR(255) UNIQUE,
+    PASSWORD           VARCHAR(255) NOT NULL,
+    FULL_NAME          VARCHAR(255),
+    ENABLED            BOOLEAN DEFAULT TRUE,
+    ROLET_ID           BIGINT REFERENCES role_transaction(ID)
+);
+
+CREATE TABLE IF NOT EXISTS professor_profile (
+    ID                    BIGSERIAL PRIMARY KEY,
+    STATUS                SMALLINT DEFAULT 1,
+    CREATED_BY            BIGINT,
+    CREATED_DATE          TIMESTAMP,
+    LAST_MODIFIED_BY      BIGINT,
+    LAST_MODIFIED_DATE    TIMESTAMP,
+    USER_ID               BIGINT REFERENCES sae_user(ID),
+    SCHOOL_ID             BIGINT,
+    DEPARTMENT            VARCHAR(255),
+    SPECIALIZATION        VARCHAR(255),
+    INSTITUTIONAL_CONTACT VARCHAR(255),
+    IS_ONLINE             BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE IF NOT EXISTS student_profile (
+    ID                 BIGSERIAL PRIMARY KEY,
+    STATUS             SMALLINT DEFAULT 1,
+    CREATED_BY         BIGINT,
+    CREATED_DATE       TIMESTAMP,
+    LAST_MODIFIED_BY   BIGINT,
+    LAST_MODIFIED_DATE TIMESTAMP,
+    USER_ID            BIGINT REFERENCES sae_user(ID),
+    SCHOOL_ID          BIGINT,
+    CLASSROOM_ID       BIGINT,
+    GRADE              VARCHAR(255),
+    AGE                INTEGER,
+    ENROLLMENT_DATE    DATE
+);
 
 -- ============================================================
 -- 1. APP_TRANSACTION — Estrutura de Menus por Role
 -- STATUS: 1 = ATIVO | TYPE: 'HEADER' ou 'MENU_ITEM'
 -- ============================================================
-
-CREATE TABLE IF NOT EXISTS app_transaction (
-    ID BIGSERIAL PRIMARY KEY,
-    STATUS SMALLINT NOT NULL DEFAULT 1,
-    CODE VARCHAR(64) NOT NULL UNIQUE,
-    TYPE VARCHAR(64) NOT NULL,
-    LABEL VARCHAR(256) NOT NULL,
-    ROUTER_LINK VARCHAR(256),
-    POSITION BIGINT NOT NULL,
-    PARENT_ID BIGINT REFERENCES app_transaction(ID)
-);
-
--- -----------------------------------------------------------------------------
--- ROLE_TRANSACTION TABLE
--- -----------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS role_transaction (
-    ID BIGSERIAL PRIMARY KEY,
-    STATUS SMALLINT NOT NULL DEFAULT 1,
-    ROLE VARCHAR(64) NOT NULL,
-    APP_TRANSACTION_ID BIGINT REFERENCES app_transaction(ID)
-);
-
-
 
 INSERT INTO app_transaction (id, status, code, type, label, router_link, position, parent_id) VALUES
 
@@ -59,10 +150,10 @@ INSERT INTO app_transaction (id, status, code, type, label, router_link, positio
 (15, 1, 'PRF-002-002', 'MENU_ITEM', 'Respondidas',         '/professor/forum/answered',   2, 11),
 
 -- ── ADMIN ───────────────────────────────────────────────────
-(20, 1, 'ADM-001',     'HEADER',    'Utilizadores',       '/admin/users',                1, NULL),
-(21, 1, 'ADM-002',     'HEADER',    'Académico',          '/admin/academic',             2, NULL),
-(22, 1, 'ADM-001-001', 'MENU_ITEM', 'Listar Utilizadores','/admin/users/list',           1, 20),
-(23, 1, 'ADM-001-002', 'MENU_ITEM', 'Gerir Roles',        '/admin/users/roles',          2, 20),
+(20, 1, 'ADM-001',     'HEADER',    'Utilizadores',            '/admin/users',                           1, NULL),
+(21, 1, 'ADM-002',     'HEADER',    'Académico',               '/admin/academic',                        2, NULL),
+(22, 1, 'ADM-001-001', 'MENU_ITEM', 'Listar Utilizadores',     '/admin/users/list',                      1, 20),
+(23, 1, 'ADM-001-002', 'MENU_ITEM', 'Gerir Roles',             '/admin/users/roles',                     2, 20),
 (24, 1, 'ADM-002-001', 'MENU_ITEM', 'Turmas',                  '/admin/academic/classrooms',             1, 21),
 (25, 1, 'ADM-002-002', 'MENU_ITEM', 'Disciplinas',             '/admin/academic/subjects',               2, 21),
 (26, 1, 'ADM-002-003', 'MENU_ITEM', 'Escolas',                 '/admin/academic/schools',                3, 21),
@@ -70,14 +161,16 @@ INSERT INTO app_transaction (id, status, code, type, label, router_link, positio
 (28, 1, 'ADM-002-005', 'MENU_ITEM', 'Atribuições Professores', '/admin/academic/professor-assignments',  5, 21),
 
 -- ── GUEST ───────────────────────────────────────────────────
-(30, 1, 'GST-001',     'HEADER',    'Início',             '/guest/home',                 1, NULL);
+(30, 1, 'GST-001',     'HEADER',    'Início',             '/guest/home',                 1, NULL)
+
+ON CONFLICT (id) DO NOTHING;
 
 SELECT setval(pg_get_serial_sequence('app_transaction', 'id'), 100);
 
 -- ============================================================
 -- 2. ROLE_TRANSACTION — Mapeamento Role → Transação
--- STATUS: 1 = ATIVO | ROLE: valor do enum UserRoles (STRING)
 -- ============================================================
+
 INSERT INTO role_transaction (id, status, role, app_transaction_id) VALUES
 
 -- STUDENT
@@ -108,30 +201,37 @@ INSERT INTO role_transaction (id, status, role, app_transaction_id) VALUES
 (28, 1, 'ADMIN',     28),
 
 -- GUEST
-(30, 1, 'GUEST',     30);
+(30, 1, 'GUEST',     30)
+
+ON CONFLICT (id) DO NOTHING;
 
 SELECT setval(pg_get_serial_sequence('role_transaction', 'id'), 100);
 
 -- ============================================================
 -- 3. SCHOOLS (ac_school)
--- Coincidem com as opções do frontend Register.tsx
 -- ============================================================
+
 INSERT INTO ac_school (id, status, created_by, created_date, last_modified_by, last_modified_date, name, city) VALUES
 (1, 1, 0, NOW(), 0, NOW(), 'Universidade Eduardo Mondlane',       'Maputo'),
 (2, 1, 0, NOW(), 0, NOW(), 'Universidade Politécnica',            'Maputo'),
-(3, 1, 0, NOW(), 0, NOW(), 'Universidade Católica de Moçambique', 'Beira');
+(3, 1, 0, NOW(), 0, NOW(), 'Universidade Católica de Moçambique', 'Beira')
+
+ON CONFLICT (id) DO NOTHING;
 
 SELECT setval(pg_get_serial_sequence('ac_school', 'id'), 10);
 
 -- ============================================================
 -- 4. CLASS LEVELS (ac_class_level)
 -- ============================================================
+
 INSERT INTO ac_class_level (id, status, created_by, created_date, last_modified_by, last_modified_date, name) VALUES
 (1, 1, 0, NOW(), 0, NOW(), '1º Ano'),
 (2, 1, 0, NOW(), 0, NOW(), '2º Ano'),
 (3, 1, 0, NOW(), 0, NOW(), '3º Ano'),
 (4, 1, 0, NOW(), 0, NOW(), '4º Ano'),
-(5, 1, 0, NOW(), 0, NOW(), '5º Ano');
+(5, 1, 0, NOW(), 0, NOW(), '5º Ano')
+
+ON CONFLICT (id) DO NOTHING;
 
 SELECT setval(pg_get_serial_sequence('ac_class_level', 'id'), 10);
 
@@ -139,6 +239,7 @@ SELECT setval(pg_get_serial_sequence('ac_class_level', 'id'), 10);
 -- 5. CLASSROOMS (ac_classroom)
 -- FK: school_id → ac_school | class_level_id → ac_class_level
 -- ============================================================
+
 INSERT INTO ac_classroom (id, status, created_by, created_date, last_modified_by, last_modified_date, name, school_id, class_level_id, shift) VALUES
 
 -- UEM (school_id = 1)
@@ -156,13 +257,16 @@ INSERT INTO ac_classroom (id, status, created_by, created_date, last_modified_by
 
 -- UCM (school_id = 3)
 (10, 1, 0, NOW(), 0, NOW(), 'Turma A - 1º Ano', 3, 1, 'Manhã'),
-(11, 1, 0, NOW(), 0, NOW(), 'Turma A - 2º Ano', 3, 2, 'Manhã');
+(11, 1, 0, NOW(), 0, NOW(), 'Turma A - 2º Ano', 3, 2, 'Manhã')
+
+ON CONFLICT (id) DO NOTHING;
 
 SELECT setval(pg_get_serial_sequence('ac_classroom', 'id'), 20);
 
 -- ============================================================
 -- 6. SUBJECTS (ac_subject)
 -- ============================================================
+
 INSERT INTO ac_subject (id, status, created_by, created_date, last_modified_by, last_modified_date, name) VALUES
 (1,  1, 0, NOW(), 0, NOW(), 'Matemática'),
 (2,  1, 0, NOW(), 0, NOW(), 'Português'),
@@ -173,23 +277,27 @@ INSERT INTO ac_subject (id, status, created_by, created_date, last_modified_by, 
 (7,  1, 0, NOW(), 0, NOW(), 'Inglês'),
 (8,  1, 0, NOW(), 0, NOW(), 'Informática'),
 (9,  1, 0, NOW(), 0, NOW(), 'Programação'),
-(10, 1, 0, NOW(), 0, NOW(), 'Economia');
+(10, 1, 0, NOW(), 0, NOW(), 'Economia')
+
+ON CONFLICT (id) DO NOTHING;
 
 SELECT setval(pg_get_serial_sequence('ac_subject', 'id'), 20);
 
 -- ============================================================
 -- 7. UTILIZADOR DE TESTE (DEV ONLY)
 -- Login: +258849997777 / prof12345
+-- Usa SELECT WHERE NOT EXISTS — seguro para re-execução
 -- ============================================================
+
 INSERT INTO sae_user (
     status, created_by, created_date, last_modified_by, last_modified_date,
     username, email, password, full_name, enabled, rolet_id
 )
 SELECT
-    0, 0, NOW(), 0, NOW(),
+    1, 0, NOW(), 0, NOW(),
     '+258849997777',
     'prof@sae.test',
-    '$2b$10$KKJUhQcHnzzjMs4M.fZDd.US/9swMTv7nU3A9ADQ4RAcMpjI1IQzO',
+    '$2a$10$KKJUhQcHnzzjMs4M.fZDd.US/9swMTv7nU3A9ADQ4RAcMpjI1IQzO',
     'Professor Teste',
     true,
     (SELECT id FROM role_transaction WHERE role = 'PROFESSOR' ORDER BY id LIMIT 1)
