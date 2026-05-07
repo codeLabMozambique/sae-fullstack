@@ -24,6 +24,11 @@ import codelab.api.smart.sae.roleTransaction.repository.RoleTransactionRepositor
 import codelab.api.smart.sae.user.dto.MenuDTO;
 import codelab.api.smart.sae.user.dto.MenuItemDTO;
 import codelab.api.smart.sae.user.dto.ProfessorProfileDTO;
+import codelab.api.smart.sae.user.dto.UserListDTO;
+import codelab.api.smart.sae.user.dto.UserUpdateDTO;
+import codelab.api.smart.sae.user.dto.ProfessorProfileUpdateDTO;
+import codelab.api.smart.sae.user.dto.StudentProfileDTO;
+import codelab.api.smart.sae.user.dto.StudentProfileUpdateDTO;
 import codelab.api.smart.sae.user.dto.ProfessorRegisterDTO;
 import codelab.api.smart.sae.user.dto.RegisterRequestDTO;
 import codelab.api.smart.sae.user.dto.StudentRegisterDTO;
@@ -253,6 +258,85 @@ public class UserService {
         }
 
         return menus;
+    }
+
+    public List<UserListDTO> findAllUsers() {
+        return userRepository.findAll().stream()
+                .map(u -> new UserListDTO(
+                        u.getId(),
+                        u.getUsername(),
+                        u.getFullname(),
+                        u.getEmail(),
+                        u.getUsername(),
+                        (u.getRole() != null && u.getRole().getRole() != null)
+                                ? u.getRole().getRole().name() : "GUEST",
+                        u.isEnabled() ? 1 : 0))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public UserListDTO updateUser(UserUpdateDTO dto) {
+        UserEntity user = userRepository.findById(dto.getUserId())
+                .orElseThrow(() -> new BusinessException("Utilizador não encontrado"));
+        if (dto.getFullname() != null && !dto.getFullname().trim().isEmpty())
+            user.setFullname(dto.getFullname());
+        if (dto.getEmail() != null && !dto.getEmail().trim().isEmpty())
+            user.setEmail(dto.getEmail());
+        userRepository.save(user);
+        return new UserListDTO(
+                user.getId(), user.getUsername(), user.getFullname(), user.getEmail(),
+                user.getUsername(),
+                (user.getRole() != null && user.getRole().getRole() != null)
+                        ? user.getRole().getRole().name() : "GUEST",
+                user.isEnabled() ? 1 : 0);
+    }
+
+    public ProfessorProfileDTO getProfessorProfile(Long userId) {
+        ProfessorProfileEntity p = professorProfileRepository.findByUser_Id(userId)
+                .orElseThrow(() -> new BusinessException("Perfil de professor não encontrado"));
+        return new ProfessorProfileDTO(
+                p.getUser().getId(), p.getUser().getFullname(), p.getUser().getUsername(),
+                p.getUser().getEmail(), p.getSchoolId(), p.getDepartment(),
+                p.getSpecialization(), p.getInstitutionalContact(), p.isOnline());
+    }
+
+    @Transactional
+    public ProfessorProfileDTO updateProfessorProfile(ProfessorProfileUpdateDTO dto) {
+        ProfessorProfileEntity p = professorProfileRepository.findByUser_Id(dto.getUserId())
+                .orElseThrow(() -> new BusinessException("Perfil de professor não encontrado"));
+        if (dto.getSchoolId() != null)             p.setSchoolId(dto.getSchoolId());
+        if (dto.getDepartment() != null)           p.setDepartment(dto.getDepartment());
+        if (dto.getSpecialization() != null)       p.setSpecialization(dto.getSpecialization());
+        if (dto.getInstitutionalContact() != null) p.setInstitutionalContact(dto.getInstitutionalContact());
+        professorProfileRepository.save(p);
+        return new ProfessorProfileDTO(
+                p.getUser().getId(), p.getUser().getFullname(), p.getUser().getUsername(),
+                p.getUser().getEmail(), p.getSchoolId(), p.getDepartment(),
+                p.getSpecialization(), p.getInstitutionalContact(), p.isOnline());
+    }
+
+    public StudentProfileDTO getStudentProfile(Long userId) {
+        StudentProfileEntity s = studentProfileRepository.findByUser_Id(userId)
+                .orElseThrow(() -> new BusinessException("Perfil de estudante não encontrado"));
+        return new StudentProfileDTO(
+                s.getUser().getId(), s.getUser().getFullname(), s.getUser().getUsername(),
+                s.getUser().getEmail(), s.getSchoolId(), s.getClassroomId(),
+                s.getGrade(), s.getAge());
+    }
+
+    @Transactional
+    public StudentProfileDTO updateStudentProfile(StudentProfileUpdateDTO dto) {
+        StudentProfileEntity s = studentProfileRepository.findByUser_Id(dto.getUserId())
+                .orElseThrow(() -> new BusinessException("Perfil de estudante não encontrado"));
+        if (dto.getSchoolId() != null)    s.setSchoolId(dto.getSchoolId());
+        if (dto.getClassroomId() != null) s.setClassroomId(dto.getClassroomId());
+        if (dto.getGrade() != null)       s.setGrade(dto.getGrade());
+        if (dto.getAge() != null)         s.setAge(dto.getAge());
+        studentProfileRepository.save(s);
+        return new StudentProfileDTO(
+                s.getUser().getId(), s.getUser().getFullname(), s.getUser().getUsername(),
+                s.getUser().getEmail(), s.getSchoolId(), s.getClassroomId(),
+                s.getGrade(), s.getAge());
     }
 
     public List<ProfessorProfileDTO> findAllProfessors() {

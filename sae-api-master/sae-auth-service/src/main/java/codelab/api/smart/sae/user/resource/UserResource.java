@@ -9,8 +9,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import codelab.api.smart.sae.framework.security.SecurityService;
@@ -19,6 +21,11 @@ import codelab.api.smart.sae.user.dto.AuthenticationRequestDTO;
 import codelab.api.smart.sae.user.dto.AuthenticationResponseDTO;
 import codelab.api.smart.sae.user.dto.ProfessorProfileDTO;
 import codelab.api.smart.sae.user.dto.ProfessorRegisterDTO;
+import codelab.api.smart.sae.user.dto.UserListDTO;
+import codelab.api.smart.sae.user.dto.UserUpdateDTO;
+import codelab.api.smart.sae.user.dto.ProfessorProfileUpdateDTO;
+import codelab.api.smart.sae.user.dto.StudentProfileDTO;
+import codelab.api.smart.sae.user.dto.StudentProfileUpdateDTO;
 import codelab.api.smart.sae.user.dto.RegisterRequestDTO;
 import codelab.api.smart.sae.user.dto.StudentRegisterDTO;
 import codelab.api.smart.sae.user.model.ProfessorProfileEntity;
@@ -74,9 +81,39 @@ public class UserResource {
         return new ResponseEntity<>(profile, HttpStatus.CREATED);
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<UserListDTO>> getAllUsers() {
+        return ResponseEntity.ok(userService.findAllUsers());
+    }
+
     @GetMapping("/professors")
     public ResponseEntity<List<ProfessorProfileDTO>> getProfessors() {
         return ResponseEntity.ok(userService.findAllProfessors());
+    }
+
+    @PutMapping("/update")
+    public ResponseEntity<?> updateUser(@RequestBody UserUpdateDTO dto) {
+        return ResponseEntity.ok(userService.updateUser(dto));
+    }
+
+    @GetMapping("/professor-profile")
+    public ResponseEntity<ProfessorProfileDTO> getProfessorProfile(@RequestParam Long userId) {
+        return ResponseEntity.ok(userService.getProfessorProfile(userId));
+    }
+
+    @PutMapping("/professor-profile")
+    public ResponseEntity<ProfessorProfileDTO> updateProfessorProfile(@RequestBody ProfessorProfileUpdateDTO dto) {
+        return ResponseEntity.ok(userService.updateProfessorProfile(dto));
+    }
+
+    @GetMapping("/student-profile")
+    public ResponseEntity<StudentProfileDTO> getStudentProfile(@RequestParam Long userId) {
+        return ResponseEntity.ok(userService.getStudentProfile(userId));
+    }
+
+    @PutMapping("/student-profile")
+    public ResponseEntity<StudentProfileDTO> updateStudentProfile(@RequestBody StudentProfileUpdateDTO dto) {
+        return ResponseEntity.ok(userService.updateStudentProfile(dto));
     }
 
     @PostMapping("/login")

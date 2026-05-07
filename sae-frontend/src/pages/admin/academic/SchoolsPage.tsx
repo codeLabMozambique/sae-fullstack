@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Chip, Button, IconButton, Dialog, DialogTitle,
+  TableHead, TableRow, TablePagination, Chip, Button, IconButton, Dialog, DialogTitle,
   DialogContent, TextField, Alert, CircularProgress, Tooltip,
   Avatar, InputAdornment, Select, MenuItem, FormControl, InputLabel,
 } from '@mui/material';
@@ -57,6 +57,8 @@ const SchoolsPage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch]         = useState('');
   const [cityFilter, setCityFilter] = useState('');
+  const [page, setPage]             = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const load = async () => {
     try { setLoading(true); setError(null); setSchools(await schoolService.findAll()); }
@@ -74,6 +76,8 @@ const SchoolsPage: React.FC = () => {
       || (s.email ?? '').toLowerCase().includes(q) || (s.phone ?? '').includes(q);
     return hit && (!cityFilter || s.city === cityFilter);
   }), [schools, search, cityFilter]);
+
+  useEffect(() => { setPage(0); }, [search, cityFilter]);
 
   const openCreate  = () => { setEditing(null);  setForm(emptyForm);  setDialogOpen(true); };
   const openEdit    = (r: SchoolDTO) => { setEditing(r); setForm({ ...r }); setDialogOpen(true); };
@@ -184,6 +188,7 @@ const SchoolsPage: React.FC = () => {
               <CircularProgress sx={{ color: ACCENT }} />
             </Box>
           ) : (
+            <>
             <TableContainer sx={{ background: 'transparent' }}>
               <Table sx={{ minWidth: 700 }}>
                 <TableHead>
@@ -206,7 +211,7 @@ const SchoolsPage: React.FC = () => {
                         </Box>
                       </TableCell>
                     </TableRow>
-                  ) : filtered.map(row => (
+                  ) : filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(row => (
                     <TableRow key={row.id} sx={{ transition: 'background .15s', '&:hover': { background: 'rgba(0,166,81,0.035)' } }}>
                       <TableCell sx={{ py: 1.5 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -244,6 +249,19 @@ const SchoolsPage: React.FC = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+            <TablePagination
+              component="div"
+              count={filtered.length}
+              page={page}
+              onPageChange={(_, newPage) => setPage(newPage)}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={e => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              labelRowsPerPage="Por página:"
+              labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
+              sx={{ borderTop: '1px solid rgba(0,0,0,0.06)', bgcolor: 'rgba(248,250,252,0.6)' }}
+            />
+            </>
           )}
         </Box>
       </Box>

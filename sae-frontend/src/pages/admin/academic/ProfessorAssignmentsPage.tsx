@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Chip, Button, IconButton, Dialog, DialogTitle,
+  TableHead, TableRow, TablePagination, Chip, Button, IconButton, Dialog, DialogTitle,
   DialogContent, TextField, Alert, CircularProgress, Tooltip,
   Avatar, InputAdornment, Select, MenuItem, FormControl, InputLabel,
 } from '@mui/material';
@@ -72,6 +72,8 @@ const ProfessorAssignmentsPage: React.FC = () => {
   const [search, setSearch]           = useState('');
   const [classroomFilter, setClassroomFilter] = useState('');
   const [subjectFilter, setSubjectFilter]     = useState('');
+  const [page, setPage]               = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const load = async () => {
     try {
@@ -94,6 +96,8 @@ const ProfessorAssignmentsPage: React.FC = () => {
       && (!classroomFilter || String(a.classroomId) === classroomFilter)
       && (!subjectFilter || String(a.subjectId) === subjectFilter);
   }), [assignments, professors, search, classroomFilter, subjectFilter]);
+
+  useEffect(() => { setPage(0); }, [search, classroomFilter, subjectFilter]);
 
   const openCreate  = () => { setForm(emptyForm); setDialogOpen(true); };
   const closeDialog = () => { setDialogOpen(false); setForm(emptyForm); };
@@ -202,6 +206,7 @@ const ProfessorAssignmentsPage: React.FC = () => {
               <CircularProgress sx={{ color: ACCENT }} />
             </Box>
           ) : (
+            <>
             <TableContainer sx={{ background: 'transparent' }}>
               <Table sx={{ minWidth: 640 }}>
                 <TableHead>
@@ -224,7 +229,7 @@ const ProfessorAssignmentsPage: React.FC = () => {
                         </Box>
                       </TableCell>
                     </TableRow>
-                  ) : filtered.map(row => {
+                  ) : filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(row => {
                     const prof = professors.find(p => p.id === row.professorId);
                     const bgColor = avatarColor(row.professorId);
                     return (
@@ -265,6 +270,19 @@ const ProfessorAssignmentsPage: React.FC = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+            <TablePagination
+              component="div"
+              count={filtered.length}
+              page={page}
+              onPageChange={(_, newPage) => setPage(newPage)}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={e => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              labelRowsPerPage="Por página:"
+              labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
+              sx={{ borderTop: '1px solid rgba(0,0,0,0.06)', bgcolor: 'rgba(248,250,252,0.6)' }}
+            />
+            </>
           )}
         </Box>
       </Box>
