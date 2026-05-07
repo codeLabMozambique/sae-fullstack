@@ -34,10 +34,11 @@ interface Props {
 
 /* ── Static fallback menu (legacy /app/* routes) ── */
 const staticMenuItems = [
-  { text: 'Dashboard',           icon: <DashboardIcon />, path: '/app/dashboard' },
-  { text: 'Biblioteca Digital',  icon: <LibraryIcon />,   path: '/app/biblioteca' },
-  { text: 'Chat com IA',         icon: <ChatIcon />,      path: '/app/chat' },
-  { text: 'Painel Administrativo', icon: <AdminIcon />,   path: '/app/admin' },
+  { text: 'Dashboard',             icon: <DashboardIcon />, path: '/app/dashboard' },
+  { text: 'Biblioteca Digital',    icon: <LibraryIcon />,   path: '/app/biblioteca' },
+  { text: 'Fórum',                 icon: <ForumIcon />,     path: '/app/forum' },
+  { text: 'Chat com IA',           icon: <ChatIcon />,      path: '/app/chat' },
+  { text: 'Painel Administrativo', icon: <AdminIcon />,     path: '/app/admin' },
 ];
 
 /* ── Icon map for dynamic menus by code prefix ── */

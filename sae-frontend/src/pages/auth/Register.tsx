@@ -32,7 +32,7 @@ const Register: React.FC = () => {
   const [schoolId, setSchoolId] = useState<number | ''>('');
 
   // Student-specific
-  const [classroomId, setClassroomId] = useState<number | ''>('');
+  const [classroomId] = useState<number | ''>('');
   const [grade, setGrade] = useState('');
   const [age, setAge] = useState<number | ''>('');
 

@@ -1,0 +1,5 @@
+$kind: http-request
+name: listar questoes
+url: http://localhost:8083/api/forum/questions
+method: GET
+order: 3678248668428462

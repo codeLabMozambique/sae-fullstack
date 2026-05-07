@@ -8,7 +8,8 @@
             "mainClass": "codelab.api.smart.sae.AcademicServiceApplication",
             "projectName": "sae-academic-service",
             "args": "",
-            "envFile": "${workspaceFolder}/.env"
+            "envFile": "${workspaceFolder}/.env",
+            "vmArgs": " -Dcom.sun.management.jmxremote"
         },
         {
             "type": "java",
@@ -19,7 +20,7 @@
             "projectName": "sae-api-gateway",
             "args": "",
             "envFile": "${workspaceFolder}/.env",
-            "vmArgs": " -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=64100 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=sae-api-gateway"
+            "vmArgs": " -Dcom.sun.management.jmxremote -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=sae-api-gateway"
         },
         {
             "type": "java",
@@ -30,7 +31,7 @@
             "projectName": "sae-auth-service",
             "args": "",
             "envFile": "${workspaceFolder}/.env",
-            "vmArgs": " -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=49705 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=sae-auth-service"
+            "vmArgs": " -Dcom.sun.management.jmxremote -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=sae-auth-service"
         },
         {
             "type": "java",
@@ -39,6 +40,47 @@
             "cwd": "${workspaceFolder}",
             "mainClass": "codelab.api.smart.sae.framework.util.PasswordGenerator",
             "projectName": "sae-common",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env",
+            "vmArgs": " -Dcom.sun.management.jmxremote"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-AiServiceApplication<sae-ai-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "codelab.api.smart.sae.AiServiceApplication",
+            "projectName": "sae-ai-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-ContentServiceApplication<sae-content-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "codelab.api.smart.sae.ContentServiceApplication",
+            "projectName": "sae-content-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-ForumServiceApplication<sae-forum-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "codelab.api.smart.sae.ForumServiceApplication",
+            "projectName": "sae-forum-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-QuizServiceApplication<sae-quiz-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "codelab.api.smart.sae.QuizServiceApplication",
+            "projectName": "sae-quiz-service",
             "args": "",
             "envFile": "${workspaceFolder}/.env"
         },

@@ -366,6 +366,36 @@ public class UserService {
         }
     }
 
+    public String[] getProfessorSpecializations(String username) {
+        return professorProfileRepository.findByUserUsername(username)
+            .map(profile -> new String[]{profile.getSpecialization()})
+            .orElse(new String[]{});
+    }
+
+    public java.util.List<codelab.api.smart.sae.user.dto.ProfessorInfoDTO> getProfessorsByDiscipline(String disciplinaName) {
+        String normalizedDisc = normalize(disciplinaName);
+        return professorProfileRepository.findAll().stream()
+            .filter(p -> p.getSpecialization() != null
+                && !normalize(p.getSpecialization()).isEmpty()
+                && (normalize(p.getSpecialization()).contains(normalizedDisc)
+                    || normalizedDisc.contains(normalize(p.getSpecialization()))))
+            .map(p -> new codelab.api.smart.sae.user.dto.ProfessorInfoDTO(
+                p.getUser().getUsername(),
+                p.getUser().getFullname(),
+                p.isOnline(),
+                p.getSpecialization()
+            ))
+            .collect(java.util.stream.Collectors.toList());
+    }
+
+    private String normalize(String input) {
+        if (input == null) return "";
+        String str = input.trim().toLowerCase();
+        str = java.text.Normalizer.normalize(str, java.text.Normalizer.Form.NFD);
+        str = str.replaceAll("[\\p{InCombiningDiacriticalMarks}]", "");
+        return str.replaceAll("[^a-z0-9]", "");
+    }
+
     /**
      * 
      */

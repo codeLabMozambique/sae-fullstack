@@ -1,7 +1,9 @@
 /**
- * 
+ *
  */
 package codelab.api.smart.sae.user.resource;
+
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,6 +21,7 @@ import codelab.api.smart.sae.framework.security.SecurityService;
 import codelab.api.smart.sae.otp.OTPManager;
 import codelab.api.smart.sae.user.dto.AuthenticationRequestDTO;
 import codelab.api.smart.sae.user.dto.AuthenticationResponseDTO;
+import codelab.api.smart.sae.user.dto.ProfessorInfoDTO;
 import codelab.api.smart.sae.user.dto.ProfessorProfileDTO;
 import codelab.api.smart.sae.user.dto.ProfessorRegisterDTO;
 import codelab.api.smart.sae.user.dto.UserListDTO;
@@ -31,8 +34,6 @@ import codelab.api.smart.sae.user.dto.StudentRegisterDTO;
 import codelab.api.smart.sae.user.model.ProfessorProfileEntity;
 import codelab.api.smart.sae.user.model.StudentProfileEntity;
 import codelab.api.smart.sae.user.model.UserEntity;
-
-import java.util.List;
 import codelab.api.smart.sae.user.service.UserService;
 import codelab.api.smart.sae.user.validators.UserRoleValidator;
 
@@ -134,6 +135,18 @@ public class UserResource {
                 jwt, userService.findTransactionsByRole(principal),
                 UserRoleValidator.validate(roleName));
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/professor/{username}/specializations")
+    public ResponseEntity<String[]> getProfessorSpecializations(@PathVariable String username) {
+        String[] specializations = userService.getProfessorSpecializations(username);
+        return ResponseEntity.ok(specializations);
+    }
+
+    @GetMapping("/professors/by-discipline")
+    public ResponseEntity<List<ProfessorInfoDTO>> getProfessorsByDiscipline(
+            @RequestParam String disciplina) {
+        return ResponseEntity.ok(userService.getProfessorsByDiscipline(disciplina));
     }
 
 }
