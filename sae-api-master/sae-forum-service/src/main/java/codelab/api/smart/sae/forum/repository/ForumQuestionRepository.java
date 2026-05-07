@@ -1,6 +1,6 @@
 package codelab.api.smart.sae.forum.repository;
 
-import codelab.api.smart.sae.forum.enums.QuestionStatus;
+import codelab.api.smart.sae.forum.enums.DisciplinaEnum;
 import codelab.api.smart.sae.forum.enums.QuestionType;
 import codelab.api.smart.sae.forum.model.ForumQuestionEntity;
 import org.springframework.data.domain.Page;
@@ -11,29 +11,40 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ForumQuestionRepository extends JpaRepository<ForumQuestionEntity, Long> {
 
-    @Query("""
-        SELECT q FROM ForumQuestionEntity q
-        WHERE (:disciplina IS NULL OR q.disciplina = :disciplina)
-          AND (:questionType IS NULL OR q.questionType = :questionType)
-          AND (:status IS NULL OR q.status = :status)
-        ORDER BY q.createdAt DESC
-    """)
+    /**
+     * Filtro dinâmico com native query para evitar problema do Hibernate 6
+     * com parâmetros enum nulos em JPQL (BindException / type mismatch).
+     * Os enums são passados como String (.name()) pelo serviço.
+     */
+    @Query(
+        value = "SELECT * FROM forum_question " +
+                "WHERE (:disciplinaName IS NULL OR area = :disciplinaName) " +
+                "AND (:questionTypeName IS NULL OR question_type = :questionTypeName) " +
+                "AND (:statusName IS NULL OR status = :statusName) " +
+                "ORDER BY created_at DESC",
+        countQuery = "SELECT count(*) FROM forum_question " +
+                     "WHERE (:disciplinaName IS NULL OR area = :disciplinaName) " +
+                     "AND (:questionTypeName IS NULL OR question_type = :questionTypeName) " +
+                     "AND (:statusName IS NULL OR status = :statusName)",
+        nativeQuery = true
+    )
     Page<ForumQuestionEntity> findWithFilters(
-        @Param("disciplina") codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina,
-        @Param("questionType") QuestionType questionType,
-        @Param("status") QuestionStatus status,
+        @Param("disciplinaName")    String disciplinaName,
+        @Param("questionTypeName")  String questionTypeName,
+        @Param("statusName")        String statusName,
         Pageable pageable
     );
 
-    List<ForumQuestionEntity> findByDisciplina(codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina);
+    List<ForumQuestionEntity> findByDisciplina(DisciplinaEnum disciplina);
 
-    java.util.Optional<ForumQuestionEntity> findFirstByDisciplinaAndQuestionTypeOrderByCreatedAtAsc(
-        codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina, QuestionType type);
+    Optional<ForumQuestionEntity> findFirstByDisciplinaAndQuestionTypeOrderByCreatedAtAsc(
+        DisciplinaEnum disciplina, QuestionType type);
 
-    java.util.Optional<ForumQuestionEntity> findFirstByDisciplinaAndQuestionTypeAndCreatedByOrderByCreatedAtAsc(
-        codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina, QuestionType type, String createdBy);
+    Optional<ForumQuestionEntity> findFirstByDisciplinaAndQuestionTypeAndCreatedByOrderByCreatedAtAsc(
+        DisciplinaEnum disciplina, QuestionType type, String createdBy);
 }

@@ -2,7 +2,7 @@ import api from './api';
 import type {
   ForumQuestion, ExpertAnswer, CollaborativeAnswer,
   PageResponse, CreateQuestionRequest, CreateAnswerRequest,
-  QuestionType, QuestionStatus, DisciplinaEnum,
+  QuestionType, QuestionStatus, DisciplinaEnum, ProfessorInfo,
 } from '../types/forum';
 
 const BASE = '/forum';
@@ -66,6 +66,10 @@ export const forumService = {
   // EP-14: Definir primeira mensagem numa sala expert
   updateFirstMessage: (id: number, descricao: string): Promise<void> =>
     api.patch(`${BASE}/questions/${id}/message`, { descricao }).then(() => {}),
+
+  // EP-15: Listar professores por disciplina
+  getProfessorsByDisciplina: (disciplina: DisciplinaEnum): Promise<ProfessorInfo[]> =>
+    api.get<ProfessorInfo[]>(`${BASE}/questions/professors/disciplina/${disciplina}`).then(r => r.data),
 
   // Listar questões abertas para professor (caixa de entrada)
   listProfessorInbox: (params?: {

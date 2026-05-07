@@ -127,3 +127,10 @@ export interface CreateQuestionRequest {
 export interface CreateAnswerRequest {
   conteudo: string;
 }
+
+export interface ProfessorInfo {
+  username: string;
+  fullname: string;
+  online: boolean;
+  specialization: string;
+}

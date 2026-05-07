@@ -1,6 +1,7 @@
 package codelab.api.smart.sae.forum.config;
 
 import codelab.api.smart.sae.framework.filter.JwtRequestFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,8 +30,30 @@ public class SecurityConfig {
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/ws/**", "/ws").permitAll()
+                // Endpoints que requerem autenticação — devem vir ANTES dos permitAll mais genéricos
+                .requestMatchers(HttpMethod.GET,  "/questions/rooms/expert/**").authenticated()
+                .requestMatchers(HttpMethod.GET,  "/questions/professors/**").permitAll()
+                .requestMatchers(HttpMethod.PATCH, "/questions/*/message").authenticated()
+                // Leitura pública de perguntas e respostas colaborativas
                 .requestMatchers(HttpMethod.GET, "/questions/**", "/collaborative/questions/**").permitAll()
+                // Qualquer outro endpoint requer autenticação
                 .anyRequest().authenticated()
+            )
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((req, res, authEx) -> {
+                    res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    res.setContentType("application/json;charset=UTF-8");
+                    res.getWriter().write(
+                        "{\"error\":\"Sessão expirada. Por favor, faça login novamente.\",\"code\":401}"
+                    );
+                })
+                .accessDeniedHandler((req, res, accEx) -> {
+                    res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    res.setContentType("application/json;charset=UTF-8");
+                    res.getWriter().write(
+                        "{\"error\":\"Você não tem permissão para acessar este recurso.\",\"code\":403}"
+                    );
+                })
             )
             .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 

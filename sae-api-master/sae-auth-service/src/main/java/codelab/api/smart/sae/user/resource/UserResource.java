@@ -13,10 +13,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
+import org.springframework.web.bind.annotation.RequestParam;
+
 import codelab.api.smart.sae.framework.security.SecurityService;
 import codelab.api.smart.sae.otp.OTPManager;
 import codelab.api.smart.sae.user.dto.AuthenticationRequestDTO;
 import codelab.api.smart.sae.user.dto.AuthenticationResponseDTO;
+import codelab.api.smart.sae.user.dto.ProfessorInfoDTO;
 import codelab.api.smart.sae.user.dto.ProfessorRegisterDTO;
 import codelab.api.smart.sae.user.dto.RegisterRequestDTO;
 import codelab.api.smart.sae.user.dto.StudentRegisterDTO;
@@ -95,6 +100,12 @@ public class UserResource {
     public ResponseEntity<String[]> getProfessorSpecializations(@PathVariable String username) {
         String[] specializations = userService.getProfessorSpecializations(username);
         return ResponseEntity.ok(specializations);
+    }
+
+    @GetMapping("/professors/by-discipline")
+    public ResponseEntity<List<ProfessorInfoDTO>> getProfessorsByDiscipline(
+            @RequestParam String disciplina) {
+        return ResponseEntity.ok(userService.getProfessorsByDiscipline(disciplina));
     }
 
 }

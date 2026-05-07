@@ -14,7 +14,7 @@ import { forumService } from '../../services/forumService';
 import { useAuth } from '../../context/AuthContext';
 import {
   ALL_DISCIPLINAS, DISCIPLINA_LABELS, DISCIPLINA_EMOJI, DISCIPLINA_COLOR,
-  type DisciplinaEnum, type ForumQuestion,
+  type DisciplinaEnum, type ForumQuestion, type ProfessorInfo,
 } from '../../types/forum';
 
 function formatRelative(dateStr: string): string {
@@ -43,10 +43,21 @@ const DisciplineCard: React.FC<{
   onClick: (d: DisciplinaEnum) => void;
   selected?: boolean;
   loading?: boolean;
-}> = ({ disciplina, onClick, selected, loading }) => {
+  professors?: ProfessorInfo[];
+  loadingProfessors?: boolean;
+}> = ({ disciplina, onClick, selected, loading, professors, loadingProfessors }) => {
   const color = DISCIPLINA_COLOR[disciplina];
   const emoji = DISCIPLINA_EMOJI[disciplina];
   const label = DISCIPLINA_LABELS[disciplina];
+
+  const onlineCount = professors?.filter(p => p.online).length ?? 0;
+  const profLabel = professors == null
+    ? null
+    : professors.length === 0
+      ? null
+      : professors.length === 1
+        ? professors[0].fullname.split(' ')[0]
+        : `${professors.length} professores`;
 
   return (
     <Box
@@ -82,6 +93,21 @@ const DisciplineCard: React.FC<{
           <Typography variant="body2" fontWeight={700} color={color} textAlign="center" fontSize="0.82rem">
             {label}
           </Typography>
+          {/* Professor info row */}
+          {loadingProfessors ? (
+            <CircularProgress size={10} sx={{ color, mt: 0.75 }} />
+          ) : profLabel != null && (
+            <Stack direction="row" alignItems="center" spacing={0.4} mt={0.75}>
+              <Box sx={{
+                width: 7, height: 7, borderRadius: '50%',
+                bgcolor: onlineCount > 0 ? '#16A34A' : '#9CA3AF',
+                flexShrink: 0,
+              }} />
+              <Typography variant="caption" color="text.secondary" fontSize="0.6rem" noWrap>
+                {profLabel}
+              </Typography>
+            </Stack>
+          )}
           {selected && <CheckCircleIcon sx={{ fontSize: 14, color, mt: 0.5 }} />}
         </>
       )}
@@ -309,6 +335,11 @@ const ForumList: React.FC = () => {
   const [inboxLoading, setInboxLoading] = useState(false);
   const [inboxLoaded, setInboxLoaded] = useState(false);
 
+  // Professors by discipline (expert tab)
+  const [professorsByDisc, setProfessorsByDisc] = useState<Partial<Record<DisciplinaEnum, ProfessorInfo[]>>>({});
+  const [loadingProfessors, setLoadingProfessors] = useState(false);
+  const [professorsLoaded, setProfessorsLoaded] = useState(false);
+
   const formRef = useRef<HTMLDivElement>(null);
 
   const loadCollabQuestions = useCallback(async () => {
@@ -339,11 +370,31 @@ const ForumList: React.FC = () => {
     } finally { setInboxLoading(false); }
   }, [inboxLoaded]);
 
+  const loadProfessors = useCallback(async () => {
+    if (professorsLoaded) return;
+    setLoadingProfessors(true);
+    try {
+      const results = await Promise.all(
+        ALL_DISCIPLINAS.map(d =>
+          forumService.getProfessorsByDisciplina(d)
+            .then(list => ({ d, list }))
+            .catch(() => ({ d, list: [] as ProfessorInfo[] }))
+        )
+      );
+      const map: Partial<Record<DisciplinaEnum, ProfessorInfo[]>> = {};
+      results.forEach(({ d, list }) => { map[d] = list; });
+      setProfessorsByDisc(map);
+      setProfessorsLoaded(true);
+    } finally {
+      setLoadingProfessors(false);
+    }
+  }, [professorsLoaded]);
+
   useEffect(() => {
     if (tab === 0) loadCollabQuestions();
     else if (isProfessor) loadInbox();
-    else loadExpertQuestions();
-  }, [tab, isProfessor, loadCollabQuestions, loadExpertQuestions, loadInbox]);
+    else { loadExpertQuestions(); loadProfessors(); }
+  }, [tab, isProfessor, loadCollabQuestions, loadExpertQuestions, loadInbox, loadProfessors]);
 
   // Scroll form into view when a discipline is selected
   useEffect(() => {
@@ -559,6 +610,8 @@ const ForumList: React.FC = () => {
                   disciplina={d}
                   onClick={handleDisciplineClick}
                   selected={selectedDisc === d}
+                  professors={professorsByDisc[d]}
+                  loadingProfessors={loadingProfessors && !professorsLoaded}
                 />
               ))}
             </Box>

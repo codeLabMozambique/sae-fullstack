@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 @Service
 public class AuthServiceClient {
@@ -51,6 +53,34 @@ public class AuthServiceClient {
                 professorUsername, e.getMessage());
             return true;
         }
+    }
+
+    public List<ProfessorInfo> getProfessorsByDisciplina(codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina) {
+        try {
+            String url = authServiceUrl + "/users/professors/by-discipline?disciplina=" + disciplina.name();
+            ProfessorInfo[] result = restTemplate.getForObject(url, ProfessorInfo[].class);
+            return result != null ? Arrays.asList(result) : Collections.emptyList();
+        } catch (Exception e) {
+            log.warn("Could not fetch professors for disciplina '{}': {}", disciplina, e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    public static class ProfessorInfo {
+        private String username;
+        private String fullname;
+        private boolean online;
+        private String specialization;
+
+        public String getUsername()       { return username; }
+        public String getFullname()       { return fullname; }
+        public boolean isOnline()         { return online; }
+        public String getSpecialization() { return specialization; }
+
+        public void setUsername(String v)       { this.username = v; }
+        public void setFullname(String v)       { this.fullname = v; }
+        public void setOnline(boolean v)        { this.online = v; }
+        public void setSpecialization(String v) { this.specialization = v; }
     }
 
     private String normalize(String input) {

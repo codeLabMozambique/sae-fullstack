@@ -46,8 +46,13 @@ public class ForumQuestionService {
     }
 
     public Page<QuestionResponseDTO> list(codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina, QuestionType questionType, QuestionStatus status, Pageable pageable) {
-        return questionRepository.findWithFilters(disciplina, questionType, status, pageable)
-            .map(QuestionResponseDTO::from);
+        // Passamos os nomes dos enums como String para evitar o bug do Hibernate 6 com null enum params
+        return questionRepository.findWithFilters(
+            disciplina     != null ? disciplina.name()     : null,
+            questionType   != null ? questionType.name()   : null,
+            status         != null ? status.name()         : null,
+            pageable
+        ).map(QuestionResponseDTO::from);
     }
 
     public QuestionResponseDTO getById(Long id) {

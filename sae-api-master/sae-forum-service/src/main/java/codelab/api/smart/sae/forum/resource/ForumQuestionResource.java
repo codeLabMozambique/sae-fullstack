@@ -5,6 +5,7 @@ import codelab.api.smart.sae.forum.dto.response.QuestionResponseDTO;
 import codelab.api.smart.sae.forum.enums.DisciplinaEnum;
 import codelab.api.smart.sae.forum.enums.QuestionStatus;
 import codelab.api.smart.sae.forum.enums.QuestionType;
+import codelab.api.smart.sae.forum.service.AuthServiceClient;
 import codelab.api.smart.sae.forum.service.ForumQuestionService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -26,6 +28,9 @@ public class ForumQuestionResource {
 
     @Autowired
     private ForumQuestionService questionService;
+
+    @Autowired
+    private AuthServiceClient authServiceClient;
 
     // EP-1: Criar pergunta ESPECIALIZADO
     @PostMapping
@@ -85,6 +90,13 @@ public class ForumQuestionResource {
     public ResponseEntity<QuestionResponseDTO> getExpertRoom(
             @PathVariable DisciplinaEnum disciplina, Authentication auth) {
         return ResponseEntity.ok(questionService.getOrCreateExpertRoom(disciplina, auth.getName()));
+    }
+
+    // EP-15: Listar professores por disciplina (proxy para auth service)
+    @GetMapping("/professors/disciplina/{disciplina}")
+    public ResponseEntity<List<AuthServiceClient.ProfessorInfo>> getProfessorsByDisciplina(
+            @PathVariable DisciplinaEnum disciplina) {
+        return ResponseEntity.ok(authServiceClient.getProfessorsByDisciplina(disciplina));
     }
 
     // EP-14: Definir primeira mensagem de uma sala expert (aluno)

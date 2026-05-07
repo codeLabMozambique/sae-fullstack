@@ -37,7 +37,8 @@ public class SecurityConfig {
 								AntPathRequestMatcher.antMatcher("/users/authenticate"),
 								AntPathRequestMatcher.antMatcher("/users/otpGen/**"),
 								AntPathRequestMatcher.antMatcher("/users/otpValidation/**"),
-								AntPathRequestMatcher.antMatcher("/users/professor/**/specializations"))
+								AntPathRequestMatcher.antMatcher("/users/professor/**/specializations"),
+							AntPathRequestMatcher.antMatcher("/users/professors/by-discipline"))
 						.permitAll()
 						.requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/**"))
 						.hasAnyAuthority(UserRoles.ADMIN.name())
