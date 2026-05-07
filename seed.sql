@@ -63,8 +63,11 @@ INSERT INTO app_transaction (id, status, code, type, label, router_link, positio
 (21, 1, 'ADM-002',     'HEADER',    'Académico',          '/admin/academic',             2, NULL),
 (22, 1, 'ADM-001-001', 'MENU_ITEM', 'Listar Utilizadores','/admin/users/list',           1, 20),
 (23, 1, 'ADM-001-002', 'MENU_ITEM', 'Gerir Roles',        '/admin/users/roles',          2, 20),
-(24, 1, 'ADM-002-001', 'MENU_ITEM', 'Turmas',             '/admin/academic/classrooms',  1, 21),
-(25, 1, 'ADM-002-002', 'MENU_ITEM', 'Disciplinas',        '/admin/academic/subjects',    2, 21),
+(24, 1, 'ADM-002-001', 'MENU_ITEM', 'Turmas',                  '/admin/academic/classrooms',             1, 21),
+(25, 1, 'ADM-002-002', 'MENU_ITEM', 'Disciplinas',             '/admin/academic/subjects',               2, 21),
+(26, 1, 'ADM-002-003', 'MENU_ITEM', 'Escolas',                 '/admin/academic/schools',                3, 21),
+(27, 1, 'ADM-002-004', 'MENU_ITEM', 'Níveis de Ensino',        '/admin/academic/class-levels',           4, 21),
+(28, 1, 'ADM-002-005', 'MENU_ITEM', 'Atribuições Professores', '/admin/academic/professor-assignments',  5, 21),
 
 -- ── GUEST ───────────────────────────────────────────────────
 (30, 1, 'GST-001',     'HEADER',    'Início',             '/guest/home',                 1, NULL);
@@ -100,6 +103,9 @@ INSERT INTO role_transaction (id, status, role, app_transaction_id) VALUES
 (23, 1, 'ADMIN',     23),
 (24, 1, 'ADMIN',     24),
 (25, 1, 'ADMIN',     25),
+(26, 1, 'ADMIN',     26),
+(27, 1, 'ADMIN',     27),
+(28, 1, 'ADMIN',     28),
 
 -- GUEST
 (30, 1, 'GUEST',     30);

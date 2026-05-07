@@ -1,7 +1,9 @@
 /**
- * 
+ *
  */
 package codelab.api.smart.sae.user.resource;
+
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,17 +13,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
-
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import codelab.api.smart.sae.framework.security.SecurityService;
 import codelab.api.smart.sae.otp.OTPManager;
 import codelab.api.smart.sae.user.dto.AuthenticationRequestDTO;
 import codelab.api.smart.sae.user.dto.AuthenticationResponseDTO;
 import codelab.api.smart.sae.user.dto.ProfessorInfoDTO;
+import codelab.api.smart.sae.user.dto.ProfessorProfileDTO;
 import codelab.api.smart.sae.user.dto.ProfessorRegisterDTO;
 import codelab.api.smart.sae.user.dto.RegisterRequestDTO;
 import codelab.api.smart.sae.user.dto.StudentRegisterDTO;
@@ -74,6 +74,11 @@ public class UserResource {
     public ResponseEntity<?> signupStudent(@RequestBody StudentRegisterDTO registerRequest) throws Exception {
         StudentProfileEntity profile = userService.createStudent(registerRequest);
         return new ResponseEntity<>(profile, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/professors")
+    public ResponseEntity<List<ProfessorProfileDTO>> getProfessors() {
+        return ResponseEntity.ok(userService.findAllProfessors());
     }
 
     @PostMapping("/login")
