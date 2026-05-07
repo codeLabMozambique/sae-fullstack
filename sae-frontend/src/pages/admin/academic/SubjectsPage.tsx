@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Chip, Button, IconButton, Dialog, DialogTitle,
+  TableHead, TableRow, TablePagination, Chip, Button, IconButton, Dialog, DialogTitle,
   DialogContent, TextField, Alert, CircularProgress, Tooltip,
   InputAdornment,
 } from '@mui/material';
@@ -54,6 +54,8 @@ const SubjectsPage: React.FC = () => {
   const [form, setForm]             = useState<SubjectDTO>(emptyForm);
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch]         = useState('');
+  const [page, setPage]             = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const load = async () => {
     try { setLoading(true); setError(null); setSubjects(await subjectService.findAll()); }
@@ -69,6 +71,8 @@ const SubjectsPage: React.FC = () => {
       || (s.code ?? '').toLowerCase().includes(q)
       || (s.description ?? '').toLowerCase().includes(q);
   }), [subjects, search]);
+
+  useEffect(() => { setPage(0); }, [search]);
 
   const openCreate  = () => { setEditing(null); setForm(emptyForm); setDialogOpen(true); };
   const openEdit    = (r: SubjectDTO) => { setEditing(r); setForm({ ...r }); setDialogOpen(true); };
@@ -169,6 +173,7 @@ const SubjectsPage: React.FC = () => {
               <CircularProgress sx={{ color: ACCENT }} />
             </Box>
           ) : (
+            <>
             <TableContainer sx={{ background: 'transparent' }}>
               <Table sx={{ minWidth: 560 }}>
                 <TableHead>
@@ -191,7 +196,7 @@ const SubjectsPage: React.FC = () => {
                         </Box>
                       </TableCell>
                     </TableRow>
-                  ) : filtered.map(row => {
+                  ) : filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(row => {
                     const { bg, color } = row.code ? codeColor(row.code) : { bg: 'rgba(0,0,0,0.05)', color: '#757575' };
                     return (
                       <TableRow key={row.id} sx={{ transition: 'background .15s', '&:hover': { background: 'rgba(0,166,81,0.035)' } }}>
@@ -231,6 +236,19 @@ const SubjectsPage: React.FC = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+            <TablePagination
+              component="div"
+              count={filtered.length}
+              page={page}
+              onPageChange={(_, newPage) => setPage(newPage)}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={e => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              labelRowsPerPage="Por página:"
+              labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
+              sx={{ borderTop: '1px solid rgba(0,0,0,0.06)', bgcolor: 'rgba(248,250,252,0.6)' }}
+            />
+            </>
           )}
         </Box>
       </Box>
