@@ -14,10 +14,14 @@ import SubjectsPage from './pages/admin/academic/SubjectsPage';
 import SchoolsPage from './pages/admin/academic/SchoolsPage';
 import ClassLevelsPage from './pages/admin/academic/ClassLevelsPage';
 import ProfessorAssignmentsPage from './pages/admin/academic/ProfessorAssignmentsPage';
+import ProfessorClassesPage from './pages/professor/ProfessorClassesPage';
+import ProfessorGradesPage from './pages/professor/ProfessorGradesPage';
+import StudentForumPage from './pages/student/StudentForumPage';
 import UsersListPage from './pages/admin/users/UsersListPage';
 import ProfessorClassroomsPage from './pages/professor/ProfessorClassroomsPage';
 
 // Biblioteca / Content-service pages
+import ForumList from './pages/forum/ForumList';
 import Biblioteca from './pages/Biblioteca';
 import Favoritos from './pages/biblioteca/Favoritos';
 import ContinuarLer from './pages/biblioteca/ContinuarLer';
@@ -32,7 +36,6 @@ import AdminBatchUpload from './pages/biblioteca/admin/AdminBatchUpload';
 
 // Forum & Dashboard (for dynamic-menu routes)
 import Dashboard from './pages/Dashboard';
-import ForumList from './pages/forum/ForumList';
 
 import { testBackendConnection } from './services/api';
 
@@ -73,9 +76,10 @@ function App() {
 
             {/* ── STUDENT — Dashboard & Fórum ───────────────── */}
             <Route path="/student/dashboard" element={<Layout><Dashboard /></Layout>} />
-            <Route path="/student/questions" element={<Layout><ForumList /></Layout>} />
-            <Route path="/student/forum/new" element={<Layout><ForumList /></Layout>} />
-            <Route path="/student/forum/questions" element={<Layout><ForumList /></Layout>} />
+            <Route path="/student/questions" element={<Layout><StudentForumPage /></Layout>} />
+            <Route path="/student/forum" element={<Layout><StudentForumPage /></Layout>} />
+            <Route path="/student/forum/new" element={<Layout><StudentForumPage /></Layout>} />
+            <Route path="/student/forum/questions" element={<Layout><StudentForumPage /></Layout>} />
 
             {/* ── STUDENT — Biblioteca ───────────────────────── */}
             <Route path="/student/library" element={<Layout><Biblioteca /></Layout>} />
@@ -93,8 +97,8 @@ function App() {
             <Route path="/professor/forum/answered" element={<Layout><ForumList /></Layout>} />
             <Route path="/professor/my-classes" element={<Layout><ProfessorClassroomsPage /></Layout>} />
             <Route path="/professor/students" element={<Layout><ProfessorClassroomsPage /></Layout>} />
-            <Route path="/professor/classes" element={<Layout><ProfessorClassroomsPage /></Layout>} />
-            <Route path="/professor/grades" element={<Layout><ProfessorClassroomsPage /></Layout>} />
+            <Route path="/professor/classes" element={<Layout><ProfessorClassesPage /></Layout>} />
+            <Route path="/professor/grades" element={<Layout><ProfessorGradesPage /></Layout>} />
 
             {/* ── PROFESSOR — Biblioteca ─────────────────────── */}
             <Route path="/professor/library" element={<Layout><Biblioteca /></Layout>} />

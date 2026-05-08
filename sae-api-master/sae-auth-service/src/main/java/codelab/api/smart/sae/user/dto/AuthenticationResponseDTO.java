@@ -15,6 +15,7 @@ public class AuthenticationResponseDTO implements Serializable {
 
     private static final long serialVersionUID = -1250867815652061380L;
 
+    private Long userId;
     private String fullName;
     private String username;
     private String token;
@@ -40,6 +41,9 @@ public class AuthenticationResponseDTO implements Serializable {
         this.setRole(role);
 
     }
+
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
 
     /**
      * @return the role

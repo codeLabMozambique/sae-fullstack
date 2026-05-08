@@ -1,6 +1,7 @@
 package codelab.api.smart.sae.academic.service;
 
 import codelab.api.smart.sae.academic.dto.ProfessorAssignmentDTO;
+import codelab.api.smart.sae.academic.dto.ProfessorAssignmentDetailDTO;
 import codelab.api.smart.sae.academic.model.ClassroomEntity;
 import codelab.api.smart.sae.academic.model.ProfessorAssignmentEntity;
 import codelab.api.smart.sae.academic.model.SubjectEntity;
@@ -26,6 +27,48 @@ public class ProfessorAssignmentService {
 
     @Autowired
     private SubjectRepository subjectRepository;
+
+    public List<ProfessorAssignmentDetailDTO> findByClassroomId(Long classroomId) {
+        return professorAssignmentRepository.findByClassroom_IdAndStatus(classroomId, EntityState.ACTIVE)
+                .stream()
+                .map(entity -> {
+                    ProfessorAssignmentDetailDTO dto = new ProfessorAssignmentDetailDTO();
+                    dto.setId(entity.getId());
+                    dto.setProfessorId(entity.getProfessorId());
+                    dto.setClassroomId(entity.getClassroom().getId());
+                    dto.setClassroomName(entity.getClassroom().getName());
+                    dto.setClassroomShift(entity.getClassroom().getShift());
+                    dto.setClassroomAcademicYear(entity.getClassroom().getAcademicYear());
+                    if (entity.getClassroom().getClassLevel() != null) {
+                        dto.setClassLevelName(entity.getClassroom().getClassLevel().getName());
+                    }
+                    dto.setSubjectId(entity.getSubject().getId());
+                    dto.setSubjectName(entity.getSubject().getName());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    public List<ProfessorAssignmentDetailDTO> findByProfessorId(Long professorId) {
+        return professorAssignmentRepository.findByProfessorIdAndStatus(professorId, EntityState.ACTIVE)
+                .stream()
+                .map(entity -> {
+                    ProfessorAssignmentDetailDTO dto = new ProfessorAssignmentDetailDTO();
+                    dto.setId(entity.getId());
+                    dto.setProfessorId(entity.getProfessorId());
+                    dto.setClassroomId(entity.getClassroom().getId());
+                    dto.setClassroomName(entity.getClassroom().getName());
+                    dto.setClassroomShift(entity.getClassroom().getShift());
+                    dto.setClassroomAcademicYear(entity.getClassroom().getAcademicYear());
+                    if (entity.getClassroom().getClassLevel() != null) {
+                        dto.setClassLevelName(entity.getClassroom().getClassLevel().getName());
+                    }
+                    dto.setSubjectId(entity.getSubject().getId());
+                    dto.setSubjectName(entity.getSubject().getName());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
 
     public List<ProfessorAssignmentDTO> findAllActive() {
         return professorAssignmentRepository.findByStatus(EntityState.ACTIVE).stream()

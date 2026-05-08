@@ -55,6 +55,41 @@ public class AuthServiceClient {
         }
     }
 
+    /**
+     * Retorna os nomes dos enums DisciplinaEnum correspondentes às especializações do professor.
+     * Usa a mesma normalização de canProfessorAnswerArea para garantir consistência.
+     */
+    public List<String> getProfessorDisciplineNames(String professorUsername) {
+        try {
+            String[] specs = getProfessorSpecializations(professorUsername);
+            List<String> disciplines = new java.util.ArrayList<>();
+            for (String spec : specs) {
+                String normalizedSpec = normalize(spec);
+                for (codelab.api.smart.sae.forum.enums.DisciplinaEnum d : codelab.api.smart.sae.forum.enums.DisciplinaEnum.values()) {
+                    String normalizedEnum = normalize(d.name());
+                    if (normalizedSpec.contains(normalizedEnum) || normalizedEnum.contains(normalizedSpec)) {
+                        if (!disciplines.contains(d.name())) {
+                            disciplines.add(d.name());
+                        }
+                        break;
+                    }
+                }
+            }
+            if (disciplines.isEmpty()) {
+                // Fallback: sem disciplinas reconhecidas → inclui todas (consistente com canProfessorAnswerArea)
+                for (codelab.api.smart.sae.forum.enums.DisciplinaEnum d : codelab.api.smart.sae.forum.enums.DisciplinaEnum.values()) {
+                    disciplines.add(d.name());
+                }
+            }
+            return disciplines;
+        } catch (Exception e) {
+            log.warn("Não foi possível resolver disciplinas do professor '{}': {}", professorUsername, e.getMessage());
+            return Arrays.stream(codelab.api.smart.sae.forum.enums.DisciplinaEnum.values())
+                .map(Enum::name)
+                .collect(java.util.stream.Collectors.toList());
+        }
+    }
+
     public List<ProfessorInfo> getProfessorsByDisciplina(codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina) {
         try {
             String url = authServiceUrl + "/users/professors/by-discipline?disciplina=" + disciplina.name();

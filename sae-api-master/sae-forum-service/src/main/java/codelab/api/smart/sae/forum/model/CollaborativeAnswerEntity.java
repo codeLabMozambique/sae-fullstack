@@ -47,6 +47,9 @@ public class CollaborativeAnswerEntity implements Serializable {
     @Column(name = "REJECTED_AT")
     private LocalDateTime rejectedAt;
 
+    @Column(name = "ATTACHMENT_ID", length = 64)
+    private String attachmentId;
+
     @Column(name = "CREATED_AT", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -84,4 +87,7 @@ public class CollaborativeAnswerEntity implements Serializable {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getAttachmentId() { return attachmentId; }
+    public void setAttachmentId(String attachmentId) { this.attachmentId = attachmentId; }
 }

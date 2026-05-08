@@ -98,6 +98,27 @@ public class ForumQuestionResource {
         return ResponseEntity.ok(authServiceClient.getProfessorsByDisciplina(disciplina));
     }
 
+    // Perguntas do utilizador autenticado (aluno ou professor)
+    @GetMapping("/mine")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<QuestionResponseDTO>> getMyQuestions(Authentication auth) {
+        return ResponseEntity.ok(questionService.getMyQuestions(auth.getName()));
+    }
+
+    // EP-16: Perguntas pendentes filtradas pela especialidade do professor
+    @GetMapping("/professor/pending")
+    @PreAuthorize("hasAuthority('PROFESSOR')")
+    public ResponseEntity<List<QuestionResponseDTO>> getProfessorPending(Authentication auth) {
+        return ResponseEntity.ok(questionService.getProfessorPending(auth.getName()));
+    }
+
+    // EP-17: Perguntas respondidas pelo professor (+ colaborativas com actividade)
+    @GetMapping("/professor/answered")
+    @PreAuthorize("hasAuthority('PROFESSOR')")
+    public ResponseEntity<List<QuestionResponseDTO>> getProfessorAnswered(Authentication auth) {
+        return ResponseEntity.ok(questionService.getProfessorAnswered(auth.getName()));
+    }
+
     // EP-14: Definir primeira mensagem de uma sala expert (aluno)
     @PatchMapping("/{id}/message")
     @PreAuthorize("isAuthenticated()")

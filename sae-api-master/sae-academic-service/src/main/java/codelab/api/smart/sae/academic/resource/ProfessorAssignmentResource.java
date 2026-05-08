@@ -1,6 +1,7 @@
 package codelab.api.smart.sae.academic.resource;
 
 import codelab.api.smart.sae.academic.dto.ProfessorAssignmentDTO;
+import codelab.api.smart.sae.academic.dto.ProfessorAssignmentDetailDTO;
 import codelab.api.smart.sae.academic.service.ProfessorAssignmentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,16 @@ public class ProfessorAssignmentResource {
 
     @Autowired
     private ProfessorAssignmentService professorAssignmentService;
+
+    @GetMapping("/professor/{professorId}")
+    public ResponseEntity<List<ProfessorAssignmentDetailDTO>> findByProfessorId(@PathVariable Long professorId) {
+        return ResponseEntity.ok(professorAssignmentService.findByProfessorId(professorId));
+    }
+
+    @GetMapping("/classroom/{classroomId}")
+    public ResponseEntity<List<ProfessorAssignmentDetailDTO>> findByClassroomId(@PathVariable Long classroomId) {
+        return ResponseEntity.ok(professorAssignmentService.findByClassroomId(classroomId));
+    }
 
     @GetMapping("/all")
     public ResponseEntity<List<ProfessorAssignmentDTO>> findAllActive() {

@@ -8,6 +8,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -112,6 +113,12 @@ public class UserResource {
         return ResponseEntity.ok(userService.getStudentProfile(userId));
     }
 
+    @GetMapping("/my-student-profile")
+    public ResponseEntity<StudentProfileDTO> getMyStudentProfile(Authentication auth) {
+        StudentProfileDTO dto = userService.getStudentProfileByUsername(auth.getName());
+        return dto != null ? ResponseEntity.ok(dto) : ResponseEntity.notFound().build();
+    }
+
     @PutMapping("/student-profile")
     public ResponseEntity<StudentProfileDTO> updateStudentProfile(@RequestBody StudentProfileUpdateDTO dto) {
         return ResponseEntity.ok(userService.updateStudentProfile(dto));
@@ -134,6 +141,7 @@ public class UserResource {
                 principal.getUsername(),
                 jwt, userService.findTransactionsByRole(principal),
                 UserRoleValidator.validate(roleName));
+        response.setUserId(principal.getId());
         return ResponseEntity.ok(response);
     }
 

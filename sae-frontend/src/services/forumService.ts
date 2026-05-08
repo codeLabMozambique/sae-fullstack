@@ -71,7 +71,7 @@ export const forumService = {
   getProfessorsByDisciplina: (disciplina: DisciplinaEnum): Promise<ProfessorInfo[]> =>
     api.get<ProfessorInfo[]>(`${BASE}/questions/professors/disciplina/${disciplina}`).then(r => r.data),
 
-  // Listar questões abertas para professor (caixa de entrada)
+  // Listar questões abertas para professor (caixa de entrada) — legado
   listProfessorInbox: (params?: {
     disciplina?: DisciplinaEnum;
     page?: number;
@@ -80,4 +80,16 @@ export const forumService = {
     api.get<PageResponse<ForumQuestion>>(`${BASE}/questions`, {
       params: { questionType: 'ESPECIALIZADO', status: 'ABERTA', ...params },
     }).then(r => r.data),
+
+  // Perguntas do utilizador autenticado (aluno — "Minhas Perguntas")
+  getMyQuestions: (): Promise<ForumQuestion[]> =>
+    api.get<ForumQuestion[]>(`${BASE}/questions/mine`).then(r => r.data),
+
+  // EP-16: Perguntas pendentes filtradas pela especialidade do professor
+  listProfessorPending: (): Promise<ForumQuestion[]> =>
+    api.get<ForumQuestion[]>(`${BASE}/questions/professor/pending`).then(r => r.data),
+
+  // EP-17: Perguntas respondidas pelo professor (+ colaborativas com actividade)
+  listProfessorAnswered: (): Promise<ForumQuestion[]> =>
+    api.get<ForumQuestion[]>(`${BASE}/questions/professor/answered`).then(r => r.data),
 };

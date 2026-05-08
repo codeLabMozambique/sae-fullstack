@@ -82,11 +82,29 @@ export const professorAssignmentService = {
   save: (dto: ProfessorAssignmentDTO) => api.post<ProfessorAssignmentDTO>('/academic/professor-assignment/save', dto).then(r => r.data),
   update: (dto: ProfessorAssignmentDTO) => api.post<ProfessorAssignmentDTO>('/academic/professor-assignment/update', dto).then(r => r.data),
   deactivate: (id: number) => api.post('/academic/professor-assignment/deactivate', { id }),
+  findByProfessor: (professorId: number) =>
+    api.get<ProfessorAssignmentDetailDTO[]>(`/academic/professor-assignment/professor/${professorId}`).then(r => r.data),
+  findByClassroom: (classroomId: number) =>
+    api.get<ProfessorAssignmentDetailDTO[]>(`/academic/professor-assignment/classroom/${classroomId}`).then(r => r.data),
 };
 
 export const professorService = {
   findAll: () => api.get<ProfessorDTO[]>('/auth/users/professors').then(r => r.data),
 };
+
+
+export interface ProfessorAssignmentDetailDTO {
+  id: number;
+  professorId: number;
+  classroomId: number;
+  classroomName: string;
+  classroomShift: string;
+  classroomAcademicYear: string;
+  classLevelName: string;
+  subjectId: number;
+  subjectName: string;
+}
+
 
 export interface StudentProfileDTO {
   userId: number;

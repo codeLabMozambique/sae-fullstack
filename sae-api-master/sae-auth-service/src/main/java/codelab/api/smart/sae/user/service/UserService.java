@@ -334,6 +334,15 @@ public class UserService {
                 s.getGrade(), s.getAge());
     }
 
+    public StudentProfileDTO getStudentProfileByUsername(String username) {
+        return studentProfileRepository.findByUsername(username)
+                .map(s -> new StudentProfileDTO(
+                        s.getUser().getId(), s.getUser().getFullname(), s.getUser().getUsername(),
+                        s.getUser().getEmail(), s.getSchoolId(), s.getClassroomId(),
+                        s.getGrade(), s.getAge()))
+                .orElse(null);
+    }
+
     @Transactional
     public StudentProfileDTO updateStudentProfile(StudentProfileUpdateDTO dto) {
         StudentProfileEntity s = studentProfileRepository.findByUser_Id(dto.getUserId())
@@ -386,14 +395,13 @@ public class UserService {
     }
 
     public StudentProfileDTO findStudentProfileByUsername(String username) {
-        StudentProfileEntity s = studentProfileRepository.findByUser_Username(username)
+        StudentProfileEntity s = studentProfileRepository.findByUsername(username)
                 .orElseThrow(() -> new BusinessException("Perfil de estudante não encontrado para: " + username));
         return new StudentProfileDTO(
                 s.getUser().getId(), s.getUser().getFullname(), s.getUser().getUsername(),
                 s.getUser().getEmail(), s.getSchoolId(), s.getClassroomId(),
                 s.getGrade(), s.getAge());
     }
-
     public String[] getProfessorSpecializations(String username) {
         return professorProfileRepository.findByUserUsername(username)
             .map(profile -> new String[]{profile.getSpecialization()})

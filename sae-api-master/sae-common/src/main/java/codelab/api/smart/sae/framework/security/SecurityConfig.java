@@ -40,10 +40,13 @@ public class SecurityConfig {
                     AntPathRequestMatcher.antMatcher("/users/professor/**/specializations"),
                     AntPathRequestMatcher.antMatcher("/users/professors/by-discipline"))
                 .permitAll()
+                .requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/my-student-profile"))
+                .authenticated()
                 // Allow professors and students to read user lists needed for classroom/forum features
                 .requestMatchers(
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/all"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/professors"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/students"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/students-by-classroom"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/student-profile-by-username"))
                 .hasAnyAuthority(UserRoles.ADMIN.name(), UserRoles.PROFESSOR.name(), UserRoles.STUDENT.name())
