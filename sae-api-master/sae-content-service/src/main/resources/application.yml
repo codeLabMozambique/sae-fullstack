@@ -1,9 +1,18 @@
 server:
   port: 8082
+  tomcat:
+    max-swallow-size: 100MB
+    max-http-form-post-size: 100MB
 
 spring:
   application:
     name: sae-content-service
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 60MB
+      file-size-threshold: 2MB
   data:
     mongodb:
       uri: mongodb://localhost:27017/sae_content

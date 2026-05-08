@@ -394,6 +394,22 @@ public class UserService {
                 s.getGrade(), s.getAge());
     }
 
+    /**
+     * Lookup leve para outros micro-serviços resolverem o nome completo de um
+     * utilizador a partir do username (telefone). Devolve apenas username,
+     * fullName e role (sem dados sensíveis).
+     */
+    public java.util.Optional<java.util.Map<String, Object>> findBasicByUsername(String username) {
+        return userRepository.findByUsername(username).map(u -> {
+            java.util.Map<String, Object> out = new java.util.HashMap<>();
+            out.put("username", u.getUsername());
+            out.put("fullName", u.getFullname());
+            out.put("role", u.getRole() != null && u.getRole().getRole() != null
+                    ? u.getRole().getRole().name() : null);
+            return out;
+        });
+    }
+
     public String[] getProfessorSpecializations(String username) {
         return professorProfileRepository.findByUserUsername(username)
             .map(profile -> new String[]{profile.getSpecialization()})

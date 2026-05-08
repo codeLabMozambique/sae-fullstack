@@ -49,16 +49,49 @@ public class ContentResource {
 
     @GetMapping("/{id}/read")
     public ResponseEntity<org.springframework.core.io.InputStreamResource> readFile(@PathVariable String id) {
-        Content content = contentService.getById(id);
-        String url = content.getFileUrl();
-        String fileName = url.replace("/api/contents/", "").replace("/read", "").replace("/file", "");
-        
-        java.io.InputStream is = fileStorageService.getFile(fileName);
-        
-        return ResponseEntity.ok()
-                .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
-                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"")
-                .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "private, max-age=3600")
-                .body(new org.springframework.core.io.InputStreamResource(is));
+        // Tenta primeiro como Content document (caminho normal)
+        try {
+            Content content = contentService.getById(id);
+            String url = content.getFileUrl();
+            String fileName = url.replace("/api/contents/", "").replace("/read", "").replace("/file", "").replace("/files/", "");
+            return serveFile(fileName, org.springframework.http.MediaType.APPLICATION_PDF);
+        } catch (org.springframework.web.server.ResponseStatusException ex) {
+            // Fallback: trata `id` como nome de ficheiro no MinIO (thumbnails antigos)
+            return serveFile(id, guessMediaType(id));
+        }
+    }
+
+    /**
+     * Endpoint dedicado para servir ficheiros directamente pelo nome (sem lookup no Mongo).
+     * Usado por thumbnails e qualquer ficheiro guardado pelo nome no MinIO.
+     */
+    @GetMapping("/files/{fileName}")
+    public ResponseEntity<org.springframework.core.io.InputStreamResource> readByFileName(@PathVariable String fileName) {
+        return serveFile(fileName, guessMediaType(fileName));
+    }
+
+    private ResponseEntity<org.springframework.core.io.InputStreamResource> serveFile(
+            String fileName, org.springframework.http.MediaType mediaType) {
+        try {
+            java.io.InputStream is = fileStorageService.getFile(fileName);
+            return ResponseEntity.ok()
+                    .contentType(mediaType)
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                            "inline; filename=\"" + fileName + "\"")
+                    .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "public, max-age=86400")
+                    .body(new org.springframework.core.io.InputStreamResource(is));
+        } catch (RuntimeException e) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.NOT_FOUND, "Ficheiro não encontrado: " + fileName);
+        }
+    }
+
+    private org.springframework.http.MediaType guessMediaType(String name) {
+        String n = name.toLowerCase();
+        if (n.endsWith(".jpg") || n.endsWith(".jpeg")) return org.springframework.http.MediaType.IMAGE_JPEG;
+        if (n.endsWith(".png"))  return org.springframework.http.MediaType.IMAGE_PNG;
+        if (n.endsWith(".webp")) return org.springframework.http.MediaType.parseMediaType("image/webp");
+        if (n.endsWith(".gif"))  return org.springframework.http.MediaType.IMAGE_GIF;
+        return org.springframework.http.MediaType.APPLICATION_PDF;
     }
 }

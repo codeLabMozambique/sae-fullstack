@@ -41,14 +41,16 @@ public class ProfessorContentService {
             
             String thumbName = null;
             if (thumbBytes != null) {
-                thumbName = fileStorageService.saveFile(thumbBytes, "thumb_" + file.getOriginalFilename() + ".jpg", "image/jpeg");
+                String safeBase = (file.getOriginalFilename() == null ? "cover" : file.getOriginalFilename())
+                        .replaceAll("\\.pdf$", "");
+                thumbName = fileStorageService.saveFile(thumbBytes, "thumb_" + safeBase + ".jpg", "image/jpeg");
             }
-            
+
             String fullName = authServiceClient.getUserFullName(professorUsername, token);
-            
+
             metadata.setFileUrl("/api/contents/" + fileName + "/read");
             if (thumbName != null) {
-                metadata.setThumbnailUrl("/api/contents/" + thumbName + "/read");
+                metadata.setThumbnailUrl("/api/contents/files/" + thumbName);
             }
             metadata.setTotalPages(pages);
             metadata.setUploadedBy(professorUsername);
