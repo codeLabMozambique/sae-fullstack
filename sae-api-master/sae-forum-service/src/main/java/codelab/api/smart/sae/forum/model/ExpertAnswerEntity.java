@@ -32,6 +32,9 @@ public class ExpertAnswerEntity implements Serializable {
     @Column(name = "ACCEPTED", nullable = false)
     private Boolean accepted = false;
 
+    @Column(name = "ATTACHMENT_ID", length = 64)
+    private String attachmentId;
+
     @Column(name = "CREATED_AT", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -57,4 +60,7 @@ public class ExpertAnswerEntity implements Serializable {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getAttachmentId() { return attachmentId; }
+    public void setAttachmentId(String attachmentId) { this.attachmentId = attachmentId; }
 }

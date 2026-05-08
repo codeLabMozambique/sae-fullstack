@@ -15,6 +15,7 @@ public class CollaborativeAnswerResponseDTO {
     private LocalDateTime validatedAt;
     private String rejectedBy;
     private LocalDateTime rejectedAt;
+    private String attachmentId;
     private LocalDateTime createdAt;
 
     public static CollaborativeAnswerResponseDTO from(CollaborativeAnswerEntity e) {
@@ -28,6 +29,7 @@ public class CollaborativeAnswerResponseDTO {
         dto.validatedAt = e.getValidatedAt();
         dto.rejectedBy = e.getRejectedBy();
         dto.rejectedAt = e.getRejectedAt();
+        dto.attachmentId = e.getAttachmentId();
         dto.createdAt = e.getCreatedAt();
         return dto;
     }
@@ -41,5 +43,6 @@ public class CollaborativeAnswerResponseDTO {
     public LocalDateTime getValidatedAt() { return validatedAt; }
     public String getRejectedBy() { return rejectedBy; }
     public LocalDateTime getRejectedAt() { return rejectedAt; }
+    public String getAttachmentId() { return attachmentId; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

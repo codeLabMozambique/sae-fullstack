@@ -10,6 +10,7 @@ public class ExpertAnswerResponseDTO {
     private Long questionId;
     private String answeredBy;
     private Boolean accepted;
+    private String attachmentId;
     private LocalDateTime createdAt;
 
     public static ExpertAnswerResponseDTO from(ExpertAnswerEntity e) {
@@ -19,6 +20,7 @@ public class ExpertAnswerResponseDTO {
         dto.questionId = e.getQuestionId();
         dto.answeredBy = e.getAnsweredBy();
         dto.accepted = e.getAccepted();
+        dto.attachmentId = e.getAttachmentId();
         dto.createdAt = e.getCreatedAt();
         return dto;
     }
@@ -28,5 +30,6 @@ public class ExpertAnswerResponseDTO {
     public Long getQuestionId() { return questionId; }
     public String getAnsweredBy() { return answeredBy; }
     public Boolean getAccepted() { return accepted; }
+    public String getAttachmentId() { return attachmentId; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

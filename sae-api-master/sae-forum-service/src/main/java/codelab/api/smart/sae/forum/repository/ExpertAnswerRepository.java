@@ -13,4 +13,8 @@ public interface ExpertAnswerRepository extends JpaRepository<ExpertAnswerEntity
     List<ExpertAnswerEntity> findByQuestionIdOrderByCreatedAtAsc(Long questionId);
 
     Optional<ExpertAnswerEntity> findByQuestionIdAndAcceptedTrue(Long questionId);
+
+    boolean existsByQuestionIdAndAnsweredBy(Long questionId, String answeredBy);
+
+    List<ExpertAnswerEntity> findByAnsweredBy(String answeredBy);
 }

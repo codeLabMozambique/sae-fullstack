@@ -11,4 +11,6 @@ import java.util.List;
 public interface ProfessorAssignmentRepository extends JpaRepository<ProfessorAssignmentEntity, Long> {
     List<ProfessorAssignmentEntity> findByStatus(EntityState status);
     List<ProfessorAssignmentEntity> findByClassroomIdInAndStatus(List<Long> classroomIds, EntityState status);
+    List<ProfessorAssignmentEntity> findByProfessorIdAndStatus(Long professorId, EntityState status);
+    List<ProfessorAssignmentEntity> findByClassroom_IdAndStatus(Long classroomId, EntityState status);
 }

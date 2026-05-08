@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   Box, Typography, Tabs, Tab, CircularProgress, Avatar,
   Chip, Stack, TextField, Button, Alert, Collapse, Divider,
@@ -9,7 +9,9 @@ import InboxIcon from '@mui/icons-material/Inbox';
 import SendIcon from '@mui/icons-material/Send';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
-import { useNavigate } from 'react-router-dom';
+import PendingActionsIcon from '@mui/icons-material/PendingActions';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { forumService } from '../../services/forumService';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -182,10 +184,17 @@ const QuestionRow: React.FC<{
 };
 
 /* ─── Inbox row (professor) ───────────────────────────────────── */
-const InboxRow: React.FC<{ question: ForumQuestion; onClick: () => void }> = ({ question, onClick }) => {
+const InboxRow: React.FC<{
+  question: ForumQuestion;
+  onClick: () => void;
+  alsoInPending?: boolean;
+}> = ({ question, onClick, alsoInPending }) => {
   const color = DISCIPLINA_COLOR[question.disciplina] ?? '#374151';
+  const isCollab = question.questionType === 'COLABORATIVO';
   const rawDesc = question.descricao ?? '';
-  const preview = rawDesc === '_' ? 'Aguarda resposta...' : rawDesc;
+  const preview = rawDesc === '_' ? 'Aguarda resposta...' : rawDesc.slice(0, 90) + (rawDesc.length > 90 ? '...' : '');
+  const avatarContent = isCollab ? DISCIPLINA_EMOJI[question.disciplina] : initials(question.createdBy);
+  const title = isCollab ? `Chat da Turma · ${DISCIPLINA_LABELS[question.disciplina]}` : question.createdBy;
 
   return (
     <Box
@@ -198,18 +207,41 @@ const InboxRow: React.FC<{ question: ForumQuestion; onClick: () => void }> = ({ 
         '&:hover': { bgcolor: '#F9FAFB' },
       }}
     >
-      <Avatar sx={{ bgcolor: `${color}18`, color, fontWeight: 700, width: 42, height: 42, fontSize: '0.85rem', flexShrink: 0 }}>
-        {initials(question.createdBy)}
+      <Avatar sx={{ bgcolor: `${color}18`, color, fontWeight: 700, width: 42, height: 42, fontSize: isCollab ? '1.1rem' : '0.85rem', flexShrink: 0 }}>
+        {avatarContent}
       </Avatar>
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Stack direction="row" alignItems="center" spacing={1} mb={0.3}>
-          <Typography variant="body2" fontWeight={700} color="#111827" noWrap>{question.createdBy}</Typography>
+        <Stack direction="row" alignItems="center" spacing={0.75} mb={0.3} flexWrap="wrap">
+          <Typography variant="body2" fontWeight={700} color="#111827" noWrap>{title}</Typography>
           <Chip
-            label={DISCIPLINA_LABELS[question.disciplina]}
+            icon={isCollab
+              ? <GroupsIcon sx={{ fontSize: '0.7rem !important' }} />
+              : <SchoolIcon sx={{ fontSize: '0.7rem !important' }} />}
+            label={isCollab ? 'Colaborativo' : 'Especializado'}
             size="small"
-            sx={{ bgcolor: `${color}15`, color, fontWeight: 700, fontSize: '0.6rem', height: 16, '& .MuiChip-label': { px: 0.75 } }}
+            sx={{
+              bgcolor: isCollab ? '#DCFCE7' : '#DBEAFE',
+              color: isCollab ? '#16A34A' : '#2563EB',
+              fontWeight: 700, fontSize: '0.58rem', height: 16,
+              '& .MuiChip-label': { px: 0.5 },
+              '& .MuiChip-icon': { ml: 0.5 },
+            }}
           />
+          {!isCollab && (
+            <Chip
+              label={DISCIPLINA_LABELS[question.disciplina]}
+              size="small"
+              sx={{ bgcolor: `${color}15`, color, fontWeight: 700, fontSize: '0.58rem', height: 16, '& .MuiChip-label': { px: 0.5 } }}
+            />
+          )}
         </Stack>
+        {alsoInPending && (
+          <Chip
+            label="Aguarda a sua intervenção"
+            size="small"
+            sx={{ bgcolor: '#FEF3C7', color: '#D97706', fontWeight: 700, fontSize: '0.58rem', height: 15, mb: 0.4, '& .MuiChip-label': { px: 0.5 } }}
+          />
+        )}
         <Typography variant="caption" color="text.secondary"
           sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {preview}
@@ -310,10 +342,15 @@ const InlineForm: React.FC<{
 /* ─── Main component ──────────────────────────────────────────── */
 const ForumList: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const isProfessor = user?.role === 'Professor';
 
-  const [tab, setTab] = useState(0);
+  // Quando se acede via /professor/forum/pending ou /professor/forum/answered,
+  // abre directamente na Caixa de Entrada do professor com o sub-tab correcto.
+  const [tab, setTab] = useState(() =>
+    location.pathname.includes('/professor/forum') ? 1 : 0
+  );
 
   // Inline form state
   const [selectedDisc, setSelectedDisc] = useState<DisciplinaEnum | null>(null);
@@ -330,10 +367,16 @@ const ForumList: React.FC = () => {
   const [expertQuestions, setExpertQuestions] = useState<ForumQuestion[]>([]);
   const [loadingQ, setLoadingQ] = useState(false);
 
-  // Professor inbox
-  const [inbox, setInbox] = useState<ForumQuestion[]>([]);
-  const [inboxLoading, setInboxLoading] = useState(false);
-  const [inboxLoaded, setInboxLoaded] = useState(false);
+  // Professor inbox — pendentes / respondidas
+  const [pendingQ, setPendingQ] = useState<ForumQuestion[]>([]);
+  const [answeredQ, setAnsweredQ] = useState<ForumQuestion[]>([]);
+  const [pendingLoading, setPendingLoading] = useState(false);
+  const [answeredLoading, setAnsweredLoading] = useState(false);
+  const [pendingLoaded, setPendingLoaded] = useState(false);
+  const [answeredLoaded, setAnsweredLoaded] = useState(false);
+  const [inboxSubTab, setInboxSubTab] = useState(() =>
+    location.pathname.includes('/forum/answered') ? 1 : 0
+  );
 
   // Professors by discipline (expert tab)
   const [professorsByDisc, setProfessorsByDisc] = useState<Partial<Record<DisciplinaEnum, ProfessorInfo[]>>>({});
@@ -360,15 +403,27 @@ const ForumList: React.FC = () => {
     finally { setLoadingQ(false); }
   }, []);
 
-  const loadInbox = useCallback(async () => {
-    if (inboxLoaded) return;
-    setInboxLoading(true);
+  const loadPending = useCallback(async () => {
+    if (pendingLoaded) return;
+    setPendingLoading(true);
     try {
-      const res = await forumService.listProfessorInbox({ size: 30 });
-      setInbox(res.content);
-      setInboxLoaded(true);
-    } finally { setInboxLoading(false); }
-  }, [inboxLoaded]);
+      const data = await forumService.listProfessorPending();
+      setPendingQ(data);
+      setPendingLoaded(true);
+    } catch { /* silent */ }
+    finally { setPendingLoading(false); }
+  }, [pendingLoaded]);
+
+  const loadAnswered = useCallback(async () => {
+    if (answeredLoaded) return;
+    setAnsweredLoading(true);
+    try {
+      const data = await forumService.listProfessorAnswered();
+      setAnsweredQ(data);
+      setAnsweredLoaded(true);
+    } catch { /* silent */ }
+    finally { setAnsweredLoading(false); }
+  }, [answeredLoaded]);
 
   const loadProfessors = useCallback(async () => {
     if (professorsLoaded) return;
@@ -392,9 +447,16 @@ const ForumList: React.FC = () => {
 
   useEffect(() => {
     if (tab === 0) loadCollabQuestions();
-    else if (isProfessor) loadInbox();
+    else if (isProfessor) loadPending();
     else { loadExpertQuestions(); loadProfessors(); }
-  }, [tab, isProfessor, loadCollabQuestions, loadExpertQuestions, loadInbox, loadProfessors]);
+  }, [tab, isProfessor, loadCollabQuestions, loadExpertQuestions, loadPending, loadProfessors]);
+
+  const handleInboxSubTabChange = (_: React.SyntheticEvent, v: number) => {
+    setInboxSubTab(v);
+    if (v === 1) loadAnswered();
+  };
+
+  const pendingIds = useMemo(() => new Set(pendingQ.map(q => q.id)), [pendingQ]);
 
   // Scroll form into view when a discipline is selected
   useEffect(() => {
@@ -675,26 +737,78 @@ const ForumList: React.FC = () => {
         {/* ── Tab 1: Caixa de Entrada (professors) ── */}
         {tab === 1 && isProfessor && (
           <Box>
-            {inboxLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-                <CircularProgress sx={{ color: accentExpert }} size={28} />
-              </Box>
-            ) : inbox.length === 0 && inboxLoaded ? (
-              <Box sx={{ textAlign: 'center', py: 10 }}>
-                <InboxIcon sx={{ fontSize: 52, color: '#E5E7EB', mb: 1.5 }} />
-                <Typography fontWeight={600} color="text.secondary">Sem questões em aberto</Typography>
-                <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-                  Os alunos ainda não iniciaram conversas
-                </Typography>
-              </Box>
-            ) : (
-              inbox.map(q => (
-                <InboxRow
-                  key={q.id}
-                  question={q}
-                  onClick={() => navigate(`/app/forum/room/${q.id}`)}
+            {/* Sub-tabs: Pendentes / Respondidas */}
+            <Box sx={{ borderBottom: '1px solid #F3F4F6', px: 2, bgcolor: '#FAFAFA' }}>
+              <Tabs
+                value={inboxSubTab}
+                onChange={handleInboxSubTabChange}
+                slotProps={{ indicator: { style: { backgroundColor: inboxSubTab === 0 ? '#D97706' : '#16A34A', height: 3, borderRadius: '3px 3px 0 0' } } }}
+                sx={{ minHeight: 44 }}
+              >
+                <Tab
+                  icon={<PendingActionsIcon fontSize="small" />}
+                  iconPosition="start"
+                  label="Pendentes"
+                  sx={{ textTransform: 'none', fontWeight: inboxSubTab === 0 ? 700 : 400, color: inboxSubTab === 0 ? '#D97706' : '#6B7280', minHeight: 44, fontSize: '0.82rem', gap: 0.5 }}
                 />
-              ))
+                <Tab
+                  icon={<DoneAllIcon fontSize="small" />}
+                  iconPosition="start"
+                  label="Respondidas"
+                  sx={{ textTransform: 'none', fontWeight: inboxSubTab === 1 ? 700 : 400, color: inboxSubTab === 1 ? '#16A34A' : '#6B7280', minHeight: 44, fontSize: '0.82rem', gap: 0.5 }}
+                />
+              </Tabs>
+            </Box>
+
+            {/* Pendentes */}
+            {inboxSubTab === 0 && (
+              pendingLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                  <CircularProgress sx={{ color: '#D97706' }} size={28} />
+                </Box>
+              ) : pendingQ.length === 0 && pendingLoaded ? (
+                <Box sx={{ textAlign: 'center', py: 10 }}>
+                  <CheckCircleIcon sx={{ fontSize: 52, color: '#D1FAE5', mb: 1.5 }} />
+                  <Typography fontWeight={600} color="text.secondary">Sem perguntas pendentes</Typography>
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                    Todas as perguntas da sua especialidade foram respondidas
+                  </Typography>
+                </Box>
+              ) : (
+                pendingQ.map(q => (
+                  <InboxRow
+                    key={q.id}
+                    question={q}
+                    onClick={() => navigate(`/app/forum/room/${q.id}`)}
+                  />
+                ))
+              )
+            )}
+
+            {/* Respondidas */}
+            {inboxSubTab === 1 && (
+              answeredLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                  <CircularProgress sx={{ color: '#16A34A' }} size={28} />
+                </Box>
+              ) : answeredQ.length === 0 && answeredLoaded ? (
+                <Box sx={{ textAlign: 'center', py: 10 }}>
+                  <InboxIcon sx={{ fontSize: 52, color: '#E5E7EB', mb: 1.5 }} />
+                  <Typography fontWeight={600} color="text.secondary">Ainda não respondeu nenhuma pergunta</Typography>
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                    As suas respostas aparecerão aqui
+                  </Typography>
+                </Box>
+              ) : (
+                answeredQ.map(q => (
+                  <InboxRow
+                    key={q.id}
+                    question={q}
+                    onClick={() => navigate(`/app/forum/room/${q.id}`)}
+                    alsoInPending={pendingIds.has(q.id)}
+                  />
+                ))
+              )
             )}
           </Box>
         )}

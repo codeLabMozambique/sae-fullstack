@@ -50,6 +50,7 @@ public class ExpertAnswerService {
         answer.setQuestionId(questionId);
         answer.setAnsweredBy(professorUsername);
         answer.setAccepted(false);
+        answer.setAttachmentId(request.getAttachmentId());
         answer = answerRepository.save(answer);
 
         notificationService.notifyNewAnswer(questionId, "EXPERT");

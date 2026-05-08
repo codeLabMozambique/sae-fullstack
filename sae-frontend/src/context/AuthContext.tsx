@@ -4,6 +4,7 @@ import { loginUser, registerStudent, registerProfessor } from '../services/authS
 import type { LoginRequest, StudentRegisterRequest, ProfessorRegisterRequest, AuthResponse } from '../services/authService';
 
 interface AuthUser {
+  userId: number;
   username: string;
   fullName: string;
   role: string;
@@ -34,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (data: LoginRequest) => {
     const response: AuthResponse = await loginUser(data);
     const authUser: AuthUser = {
+      userId: response.userId,
       username: response.username,
       fullName: response.fullName,
       role: response.role,

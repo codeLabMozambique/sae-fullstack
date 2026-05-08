@@ -14,9 +14,13 @@ import SubjectsPage from './pages/admin/academic/SubjectsPage';
 import SchoolsPage from './pages/admin/academic/SchoolsPage';
 import ClassLevelsPage from './pages/admin/academic/ClassLevelsPage';
 import ProfessorAssignmentsPage from './pages/admin/academic/ProfessorAssignmentsPage';
+import ProfessorClassesPage from './pages/professor/ProfessorClassesPage';
+import ProfessorGradesPage from './pages/professor/ProfessorGradesPage';
+import StudentForumPage from './pages/student/StudentForumPage';
 import UsersListPage from './pages/admin/users/UsersListPage';
 
 // Biblioteca / Content-service pages
+import ForumList from './pages/forum/ForumList';
 import Biblioteca from './pages/Biblioteca';
 import Favoritos from './pages/biblioteca/Favoritos';
 import ContinuarLer from './pages/biblioteca/ContinuarLer';
@@ -66,6 +70,13 @@ function App() {
               </ProtectedRoute>
             } />
 
+            {/* ── STUDENT — Dashboard & Forum ───────────────── */}
+            <Route path="/student/dashboard" element={<Layout><StudentForumPage /></Layout>} />
+            <Route path="/student/questions" element={<Layout><StudentForumPage /></Layout>} />
+            <Route path="/student/forum" element={<Layout><StudentForumPage /></Layout>} />
+            <Route path="/student/forum/questions" element={<Layout><StudentForumPage /></Layout>} />
+            <Route path="/student/forum/new" element={<Layout><StudentForumPage /></Layout>} />
+
             {/* ── STUDENT — Biblioteca ───────────────────────── */}
             <Route path="/student/library" element={<Layout><Biblioteca /></Layout>} />
             <Route path="/student/library/categories" element={<Layout><Categorias /></Layout>} />
@@ -74,6 +85,14 @@ function App() {
             <Route path="/student/library/history" element={<Layout><Historico /></Layout>} />
             <Route path="/student/goals" element={<Layout><Metas /></Layout>} />
             <Route path="/student/goals/new" element={<Layout><Metas /></Layout>} />
+
+            {/* ── PROFESSOR — Área do Professor ─────────────── */}
+            <Route path="/professor/dashboard" element={<Layout><ForumList /></Layout>} />
+            <Route path="/professor/classes" element={<Layout><ProfessorClassesPage /></Layout>} />
+            <Route path="/professor/grades" element={<Layout><ProfessorGradesPage /></Layout>} />
+            <Route path="/professor/forum" element={<Layout><ForumList /></Layout>} />
+            <Route path="/professor/forum/pending" element={<Layout><ForumList /></Layout>} />
+            <Route path="/professor/forum/answered" element={<Layout><ForumList /></Layout>} />
 
             {/* ── PROFESSOR — Biblioteca ─────────────────────── */}
             <Route path="/professor/library" element={<Layout><Biblioteca /></Layout>} />

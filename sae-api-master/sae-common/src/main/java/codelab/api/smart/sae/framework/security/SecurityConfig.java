@@ -40,6 +40,10 @@ public class SecurityConfig {
 								AntPathRequestMatcher.antMatcher("/users/professor/**/specializations"),
 							AntPathRequestMatcher.antMatcher("/users/professors/by-discipline"))
 						.permitAll()
+						.requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/my-student-profile"))
+						.authenticated()
+						.requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/students"))
+						.hasAnyAuthority(UserRoles.ADMIN.name(), UserRoles.PROFESSOR.name())
 						.requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/**"))
 						.hasAnyAuthority(UserRoles.ADMIN.name())
 						.requestMatchers(AntPathRequestMatcher.antMatcher("/users/change-password"))

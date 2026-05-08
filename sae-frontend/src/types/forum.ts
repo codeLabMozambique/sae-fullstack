@@ -8,6 +8,7 @@ export interface ExpertAnswer {
   questionId: number;
   answeredBy: string;
   accepted: boolean;
+  attachmentId?: string | null;
   createdAt: string;
 }
 
@@ -21,6 +22,7 @@ export interface CollaborativeAnswer {
   validatedAt: string | null;
   rejectedBy: string | null;
   rejectedAt: string | null;
+  attachmentId?: string | null;
   createdAt: string;
 }
 
@@ -126,6 +128,7 @@ export interface CreateQuestionRequest {
 
 export interface CreateAnswerRequest {
   conteudo: string;
+  attachmentId?: string | null;
 }
 
 export interface ProfessorInfo {

@@ -22,4 +22,8 @@ public interface CollaborativeAnswerRepository extends JpaRepository<Collaborati
     List<CollaborativeAnswerEntity> findByValidationStatusAndCreatedAtAfter(
         ValidationStatus validationStatus, LocalDateTime after
     );
+
+    boolean existsByQuestionIdAndAnsweredBy(Long questionId, String answeredBy);
+
+    boolean existsByQuestionId(Long questionId);
 }

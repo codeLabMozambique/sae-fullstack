@@ -1,6 +1,7 @@
 package codelab.api.smart.sae.forum.repository;
 
 import codelab.api.smart.sae.forum.enums.DisciplinaEnum;
+import codelab.api.smart.sae.forum.enums.QuestionStatus;
 import codelab.api.smart.sae.forum.enums.QuestionType;
 import codelab.api.smart.sae.forum.model.ForumQuestionEntity;
 import org.springframework.data.domain.Page;
@@ -40,6 +41,8 @@ public interface ForumQuestionRepository extends JpaRepository<ForumQuestionEnti
         Pageable pageable
     );
 
+    List<ForumQuestionEntity> findByCreatedByOrderByCreatedAtDesc(String createdBy);
+
     List<ForumQuestionEntity> findByDisciplina(DisciplinaEnum disciplina);
 
     Optional<ForumQuestionEntity> findFirstByDisciplinaAndQuestionTypeOrderByCreatedAtAsc(
@@ -47,4 +50,10 @@ public interface ForumQuestionRepository extends JpaRepository<ForumQuestionEnti
 
     Optional<ForumQuestionEntity> findFirstByDisciplinaAndQuestionTypeAndCreatedByOrderByCreatedAtAsc(
         DisciplinaEnum disciplina, QuestionType type, String createdBy);
+
+    List<ForumQuestionEntity> findByQuestionTypeAndDisciplinaInAndStatus(
+        QuestionType questionType, List<DisciplinaEnum> disciplinas, QuestionStatus status);
+
+    List<ForumQuestionEntity> findByQuestionTypeAndDisciplinaIn(
+        QuestionType questionType, List<DisciplinaEnum> disciplinas);
 }
