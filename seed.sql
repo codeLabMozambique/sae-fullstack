@@ -376,7 +376,12 @@ INSERT INTO app_transaction (id, status, code, type, label, router_link, positio
 (63, 1, 'ADM-LIB-003',   'MENU_ITEM', 'Carregar em Lote',     '/admin/library/batch',             3, 60),
 (64, 1, 'ADM-LIB-004',   'MENU_ITEM', 'Categorias',           '/admin/library/categories',        4, 60),
 (65, 1, 'ADM-LIB-005',   'MENU_ITEM', 'Disciplinas',          '/admin/library/disciplines',       5, 60),
-(66, 1, 'ADM-LIB-006',   'MENU_ITEM', 'Logs de Auditoria',    '/admin/library/logs',              6, 60)
+(66, 1, 'ADM-LIB-006',   'MENU_ITEM', 'Logs de Auditoria',    '/admin/library/logs',              6, 60),
+
+-- ── OFFLINE — disponível em todas as roles ───────────────────
+(70, 1, 'STD-LIB-006',   'MENU_ITEM', 'Leitura Offline',      '/student/library/offline',         6, 40),
+(71, 1, 'PRF-LIB-008',   'MENU_ITEM', 'Leitura Offline',      '/professor/library/offline',       8, 50),
+(72, 1, 'ADM-LIB-007',   'MENU_ITEM', 'Leitura Offline',      '/admin/library/offline',           7, 60)
 
 -- DO UPDATE (não DO NOTHING) garante que execuções futuras corrigem discrepâncias
 -- de versões anteriores deste seed (ex.: parent_id que mudou).
@@ -427,7 +432,12 @@ INSERT INTO role_transaction (id, status, role, app_transaction_id) VALUES
 (63, 1, 'ADMIN',     63),
 (64, 1, 'ADMIN',     64),
 (65, 1, 'ADMIN',     65),
-(66, 1, 'ADMIN',     66)
+(66, 1, 'ADMIN',     66),
+
+-- Leitura Offline (item por role)
+(70, 1, 'STUDENT',   70),
+(71, 1, 'PROFESSOR', 71),
+(72, 1, 'ADMIN',     72)
 
 ON CONFLICT (id) DO NOTHING;
 
