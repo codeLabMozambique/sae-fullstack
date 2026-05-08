@@ -9,6 +9,7 @@ import Register from './pages/auth/Register';
 import Login from './pages/auth/Login';
 import MainApp from './pages/app/MainApp';
 import MainLayout from './components/Layout/MainLayout';
+import PublicLibraryLayout from './components/Layout/PublicLibraryLayout';
 import ClassroomsPage from './pages/admin/academic/ClassroomsPage';
 import SubjectsPage from './pages/admin/academic/SubjectsPage';
 import SchoolsPage from './pages/admin/academic/SchoolsPage';
@@ -29,16 +30,29 @@ import Categorias from './pages/biblioteca/Categorias';
 import AdminCategorias from './pages/biblioteca/admin/AdminCategorias';
 import AdminDisciplinas from './pages/biblioteca/admin/AdminDisciplinas';
 import AdminBatchUpload from './pages/biblioteca/admin/AdminBatchUpload';
+import Offline from './pages/biblioteca/Offline';
+import Leitor from './pages/biblioteca/Leitor';
 
 // Forum & Dashboard (for dynamic-menu routes)
 import Dashboard from './pages/Dashboard';
 import ForumList from './pages/forum/ForumList';
+import ChatIA from './pages/ChatIA';
 
 import { testBackendConnection } from './services/api';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+}
+
+function RootRedirect() {
+  const { isAuthenticated, user } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/biblioteca" replace />;
+  // Autenticado: encaminha para o dashboard apropriado
+  const role = user?.role || '';
+  if (role.includes('ADMIN') || role.includes('Administrador')) return <Navigate to="/admin/library" replace />;
+  if (role.includes('PROFESSOR') || role.includes('Professor')) return <Navigate to="/professor/dashboard" replace />;
+  return <Navigate to="/student/dashboard" replace />;
 }
 
 function Layout({ children }: { children: React.ReactNode }) {
@@ -60,9 +74,23 @@ function App() {
       <AuthProvider>
         <Router>
           <Routes>
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<RootRedirect />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
+
+            {/* ── Acesso público (sem login) — TdR ─────────────── */}
+            <Route path="/biblioteca" element={
+              <PublicLibraryLayout><Biblioteca /></PublicLibraryLayout>
+            } />
+            <Route path="/biblioteca/leitor/:id" element={
+              <PublicLibraryLayout><Leitor /></PublicLibraryLayout>
+            } />
+            <Route path="/biblioteca/categorias" element={
+              <PublicLibraryLayout><Categorias /></PublicLibraryLayout>
+            } />
+            <Route path="/biblioteca/chat" element={
+              <PublicLibraryLayout><ChatIA /></PublicLibraryLayout>
+            } />
 
             {/* Legacy /app/* routes */}
             <Route path="/app/*" element={
@@ -70,6 +98,9 @@ function App() {
                 <MainApp />
               </ProtectedRoute>
             } />
+
+            {/* ── Leitor de PDF embebido (qualquer role) ─────── */}
+            <Route path="/leitor/:id" element={<Layout><Leitor /></Layout>} />
 
             {/* ── STUDENT — Dashboard & Fórum ───────────────── */}
             <Route path="/student/dashboard" element={<Layout><Dashboard /></Layout>} />
@@ -83,6 +114,7 @@ function App() {
             <Route path="/student/library/favorites" element={<Layout><Favoritos /></Layout>} />
             <Route path="/student/library/progress" element={<Layout><ContinuarLer /></Layout>} />
             <Route path="/student/library/history" element={<Layout><Historico /></Layout>} />
+            <Route path="/student/library/offline" element={<Layout><Offline /></Layout>} />
             <Route path="/student/goals" element={<Layout><Metas /></Layout>} />
             <Route path="/student/goals/new" element={<Layout><Metas /></Layout>} />
 
@@ -104,6 +136,7 @@ function App() {
             <Route path="/professor/library/favorites" element={<Layout><Favoritos /></Layout>} />
             <Route path="/professor/library/progress" element={<Layout><ContinuarLer /></Layout>} />
             <Route path="/professor/library/history" element={<Layout><Historico /></Layout>} />
+            <Route path="/professor/library/offline" element={<Layout><Offline /></Layout>} />
             <Route path="/professor/goals" element={<Layout><Metas /></Layout>} />
 
             {/* ── ADMIN — Biblioteca ─────────────────────────── */}
@@ -121,6 +154,7 @@ function App() {
             <Route path="/admin/library/categories" element={<Layout><AdminCategorias /></Layout>} />
             <Route path="/admin/library/disciplines" element={<Layout><AdminDisciplinas /></Layout>} />
             <Route path="/admin/library/logs" element={<Layout><Historico /></Layout>} />
+            <Route path="/admin/library/offline" element={<Layout><Offline /></Layout>} />
 
             {/* Admin — Academic */}
             <Route path="/admin/academic/classrooms" element={
