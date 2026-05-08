@@ -22,8 +22,12 @@ const Login: React.FC = () => {
     }
     setSubmitting(true);
     try {
-      await login({ username: phone, password });
-      navigate('/app');
+      const authUser = await login({ username: phone, password });
+      if (authUser.role === 'Professor') navigate('/professor/dashboard');
+      else if (authUser.role === 'Estudante') navigate('/student/dashboard');
+      else if (authUser.role === 'Administrador') navigate('/admin/academic/schools');
+      else if (authUser.role === 'Visitante') navigate('/student/library');
+      else navigate('/app');
     } catch (err: any) {
       const status = err?.response?.status;
       if (status === 401 || status === 403) {

@@ -5,17 +5,20 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import {
-  Delete as DeleteIcon, MenuBook as ReadIcon, Visibility as ViewIcon,
+  Delete as DeleteIcon, MenuBook as ReadIcon, Visibility as ViewIcon, Add as AddIcon,
 } from '@mui/icons-material';
 import {
   listContents, deleteProfessorContent, deleteAdminContent,
   readUrl, absoluteContentUrl, type Content,
 } from '../../services/contentService';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const MeusConteudos: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isAdmin = user?.role === 'Administrador' || user?.role === 'ADMIN';
+  const uploadPath = isAdmin ? '/admin/library/upload' : '/professor/library/upload';
 
   const [items, setItems] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,12 +49,25 @@ const MeusConteudos: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h5" fontWeight={700} mb={1} color="#0A1628">
-        {isAdmin ? 'Todos os Conteúdos' : 'Os Meus Conteúdos'}
-      </Typography>
-      <Typography variant="body2" color="text.secondary" mb={3}>
-        {loading ? 'A carregar…' : `${items.length} conteúdos`}
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+        <Box>
+          <Typography variant="h5" fontWeight={700} color="#0A1628">
+            {isAdmin ? 'Todos os Conteúdos' : 'Os Meus Conteúdos'}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {loading ? 'A carregar…' : `${items.length} conteúdos`}
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => navigate(uploadPath)}
+          sx={{ bgcolor: '#0A1628', '&:hover': { bgcolor: '#00A651' }, borderRadius: 2.5, textTransform: 'none', fontWeight: 700 }}
+        >
+          Novo Conteúdo
+        </Button>
+      </Box>
+      <Box mb={3} />
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
 

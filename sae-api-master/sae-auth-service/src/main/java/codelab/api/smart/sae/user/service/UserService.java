@@ -134,6 +134,10 @@ public class UserService {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new BusinessException("Já existe uma conta com este número de telefone");
         }
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()
+                && userRepository.existsByEmail(request.getEmail())) {
+            throw new BusinessException("Já existe uma conta com este email");
+        }
 
         UserEntity tmp_user = new UserEntity();
         List<RoleTransactionEntity> roleT = roleTransactionRepository
@@ -162,6 +166,9 @@ public class UserService {
     public ProfessorProfileEntity createProfessor(ProfessorRegisterDTO request) {
         if (userRepository.existsByUsername(request.getNTelefone())) {
             throw new BusinessException("Já existe uma conta com este número de telefone");
+        }
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new BusinessException("Já existe uma conta com este email");
         }
 
         UserEntity user = new UserEntity();
@@ -198,6 +205,9 @@ public class UserService {
     public StudentProfileEntity createStudent(StudentRegisterDTO request) {
         if (userRepository.existsByUsername(request.getNTelefone())) {
             throw new BusinessException("Já existe uma conta com este número de telefone");
+        }
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new BusinessException("Já existe uma conta com este email");
         }
 
         UserEntity user = new UserEntity();
@@ -364,6 +374,24 @@ public class UserService {
         } else {
             return (UserEntity) authentication.getPrincipal();
         }
+    }
+
+    public List<StudentProfileDTO> findStudentsByClassroom(Long classroomId) {
+        return studentProfileRepository.findByClassroomId(classroomId).stream()
+                .map(s -> new StudentProfileDTO(
+                        s.getUser().getId(), s.getUser().getFullname(), s.getUser().getUsername(),
+                        s.getUser().getEmail(), s.getSchoolId(), s.getClassroomId(),
+                        s.getGrade(), s.getAge()))
+                .collect(Collectors.toList());
+    }
+
+    public StudentProfileDTO findStudentProfileByUsername(String username) {
+        StudentProfileEntity s = studentProfileRepository.findByUser_Username(username)
+                .orElseThrow(() -> new BusinessException("Perfil de estudante não encontrado para: " + username));
+        return new StudentProfileDTO(
+                s.getUser().getId(), s.getUser().getFullname(), s.getUser().getUsername(),
+                s.getUser().getEmail(), s.getSchoolId(), s.getClassroomId(),
+                s.getGrade(), s.getAge());
     }
 
     public String[] getProfessorSpecializations(String username) {

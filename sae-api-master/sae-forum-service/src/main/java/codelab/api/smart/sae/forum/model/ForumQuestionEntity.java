@@ -1,5 +1,6 @@
 package codelab.api.smart.sae.forum.model;
 
+import codelab.api.smart.sae.forum.enums.DisciplinaEnumConverter;
 import codelab.api.smart.sae.forum.enums.QuestionStatus;
 import codelab.api.smart.sae.forum.enums.QuestionType;
 import jakarta.persistence.*;
@@ -33,7 +34,7 @@ public class ForumQuestionEntity implements Serializable {
     @Column(name = "TAGS", length = 500)
     private String tags;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = DisciplinaEnumConverter.class)
     @Column(name = "AREA", length = 100)
     private codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina;
 

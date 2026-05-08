@@ -14,7 +14,7 @@ interface AuthContextType {
   user: AuthUser | null;
   token: string | null;
   isAuthenticated: boolean;
-  login: (data: LoginRequest) => Promise<void>;
+  login: (data: LoginRequest) => Promise<AuthUser>;
   signupStudent: (data: StudentRegisterRequest) => Promise<void>;
   signupProfessor: (data: ProfessorRegisterRequest) => Promise<void>;
   logout: () => void;
@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAuthenticated = !!token && !!user;
 
-  const login = async (data: LoginRequest) => {
+  const login = async (data: LoginRequest): Promise<AuthUser> => {
     const response: AuthResponse = await loginUser(data);
     const authUser: AuthUser = {
       username: response.username,
@@ -43,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('sae_user', JSON.stringify(authUser));
     setToken(response.token);
     setUser(authUser);
+    return authUser;
   };
 
   const signupStudent = async (data: StudentRegisterRequest) => {

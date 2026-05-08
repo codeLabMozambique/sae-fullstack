@@ -15,6 +15,7 @@ import SchoolsPage from './pages/admin/academic/SchoolsPage';
 import ClassLevelsPage from './pages/admin/academic/ClassLevelsPage';
 import ProfessorAssignmentsPage from './pages/admin/academic/ProfessorAssignmentsPage';
 import UsersListPage from './pages/admin/users/UsersListPage';
+import ProfessorClassroomsPage from './pages/professor/ProfessorClassroomsPage';
 
 // Biblioteca / Content-service pages
 import Biblioteca from './pages/Biblioteca';
@@ -28,6 +29,10 @@ import Categorias from './pages/biblioteca/Categorias';
 import AdminCategorias from './pages/biblioteca/admin/AdminCategorias';
 import AdminDisciplinas from './pages/biblioteca/admin/AdminDisciplinas';
 import AdminBatchUpload from './pages/biblioteca/admin/AdminBatchUpload';
+
+// Forum & Dashboard (for dynamic-menu routes)
+import Dashboard from './pages/Dashboard';
+import ForumList from './pages/forum/ForumList';
 
 import { testBackendConnection } from './services/api';
 
@@ -66,6 +71,12 @@ function App() {
               </ProtectedRoute>
             } />
 
+            {/* ── STUDENT — Dashboard & Fórum ───────────────── */}
+            <Route path="/student/dashboard" element={<Layout><Dashboard /></Layout>} />
+            <Route path="/student/questions" element={<Layout><ForumList /></Layout>} />
+            <Route path="/student/forum/new" element={<Layout><ForumList /></Layout>} />
+            <Route path="/student/forum/questions" element={<Layout><ForumList /></Layout>} />
+
             {/* ── STUDENT — Biblioteca ───────────────────────── */}
             <Route path="/student/library" element={<Layout><Biblioteca /></Layout>} />
             <Route path="/student/library/categories" element={<Layout><Categorias /></Layout>} />
@@ -74,6 +85,16 @@ function App() {
             <Route path="/student/library/history" element={<Layout><Historico /></Layout>} />
             <Route path="/student/goals" element={<Layout><Metas /></Layout>} />
             <Route path="/student/goals/new" element={<Layout><Metas /></Layout>} />
+
+            {/* ── PROFESSOR — Dashboard, Fórum & Turmas ─────── */}
+            <Route path="/professor/dashboard" element={<Layout><Dashboard /></Layout>} />
+            <Route path="/professor/forum" element={<Layout><ForumList /></Layout>} />
+            <Route path="/professor/forum/pending" element={<Layout><ForumList /></Layout>} />
+            <Route path="/professor/forum/answered" element={<Layout><ForumList /></Layout>} />
+            <Route path="/professor/my-classes" element={<Layout><ProfessorClassroomsPage /></Layout>} />
+            <Route path="/professor/students" element={<Layout><ProfessorClassroomsPage /></Layout>} />
+            <Route path="/professor/classes" element={<Layout><ProfessorClassroomsPage /></Layout>} />
+            <Route path="/professor/grades" element={<Layout><ProfessorClassroomsPage /></Layout>} />
 
             {/* ── PROFESSOR — Biblioteca ─────────────────────── */}
             <Route path="/professor/library" element={<Layout><Biblioteca /></Layout>} />
@@ -87,6 +108,13 @@ function App() {
 
             {/* ── ADMIN — Biblioteca ─────────────────────────── */}
             <Route path="/admin/library" element={<Layout><Biblioteca /></Layout>} />
+            <Route path="/admin/forum" element={<Layout><ForumList /></Layout>} />
+
+            {/* ── ADMIN — Aliases para rotas do menu dinâmico ── */}
+            <Route path="/admin/schools" element={<Layout><SchoolsPage /></Layout>} />
+            <Route path="/admin/classrooms" element={<Layout><ClassroomsPage /></Layout>} />
+            <Route path="/admin/subjects" element={<Layout><SubjectsPage /></Layout>} />
+            <Route path="/admin/users" element={<Layout><UsersListPage /></Layout>} />
             <Route path="/admin/library/contents" element={<Layout><MeusConteudos /></Layout>} />
             <Route path="/admin/library/upload" element={<Layout><UploadConteudo /></Layout>} />
             <Route path="/admin/library/batch" element={<Layout><AdminBatchUpload /></Layout>} />
@@ -124,6 +152,11 @@ function App() {
 
             {/* Admin — Users */}
             <Route path="/admin/users/list" element={
+              <ProtectedRoute>
+                <MainLayout><UsersListPage /></MainLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/users/roles" element={
               <ProtectedRoute>
                 <MainLayout><UsersListPage /></MainLayout>
               </ProtectedRoute>

@@ -87,3 +87,48 @@ export const professorAssignmentService = {
 export const professorService = {
   findAll: () => api.get<ProfessorDTO[]>('/auth/users/professors').then(r => r.data),
 };
+
+export interface StudentProfileDTO {
+  userId: number;
+  fullName: string;
+  username: string;
+  email?: string;
+  schoolId?: number;
+  classroomId?: number;
+  grade?: string;
+  age?: number;
+}
+
+export const studentService = {
+  findByClassroom: (classroomId: number) =>
+    api.get<StudentProfileDTO[]>('/auth/users/students-by-classroom', { params: { classroomId } }).then(r => r.data),
+  findByUsername: (username: string) =>
+    api.get<StudentProfileDTO>('/auth/users/student-profile-by-username', { params: { username } }).then(r => r.data),
+};
+
+export interface GradeDTO {
+  id?: number;
+  studentId: number;
+  studentName?: string;
+  studentUsername?: string;
+  classroomId: number;
+  subjectId: number;
+  academicYear: string;
+  nota1?: number | null;
+  nota2?: number | null;
+  nota3?: number | null;
+  acp1?: number | null;
+  acp2?: number | null;
+  miniteste1?: number | null;
+  miniteste2?: number | null;
+  exameFinal?: number | null;
+  media?: number | null;
+}
+
+export const gradeService = {
+  findByClassroomAndSubject: (classroomId: number, subjectId: number, academicYear: string) =>
+    api.get<GradeDTO[]>('/academic/grades', { params: { classroomId, subjectId, academicYear } }).then(r => r.data),
+  findByClassroom: (classroomId: number, academicYear: string) =>
+    api.get<GradeDTO[]>('/academic/grades', { params: { classroomId, academicYear } }).then(r => r.data),
+  save: (dto: GradeDTO) => api.post<GradeDTO>('/academic/grades', dto).then(r => r.data),
+};
