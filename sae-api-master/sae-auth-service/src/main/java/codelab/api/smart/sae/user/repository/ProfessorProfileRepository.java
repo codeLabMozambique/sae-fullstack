@@ -8,8 +8,6 @@ import java.util.Optional;
 
 @Repository
 public interface ProfessorProfileRepository extends JpaRepository<ProfessorProfileEntity, Long> {
-
     Optional<ProfessorProfileEntity> findByUser_Id(Long userId);
     java.util.Optional<ProfessorProfileEntity> findByUserUsername(String username);
-
 }
