@@ -14,12 +14,22 @@ import {
   Star as StarIcon,
   ArrowForward as ArrowIcon,
   Chat as ChatIcon,
-  AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { forumService } from '../services/forumService';
-import type { ForumQuestion } from '../types/forum';
+import type { ForumQuestion, DisciplinaEnum } from '../types/forum';
+import { DISCIPLINA_LABELS, ALL_DISCIPLINAS } from '../types/forum';
+import api from '../services/api';
+
+function normStr(s: string): string {
+  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+}
+
+function specToDisciplina(spec: string): DisciplinaEnum | undefined {
+  const n = normStr(spec);
+  return ALL_DISCIPLINAS.find(d => n.includes(normStr(d)) || normStr(d).includes(n));
+}
 
 // ── Shared components ─────────────────────────────────────────
 
@@ -282,13 +292,13 @@ const StudentDashboard: React.FC = () => {
             <QuickAction
               icon={<BookIcon />}
               label="Biblioteca Digital"
-              onClick={() => navigate('/app/biblioteca')}
+              onClick={() => navigate('/student/library')}
               color="#2563EB"
             />
             <QuickAction
               icon={<ForumIcon />}
               label="Fórum de Dúvidas"
-              onClick={() => navigate('/app/forum')}
+              onClick={() => navigate('/student/questions')}
               color="#00A651"
             />
             <QuickAction
@@ -341,15 +351,9 @@ const StudentDashboard: React.FC = () => {
               variant="contained"
               onClick={() => navigate('/app/chat')}
               sx={{
-                bgcolor: 'rgba(255,255,255,0.15)',
-                color: 'white',
-                textTransform: 'none',
-                fontWeight: 700,
-                borderRadius: 2.5,
-                border: '1px solid rgba(255,255,255,0.25)',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' },
-                px: 3,
-                py: 1,
+                bgcolor: 'rgba(255,255,255,0.15)', color: 'white', textTransform: 'none',
+                fontWeight: 700, borderRadius: 2.5, border: '1px solid rgba(255,255,255,0.25)',
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' }, px: 3, py: 1,
               }}
             >
               Abrir Chat IA
@@ -374,13 +378,30 @@ const ProfessorDashboard: React.FC = () => {
   const [stats, setStats] = useState<ProfStats>({ pendingCount: 0, openCount: 0 });
   const [recentQuestions, setRecentQuestions] = useState<ForumQuestion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userNames, setUserNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    api.get<{ username: string; fullName: string }[]>('/auth/users/all').then(r => {
+      const map: Record<string, string> = {};
+      r.data.forEach((u: any) => { if (u.username) map[u.username] = u.fullName || u.username; });
+      setUserNames(map);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!user?.username) return;
     const fetchAll = async () => {
+      let disciplina: DisciplinaEnum | undefined;
+      try {
+        const specRes = await api.get<string[]>(`/auth/users/professor/${user.username}/specializations`);
+        const specs = specRes.data;
+        if (specs.length > 0) disciplina = specToDisciplina(specs[0]);
+      } catch {}
+
       const results = await Promise.allSettled([
         forumService.listPendingAnswers({ page: 0, size: 1 }),
-        forumService.listQuestions({ questionType: 'ESPECIALIZADO', status: 'ABERTA', page: 0, size: 1 }),
-        forumService.listQuestions({ questionType: 'ESPECIALIZADO', page: 0, size: 4 }),
+        forumService.listQuestions({ questionType: 'ESPECIALIZADO', status: 'ABERTA', disciplina, page: 0, size: 1 }),
+        forumService.listQuestions({ questionType: 'ESPECIALIZADO', disciplina, page: 0, size: 4 }),
       ]);
 
       const pendingResult = results[0];
@@ -400,7 +421,7 @@ const ProfessorDashboard: React.FC = () => {
     };
 
     fetchAll();
-  }, []);
+  }, [user?.username]);
 
   return (
     <Grid container spacing={3}>
@@ -481,7 +502,7 @@ const ProfessorDashboard: React.FC = () => {
               <Button
                 size="small"
                 endIcon={<ArrowIcon fontSize="small" />}
-                onClick={() => navigate('/app/forum')}
+                onClick={() => navigate('/professor/forum')}
                 sx={{ textTransform: 'none', color: '#2563EB', fontWeight: 600 }}
               >
                 Ver todas
@@ -510,7 +531,7 @@ const ProfessorDashboard: React.FC = () => {
                   return (
                     <Box
                       key={q.id}
-                      onClick={() => navigate(`/app/forum/questions/${q.id}`)}
+                      onClick={() => navigate(`/app/forum/room/${q.id}`)}
                       sx={{
                         p: 2,
                         borderRadius: 2,
@@ -545,9 +566,9 @@ const ProfessorDashboard: React.FC = () => {
                         >
                           {q.titulo}
                         </Typography>
-                        {q.area && (
+                        {q.disciplina && (
                           <Chip
-                            label={q.area}
+                            label={DISCIPLINA_LABELS[q.disciplina] ?? q.disciplina}
                             size="small"
                             sx={{
                               bgcolor: '#DBEAFE',
@@ -563,7 +584,7 @@ const ProfessorDashboard: React.FC = () => {
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                         <Typography variant="caption" color="text.secondary">
-                          {q.createdBy}
+                          {userNames[q.createdBy] || q.createdBy}
                         </Typography>
                         <Typography variant="caption" color="#D1D5DB">·</Typography>
                         <Typography variant="caption" color="text.secondary">
@@ -616,20 +637,14 @@ const ProfessorDashboard: React.FC = () => {
             <QuickAction
               icon={<QuestionIcon />}
               label="Responder no Fórum"
-              onClick={() => navigate('/app/forum')}
+              onClick={() => navigate('/professor/forum')}
               color="#D97706"
             />
             <QuickAction
               icon={<BookIcon />}
               label="Biblioteca Digital"
-              onClick={() => navigate('/app/biblioteca')}
+              onClick={() => navigate('/professor/library')}
               color="#2563EB"
-            />
-            <QuickAction
-              icon={<AdminIcon />}
-              label="Painel Administrativo"
-              onClick={() => navigate('/app/admin')}
-              color="#6D28D9"
             />
           </CardContent>
         </Card>
@@ -676,15 +691,9 @@ const ProfessorDashboard: React.FC = () => {
               variant="contained"
               onClick={() => navigate('/app/forum/validations')}
               sx={{
-                bgcolor: 'rgba(255,255,255,0.15)',
-                color: 'white',
-                textTransform: 'none',
-                fontWeight: 700,
-                borderRadius: 2.5,
-                border: '1px solid rgba(255,255,255,0.25)',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' },
-                px: 3,
-                py: 1,
+                bgcolor: 'rgba(255,255,255,0.15)', color: 'white', textTransform: 'none',
+                fontWeight: 700, borderRadius: 2.5, border: '1px solid rgba(255,255,255,0.25)',
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' }, px: 3, py: 1,
               }}
             >
               Ir para Validações

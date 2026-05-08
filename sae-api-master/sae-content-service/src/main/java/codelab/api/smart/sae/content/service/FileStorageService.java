@@ -53,6 +53,22 @@ public class FileStorageService {
         }
     }
 
+    public void saveFileWithKey(byte[] fileBytes, String key, String contentType) {
+        try {
+            minioClient.putObject(
+                PutObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(key)
+                    .stream(new java.io.ByteArrayInputStream(fileBytes), fileBytes.length, -1)
+                    .contentType(contentType)
+                    .build()
+            );
+        } catch (Exception e) {
+            logger.error("Erro ao salvar ficheiro no MinIO: {}", e.getMessage());
+            throw new RuntimeException("Falha ao salvar ficheiro", e);
+        }
+    }
+
     public InputStream getFile(String fileName) {
         try {
             return minioClient.getObject(

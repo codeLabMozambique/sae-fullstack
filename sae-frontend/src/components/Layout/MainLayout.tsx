@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Drawer, AppBar, Toolbar, List, Typography, Divider, IconButton,
   ListItem, ListItemButton, ListItemIcon, ListItemText, Avatar, Collapse,
@@ -25,6 +25,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import OfflineIndicator from '../OfflineIndicator';
 import { useAuth } from '../../context/AuthContext';
 import type { MenuDTO } from '../../services/authService';
+import api from '../../services/api';
 
 const drawerWidth = 260;
 
@@ -41,8 +42,14 @@ const staticMenuItems = [
   { text: 'Painel Administrativo', icon: <AdminIcon />,     path: '/app/admin' },
 ];
 
-/* ── Icon map for dynamic menus by code prefix ── */
+/* ── Icon map for dynamic menus by code ── */
 function menuIcon(code: string): React.ReactNode {
+  // Códigos reais do backend (V1__Initial_Seed)
+  if (code === '02') return <SchoolIcon />;       // Gestão Académica (Admin)
+  if (code === '03') return <GradeIcon />;        // Área do Professor
+  if (code === '04') return <DashboardIcon />;    // Área do Aluno
+  if (code === '05') return <HomeIcon />;         // Início (Guest)
+  // Legacy
   if (code.startsWith('ADM-001')) return <GroupIcon />;
   if (code.startsWith('ADM-002')) return <SchoolIcon />;
   if (code.startsWith('STD-001')) return <DashboardIcon />;
@@ -54,6 +61,25 @@ function menuIcon(code: string): React.ReactNode {
 }
 
 function subMenuIcon(code: string): React.ReactNode {
+  // Admin sub-items
+  if (code === '0201') return <SchoolIcon />;       // Escolas
+  if (code === '0202') return <ClassroomIcon />;    // Turmas e Grades
+  if (code === '0203') return <SubjectIcon />;      // Disciplinas
+  if (code === '0204') return <GroupIcon />;        // Utilizadores
+  if (code === '0205' || code === '0206') return <LibraryIcon />; // Biblioteca Admin
+  // Professor sub-items
+  if (code === '0301') return <DashboardIcon />;    // Painel de Respostas
+  if (code === '0302') return <ClassroomIcon />;    // Minhas Turmas
+  if (code === '0303') return <GroupIcon />;        // Meus Alunos
+  if (code === '0304') return <LibraryIcon />;      // Biblioteca Professor
+  if (code === '0305') return <ForumIcon />;        // Fórum Professor
+  // Student sub-items
+  if (code === '0401') return <DashboardIcon />;    // Meus Estudos
+  if (code === '0402') return <ForumIcon />;        // Dúvidas e Perguntas
+  if (code === '0403') return <LibraryIcon />;      // Biblioteca Digital
+  // Guest sub-items
+  if (code === '0501') return <LibraryIcon />;      // Biblioteca Digital
+  // Legacy
   if (code.includes('001-001') || code.includes('list')) return <GroupIcon />;
   if (code.includes('001-002') || code.includes('roles')) return <PersonIcon />;
   if (code.includes('002-001') || code.includes('classroom')) return <ClassroomIcon />;
@@ -216,6 +242,7 @@ const StaticNav: React.FC<StaticNavProps> = ({ location, navigate }) => (
 /* ── Main Layout ── */
 const MainLayout: React.FC<Props> = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [subInfo, setSubInfo] = useState<string | null>(null);
   const navigate  = useNavigate();
   const location  = useLocation();
   const { user, logout } = useAuth();
@@ -226,6 +253,23 @@ const MainLayout: React.FC<Props> = ({ children }) => {
   const userInitials = user?.fullName
     ? user.fullName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
     : '?';
+
+  useEffect(() => {
+    if (!user?.username) return;
+    if (user.role === 'Professor') {
+      api.get<string[]>(`/auth/users/professor/${user.username}/specializations`)
+        .then(r => { if (r.data.length > 0) setSubInfo(r.data[0]); })
+        .catch(() => {});
+    } else if (user.role === 'Estudante') {
+      api.get('/auth/users/student-profile-by-username', { params: { username: user.username } })
+        .then((r: any) => {
+          const profile = r.data;
+          const parts = [profile.grade, profile.classroomId ? `Turma ${profile.classroomId}` : null].filter(Boolean);
+          if (parts.length > 0) setSubInfo(parts.join(' · '));
+        })
+        .catch(() => {});
+    }
+  }, [user?.username, user?.role]);
 
   const handleLogout = () => {
     logout();
@@ -265,7 +309,7 @@ const MainLayout: React.FC<Props> = ({ children }) => {
       }
 
       {/* User section */}
-      <Box sx={{ p: 2 }}>
+      <Box sx={{ p: 2, bgcolor: '#001B33' }}>
         <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)', mb: 2 }} />
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 1 }}>
           <Avatar sx={{ bgcolor: '#00A651', width: 36, height: 36, fontSize: '0.85rem', fontWeight: 700 }}>
@@ -275,9 +319,14 @@ const MainLayout: React.FC<Props> = ({ children }) => {
             <Typography variant="body2" fontWeight={600} color="white" noWrap>
               {user?.fullName || user?.username}
             </Typography>
-            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>
+            <Typography variant="caption" sx={{ color: '#00A651', fontWeight: 600 }} noWrap>
               {user?.role || 'GUEST'}
             </Typography>
+            {subInfo && (
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.45)', display: 'block' }} noWrap>
+                {subInfo}
+              </Typography>
+            )}
           </Box>
           <IconButton
             size="small"
@@ -312,13 +361,13 @@ const MainLayout: React.FC<Props> = ({ children }) => {
           open={mobileOpen}
           onClose={() => setMobileOpen(false)}
           ModalProps={{ keepMounted: true }}
-          sx={{ display: { xs: 'block', sm: 'none' }, '& .MuiDrawer-paper': { width: drawerWidth, border: 'none' } }}
+          sx={{ display: { xs: 'block', sm: 'none' }, '& .MuiDrawer-paper': { width: drawerWidth, border: 'none', bgcolor: '#001B33' } }}
         >
           {drawer}
         </Drawer>
         <Drawer
           variant="permanent"
-          sx={{ display: { xs: 'none', sm: 'block' }, '& .MuiDrawer-paper': { width: drawerWidth, border: 'none' } }}
+          sx={{ display: { xs: 'none', sm: 'block' }, '& .MuiDrawer-paper': { width: drawerWidth, border: 'none', bgcolor: '#001B33' } }}
           open
         >
           {drawer}

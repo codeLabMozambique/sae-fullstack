@@ -11,7 +11,6 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -49,7 +48,7 @@ public class ForumQuestionResource {
             @RequestParam(required = false) codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina,
             @RequestParam(required = false) QuestionType questionType,
             @RequestParam(required = false) QuestionStatus status,
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+            @PageableDefault(size = 10) Pageable pageable) {
         return ResponseEntity.ok(questionService.list(disciplina, questionType, status, pageable));
     }
 

@@ -15,11 +15,38 @@ import SchoolsPage from './pages/admin/academic/SchoolsPage';
 import ClassLevelsPage from './pages/admin/academic/ClassLevelsPage';
 import ProfessorAssignmentsPage from './pages/admin/academic/ProfessorAssignmentsPage';
 import UsersListPage from './pages/admin/users/UsersListPage';
+import ProfessorClassroomsPage from './pages/professor/ProfessorClassroomsPage';
+
+// Biblioteca / Content-service pages
+import Biblioteca from './pages/Biblioteca';
+import Favoritos from './pages/biblioteca/Favoritos';
+import ContinuarLer from './pages/biblioteca/ContinuarLer';
+import Historico from './pages/biblioteca/Historico';
+import Metas from './pages/biblioteca/Metas';
+import UploadConteudo from './pages/biblioteca/UploadConteudo';
+import MeusConteudos from './pages/biblioteca/MeusConteudos';
+import Categorias from './pages/biblioteca/Categorias';
+import AdminCategorias from './pages/biblioteca/admin/AdminCategorias';
+import AdminDisciplinas from './pages/biblioteca/admin/AdminDisciplinas';
+import AdminBatchUpload from './pages/biblioteca/admin/AdminBatchUpload';
+
+// Forum & Dashboard (for dynamic-menu routes)
+import Dashboard from './pages/Dashboard';
+import ForumList from './pages/forum/ForumList';
+
 import { testBackendConnection } from './services/api';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+}
+
+function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <ProtectedRoute>
+      <MainLayout>{children}</MainLayout>
+    </ProtectedRoute>
+  );
 }
 
 function App() {
@@ -44,6 +71,57 @@ function App() {
               </ProtectedRoute>
             } />
 
+            {/* ── STUDENT — Dashboard & Fórum ───────────────── */}
+            <Route path="/student/dashboard" element={<Layout><Dashboard /></Layout>} />
+            <Route path="/student/questions" element={<Layout><ForumList /></Layout>} />
+            <Route path="/student/forum/new" element={<Layout><ForumList /></Layout>} />
+            <Route path="/student/forum/questions" element={<Layout><ForumList /></Layout>} />
+
+            {/* ── STUDENT — Biblioteca ───────────────────────── */}
+            <Route path="/student/library" element={<Layout><Biblioteca /></Layout>} />
+            <Route path="/student/library/categories" element={<Layout><Categorias /></Layout>} />
+            <Route path="/student/library/favorites" element={<Layout><Favoritos /></Layout>} />
+            <Route path="/student/library/progress" element={<Layout><ContinuarLer /></Layout>} />
+            <Route path="/student/library/history" element={<Layout><Historico /></Layout>} />
+            <Route path="/student/goals" element={<Layout><Metas /></Layout>} />
+            <Route path="/student/goals/new" element={<Layout><Metas /></Layout>} />
+
+            {/* ── PROFESSOR — Dashboard, Fórum & Turmas ─────── */}
+            <Route path="/professor/dashboard" element={<Layout><Dashboard /></Layout>} />
+            <Route path="/professor/forum" element={<Layout><ForumList /></Layout>} />
+            <Route path="/professor/forum/pending" element={<Layout><ForumList /></Layout>} />
+            <Route path="/professor/forum/answered" element={<Layout><ForumList /></Layout>} />
+            <Route path="/professor/my-classes" element={<Layout><ProfessorClassroomsPage /></Layout>} />
+            <Route path="/professor/students" element={<Layout><ProfessorClassroomsPage /></Layout>} />
+            <Route path="/professor/classes" element={<Layout><ProfessorClassroomsPage /></Layout>} />
+            <Route path="/professor/grades" element={<Layout><ProfessorClassroomsPage /></Layout>} />
+
+            {/* ── PROFESSOR — Biblioteca ─────────────────────── */}
+            <Route path="/professor/library" element={<Layout><Biblioteca /></Layout>} />
+            <Route path="/professor/library/my-content" element={<Layout><MeusConteudos /></Layout>} />
+            <Route path="/professor/library/upload" element={<Layout><UploadConteudo /></Layout>} />
+            <Route path="/professor/library/categories" element={<Layout><Categorias /></Layout>} />
+            <Route path="/professor/library/favorites" element={<Layout><Favoritos /></Layout>} />
+            <Route path="/professor/library/progress" element={<Layout><ContinuarLer /></Layout>} />
+            <Route path="/professor/library/history" element={<Layout><Historico /></Layout>} />
+            <Route path="/professor/goals" element={<Layout><Metas /></Layout>} />
+
+            {/* ── ADMIN — Biblioteca ─────────────────────────── */}
+            <Route path="/admin/library" element={<Layout><Biblioteca /></Layout>} />
+            <Route path="/admin/forum" element={<Layout><ForumList /></Layout>} />
+
+            {/* ── ADMIN — Aliases para rotas do menu dinâmico ── */}
+            <Route path="/admin/schools" element={<Layout><SchoolsPage /></Layout>} />
+            <Route path="/admin/classrooms" element={<Layout><ClassroomsPage /></Layout>} />
+            <Route path="/admin/subjects" element={<Layout><SubjectsPage /></Layout>} />
+            <Route path="/admin/users" element={<Layout><UsersListPage /></Layout>} />
+            <Route path="/admin/library/contents" element={<Layout><MeusConteudos /></Layout>} />
+            <Route path="/admin/library/upload" element={<Layout><UploadConteudo /></Layout>} />
+            <Route path="/admin/library/batch" element={<Layout><AdminBatchUpload /></Layout>} />
+            <Route path="/admin/library/categories" element={<Layout><AdminCategorias /></Layout>} />
+            <Route path="/admin/library/disciplines" element={<Layout><AdminDisciplinas /></Layout>} />
+            <Route path="/admin/library/logs" element={<Layout><Historico /></Layout>} />
+
             {/* Admin — Academic */}
             <Route path="/admin/academic/classrooms" element={
               <ProtectedRoute>
@@ -56,7 +134,6 @@ function App() {
               </ProtectedRoute>
             } />
 
-            {/* Admin — Academic (extended) */}
             <Route path="/admin/academic/schools" element={
               <ProtectedRoute>
                 <MainLayout><SchoolsPage /></MainLayout>
@@ -75,6 +152,11 @@ function App() {
 
             {/* Admin — Users */}
             <Route path="/admin/users/list" element={
+              <ProtectedRoute>
+                <MainLayout><UsersListPage /></MainLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/users/roles" element={
               <ProtectedRoute>
                 <MainLayout><UsersListPage /></MainLayout>
               </ProtectedRoute>

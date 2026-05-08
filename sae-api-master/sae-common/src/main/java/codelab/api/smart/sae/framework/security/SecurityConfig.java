@@ -18,48 +18,56 @@ import codelab.api.smart.sae.framework.filter.JwtRequestFilter;
 @EnableWebSecurity
 public class SecurityConfig {
 
-	@Autowired
-	private JwtRequestFilter jwtRequestFilter;
+    @Autowired
+    private JwtRequestFilter jwtRequestFilter;
 
-	@Bean
-	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-		http.cors(cors -> cors.disable()).csrf(csrf -> csrf.disable())
-				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
-				.authorizeHttpRequests(auth -> auth
-						.requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.OPTIONS, "/**")).permitAll()
-						.requestMatchers(
-								AntPathRequestMatcher.antMatcher("/error"),
-								AntPathRequestMatcher.antMatcher("/health"),
-								AntPathRequestMatcher.antMatcher("/users/signup/**"),
-								AntPathRequestMatcher.antMatcher("/users/signup"),
-								AntPathRequestMatcher.antMatcher("/users/login"),
-								AntPathRequestMatcher.antMatcher("/users/authenticate"),
-								AntPathRequestMatcher.antMatcher("/users/otpGen/**"),
-								AntPathRequestMatcher.antMatcher("/users/otpValidation/**"),
-								AntPathRequestMatcher.antMatcher("/users/professor/**/specializations"),
-							AntPathRequestMatcher.antMatcher("/users/professors/by-discipline"))
-						.permitAll()
-						.requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/**"))
-						.hasAnyAuthority(UserRoles.ADMIN.name())
-						.requestMatchers(AntPathRequestMatcher.antMatcher("/users/change-password"))
-						.hasAnyAuthority(UserRoles.ADMIN.name())
-						.requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/driving-licenses/me"))
-						.authenticated()
-						.requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/driving-licenses/me"))
-						.authenticated()
-						.requestMatchers(
-								AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/driving-licenses/users/**"))
-						.hasAuthority(UserRoles.ADMIN.name())
-						.requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/driving-licenses/users/**"))
-						.hasAuthority(UserRoles.ADMIN.name())
-						.requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/driving-licenses"))
-						.hasAuthority(UserRoles.ADMIN.name())
-						.anyRequest().authenticated())
-				.formLogin(form -> form.disable())
-				.httpBasic(basic -> basic.disable());
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.cors(cors -> cors.disable()).csrf(csrf -> csrf.disable())
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.OPTIONS, "/**")).permitAll()
+                .requestMatchers(
+                    AntPathRequestMatcher.antMatcher("/error"),
+                    AntPathRequestMatcher.antMatcher("/health"),
+                    AntPathRequestMatcher.antMatcher("/users/signup/**"),
+                    AntPathRequestMatcher.antMatcher("/users/signup"),
+                    AntPathRequestMatcher.antMatcher("/users/login"),
+                    AntPathRequestMatcher.antMatcher("/users/authenticate"),
+                    AntPathRequestMatcher.antMatcher("/users/otpGen/**"),
+                    AntPathRequestMatcher.antMatcher("/users/otpValidation/**"),
+                    AntPathRequestMatcher.antMatcher("/users/professor/**/specializations"),
+                    AntPathRequestMatcher.antMatcher("/users/professors/by-discipline"))
+                .permitAll()
+                // Allow professors and students to read user lists needed for classroom/forum features
+                .requestMatchers(
+                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/all"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/professors"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/students-by-classroom"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/student-profile-by-username"))
+                .hasAnyAuthority(UserRoles.ADMIN.name(), UserRoles.PROFESSOR.name(), UserRoles.STUDENT.name())
+                // All other GET /users/** requires ADMIN
+                .requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/**"))
+                .hasAnyAuthority(UserRoles.ADMIN.name())
+                .requestMatchers(AntPathRequestMatcher.antMatcher("/users/change-password"))
+                .hasAnyAuthority(UserRoles.ADMIN.name())
+                .requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/driving-licenses/me"))
+                .authenticated()
+                .requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/driving-licenses/me"))
+                .authenticated()
+                .requestMatchers(
+                    AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/driving-licenses/users/**"))
+                .hasAuthority(UserRoles.ADMIN.name())
+                .requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/driving-licenses/users/**"))
+                .hasAuthority(UserRoles.ADMIN.name())
+                .requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/driving-licenses"))
+                .hasAuthority(UserRoles.ADMIN.name())
+                .anyRequest().authenticated())
+            .formLogin(form -> form.disable())
+            .httpBasic(basic -> basic.disable());
 
-		return http.build();
-	}
+        return http.build();
+    }
 
 }
