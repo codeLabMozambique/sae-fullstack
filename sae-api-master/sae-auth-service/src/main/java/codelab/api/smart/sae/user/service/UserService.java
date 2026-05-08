@@ -37,7 +37,6 @@ import codelab.api.smart.sae.user.enums.UserRoles;
 import codelab.api.smart.sae.user.model.ProfessorProfileEntity;
 import codelab.api.smart.sae.user.model.StudentProfileEntity;
 import codelab.api.smart.sae.user.model.UserEntity;
-// import codelab.api.smart.sae.user.model.UserEntity;
 import codelab.api.smart.sae.user.repository.ProfessorProfileRepository;
 import codelab.api.smart.sae.user.repository.StudentProfileRepository;
 import codelab.api.smart.sae.user.repository.UserRepository;
@@ -64,8 +63,8 @@ public class UserService {
     @Autowired
     private StudentProfileRepository studentProfileRepository;
 
-    // @Autowired
-    // private EmailService emailService;
+    @Autowired
+    private EmailService emailService;
 
     // @Autowired
     // private OTPManager otpManager;
@@ -159,7 +158,10 @@ public class UserService {
         LocalDateTime creationDate = LocalDateTime.now();
         tmp_user.setCreatedDate(creationDate);
 
-        return userRepository.save(tmp_user);
+        UserEntity saved = userRepository.save(tmp_user);
+        if (request.getEmail() != null && !request.getEmail().isBlank())
+            emailService.sendCredentials(request.getEmail(), request.getFullname(), request.getUsername(), request.getPassword(), "Administrador");
+        return saved;
     }
 
     @Transactional
@@ -188,6 +190,8 @@ public class UserService {
         user.setRole(roles.get(0));
 
         userRepository.save(user);
+        if (request.getEmail() != null && !request.getEmail().isBlank())
+            emailService.sendCredentials(request.getEmail(), request.getFullname(), request.getNTelefone(), request.getPassword(), "Professor");
 
         ProfessorProfileEntity profile = new ProfessorProfileEntity();
         profile.setUser(user);
@@ -227,6 +231,8 @@ public class UserService {
         user.setRole(roles.get(0));
 
         userRepository.save(user);
+        if (request.getEmail() != null && !request.getEmail().isBlank())
+            emailService.sendCredentials(request.getEmail(), request.getFullname(), request.getNTelefone(), request.getPassword(), "Estudante");
 
         StudentProfileEntity profile = new StudentProfileEntity();
         profile.setUser(user);

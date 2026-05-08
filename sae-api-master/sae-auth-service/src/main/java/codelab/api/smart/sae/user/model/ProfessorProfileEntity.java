@@ -25,6 +25,8 @@ public class ProfessorProfileEntity extends UpdatableEntity {
 
     @Column(name = "DEPARTMENT")
     private String department;
+    @Column(name = "uuid")
+    private String uuid;
 
     @Column(name = "SPECIALIZATION")
     private String specialization;
