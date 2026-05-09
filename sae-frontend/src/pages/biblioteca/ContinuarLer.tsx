@@ -5,8 +5,9 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { MenuBook as ReadIcon } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import {
-  listProgress, readUrl, absoluteContentUrl,
+  listProgress, absoluteContentUrl,
   type ReadingProgressView,
 } from '../../services/contentService';
 
@@ -19,6 +20,7 @@ function formatTime(seconds: number): string {
 }
 
 const ContinuarLer: React.FC = () => {
+  const navigate = useNavigate();
   const [items, setItems] = useState<ReadingProgressView[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,7 +83,7 @@ const ContinuarLer: React.FC = () => {
                     <Button
                       variant="contained" size="small" fullWidth
                       startIcon={<ReadIcon sx={{ fontSize: '14px !important' }} />}
-                      onClick={() => window.open(readUrl(p.contentId), '_blank')}
+                      onClick={() => navigate(`/leitor/${p.contentId}`)}
                       sx={{ bgcolor: '#001B33', textTransform: 'none', '&:hover': { bgcolor: '#002B50' } }}
                     >
                       Continuar

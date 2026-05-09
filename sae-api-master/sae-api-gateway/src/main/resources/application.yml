@@ -6,6 +6,8 @@ spring:
     name: sae-api-gateway
   profiles:
     active: dev
+  codec:
+    max-in-memory-size: 60MB
   cloud:
     gateway:
       globalcors:

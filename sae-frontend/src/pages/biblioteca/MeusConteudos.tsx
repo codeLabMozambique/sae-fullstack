@@ -9,7 +9,7 @@ import {
 } from '@mui/icons-material';
 import {
   listContents, deleteProfessorContent, deleteAdminContent,
-  readUrl, absoluteContentUrl, type Content,
+  absoluteContentUrl, type Content,
 } from '../../services/contentService';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -112,13 +112,13 @@ const MeusConteudos: React.FC = () => {
                   </CardContent>
                   <CardActions sx={{ px: 2, pb: 2, gap: 1 }}>
                     <Tooltip title="Ver">
-                      <IconButton size="small" onClick={() => window.open(readUrl(c.id), '_blank')}>
+                      <IconButton size="small" onClick={() => navigate(`/leitor/${c.id}`)}>
                         <ViewIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
                     <Button
                       size="small" startIcon={<ReadIcon sx={{ fontSize: '14px !important' }} />}
-                      onClick={() => window.open(readUrl(c.id), '_blank')}
+                      onClick={() => navigate(`/leitor/${c.id}`)}
                       sx={{ flex: 1, textTransform: 'none' }}
                     >
                       Abrir

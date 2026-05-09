@@ -7,12 +7,14 @@ import Grid from '@mui/material/Grid';
 import {
   Favorite as FavoriteIcon, MenuBook as ReadIcon,
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import {
-  listFavorites, removeFavorite, readUrl, absoluteContentUrl,
+  listFavorites, removeFavorite, absoluteContentUrl,
   type Content,
 } from '../../services/contentService';
 
 const Favoritos: React.FC = () => {
+  const navigate = useNavigate();
   const [items, setItems] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,7 +88,7 @@ const Favoritos: React.FC = () => {
                     <Button
                       variant="contained" size="small" fullWidth
                       startIcon={<ReadIcon sx={{ fontSize: '14px !important' }} />}
-                      onClick={() => window.open(readUrl(c.id), '_blank')}
+                      onClick={() => navigate(`/leitor/${c.id}`)}
                       disabled={!c.fileUrl}
                       sx={{ bgcolor: '#001B33', textTransform: 'none', '&:hover': { bgcolor: '#002B50' } }}
                     >

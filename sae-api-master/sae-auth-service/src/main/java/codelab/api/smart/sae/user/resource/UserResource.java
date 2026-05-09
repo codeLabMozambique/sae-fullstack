@@ -167,4 +167,18 @@ public class UserResource {
         return ResponseEntity.ok(userService.findStudentProfileByUsername(username));
     }
 
+    /**
+     * Lookup leve de utilizador por username — usado por outros micro-serviços
+     * (content-service, forum-service) para resolver o nome completo a partir
+     * do telefone (subject do JWT) sem expor todo o perfil.
+     *
+     * Devolve { username, fullName, role } ou 404 se não existir.
+     */
+    @GetMapping("/by-username")
+    public ResponseEntity<java.util.Map<String, Object>> getBasicUserByUsername(@RequestParam String username) {
+        return userService.findBasicByUsername(username)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
 }

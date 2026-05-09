@@ -3,6 +3,8 @@ spring:
   config:
     activate:
       on-profile: dev
+  codec:
+    max-in-memory-size: 60MB
   cloud:
     gateway:
       globalcors:

@@ -202,7 +202,7 @@ const ClassLevelsPage: React.FC = () => {
                       <TableRow key={row.id} sx={{ transition: 'background .15s', '&:hover': { background: 'rgba(0,166,81,0.035)' } }}>
                         <TableCell sx={{ width: 60, py: 1.5 }}>
                           <Box sx={{ width: 28, height: 28, borderRadius: '8px', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color }}>{idx + 1}</Typography>
+                            <Typography sx={{ fontSize: '0.72rem', fontWeight: 800, color }}>{page * rowsPerPage + localIdx + 1}</Typography>
                           </Box>
                         </TableCell>
                         <TableCell sx={{ py: 1.5 }}>

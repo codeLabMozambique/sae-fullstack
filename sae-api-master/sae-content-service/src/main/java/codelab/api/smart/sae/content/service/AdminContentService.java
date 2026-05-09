@@ -1,5 +1,6 @@
 package codelab.api.smart.sae.content.service;
 
+import codelab.api.smart.sae.content.client.AuthServiceClient;
 import codelab.api.smart.sae.content.model.Content;
 import codelab.api.smart.sae.content.model.jpa.ContentLog;
 import codelab.api.smart.sae.content.repository.ContentRepository;
@@ -27,7 +28,10 @@ public class AdminContentService {
     @Autowired
     private EventPublisherService eventPublisherService;
 
-    public Content uploadContent(MultipartFile file, Content metadata, String adminUser) {
+    @Autowired
+    private AuthServiceClient authServiceClient;
+
+    public Content uploadContent(MultipartFile file, Content metadata, String adminUser, String token) {
         try {
             byte[] fileBytes = file.getBytes();
             String fileName = fileStorageService.saveFile(fileBytes, file.getOriginalFilename(), file.getContentType());
@@ -38,12 +42,14 @@ public class AdminContentService {
             
             String thumbName = null;
             if (thumbBytes != null) {
-                thumbName = fileStorageService.saveFile(thumbBytes, "thumb_" + file.getOriginalFilename() + ".jpg", "image/jpeg");
+                String safeBase = (file.getOriginalFilename() == null ? "cover" : file.getOriginalFilename())
+                        .replaceAll("\\.pdf$", "");
+                thumbName = fileStorageService.saveFile(thumbBytes, "thumb_" + safeBase + ".jpg", "image/jpeg");
             }
-            
+
             metadata.setFileUrl("/api/contents/" + fileName + "/read");
             if (thumbName != null) {
-                metadata.setThumbnailUrl("/api/contents/" + thumbName + "/read");
+                metadata.setThumbnailUrl("/api/contents/files/" + thumbName);
             }
             metadata.setTotalPages(pages);
             metadata.setUploadedBy(adminUser);

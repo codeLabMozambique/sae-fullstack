@@ -48,7 +48,8 @@ public class SecurityConfig {
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/professors"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/students"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/students-by-classroom"),
-                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/student-profile-by-username"))
+                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/student-profile-by-username"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/by-username"))
                 .hasAnyAuthority(UserRoles.ADMIN.name(), UserRoles.PROFESSOR.name(), UserRoles.STUDENT.name())
                 // All other GET /users/** requires ADMIN
                 .requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/**"))
