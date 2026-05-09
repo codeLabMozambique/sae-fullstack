@@ -50,6 +50,9 @@ public class CollaborativeAnswerEntity implements Serializable {
     @Column(name = "ATTACHMENT_ID", length = 64)
     private String attachmentId;
 
+    @Column(name = "AI_GENERATED")
+    private Boolean aiGenerated = false;
+
     @Column(name = "CREATED_AT", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -90,4 +93,7 @@ public class CollaborativeAnswerEntity implements Serializable {
 
     public String getAttachmentId() { return attachmentId; }
     public void setAttachmentId(String attachmentId) { this.attachmentId = attachmentId; }
+
+    public Boolean getAiGenerated() { return aiGenerated; }
+    public void setAiGenerated(Boolean aiGenerated) { this.aiGenerated = aiGenerated; }
 }

@@ -21,6 +21,7 @@ public class QuestionResponseDTO {
     private LocalDateTime updatedAt;
     private List<ExpertAnswerResponseDTO> expertAnswers;
     private List<CollaborativeAnswerResponseDTO> collaborativeAnswers;
+    private Long responseTimeMinutes;
 
     public static QuestionResponseDTO from(ForumQuestionEntity e) {
         QuestionResponseDTO dto = new QuestionResponseDTO();
@@ -53,4 +54,7 @@ public class QuestionResponseDTO {
 
     public List<CollaborativeAnswerResponseDTO> getCollaborativeAnswers() { return collaborativeAnswers; }
     public void setCollaborativeAnswers(List<CollaborativeAnswerResponseDTO> collaborativeAnswers) { this.collaborativeAnswers = collaborativeAnswers; }
+
+    public Long getResponseTimeMinutes() { return responseTimeMinutes; }
+    public void setResponseTimeMinutes(Long responseTimeMinutes) { this.responseTimeMinutes = responseTimeMinutes; }
 }

@@ -3,6 +3,7 @@ import type {
   ForumQuestion, ExpertAnswer, CollaborativeAnswer,
   PageResponse, CreateQuestionRequest, CreateAnswerRequest,
   QuestionType, QuestionStatus, DisciplinaEnum, ProfessorInfo,
+  ForumStatsOverview, ProfessorAssistanceStats,
 } from '../types/forum';
 
 const BASE = '/forum';
@@ -92,4 +93,12 @@ export const forumService = {
   // EP-17: Perguntas respondidas pelo professor (+ colaborativas com actividade)
   listProfessorAnswered: (): Promise<ForumQuestion[]> =>
     api.get<ForumQuestion[]>(`${BASE}/questions/professor/answered`).then(r => r.data),
+
+  // Estatísticas globais do fórum (ADMIN)
+  getStatsOverview: (): Promise<ForumStatsOverview> =>
+    api.get<ForumStatsOverview>(`${BASE}/questions/stats/overview`).then(r => r.data),
+
+  // Estatísticas de assistência de um professor (ADMIN / PROFESSOR)
+  getProfessorAssistanceStats: (username: string): Promise<ProfessorAssistanceStats> =>
+    api.get<ProfessorAssistanceStats>(`${BASE}/questions/professor/${username}/assistance-stats`).then(r => r.data),
 };

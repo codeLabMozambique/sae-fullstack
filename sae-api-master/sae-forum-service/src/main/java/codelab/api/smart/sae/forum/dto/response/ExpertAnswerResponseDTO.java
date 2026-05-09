@@ -11,6 +11,7 @@ public class ExpertAnswerResponseDTO {
     private String answeredBy;
     private Boolean accepted;
     private String attachmentId;
+    private Boolean aiGenerated;
     private LocalDateTime createdAt;
 
     public static ExpertAnswerResponseDTO from(ExpertAnswerEntity e) {
@@ -21,6 +22,7 @@ public class ExpertAnswerResponseDTO {
         dto.answeredBy = e.getAnsweredBy();
         dto.accepted = e.getAccepted();
         dto.attachmentId = e.getAttachmentId();
+        dto.aiGenerated = e.getAiGenerated();
         dto.createdAt = e.getCreatedAt();
         return dto;
     }
@@ -31,5 +33,6 @@ public class ExpertAnswerResponseDTO {
     public String getAnsweredBy() { return answeredBy; }
     public Boolean getAccepted() { return accepted; }
     public String getAttachmentId() { return attachmentId; }
+    public Boolean getAiGenerated() { return aiGenerated; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

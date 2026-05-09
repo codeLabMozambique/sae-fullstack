@@ -1,9 +1,12 @@
 package codelab.api.smart.sae.content.service;
 
+import io.minio.BucketExistsArgs;
+import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.GetObjectArgs;
 import io.minio.RemoveObjectArgs;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +28,15 @@ public class FileStorageService {
                                @Value("${smartsae.minio.bucket}") String bucketName) {
         this.minioClient = minioClient;
         this.bucketName = bucketName;
+        try {
+            boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
+            if (!found) {
+                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
+            }
+        } catch (Exception e) {
+            logger.error("Erro ao verificar ou criar bucket no MinIO: {}", e.getMessage());
+            throw new RuntimeException("Falha ao inicializar o bucket", e);
+        }
     }
 
     public String saveFile(MultipartFile file) {

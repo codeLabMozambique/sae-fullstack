@@ -9,6 +9,7 @@ export interface ExpertAnswer {
   answeredBy: string;
   accepted: boolean;
   attachmentId?: string | null;
+  aiGenerated?: boolean;
   createdAt: string;
 }
 
@@ -23,6 +24,7 @@ export interface CollaborativeAnswer {
   rejectedBy: string | null;
   rejectedAt: string | null;
   attachmentId?: string | null;
+  aiGenerated?: boolean;
   createdAt: string;
 }
 
@@ -99,6 +101,25 @@ export interface ForumQuestion {
   updatedAt: string;
   expertAnswers?: ExpertAnswer[];
   collaborativeAnswers?: CollaborativeAnswer[];
+  responseTimeMinutes?: number | null;
+}
+
+export interface ForumStatsOverview {
+  totalQuestions: number;
+  totalByDisciplina: Record<string, number>;
+  totalByType: Record<string, number>;
+  totalByStatus: Record<string, number>;
+  avgResponseTimeMinutes: number | null;
+}
+
+export interface ProfessorAssistanceStats {
+  username: string;
+  totalAnswered: number;
+  totalAccepted: number;
+  acceptanceRate: number;
+  avgResponseTimeMinutes: number | null;
+  assistancePercentage: number;
+  disciplinas: string[];
 }
 
 export interface PageResponse<T> {

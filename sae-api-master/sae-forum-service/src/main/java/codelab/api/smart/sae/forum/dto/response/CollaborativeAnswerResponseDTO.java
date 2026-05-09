@@ -16,6 +16,7 @@ public class CollaborativeAnswerResponseDTO {
     private String rejectedBy;
     private LocalDateTime rejectedAt;
     private String attachmentId;
+    private Boolean aiGenerated;
     private LocalDateTime createdAt;
 
     public static CollaborativeAnswerResponseDTO from(CollaborativeAnswerEntity e) {
@@ -30,6 +31,7 @@ public class CollaborativeAnswerResponseDTO {
         dto.rejectedBy = e.getRejectedBy();
         dto.rejectedAt = e.getRejectedAt();
         dto.attachmentId = e.getAttachmentId();
+        dto.aiGenerated = e.getAiGenerated();
         dto.createdAt = e.getCreatedAt();
         return dto;
     }
@@ -44,5 +46,6 @@ public class CollaborativeAnswerResponseDTO {
     public String getRejectedBy() { return rejectedBy; }
     public LocalDateTime getRejectedAt() { return rejectedAt; }
     public String getAttachmentId() { return attachmentId; }
+    public Boolean getAiGenerated() { return aiGenerated; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

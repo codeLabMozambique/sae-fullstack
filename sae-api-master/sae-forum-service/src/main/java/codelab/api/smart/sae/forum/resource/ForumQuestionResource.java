@@ -1,6 +1,8 @@
 package codelab.api.smart.sae.forum.resource;
 
 import codelab.api.smart.sae.forum.dto.request.CreateQuestionRequestDTO;
+import codelab.api.smart.sae.forum.dto.response.ForumStatsDTO;
+import codelab.api.smart.sae.forum.dto.response.ProfessorAssistanceStatsDTO;
 import codelab.api.smart.sae.forum.dto.response.QuestionResponseDTO;
 import codelab.api.smart.sae.forum.enums.DisciplinaEnum;
 import codelab.api.smart.sae.forum.enums.QuestionStatus;
@@ -128,5 +130,20 @@ public class ForumQuestionResource {
             Authentication auth) {
         questionService.updateFirstMessage(id, body.getOrDefault("descricao", ""), auth.getName());
         return ResponseEntity.noContent().build();
+    }
+
+    // Estatísticas globais do fórum (para painel admin)
+    @GetMapping("/stats/overview")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<ForumStatsDTO> getStatsOverview() {
+        return ResponseEntity.ok(questionService.getStatsOverview());
+    }
+
+    // Estatísticas de assistência de um professor específico (para painel admin)
+    @GetMapping("/professor/{username}/assistance-stats")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'PROFESSOR')")
+    public ResponseEntity<ProfessorAssistanceStatsDTO> getProfessorAssistanceStats(
+            @PathVariable String username) {
+        return ResponseEntity.ok(questionService.getProfessorAssistanceStats(username));
     }
 }

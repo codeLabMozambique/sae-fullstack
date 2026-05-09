@@ -17,6 +17,7 @@ import ProfessorAssignmentsPage from './pages/admin/academic/ProfessorAssignment
 import ProfessorClassesPage from './pages/professor/ProfessorClassesPage';
 import ProfessorGradesPage from './pages/professor/ProfessorGradesPage';
 import StudentForumPage from './pages/student/StudentForumPage';
+import ProfessorForumPage from './pages/professor/ProfessorForumPage';
 import UsersListPage from './pages/admin/users/UsersListPage';
 import ProfessorClassroomsPage from './pages/professor/ProfessorClassroomsPage';
 
@@ -92,9 +93,9 @@ function App() {
 
             {/* ── PROFESSOR — Dashboard, Fórum & Turmas ─────── */}
             <Route path="/professor/dashboard" element={<Layout><Dashboard /></Layout>} />
-            <Route path="/professor/forum" element={<Layout><ForumList /></Layout>} />
-            <Route path="/professor/forum/pending" element={<Layout><ForumList /></Layout>} />
-            <Route path="/professor/forum/answered" element={<Layout><ForumList /></Layout>} />
+            <Route path="/professor/forum" element={<Layout><ProfessorForumPage /></Layout>} />
+            <Route path="/professor/forum/pending" element={<Layout><ProfessorForumPage /></Layout>} />
+            <Route path="/professor/forum/answered" element={<Layout><ProfessorForumPage /></Layout>} />
             <Route path="/professor/my-classes" element={<Layout><ProfessorClassroomsPage /></Layout>} />
             <Route path="/professor/students" element={<Layout><ProfessorClassroomsPage /></Layout>} />
             <Route path="/professor/classes" element={<Layout><ProfessorClassesPage /></Layout>} />

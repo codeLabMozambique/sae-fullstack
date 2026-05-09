@@ -200,54 +200,45 @@ const InboxRow: React.FC<{
     <Box
       onClick={onClick}
       sx={{
-        display: 'flex', alignItems: 'center', gap: 2,
-        px: 2.5, py: 1.75, cursor: 'pointer',
-        borderBottom: '1px solid #F3F4F6',
-        transition: 'background 0.15s',
-        '&:hover': { bgcolor: '#F9FAFB' },
+        display: 'flex', alignItems: 'center', gap: 2.5,
+        px: 3, py: 2.5, cursor: 'pointer',
+        borderBottom: '1px solid #f1f5f9',
+        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        '&:hover': { bgcolor: '#f8fafc', transform: 'translateX(4px)' },
+        '&:active': { transform: 'translateX(2px)' }
       }}
     >
-      <Avatar sx={{ bgcolor: `${color}18`, color, fontWeight: 700, width: 42, height: 42, fontSize: isCollab ? '1.1rem' : '0.85rem', flexShrink: 0 }}>
+      <Avatar sx={{ 
+        bgcolor: `${color}10`, color, fontWeight: 800, width: 48, height: 48, 
+        fontSize: isCollab ? '1.4rem' : '1rem', flexShrink: 0,
+        border: `1px solid ${color}20`
+      }}>
         {avatarContent}
       </Avatar>
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Stack direction="row" alignItems="center" spacing={0.75} mb={0.3} flexWrap="wrap">
-          <Typography variant="body2" fontWeight={700} color="#111827" noWrap>{title}</Typography>
+        <Stack direction="row" alignItems="center" spacing={1} mb={0.5} flexWrap="wrap">
+          <Typography variant="body1" fontWeight={800} color="#0f172a" noWrap>{title}</Typography>
           <Chip
             icon={isCollab
-              ? <GroupsIcon sx={{ fontSize: '0.7rem !important' }} />
-              : <SchoolIcon sx={{ fontSize: '0.7rem !important' }} />}
-            label={isCollab ? 'Colaborativo' : 'Especializado'}
+              ? <GroupsIcon sx={{ fontSize: '0.8rem !important' }} />
+              : <SchoolIcon sx={{ fontSize: '0.8rem !important' }} />}
+            label={isCollab ? 'Fórum da Turma' : 'Privado'}
             size="small"
             sx={{
-              bgcolor: isCollab ? '#DCFCE7' : '#DBEAFE',
-              color: isCollab ? '#16A34A' : '#2563EB',
-              fontWeight: 700, fontSize: '0.58rem', height: 16,
-              '& .MuiChip-label': { px: 0.5 },
-              '& .MuiChip-icon': { ml: 0.5 },
+              bgcolor: isCollab ? '#f0fdf4' : '#eff6ff',
+              color: isCollab ? '#16a34a' : '#2563eb',
+              fontWeight: 800, fontSize: '0.65rem', height: 20,
+              border: `1px solid ${isCollab ? '#dcfce7' : '#dbeafe'}`,
+              '& .MuiChip-label': { px: 1 },
             }}
           />
-          {!isCollab && (
-            <Chip
-              label={DISCIPLINA_LABELS[question.disciplina]}
-              size="small"
-              sx={{ bgcolor: `${color}15`, color, fontWeight: 700, fontSize: '0.58rem', height: 16, '& .MuiChip-label': { px: 0.5 } }}
-            />
-          )}
         </Stack>
-        {alsoInPending && (
-          <Chip
-            label="Aguarda a sua intervenção"
-            size="small"
-            sx={{ bgcolor: '#FEF3C7', color: '#D97706', fontWeight: 700, fontSize: '0.58rem', height: 15, mb: 0.4, '& .MuiChip-label': { px: 0.5 } }}
-          />
-        )}
-        <Typography variant="caption" color="text.secondary"
-          sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <Typography variant="body2" color="text.secondary"
+          sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>
           {preview}
         </Typography>
       </Box>
-      <Typography variant="caption" color="#9CA3AF" sx={{ flexShrink: 0 }}>
+      <Typography variant="caption" fontWeight={600} color="text.disabled" sx={{ flexShrink: 0 }}>
         {formatRelative(question.createdAt)}
       </Typography>
     </Box>
@@ -451,6 +442,11 @@ const ForumList: React.FC = () => {
     else { loadExpertQuestions(); loadProfessors(); }
   }, [tab, isProfessor, loadCollabQuestions, loadExpertQuestions, loadPending, loadProfessors]);
 
+  // Carregar respondidas quando o subtab começa em 1 (acesso directo via URL /forum/answered)
+  useEffect(() => {
+    if (tab === 1 && inboxSubTab === 1 && isProfessor) loadAnswered();
+  }, [tab, inboxSubTab, isProfessor, loadAnswered]);
+
   const handleInboxSubTabChange = (_: React.SyntheticEvent, v: number) => {
     setInboxSubTab(v);
     if (v === 1) loadAnswered();
@@ -544,9 +540,18 @@ const ForumList: React.FC = () => {
   return (
     <Box>
       {/* Page header */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h5" fontWeight={700} color="#0A1628">Chat</Typography>
-        <Typography variant="body2" color="text.secondary">Seleciona onde queres conversar</Typography>
+      <Box sx={{ mb: 4, p: 3, borderRadius: 4, background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', color: 'white', position: 'relative', overflow: 'hidden' }}>
+        <Box sx={{ position: 'relative', zIndex: 2 }}>
+          <Typography variant="h5" fontWeight={800}>Centro de Comunicação</Typography>
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>
+            {isProfessor ? 'Gere as tuas interações com os alunos' : 'Escolhe como queres obter suporte hoje'}
+          </Typography>
+        </Box>
+        <Box sx={{ 
+          position: 'absolute', top: -40, right: -40, width: 180, height: 180, 
+          background: 'radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, transparent 70%)',
+          borderRadius: '50%'
+        }} />
       </Box>
 
       {topError && (
@@ -555,24 +560,24 @@ const ForumList: React.FC = () => {
 
       <Box sx={{ bgcolor: '#fff', borderRadius: 3, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.07)' }}>
         {/* Tabs */}
-        <Box sx={{ borderBottom: '1px solid #F3F4F6', px: 2 }}>
+        <Box sx={{ borderBottom: '1px solid #F3F4F6', px: 2, bgcolor: '#f8faff' }}>
           <Tabs
             value={tab}
             onChange={handleTabChange}
-            slotProps={{ indicator: { style: { backgroundColor: tab === 0 ? accentCollab : accentExpert, height: 3, borderRadius: '3px 3px 0 0' } } }}
-            sx={{ minHeight: 52 }}
+            slotProps={{ indicator: { style: { backgroundColor: tab === 0 ? accentCollab : accentExpert, height: 4, borderRadius: '4px 4px 0 0' } } }}
+            sx={{ minHeight: 60 }}
           >
             <Tab
-              icon={<GroupsIcon fontSize="small" />}
+              icon={<GroupsIcon sx={{ fontSize: 20 }} />}
               iconPosition="start"
-              label="Chat da Turma"
-              sx={{ textTransform: 'none', fontWeight: tab === 0 ? 700 : 400, color: tab === 0 ? accentCollab : '#6B7280', minHeight: 52, fontSize: '0.88rem', gap: 0.5 }}
+              label="Fórum da Turma"
+              sx={{ textTransform: 'none', fontWeight: tab === 0 ? 800 : 500, color: tab === 0 ? accentCollab : '#64748b', minHeight: 60, fontSize: '0.9rem', gap: 1 }}
             />
             <Tab
-              icon={isProfessor ? <InboxIcon fontSize="small" /> : <SchoolIcon fontSize="small" />}
+              icon={isProfessor ? <InboxIcon sx={{ fontSize: 20 }} /> : <SchoolIcon sx={{ fontSize: 20 }} />}
               iconPosition="start"
-              label={isProfessor ? 'Caixa de Entrada' : 'Chat com Professor'}
-              sx={{ textTransform: 'none', fontWeight: tab === 1 ? 700 : 400, color: tab === 1 ? accentExpert : '#6B7280', minHeight: 52, fontSize: '0.88rem', gap: 0.5 }}
+              label={isProfessor ? 'Caixa de Entrada' : 'Chat Privado'}
+              sx={{ textTransform: 'none', fontWeight: tab === 1 ? 800 : 500, color: tab === 1 ? accentExpert : '#64748b', minHeight: 60, fontSize: '0.9rem', gap: 1 }}
             />
           </Tabs>
         </Box>

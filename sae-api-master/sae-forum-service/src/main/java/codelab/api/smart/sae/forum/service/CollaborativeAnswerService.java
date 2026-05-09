@@ -32,16 +32,15 @@ public class CollaborativeAnswerService {
 
         ForumQuestionEntity question = questionService.getEntityById(questionId);
 
-        if (!QuestionType.COLABORATIVO.equals(question.getQuestionType())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                "Esta pergunta pertence ao Fórum Especializado");
-        }
         if (QuestionStatus.FECHADA.equals(question.getStatus())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Pergunta já está fechada");
         }
-        if (!"system".equals(question.getCreatedBy()) && question.getCreatedBy().equals(studentUsername)) {
+        
+        // Em fóruns colaborativos, o autor não responde a si mesmo. 
+        // Em salas expert, o autor (aluno) pode enviar mensagens de seguimento.
+        if (QuestionType.COLABORATIVO.equals(question.getQuestionType()) && question.getCreatedBy().equals(studentUsername)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                "Não é possível responder à sua própria pergunta");
+                "No fórum colaborativo, não é possível responder à sua própria pergunta");
         }
 
         if (request.getConteudo() == null || request.getConteudo().isBlank()) {

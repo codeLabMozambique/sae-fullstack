@@ -3,6 +3,8 @@ package codelab.api.smart.sae.forum.service;
 import codelab.api.smart.sae.forum.dto.request.CreateQuestionRequestDTO;
 import codelab.api.smart.sae.forum.dto.response.CollaborativeAnswerResponseDTO;
 import codelab.api.smart.sae.forum.dto.response.ExpertAnswerResponseDTO;
+import codelab.api.smart.sae.forum.dto.response.ForumStatsDTO;
+import codelab.api.smart.sae.forum.dto.response.ProfessorAssistanceStatsDTO;
 import codelab.api.smart.sae.forum.dto.response.QuestionResponseDTO;
 import codelab.api.smart.sae.forum.enums.DisciplinaEnum;
 import codelab.api.smart.sae.forum.enums.QuestionStatus;
@@ -21,11 +23,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -75,17 +80,16 @@ public class ForumQuestionService {
 
         QuestionResponseDTO dto = QuestionResponseDTO.from(question);
 
-        if (QuestionType.ESPECIALIZADO.equals(question.getQuestionType())) {
-            dto.setExpertAnswers(
-                expertAnswerRepository.findByQuestionIdOrderByCreatedAtAsc(id).stream()
-                    .map(ExpertAnswerResponseDTO::from).toList()
-            );
-        } else {
-            dto.setCollaborativeAnswers(
-                collaborativeAnswerRepository.findByQuestionIdOrderByCreatedAtAsc(id).stream()
-                    .map(CollaborativeAnswerResponseDTO::from).toList()
-            );
-        }
+        List<ExpertAnswerResponseDTO> expertAnswers =
+            expertAnswerRepository.findByQuestionIdOrderByCreatedAtAsc(id).stream()
+                .map(ExpertAnswerResponseDTO::from).toList();
+        List<CollaborativeAnswerResponseDTO> collabAnswers =
+            collaborativeAnswerRepository.findByQuestionIdOrderByCreatedAtAsc(id).stream()
+                .map(CollaborativeAnswerResponseDTO::from).toList();
+
+        dto.setExpertAnswers(expertAnswers);
+        dto.setCollaborativeAnswers(collabAnswers);
+        dto.setResponseTimeMinutes(computeResponseTime(question.getCreatedAt(), expertAnswers, collabAnswers));
 
         return dto;
     }
@@ -190,7 +194,7 @@ public class ForumQuestionService {
         List<ForumQuestionEntity> combined = new ArrayList<>(expert);
         combined.addAll(collab);
         combined.sort(Comparator.comparing(ForumQuestionEntity::getCreatedAt).reversed());
-        return combined.stream().map(QuestionResponseDTO::from).collect(Collectors.toList());
+        return combined.stream().map(this::enrichWithAnswers).collect(Collectors.toList());
     }
 
     /**
@@ -223,12 +227,122 @@ public class ForumQuestionService {
 
         List<ForumQuestionEntity> result = new ArrayList<>(map.values());
         result.sort(Comparator.comparing(ForumQuestionEntity::getCreatedAt).reversed());
-        return result.stream().map(QuestionResponseDTO::from).collect(Collectors.toList());
+        return result.stream().map(this::enrichWithAnswers).collect(Collectors.toList());
     }
 
     public List<QuestionResponseDTO> getMyQuestions(String username) {
         return questionRepository.findByCreatedByOrderByCreatedAtDesc(username)
-            .stream().map(QuestionResponseDTO::from).collect(Collectors.toList());
+            .stream().map(this::enrichWithAnswers).collect(Collectors.toList());
+    }
+
+    public ForumStatsDTO getStatsOverview() {
+        List<ForumQuestionEntity> all = questionRepository.findAll();
+
+        ForumStatsDTO stats = new ForumStatsDTO();
+        stats.setTotalQuestions((long) all.size());
+
+        stats.setTotalByDisciplina(all.stream()
+            .collect(Collectors.groupingBy(q -> q.getDisciplina().name(), TreeMap::new, Collectors.counting())));
+
+        stats.setTotalByType(all.stream()
+            .collect(Collectors.groupingBy(q -> q.getQuestionType().name(), TreeMap::new, Collectors.counting())));
+
+        stats.setTotalByStatus(all.stream()
+            .collect(Collectors.groupingBy(q -> q.getStatus().name(), TreeMap::new, Collectors.counting())));
+
+        // Média de tempo de resposta: considera só questões que têm pelo menos uma resposta
+        List<Long> responseTimes = all.stream()
+            .map(q -> {
+                List<ExpertAnswerResponseDTO> ea =
+                    expertAnswerRepository.findByQuestionIdOrderByCreatedAtAsc(q.getId()).stream()
+                        .map(ExpertAnswerResponseDTO::from).collect(Collectors.toList());
+                List<CollaborativeAnswerResponseDTO> ca =
+                    collaborativeAnswerRepository.findByQuestionIdOrderByCreatedAtAsc(q.getId()).stream()
+                        .map(CollaborativeAnswerResponseDTO::from).collect(Collectors.toList());
+                return computeResponseTime(q.getCreatedAt(), ea, ca);
+            })
+            .filter(t -> t != null)
+            .collect(Collectors.toList());
+
+        stats.setAvgResponseTimeMinutes(responseTimes.isEmpty()
+            ? null
+            : responseTimes.stream().mapToLong(Long::longValue).average().orElse(0));
+
+        return stats;
+    }
+
+    public ProfessorAssistanceStatsDTO getProfessorAssistanceStats(String professorUsername) {
+        List<codelab.api.smart.sae.forum.model.ExpertAnswerEntity> answers =
+            expertAnswerRepository.findByAnsweredBy(professorUsername);
+
+        ProfessorAssistanceStatsDTO stats = new ProfessorAssistanceStatsDTO();
+        stats.setUsername(professorUsername);
+        stats.setTotalAnswered((long) answers.size());
+        long accepted = answers.stream().filter(a -> Boolean.TRUE.equals(a.getAccepted())).count();
+        stats.setTotalAccepted(accepted);
+        stats.setAcceptanceRate(answers.isEmpty() ? 0.0 : (accepted * 100.0 / answers.size()));
+
+        // Disciplinas distintas onde o professor respondeu
+        List<String> disciplinas = answers.stream()
+            .map(ExpertAnswerEntity::getQuestionId)
+            .distinct()
+            .map(qid -> questionRepository.findById(qid).orElse(null))
+            .filter(q -> q != null)
+            .map(q -> q.getDisciplina().name())
+            .distinct()
+            .sorted()
+            .collect(Collectors.toList());
+        stats.setDisciplinas(disciplinas);
+
+        // Percentagem de assistência: respostas dadas / total questões ESPECIALIZADO nas suas disciplinas
+        List<DisciplinaEnum> disciplinaEnums = disciplinas.stream()
+            .map(name -> { try { return DisciplinaEnum.valueOf(name); } catch (Exception e) { return null; } })
+            .filter(d -> d != null)
+            .collect(Collectors.toList());
+        long totalEspecializado = disciplinaEnums.isEmpty() ? 0L :
+            questionRepository.findByQuestionTypeAndDisciplinaIn(QuestionType.ESPECIALIZADO, disciplinaEnums).size();
+        stats.setAssistancePercentage(totalEspecializado == 0 ? 0.0
+            : (answers.size() * 100.0 / totalEspecializado));
+
+        // Tempo médio de resposta desta prof em relação à criação das questões
+        double avgTime = answers.stream()
+            .mapToLong(a -> {
+                ForumQuestionEntity q = questionRepository.findById(a.getQuestionId()).orElse(null);
+                if (q == null) return 0L;
+                return Duration.between(q.getCreatedAt(), a.getCreatedAt()).toMinutes();
+            })
+            .filter(t -> t >= 0)
+            .average()
+            .orElse(0.0);
+        stats.setAvgResponseTimeMinutes(answers.isEmpty() ? null : avgTime);
+
+        return stats;
+    }
+
+    private QuestionResponseDTO enrichWithAnswers(ForumQuestionEntity q) {
+        QuestionResponseDTO dto = QuestionResponseDTO.from(q);
+        List<ExpertAnswerResponseDTO> expertAnswers =
+            expertAnswerRepository.findByQuestionIdOrderByCreatedAtAsc(q.getId()).stream()
+                .map(ExpertAnswerResponseDTO::from).collect(Collectors.toList());
+        List<CollaborativeAnswerResponseDTO> collabAnswers =
+            collaborativeAnswerRepository.findByQuestionIdOrderByCreatedAtAsc(q.getId()).stream()
+                .map(CollaborativeAnswerResponseDTO::from).collect(Collectors.toList());
+        dto.setExpertAnswers(expertAnswers);
+        dto.setCollaborativeAnswers(collabAnswers);
+        dto.setResponseTimeMinutes(computeResponseTime(q.getCreatedAt(), expertAnswers, collabAnswers));
+        return dto;
+    }
+
+    private Long computeResponseTime(LocalDateTime questionCreatedAt,
+                                     List<ExpertAnswerResponseDTO> expertAnswers,
+                                     List<CollaborativeAnswerResponseDTO> collabAnswers) {
+        LocalDateTime firstAt = null;
+        if (!expertAnswers.isEmpty()) firstAt = expertAnswers.get(0).getCreatedAt();
+        if (!collabAnswers.isEmpty()) {
+            LocalDateTime collabFirst = collabAnswers.get(0).getCreatedAt();
+            firstAt = (firstAt == null || collabFirst.isBefore(firstAt)) ? collabFirst : firstAt;
+        }
+        return firstAt != null ? Duration.between(questionCreatedAt, firstAt).toMinutes() : null;
     }
 
     private List<DisciplinaEnum> resolveDisciplinas(String professorUsername) {

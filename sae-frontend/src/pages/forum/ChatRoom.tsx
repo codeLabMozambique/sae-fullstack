@@ -190,12 +190,12 @@ const ChatRoom: React.FC = () => {
   };
 
   const headerTitle = isCollab
-    ? `${disciplinaLabel} — Chat da Turma`
+    ? `${disciplinaLabel} — Fórum da Turma`
     : isSystemRoom
-      ? `${disciplinaLabel} — Chat com Professor`
+      ? `${disciplinaLabel} — Chat Privado`
       : isProfessor
-        ? `${disciplinaLabel} — Chat com ${question.createdBy}`
-        : `${disciplinaLabel} — Chat com Professor`;
+        ? `${disciplinaLabel} — Aluno: ${question.createdBy}`
+        : `${disciplinaLabel} — Chat Privado`;
 
   return (
     <Box
@@ -205,9 +205,10 @@ const ChatRoom: React.FC = () => {
         height: { xs: 'calc(100vh - 150px)', sm: 'calc(100vh - 175px)' },
         minHeight: 500,
         bgcolor: '#fff',
-        borderRadius: 3,
+        borderRadius: 5,
         overflow: 'hidden',
-        boxShadow: '0 2px 16px rgba(0,0,0,0.08)',
+        boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
+        border: '1px solid #f1f5f9'
       }}
     >
       {/* ── Header ── */}
@@ -216,25 +217,29 @@ const ChatRoom: React.FC = () => {
           flexShrink: 0,
           display: 'flex',
           alignItems: 'center',
-          gap: 1.5,
-          px: 2,
-          py: 1.5,
-          borderBottom: `3px solid ${accent}`,
-          bgcolor: '#fff',
+          gap: 2,
+          px: 3,
+          py: 2.5,
+          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+          color: 'white',
+          position: 'relative',
+          overflow: 'hidden'
         }}
       >
-        <IconButton size="small" onClick={() => navigate('/app/forum')} sx={{ color: '#6B7280' }}>
+        <IconButton size="small" onClick={() => navigate('/app/forum')} sx={{ color: 'rgba(255,255,255,0.6)', bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}>
           <ArrowBackIcon fontSize="small" />
         </IconButton>
 
         <Avatar
           sx={{
-            bgcolor: `${disciplinaColor}18`,
-            color: disciplinaColor,
-            fontWeight: 700,
-            width: 38,
-            height: 38,
-            fontSize: '1.1rem',
+            bgcolor: 'rgba(255,255,255,0.1)',
+            color: 'white',
+            fontWeight: 800,
+            width: 44,
+            height: 44,
+            fontSize: '1.2rem',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.1)'
           }}
         >
           {disciplinaEmoji}
@@ -242,38 +247,42 @@ const ChatRoom: React.FC = () => {
 
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography
-            variant="body1"
-            fontWeight={700}
-            color="#111827"
-            sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3 }}
+            variant="subtitle1"
+            fontWeight={800}
+            sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.2, color: 'white' }}
           >
             {headerTitle}
           </Typography>
-          <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mt: 0.25 }}>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
             <Chip
-              icon={isCollab ? <GroupsIcon sx={{ fontSize: '10px !important' }} /> : <SchoolIcon sx={{ fontSize: '10px !important' }} />}
-              label={isCollab ? 'Colaborativo' : 'Especializado'}
+              icon={isCollab ? <GroupsIcon sx={{ fontSize: '12px !important', color: 'white !important' }} /> : <SchoolIcon sx={{ fontSize: '12px !important', color: 'white !important' }} />}
+              label={isCollab ? 'Fórum da Turma' : 'Chat Privado'}
               size="small"
               sx={{
-                bgcolor: accentLight,
-                color: accent,
+                bgcolor: 'rgba(255,255,255,0.15)',
+                color: 'white',
                 fontWeight: 700,
-                fontSize: '0.62rem',
-                height: 17,
-                '& .MuiChip-label': { px: 0.75 },
-                '& .MuiChip-icon': { ml: 0.5, color: `${accent} !important` },
+                fontSize: '0.65rem',
+                height: 20,
+                backdropFilter: 'blur(10px)',
+                '& .MuiChip-label': { px: 1 },
               }}
             />
             {question.status === 'FECHADA' && (
               <Chip
-                icon={<LockIcon sx={{ fontSize: '11px !important' }} />}
+                icon={<LockIcon sx={{ fontSize: '11px !important', color: 'rgba(255,255,255,0.5) !important' }} />}
                 label="Fechada"
                 size="small"
-                sx={{ bgcolor: '#F3F4F6', color: '#9CA3AF', height: 17, '& .MuiChip-label': { px: 0.5 }, '& .MuiChip-icon': { ml: 0.5 } }}
+                sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)', height: 20, '& .MuiChip-label': { px: 1 } }}
               />
             )}
           </Stack>
         </Box>
+        <Box sx={{ 
+          position: 'absolute', top: -30, right: -30, width: 120, height: 120, 
+          background: `radial-gradient(circle, ${accent}20 0%, transparent 70%)`,
+          borderRadius: '50%'
+        }} />
       </Box>
 
       {/* ── Context bar ── */}
@@ -479,13 +488,14 @@ const ChatRoom: React.FC = () => {
                   sx={{
                     bgcolor: bubbleBg,
                     borderRadius: bubbleRadius,
-                    px: 2,
-                    py: 1.25,
-                    boxShadow: mine ? `0 2px 8px ${accent}35` : '0 1px 4px rgba(0,0,0,0.07)',
-                    ...(expertData?.accepted && !mine ? { border: '2px solid #16A34A' } : {}),
+                    px: 2.5,
+                    py: 1.5,
+                    boxShadow: mine ? `0 4px 15px ${accent}25` : '0 2px 10px rgba(0,0,0,0.05)',
+                    border: mine ? 'none' : '1px solid #f1f5f9',
+                    ...(expertData?.accepted && !mine ? { border: '2px solid #16A34A', boxShadow: '0 4px 20px rgba(22, 163, 74, 0.15)' } : {}),
                   }}
                 >
-                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.65, color: textColor }}>
+                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.65, color: textColor, fontWeight: 500 }}>
                     {msg.data.conteudo}
                   </Typography>
                 </Box>
