@@ -10,4 +10,5 @@ import java.util.List;
 public interface StudyGoalRepository extends MongoRepository<StudyGoal, String> {
     List<StudyGoal> findByUserId(String userId);
     List<StudyGoal> findByUserIdAndActive(String userId, boolean active);
+    List<StudyGoal> findByUserIdAndStatus(String userId, String status);
 }

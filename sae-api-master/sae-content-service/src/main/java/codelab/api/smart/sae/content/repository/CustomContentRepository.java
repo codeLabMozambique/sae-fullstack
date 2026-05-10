@@ -6,4 +6,5 @@ import org.springframework.data.domain.Pageable;
 
 public interface CustomContentRepository {
     Page<Content> findWithFilters(String discipline, String level, Long classroomId, String uploadedBy, Pageable pageable);
+    Page<Content> searchByText(String query, Pageable pageable);
 }

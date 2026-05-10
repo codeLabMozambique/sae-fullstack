@@ -72,8 +72,7 @@ const UploadConteudo: React.FC = () => {
     (async () => {
       try {
         const pdfjs: any = await import('pdfjs-dist');
-        const workerUrl: string = (await import('pdfjs-dist/build/pdf.worker.min.mjs?url')).default;
-        pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
         const buf = await file.arrayBuffer();
         const pdf = await pdfjs.getDocument({ data: buf }).promise;
         const page = await pdf.getPage(1);

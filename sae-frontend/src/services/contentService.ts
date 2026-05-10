@@ -182,6 +182,7 @@ export interface ReadingHistory {
   id: string;
   userId: string;
   contentId: string;
+  contentTitle: string | null;
   discipline: string;
   pagesRead: number;
   durationSeconds: number;
@@ -197,6 +198,10 @@ export async function recordHistory(contentId: string, pagesRead: number, durati
   await api.post('/content/api/user/history', { contentId, pagesRead, durationSeconds });
 }
 
+export async function deleteHistory(id: string): Promise<void> {
+  await api.delete(`/content/api/user/history/${id}`);
+}
+
 // ────────────────────────────────────────────────────────────
 // User: metas de estudo
 // ────────────────────────────────────────────────────────────
@@ -204,31 +209,95 @@ export async function recordHistory(contentId: string, pagesRead: number, durati
 export interface StudyGoal {
   id: string;
   userId: string;
+  goalType: string | null;        // BOOK, PAGES, DISCIPLINE, CATEGORY
+  goalUnit: string | null;        // PAGES or TIME
+  contentId: string | null;
+  contentTitle: string | null;
+  contentThumbnail: string | null;
+  discipline: string | null;
+  category: string | null;
   title: string;
   targetPages: number;
   currentPages: number;
+  dailyPagesTarget: number;
+  targetMinutes: number;
+  currentMinutes: number;
+  dailyMinutesTarget: number;
   deadline: string;
+  startedAt: string | null;
+  status: string;                 // ACTIVE, PAUSED, COMPLETED
   active: boolean;
+  reminderEmail: string | null;
+  reminderEnabled: boolean;
+  reminderFrequency: string;      // DAILY, EVERY_2_DAYS, WEEKLY, BEFORE_DEADLINE
+  reminderDaysBefore: number;
+  reminderTime: string;
+  lastReminderSentAt: string | null;
 }
 
-export async function listGoals(active?: boolean): Promise<StudyGoal[]> {
-  const { data } = await api.get<StudyGoal[]>('/content/api/user/goals', {
-    params: active !== undefined ? { active } : {},
-  });
+export async function listGoals(params?: { active?: boolean; status?: string }): Promise<StudyGoal[]> {
+  const { data } = await api.get<StudyGoal[]>('/content/api/user/goals', { params });
   return data;
 }
 
-export async function createGoal(payload: { title: string; targetPages: number; deadline: string }): Promise<StudyGoal> {
+export async function createGoal(payload: {
+  title: string;
+  targetPages?: number;
+  dailyPagesTarget?: number;
+  targetMinutes?: number;
+  dailyMinutesTarget?: number;
+  deadline: string;
+  goalType?: string;
+  goalUnit?: string;
+  contentId?: string;
+  contentTitle?: string;
+  contentThumbnail?: string;
+  discipline?: string;
+  category?: string;
+}): Promise<StudyGoal> {
   const { data } = await api.post<StudyGoal>('/content/api/user/goals', payload);
   return data;
 }
 
-export async function addGoalProgress(id: string, pages: number): Promise<void> {
-  await api.post(`/content/api/user/goals/${id}/progress`, { pages });
+export async function updateGoal(id: string, payload: Partial<StudyGoal>): Promise<StudyGoal> {
+  const { data } = await api.patch<StudyGoal>(`/content/api/user/goals/${id}`, payload);
+  return data;
+}
+
+export async function addGoalProgress(id: string, pages: number, minutes?: number): Promise<void> {
+  await api.post(`/content/api/user/goals/${id}/progress`, { pages, ...(minutes ? { minutes } : {}) });
+}
+
+export async function pauseGoal(id: string): Promise<StudyGoal> {
+  const { data } = await api.put<StudyGoal>(`/content/api/user/goals/${id}/pause`);
+  return data;
+}
+
+export async function resumeGoal(id: string): Promise<StudyGoal> {
+  const { data } = await api.put<StudyGoal>(`/content/api/user/goals/${id}/resume`);
+  return data;
+}
+
+export async function resetGoal(id: string): Promise<StudyGoal> {
+  const { data } = await api.put<StudyGoal>(`/content/api/user/goals/${id}/reset`);
+  return data;
 }
 
 export async function deleteGoal(id: string): Promise<void> {
   await api.delete(`/content/api/user/goals/${id}`);
+}
+
+export async function setGoalReminder(
+  id: string,
+  payload: { email: string; frequency: string; daysBefore?: number; time?: string }
+): Promise<StudyGoal> {
+  const { data } = await api.put<StudyGoal>(`/content/api/user/goals/${id}/reminder`, payload);
+  return data;
+}
+
+export async function removeGoalReminder(id: string): Promise<StudyGoal> {
+  const { data } = await api.delete<StudyGoal>(`/content/api/user/goals/${id}/reminder`);
+  return data;
 }
 
 // ────────────────────────────────────────────────────────────

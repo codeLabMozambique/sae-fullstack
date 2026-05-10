@@ -161,7 +161,7 @@ INSERT INTO app_transaction (id, status, code, type, label, router_link, positio
 (28, 1, 'ADM-002-005', 'MENU_ITEM', 'Atribuições Professores', '/admin/academic/professor-assignments',  5, 21),
 
 -- ── GUEST ───────────────────────────────────────────────────
-(30, 1, 'GST-001',     'HEADER',    'Início',             '/guest/home',                 1, NULL)
+(30, 1, 'GST-001',     'HEADER',    'Biblioteca',         '/biblioteca',                 1, NULL)
 
 ON CONFLICT (id) DO NOTHING;
 
@@ -381,7 +381,15 @@ INSERT INTO app_transaction (id, status, code, type, label, router_link, positio
 -- ── OFFLINE — disponível em todas as roles ───────────────────
 (70, 1, 'STD-LIB-006',   'MENU_ITEM', 'Leitura Offline',      '/student/library/offline',         6, 40),
 (71, 1, 'PRF-LIB-008',   'MENU_ITEM', 'Leitura Offline',      '/professor/library/offline',       8, 50),
-(72, 1, 'ADM-LIB-007',   'MENU_ITEM', 'Leitura Offline',      '/admin/library/offline',           7, 60)
+(72, 1, 'ADM-LIB-007',   'MENU_ITEM', 'Leitura Offline',      '/admin/library/offline',           7, 60),
+
+-- ── GUEST — Biblioteca Pública + Chat IA ─────────────────────
+-- (utilizadores sem conta ou com role GUEST)
+-- Rotas públicas definidas no App.tsx com PublicLibraryLayout
+(30, 1, 'GST-001',       'HEADER',    'Biblioteca',            '/biblioteca',                      1, NULL),
+(80, 1, 'GST-LIB-001',   'MENU_ITEM', 'Pesquisar',             '/biblioteca',                      1, 30),
+(81, 1, 'GST-LIB-002',   'MENU_ITEM', 'Categorias',            '/biblioteca/categorias',           2, 30),
+(82, 1, 'GST-LIB-003',   'MENU_ITEM', 'Chat IA',               '/biblioteca/chat',                 3, 30)
 
 -- DO UPDATE (não DO NOTHING) garante que execuções futuras corrigem discrepâncias
 -- de versões anteriores deste seed (ex.: parent_id que mudou).
@@ -394,7 +402,7 @@ ON CONFLICT (id) DO UPDATE SET
     position    = EXCLUDED.position,
     parent_id   = EXCLUDED.parent_id;
 
-SELECT setval(pg_get_serial_sequence('app_transaction', 'id'), 200);
+SELECT setval(pg_get_serial_sequence('app_transaction', 'id'), 300);
 
 -- ============================================================
 -- 9. ROLE_TRANSACTION — Mapeamento dos novos menus
@@ -437,11 +445,22 @@ INSERT INTO role_transaction (id, status, role, app_transaction_id) VALUES
 -- Leitura Offline (item por role)
 (70, 1, 'STUDENT',   70),
 (71, 1, 'PROFESSOR', 71),
-(72, 1, 'ADMIN',     72)
+(72, 1, 'ADMIN',     72),
 
-ON CONFLICT (id) DO NOTHING;
+-- GUEST — Biblioteca pública (acesso sem conta completa)
+-- id=85 porque id=30 já existe mapeado para STUDENT→GST-001
+(85, 1, 'GUEST',     30),
+(80, 1, 'GUEST',     80),
+(81, 1, 'GUEST',     81),
+(82, 1, 'GUEST',     82)
 
-SELECT setval(pg_get_serial_sequence('role_transaction', 'id'), 200);
+-- DO UPDATE garante que role errado (ex: GUEST em vez de STUDENT) é corrigido
+ON CONFLICT (id) DO UPDATE SET
+    status             = EXCLUDED.status,
+    role               = EXCLUDED.role,
+    app_transaction_id = EXCLUDED.app_transaction_id;
+
+SELECT setval(pg_get_serial_sequence('role_transaction', 'id'), 300);
 
 -- ============================================================
 -- 10. DISCIPLINES — Tabela do CONTENT-SERVICE (JPA)

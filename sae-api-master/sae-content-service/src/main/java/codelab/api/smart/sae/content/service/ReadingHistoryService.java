@@ -22,14 +22,16 @@ public class ReadingHistoryService {
     public void recordSession(String userId, String contentId, int pagesRead, long durationSeconds) {
         Content content = contentRepository.findById(contentId).orElse(null);
         String discipline = (content != null) ? content.getDiscipline() : "N/A";
+        String title = (content != null) ? content.getTitle() : contentId;
 
         ReadingHistory history = new ReadingHistory();
         history.setUserId(userId);
         history.setContentId(contentId);
+        history.setContentTitle(title);
         history.setDiscipline(discipline);
         history.setPagesRead(pagesRead);
         history.setDurationSeconds(durationSeconds);
-        
+
         readingHistoryRepository.save(history);
     }
 
@@ -39,5 +41,9 @@ public class ReadingHistoryService {
 
     public List<ReadingHistory> getFilteredHistory(String userId, String discipline, LocalDateTime from, LocalDateTime to) {
         return readingHistoryRepository.findByUserIdAndDisciplineAndReadAtBetween(userId, discipline, from, to);
+    }
+
+    public void deleteEntry(String userId, String id) {
+        readingHistoryRepository.deleteByIdAndUserId(id, userId);
     }
 }

@@ -20,6 +20,21 @@ import {
   Forum as ForumIcon,
   Grade as GradeIcon,
   Person as PersonIcon,
+  // Biblioteca sub-items
+  Search as SearchIcon,
+  PermMedia as MyContentIcon,
+  CloudUpload as UploadIcon,
+  AccountTree as CategoriesIcon,
+  Bookmark as FavoritesIcon,
+  AutoStories as ContinueReadingIcon,
+  History as HistoryIcon,
+  DownloadForOffline as OfflineIcon,
+  // Outros
+  EmojiEvents as GoalsIcon,
+  Groups as StudentsIcon,
+  BarChart as StatsIcon,
+  Class as ClassIcon,
+  MenuBook as MenuBookIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import OfflineIndicator from '../OfflineIndicator';
@@ -42,43 +57,71 @@ const staticMenuItems = [
   { text: 'Painel Administrativo', icon: <AdminIcon />,     path: '/app/admin' },
 ];
 
-/* ── Icon map for dynamic menus by code ── */
+/* ── Icon map for dynamic menus by code (parent headers) ── */
 function menuIcon(code: string): React.ReactNode {
-  // Códigos reais do backend (V1__Initial_Seed)
-  if (code === '02') return <SchoolIcon />;       // Gestão Académica (Admin)
-  if (code === '03') return <GradeIcon />;        // Área do Professor
-  if (code === '04') return <DashboardIcon />;    // Área do Aluno
-  if (code === '05') return <HomeIcon />;         // Início (Guest)
+  if (code === '02') return <AdminIcon />;         // Gestão Académica (Admin)
+  if (code === '03') return <SchoolIcon />;        // Área do Professor
+  if (code === '04') return <DashboardIcon />;     // Área do Aluno
+  if (code === '05') return <HomeIcon />;          // Início (Guest)
   // Legacy
   if (code.startsWith('ADM-001')) return <GroupIcon />;
   if (code.startsWith('ADM-002')) return <SchoolIcon />;
   if (code.startsWith('STD-001')) return <DashboardIcon />;
   if (code.startsWith('STD-002')) return <ForumIcon />;
-  if (code.startsWith('PRF-001')) return <GradeIcon />;
+  if (code.startsWith('PRF-001')) return <SchoolIcon />;
   if (code.startsWith('PRF-002')) return <ForumIcon />;
   if (code.startsWith('GST'))     return <HomeIcon />;
   return <AdminIcon />;
 }
 
+/* ── Route-based icon (preciso e semântico) ── */
+function iconByRoute(route: string): React.ReactNode | null {
+  // Biblioteca — sub-itens
+  if (/\/library\/my-content/.test(route))  return <MyContentIcon />;
+  if (/\/library\/upload/.test(route))      return <UploadIcon />;
+  if (/\/library\/categories/.test(route))  return <CategoriesIcon />;
+  if (/\/library\/favorites/.test(route))   return <FavoritesIcon />;
+  if (/\/library\/progress/.test(route))    return <ContinueReadingIcon />;
+  if (/\/library\/history/.test(route))     return <HistoryIcon />;
+  if (/\/library\/offline/.test(route))     return <OfflineIcon />;
+  if (/\/library$/.test(route))             return <SearchIcon />;
+  // Metas
+  if (/\/goals/.test(route))                return <GoalsIcon />;
+  // Professor / Aluno raíz
+  if (/\/dashboard/.test(route))            return <DashboardIcon />;
+  if (/\/my-classes/.test(route))           return <ClassIcon />;
+  if (/\/students/.test(route))             return <StudentsIcon />;
+  if (/\/forum/.test(route))               return <ForumIcon />;
+  if (/\/questions/.test(route))            return <ForumIcon />;
+  if (/\/stats/.test(route))               return <StatsIcon />;
+  // Admin
+  if (/\/schools/.test(route))             return <SchoolIcon />;
+  if (/\/classrooms/.test(route))          return <ClassroomIcon />;
+  if (/\/subjects/.test(route))            return <MenuBookIcon />;
+  if (/\/users/.test(route))              return <GroupIcon />;
+  if (/\/admin\/library/.test(route))      return <LibraryIcon />;
+  return null;
+}
+
 function subMenuIcon(code: string): React.ReactNode {
   // Admin sub-items
-  if (code === '0201') return <SchoolIcon />;       // Escolas
-  if (code === '0202') return <ClassroomIcon />;    // Turmas e Grades
-  if (code === '0203') return <SubjectIcon />;      // Disciplinas
-  if (code === '0204') return <GroupIcon />;        // Utilizadores
-  if (code === '0205' || code === '0206') return <LibraryIcon />; // Biblioteca Admin
+  if (code === '0201') return <SchoolIcon />;
+  if (code === '0202') return <ClassroomIcon />;
+  if (code === '0203') return <SubjectIcon />;
+  if (code === '0204') return <GroupIcon />;
+  if (code === '0205' || code === '0206') return <LibraryIcon />;
   // Professor sub-items
-  if (code === '0301') return <DashboardIcon />;    // Painel de Respostas
-  if (code === '0302') return <ClassroomIcon />;    // Minhas Turmas
-  if (code === '0303') return <GroupIcon />;        // Meus Alunos
-  if (code === '0304') return <LibraryIcon />;      // Biblioteca Professor
-  if (code === '0305') return <ForumIcon />;        // Fórum Professor
+  if (code === '0301') return <StatsIcon />;
+  if (code === '0302') return <ClassIcon />;
+  if (code === '0303') return <StudentsIcon />;
+  if (code === '0304') return <LibraryIcon />;
+  if (code === '0305') return <ForumIcon />;
   // Student sub-items
-  if (code === '0401') return <DashboardIcon />;    // Meus Estudos
-  if (code === '0402') return <ForumIcon />;        // Dúvidas e Perguntas
-  if (code === '0403') return <LibraryIcon />;      // Biblioteca Digital
+  if (code === '0401') return <DashboardIcon />;
+  if (code === '0402') return <ForumIcon />;
+  if (code === '0403') return <LibraryIcon />;
   // Guest sub-items
-  if (code === '0501') return <LibraryIcon />;      // Biblioteca Digital
+  if (code === '0501') return <LibraryIcon />;
   // Legacy
   if (code.includes('001-001') || code.includes('list')) return <GroupIcon />;
   if (code.includes('001-002') || code.includes('roles')) return <PersonIcon />;
@@ -168,7 +211,7 @@ const DynamicNav: React.FC<DynamicNavProps> = ({ menus, location, navigate }) =>
                         >
                           <ListItemIcon sx={{ minWidth: 32, color: isActive ? '#00A651' : 'rgba(255,255,255,0.4)' }}>
                             <Box sx={{ fontSize: '1rem', display: 'flex' }}>
-                              {subMenuIcon(item.code)}
+                              {iconByRoute(item.routerLink) ?? subMenuIcon(item.code)}
                             </Box>
                           </ListItemIcon>
                           <ListItemText

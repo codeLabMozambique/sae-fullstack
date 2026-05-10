@@ -3,7 +3,7 @@ import Grid from '@mui/material/Grid';
 import {
   Card, CardContent, CardActions,
   Typography, Button, TextField, InputAdornment, Box,
-  Chip, Stack, IconButton, Tooltip, CircularProgress, Alert,
+  Chip, Stack, IconButton, Tooltip, CircularProgress, Alert, Snackbar,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -158,6 +158,7 @@ const Biblioteca: React.FC = () => {
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [snackMsg, setSnackMsg] = useState<string | null>(null);
 
   const voice = useVoiceSearch('pt-PT');
   const offline = useOfflineContent();
@@ -245,6 +246,21 @@ const Biblioteca: React.FC = () => {
     () => [ALL_LABEL, ...disciplines.map(d => d.name)],
     [disciplines]
   );
+
+  const handleOfflineToggle = async (book: Content) => {
+    const wasCached = offline.cachedIds.has(book.id);
+    try {
+      if (wasCached) {
+        await offline.removeOffline(book.id);
+        setSnackMsg('Removido do dispositivo');
+      } else {
+        await offline.saveOffline(book.id);
+        setSnackMsg('Guardado para leitura offline!');
+      }
+    } catch {
+      setSnackMsg('Falha ao guardar offline');
+    }
+  };
 
   const handleRead = (book: Content) => {
     // Política TdR: leitura apenas dentro da plataforma — leitor embebido.
@@ -471,31 +487,40 @@ const Biblioteca: React.FC = () => {
                   <SpeechButton
                     text={`${book.title}. ${book.discipline ?? ''}. ${book.description ?? ''}`}
                   />
-                  {isAuthenticated && (
+                  {isAuthenticated && book.fileUrl && (
                     <Tooltip title={
-                      offline.cachedIds.has(book.id)
-                        ? 'Disponível offline · clica para remover'
-                        : 'Guardar para leitura offline'
+                      offline.busy.has(book.id)
+                        ? 'A guardar…'
+                        : offline.cachedIds.has(book.id)
+                          ? 'Guardado offline — clica para remover'
+                          : 'Guardar para ler sem internet'
                     }>
                       <span>
                         <IconButton
                           size="small"
-                          disabled={offline.busy.has(book.id) || !book.fileUrl}
-                          onClick={() => offline.cachedIds.has(book.id)
-                            ? offline.removeOffline(book.id)
-                            : offline.saveOffline(book.id)}
+                          disabled={offline.busy.has(book.id)}
+                          onClick={() => handleOfflineToggle(book)}
                           sx={{
                             border: '1px solid',
                             borderColor: offline.cachedIds.has(book.id) ? '#00A651' : '#E5E7EB',
                             borderRadius: 1.5,
                             color: offline.cachedIds.has(book.id) ? '#00A651' : '#9CA3AF',
                             flexShrink: 0,
-                            '&:hover': { bgcolor: '#F0FDF4' },
+                            transition: 'all 0.2s',
+                            '&:hover': {
+                              bgcolor: offline.cachedIds.has(book.id) ? '#FEF2F2' : '#F0FDF4',
+                              borderColor: offline.cachedIds.has(book.id) ? '#FCA5A5' : '#00A651',
+                              color: offline.cachedIds.has(book.id) ? '#DC2626' : '#00A651',
+                            },
                           }}
                         >
-                          {offline.cachedIds.has(book.id)
-                            ? <SavedOfflineIcon sx={{ fontSize: 16 }} />
-                            : <SaveOfflineIcon sx={{ fontSize: 16 }} />}
+                          {offline.busy.has(book.id) ? (
+                            <CircularProgress size={14} sx={{ color: '#00A651' }} />
+                          ) : offline.cachedIds.has(book.id) ? (
+                            <SavedOfflineIcon sx={{ fontSize: 16 }} />
+                          ) : (
+                            <SaveOfflineIcon sx={{ fontSize: 16 }} />
+                          )}
                         </IconButton>
                       </span>
                     </Tooltip>
@@ -519,6 +544,14 @@ const Biblioteca: React.FC = () => {
           ))}
         </Grid>
       )}
+
+      <Snackbar
+        open={!!snackMsg}
+        autoHideDuration={3000}
+        onClose={() => setSnackMsg(null)}
+        message={snackMsg}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
     </Box>
   );
 };

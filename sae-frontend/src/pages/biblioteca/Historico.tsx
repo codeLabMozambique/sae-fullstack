@@ -1,11 +1,17 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Table, TableHead, TableRow, TableCell, TableBody,
-  CircularProgress, Alert, TextField, MenuItem, Stack, Card,
+  CircularProgress, Alert, TextField, MenuItem, Stack, Card, IconButton,
+  Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, Button,
 } from '@mui/material';
-import { History as HistoryIcon } from '@mui/icons-material';
 import {
-  getHistory, listDisciplines,
+  History as HistoryIcon,
+  DeleteOutline as DeleteIcon,
+  OpenInNew as OpenIcon,
+} from '@mui/icons-material';
+import {
+  getHistory, deleteHistory, listDisciplines,
   type ReadingHistory, type Discipline,
 } from '../../services/contentService';
 
@@ -17,6 +23,7 @@ function formatDuration(seconds: number): string {
 }
 
 const Historico: React.FC = () => {
+  const navigate = useNavigate();
   const [items, setItems] = useState<ReadingHistory[]>([]);
   const [disciplines, setDisciplines] = useState<Discipline[]>([]);
   const [discipline, setDiscipline] = useState('');
@@ -24,12 +31,13 @@ const Historico: React.FC = () => {
   const [to, setTo] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
     listDisciplines().then(setDisciplines).catch(() => undefined);
   }, []);
 
-  useEffect(() => {
+  const load = () => {
     setLoading(true);
     const filters: Record<string, string> = {};
     if (discipline) filters.discipline = discipline;
@@ -41,7 +49,27 @@ const Historico: React.FC = () => {
       .then(setItems)
       .catch(e => setError(e?.message || 'Falha ao carregar histórico'))
       .finally(() => setLoading(false));
-  }, [discipline, from, to]);
+  };
+
+  useEffect(() => { load(); }, [discipline, from, to]);
+
+  const handleDelete = async () => {
+    if (!confirmId) return;
+    try {
+      await deleteHistory(confirmId);
+      setItems(prev => prev.filter(h => h.id !== confirmId));
+    } catch {
+      setError('Falha ao remover registo');
+    } finally {
+      setConfirmId(null);
+    }
+  };
+
+  const goToBook = (h: ReadingHistory) => {
+    const token = localStorage.getItem('sae_token');
+    const base = token ? '' : '/biblioteca';
+    navigate(`${base}/leitor/${h.contentId}`);
+  };
 
   return (
     <Box>
@@ -87,25 +115,66 @@ const Historico: React.FC = () => {
           <Table>
             <TableHead sx={{ bgcolor: '#F9FAFB' }}>
               <TableRow>
+                <TableCell sx={{ fontWeight: 700 }}>Livro</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Data</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Disciplina</TableCell>
-                <TableCell sx={{ fontWeight: 700 }} align="right">Páginas lidas</TableCell>
+                <TableCell sx={{ fontWeight: 700 }} align="right">Páginas</TableCell>
                 <TableCell sx={{ fontWeight: 700 }} align="right">Duração</TableCell>
+                <TableCell sx={{ fontWeight: 700 }} align="center">Ações</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {items.map(h => (
                 <TableRow key={h.id} hover>
-                  <TableCell>{h.readAt}</TableCell>
+                  <TableCell>
+                    <Typography
+                      variant="body2" fontWeight={600}
+                      sx={{ cursor: 'pointer', color: '#001B33', '&:hover': { textDecoration: 'underline' } }}
+                      onClick={() => goToBook(h)}
+                    >
+                      {h.contentTitle || h.contentId}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                    {new Date(h.readAt).toLocaleDateString('pt-MZ')}
+                  </TableCell>
                   <TableCell>{h.discipline}</TableCell>
                   <TableCell align="right">{h.pagesRead}</TableCell>
                   <TableCell align="right">{formatDuration(h.durationSeconds)}</TableCell>
+                  <TableCell align="center">
+                    <Stack direction="row" justifyContent="center" spacing={0.5}>
+                      <Tooltip title="Abrir livro">
+                        <IconButton size="small" onClick={() => goToBook(h)}>
+                          <OpenIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Remover do histórico">
+                        <IconButton size="small" color="error" onClick={() => setConfirmId(h.id)}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </Card>
       )}
+
+      {/* Confirmação de remoção */}
+      <Dialog open={confirmId !== null} onClose={() => setConfirmId(null)} maxWidth="xs" fullWidth>
+        <DialogTitle>Remover do histórico?</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            Este registo de leitura será removido permanentemente.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmId(null)}>Cancelar</Button>
+          <Button variant="contained" color="error" onClick={handleDelete}>Remover</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
