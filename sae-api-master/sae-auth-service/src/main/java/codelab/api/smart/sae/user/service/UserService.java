@@ -313,7 +313,7 @@ public class UserService {
         return new ProfessorProfileDTO(
                 p.getUser().getId(), p.getUser().getFullname(), p.getUser().getUsername(),
                 p.getUser().getEmail(), p.getSchoolId(), p.getDepartment(),
-                p.getSpecialization(), p.getInstitutionalContact(), p.isOnline());
+                p.getSpecialization(), p.getInstitutionalContact(), p.isOnline(), p.getLastSeen());
     }
 
     @Transactional
@@ -328,7 +328,7 @@ public class UserService {
         return new ProfessorProfileDTO(
                 p.getUser().getId(), p.getUser().getFullname(), p.getUser().getUsername(),
                 p.getUser().getEmail(), p.getSchoolId(), p.getDepartment(),
-                p.getSpecialization(), p.getInstitutionalContact(), p.isOnline());
+                p.getSpecialization(), p.getInstitutionalContact(), p.isOnline(), p.getLastSeen());
     }
 
     public StudentProfileDTO getStudentProfile(Long userId) {
@@ -375,7 +375,8 @@ public class UserService {
                         p.getDepartment(),
                         p.getSpecialization(),
                         p.getInstitutionalContact(),
-                        p.isOnline()))
+                        p.isOnline(),
+                        p.getLastSeen()))
                 .collect(Collectors.toList());
     }
 
@@ -437,9 +438,19 @@ public class UserService {
                 p.getUser().getUsername(),
                 p.getUser().getFullname(),
                 p.isOnline(),
-                p.getSpecialization()
+                p.getSpecialization(),
+                p.getLastSeen()
             ))
             .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Transactional
+    public void setProfessorOnline(String username, boolean online) {
+        professorProfileRepository.findByUserUsername(username).ifPresent(p -> {
+            p.setOnline(online);
+            p.setLastSeen(LocalDateTime.now());
+            professorProfileRepository.save(p);
+        });
     }
 
     private String normalize(String input) {

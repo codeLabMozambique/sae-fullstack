@@ -18,7 +18,7 @@ import { useAuth } from '../../context/AuthContext';
 import ValidationBadge from '../../components/forum/ValidationBadge';
 import {
   DISCIPLINA_LABELS, DISCIPLINA_COLOR, DISCIPLINA_EMOJI,
-  type ForumQuestion, type ExpertAnswer, type CollaborativeAnswer,
+  type ForumQuestion, type ExpertAnswer, type CollaborativeAnswer, type ProfessorInfo,
 } from '../../types/forum';
 
 function initials(name: string): string {
@@ -29,6 +29,15 @@ function initials(name: string): string {
     .slice(0, 2)
     .join('')
     .toUpperCase() || '?';
+}
+
+function formatLastSeen(iso?: string): string {
+  if (!iso) return '';
+  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (diff < 1) return 'agora';
+  if (diff < 60) return `${diff}min atrás`;
+  if (diff < 1440) return `${Math.floor(diff / 60)}h atrás`;
+  return new Date(iso).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' });
 }
 
 function formatTime(dateStr: string): string {
@@ -59,6 +68,16 @@ const ChatRoom: React.FC = () => {
   const [settingFirst, setSettingFirst] = useState(false);
   const [error, setError] = useState('');
   const [processing, setProcessing] = useState<number | null>(null);
+  const [professorsForRoom, setProfessorsForRoom] = useState<ProfessorInfo[]>([]);
+  const [professorPresence, setProfessorPresence] = useState<{ online: boolean; lastSeen?: string } | null>(null);
+  const [requestingAI, setRequestingAI] = useState(false);
+
+  // Professors use StudentForumPage — redirect and carry the question ID as state
+  useEffect(() => {
+    if (user?.role === 'Professor' && id) {
+      navigate('/professor/forum', { replace: true, state: { openQuestionId: Number(id) } });
+    }
+  }, [user?.role, id]);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -82,6 +101,30 @@ const ChatRoom: React.FC = () => {
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     }
   }, [question, loading]);
+
+  // Fetch professor presence for expert rooms
+  useEffect(() => {
+    if (!question || question.questionType !== 'ESPECIALIZADO') return;
+    forumService.getProfessorsByDisciplina(question.disciplina).then(profs => {
+      setProfessorsForRoom(profs);
+      if (profs.length > 0)
+        setProfessorPresence({ online: profs[0].online, lastSeen: profs[0].lastSeen });
+    }).catch(() => {});
+  }, [question?.id]);
+
+  const handleAskAI = async () => {
+    if (!question) return;
+    setRequestingAI(true);
+    setError('');
+    try {
+      await forumService.requestAIAnswer(question.id);
+      load();
+    } catch (e: any) {
+      setError(e?.response?.data?.message || 'Não foi possível contactar o assistente IA');
+    } finally {
+      setRequestingAI(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -306,6 +349,21 @@ const ChatRoom: React.FC = () => {
             ? `Chat da Turma · ${disciplinaLabel} · O professor será notificado ao enviar uma mensagem`
             : `Chat Privado com Prof. de ${disciplinaLabel} · A mensagem chegará directamente ao professor`}
         </Typography>
+        {isSpec && professorPresence && (
+          <Stack direction="row" alignItems="center" spacing={0.5} sx={{ ml: 'auto', flexShrink: 0 }}>
+            <Box sx={{
+              width: 7, height: 7, borderRadius: '50%',
+              bgcolor: professorPresence.online ? '#16A34A' : '#9CA3AF',
+            }} />
+            <Typography variant="caption" sx={{ color: accentDark, fontWeight: 500, fontSize: '0.65rem', whiteSpace: 'nowrap' }}>
+              {professorPresence.online
+                ? 'Prof. online'
+                : professorPresence.lastSeen
+                  ? `Último acesso: ${formatLastSeen(professorPresence.lastSeen)}`
+                  : 'Prof. offline'}
+            </Typography>
+          </Stack>
+        )}
       </Box>
 
       {/* ── Messages area ── */}
@@ -436,6 +494,26 @@ const ChatRoom: React.FC = () => {
                 <Typography variant="caption" color="text.secondary" display="block">
                   O professor foi notificado da tua dúvida
                 </Typography>
+                {professorsForRoom.length > 0 && professorsForRoom.every(p => !p.online) && !isProfessor && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="caption" color="text.secondary" display="block" mb={1}>
+                      O professor está offline. Podes pedir ajuda ao Assistente IA enquanto aguardas.
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      disabled={requestingAI}
+                      onClick={handleAskAI}
+                      startIcon={requestingAI ? <CircularProgress size={14} /> : <span>🤖</span>}
+                      sx={{
+                        borderColor: '#4F46E5', color: '#4F46E5', textTransform: 'none',
+                        fontWeight: 700, borderRadius: 2,
+                        '&:hover': { bgcolor: '#EEF2FF', borderColor: '#4338CA' },
+                      }}
+                    >
+                      {requestingAI ? 'A consultar IA...' : 'Perguntar ao Assistente IA'}
+                    </Button>
+                  </Box>
+                )}
               </>
             )}
           </Box>

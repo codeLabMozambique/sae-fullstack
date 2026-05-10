@@ -6,9 +6,16 @@ import Biblioteca from '../Biblioteca';
 import ChatIA from '../ChatIA';
 import AdminPanel from '../AdminPanel';
 import ForumList from '../forum/ForumList';
+import StudentForumPage from '../student/StudentForumPage';
 import QuestionDetail from '../forum/QuestionDetail';
 import ChatRoom from '../forum/ChatRoom';
 import Validations from '../forum/Validations';
+import { useAuth } from '../../context/AuthContext';
+
+function ForumRoute() {
+  const { user } = useAuth();
+  return user?.role === 'Professor' ? <StudentForumPage /> : <ForumList />;
+}
 
 const MainApp: React.FC = () => {
   return (
@@ -19,7 +26,7 @@ const MainApp: React.FC = () => {
         <Route path="biblioteca" element={<Biblioteca />} />
         <Route path="chat" element={<ChatIA />} />
         <Route path="admin" element={<AdminPanel />} />
-        <Route path="forum" element={<ForumList />} />
+        <Route path="forum" element={<ForumRoute />} />
         <Route path="forum/room/:id" element={<ChatRoom />} />
         <Route path="forum/questions/:id" element={<QuestionDetail />} />
         <Route path="forum/new" element={<Navigate to="/app/forum" replace />} />

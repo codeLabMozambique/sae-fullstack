@@ -31,7 +31,7 @@ public class AdminContentService {
     @Autowired
     private AuthServiceClient authServiceClient;
 
-    public Content uploadContent(MultipartFile file, Content metadata, String adminUser, String token) {
+    public Content uploadContent(MultipartFile file, Content metadata, String adminUser) {
         try {
             byte[] fileBytes = file.getBytes();
             String fileName = fileStorageService.saveFile(fileBytes, file.getOriginalFilename(), file.getContentType());

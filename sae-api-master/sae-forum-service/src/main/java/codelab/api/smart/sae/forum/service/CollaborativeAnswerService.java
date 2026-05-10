@@ -87,6 +87,9 @@ public class CollaborativeAnswerService {
         answer.setValidatedAt(LocalDateTime.now());
         answerRepository.save(answer);
 
+        // Close the collaborative question once a professor validates an answer
+        questionService.closeQuestion(answer.getQuestionId());
+
         notificationService.notifyAnswerValidated(answer.getQuestionId(), answerId);
 
         return CollaborativeAnswerResponseDTO.from(answer);

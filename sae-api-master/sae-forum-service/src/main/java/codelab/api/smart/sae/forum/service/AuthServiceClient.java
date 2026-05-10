@@ -106,16 +106,19 @@ public class AuthServiceClient {
         private String fullname;
         private boolean online;
         private String specialization;
+        private String lastSeen;
 
         public String getUsername()       { return username; }
         public String getFullname()       { return fullname; }
         public boolean isOnline()         { return online; }
         public String getSpecialization() { return specialization; }
+        public String getLastSeen()       { return lastSeen; }
 
         public void setUsername(String v)       { this.username = v; }
         public void setFullname(String v)       { this.fullname = v; }
         public void setOnline(boolean v)        { this.online = v; }
         public void setSpecialization(String v) { this.specialization = v; }
+        public void setLastSeen(String v)       { this.lastSeen = v; }
     }
 
     private String normalize(String input) {

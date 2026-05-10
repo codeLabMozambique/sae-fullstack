@@ -7,6 +7,9 @@ import codelab.api.smart.sae.forum.dto.response.QuestionResponseDTO;
 import codelab.api.smart.sae.forum.enums.DisciplinaEnum;
 import codelab.api.smart.sae.forum.enums.QuestionStatus;
 import codelab.api.smart.sae.forum.enums.QuestionType;
+import codelab.api.smart.sae.forum.dto.response.ExpertAnswerResponseDTO;
+import codelab.api.smart.sae.forum.model.ExpertAnswerEntity;
+import codelab.api.smart.sae.forum.service.AIAnswerService;
 import codelab.api.smart.sae.forum.service.AuthServiceClient;
 import codelab.api.smart.sae.forum.service.ForumQuestionService;
 import jakarta.validation.Valid;
@@ -32,6 +35,9 @@ public class ForumQuestionResource {
 
     @Autowired
     private AuthServiceClient authServiceClient;
+
+    @Autowired
+    private AIAnswerService aiAnswerService;
 
     // EP-1: Criar pergunta ESPECIALIZADO
     @PostMapping
@@ -145,5 +151,13 @@ public class ForumQuestionResource {
     public ResponseEntity<ProfessorAssistanceStatsDTO> getProfessorAssistanceStats(
             @PathVariable String username) {
         return ResponseEntity.ok(questionService.getProfessorAssistanceStats(username));
+    }
+
+    // Gerar resposta do Assistente IA para uma questão (quando professor indisponível)
+    @PostMapping("/{id}/ai-answer")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ExpertAnswerResponseDTO> requestAIAnswer(@PathVariable Long id) {
+        ExpertAnswerEntity answer = aiAnswerService.generateAndSave(id);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ExpertAnswerResponseDTO.from(answer));
     }
 }

@@ -101,4 +101,16 @@ export const forumService = {
   // Estatísticas de assistência de um professor (ADMIN / PROFESSOR)
   getProfessorAssistanceStats: (username: string): Promise<ProfessorAssistanceStats> =>
     api.get<ProfessorAssistanceStats>(`${BASE}/questions/professor/${username}/assistance-stats`).then(r => r.data),
+
+  // Presença: heartbeat do professor (chamado a cada 90s enquanto online)
+  professorHeartbeat: (): Promise<void> =>
+    api.put('/auth/users/professor/heartbeat').then(() => {}),
+
+  // Presença: marcar professor como offline (chamado no logout / unload)
+  professorGoOffline: (): Promise<void> =>
+    api.put('/auth/users/professor/go-offline').then(() => {}),
+
+  // Assistente IA: gera resposta automática para uma questão especializada
+  requestAIAnswer: (questionId: number): Promise<ExpertAnswer> =>
+    api.post<ExpertAnswer>(`${BASE}/questions/${questionId}/ai-answer`).then(r => r.data),
 };

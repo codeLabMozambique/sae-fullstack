@@ -531,7 +531,7 @@ const ProfessorDashboard: React.FC = () => {
                   return (
                     <Box
                       key={q.id}
-                      onClick={() => navigate(`/app/forum/room/${q.id}`)}
+                      onClick={() => navigate('/professor/forum', { state: { openQuestionId: q.id } })}
                       sx={{
                         p: 2,
                         borderRadius: 2,

@@ -11,12 +11,14 @@ public class ProfessorProfileDTO {
     private String specialization;
     private String institutionalContact;
     private boolean online;
+    private java.time.LocalDateTime lastSeen;
 
     public ProfessorProfileDTO() {}
 
     public ProfessorProfileDTO(Long id, String fullName, String username, String email,
                                Long schoolId, String department, String specialization,
-                               String institutionalContact, boolean online) {
+                               String institutionalContact, boolean online,
+                               java.time.LocalDateTime lastSeen) {
         this.id = id;
         this.fullName = fullName;
         this.username = username;
@@ -26,6 +28,7 @@ public class ProfessorProfileDTO {
         this.specialization = specialization;
         this.institutionalContact = institutionalContact;
         this.online = online;
+        this.lastSeen = lastSeen;
     }
 
     public Long getId() { return id; }
@@ -54,4 +57,7 @@ public class ProfessorProfileDTO {
 
     public boolean isOnline() { return online; }
     public void setOnline(boolean online) { this.online = online; }
+
+    public java.time.LocalDateTime getLastSeen() { return lastSeen; }
+    public void setLastSeen(java.time.LocalDateTime lastSeen) { this.lastSeen = lastSeen; }
 }

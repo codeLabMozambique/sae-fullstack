@@ -142,6 +142,8 @@ public class UserResource {
                 jwt, userService.findTransactionsByRole(principal),
                 UserRoleValidator.validate(roleName));
         response.setUserId(principal.getId());
+        if (roleName.contains("PROFESSOR"))
+            userService.setProfessorOnline(principal.getUsername(), true);
         return ResponseEntity.ok(response);
     }
 
@@ -179,6 +181,22 @@ public class UserResource {
         return userService.findBasicByUsername(username)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/professor/heartbeat")
+    public ResponseEntity<Void> professorHeartbeat(Authentication auth) {
+        if (auth == null || auth.getAuthorities().stream()
+                .noneMatch(a -> a.getAuthority().equals("PROFESSOR")))
+            return ResponseEntity.status(403).build();
+        userService.setProfessorOnline(auth.getName(), true);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/professor/go-offline")
+    public ResponseEntity<Void> professorGoOffline(Authentication auth) {
+        if (auth == null) return ResponseEntity.status(401).build();
+        userService.setProfessorOnline(auth.getName(), false);
+        return ResponseEntity.noContent().build();
     }
 
 }

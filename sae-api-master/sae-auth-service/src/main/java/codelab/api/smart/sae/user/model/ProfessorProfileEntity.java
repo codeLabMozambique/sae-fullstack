@@ -37,6 +37,9 @@ public class ProfessorProfileEntity extends UpdatableEntity {
     @Column(name = "IS_ONLINE")
     private boolean online;
 
+    @Column(name = "LAST_SEEN")
+    private java.time.LocalDateTime lastSeen;
+
     public ProfessorProfileEntity() {
     }
 
@@ -86,5 +89,13 @@ public class ProfessorProfileEntity extends UpdatableEntity {
 
     public void setOnline(boolean online) {
         this.online = online;
+    }
+
+    public java.time.LocalDateTime getLastSeen() {
+        return lastSeen;
+    }
+
+    public void setLastSeen(java.time.LocalDateTime lastSeen) {
+        this.lastSeen = lastSeen;
     }
 }

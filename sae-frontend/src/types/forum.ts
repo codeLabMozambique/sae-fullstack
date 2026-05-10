@@ -156,5 +156,6 @@ export interface ProfessorInfo {
   username: string;
   fullname: string;
   online: boolean;
+  lastSeen?: string;
   specialization: string;
 }

@@ -93,9 +93,7 @@ async function uploadAttachment(file: File, context: string, contextId?: string)
   form.append('file', file);
   if (context) form.append('context', context);
   if (contextId) form.append('contextId', contextId);
-  const res = await api.post<AttachmentInfo>('/content/api/user/uploads', form, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const res = await api.post<AttachmentInfo>('/content/api/user/uploads', form);
   return res.data;
 }
 
@@ -206,26 +204,47 @@ function SidebarItem({ q, active, onClick }: { q: ForumQuestion; active: boolean
 // ─── Chat messages ─────────────────────────────────────────────────────────────
 
 function ChatMessages({
-  q, currentUser, isOwner, onAccept, accepting,
+  q, currentUser, isOwner, onAccept, accepting, onRefresh,
 }: {
   q: ForumQuestion; currentUser: string; isOwner: boolean;
   onAccept: (id: number) => void; accepting: number | null;
+  onRefresh?: () => void;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
   const isExpert = q.questionType === 'ESPECIALIZADO';
   const ownBg = isExpert ? '#2563EB' : '#10B981';
   const ownColor = 'white';
+  const [allProfOffline, setAllProfOffline] = useState(false);
+  const [requestingAI, setRequestingAI] = useState(false);
+  const [aiError, setAiError] = useState('');
 
   const messages = [
     ...(q.expertAnswers ?? []),
     ...(q.collaborativeAnswers ?? []),
   ].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
-  useEffect(() => { 
+  useEffect(() => {
     if (messages.length > 0) {
-      endRef.current?.scrollIntoView({ behavior: 'smooth' }); 
+      endRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages.length]);
+
+  useEffect(() => {
+    if (!isExpert || messages.length > 0) { setAllProfOffline(false); return; }
+    forumService.getProfessorsByDisciplina(q.disciplina)
+      .then(profs => setAllProfOffline(profs.length > 0 && profs.every(p => !p.online)))
+      .catch(() => {});
+  }, [q.id, isExpert, messages.length]);
+
+  const handleAskAI = async () => {
+    setRequestingAI(true); setAiError('');
+    try {
+      await forumService.requestAIAnswer(q.id);
+      onRefresh?.();
+    } catch (e: any) {
+      setAiError(e?.response?.data?.message ?? 'Não foi possível contactar o assistente IA');
+    } finally { setRequestingAI(false); }
+  };
 
   return (
     <Box sx={{ 
@@ -347,6 +366,29 @@ function ChatMessages({
         );
       })}
 
+      {/* AI button — shown when expert room has no replies and all professors offline */}
+      {isExpert && messages.length === 0 && allProfOffline && q.status === 'ABERTA' && (
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 2 }}>
+          {aiError && <Alert severity="error" sx={{ mb: 1, width: '100%', borderRadius: 2 }}>{aiError}</Alert>}
+          <Typography variant="caption" color="text.secondary" mb={1} textAlign="center">
+            O professor está offline. Podes pedir ajuda ao Assistente IA enquanto aguardas.
+          </Typography>
+          <Button
+            variant="outlined"
+            disabled={requestingAI}
+            onClick={handleAskAI}
+            startIcon={requestingAI ? <CircularProgress size={14} /> : <span>🤖</span>}
+            sx={{
+              borderColor: '#4F46E5', color: '#4F46E5', textTransform: 'none',
+              fontWeight: 700, borderRadius: 2,
+              '&:hover': { bgcolor: '#EEF2FF', borderColor: '#4338CA' },
+            }}
+          >
+            {requestingAI ? 'A consultar IA...' : 'Perguntar ao Assistente IA'}
+          </Button>
+        </Box>
+      )}
+
       <div ref={endRef} />
     </Box>
   );
@@ -365,7 +407,9 @@ function ChatInput({ questionId, questionType, onSent, prefillText, onPrefillCon
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
   const isExpert = questionType === 'ESPECIALIZADO';
+  const isProfessor = user?.role === 'Professor';
   const accent = isExpert ? '#2563EB' : '#10B981';
 
   useEffect(() => {
@@ -387,7 +431,8 @@ function ChatInput({ questionId, questionType, onSent, prefillText, onPrefillCon
         attachmentId = att.id;
         setUploading(false);
       }
-      if (isExpert) await forumService.createExpertAnswer(questionId, { conteudo: text, attachmentId });
+      // Expert rooms: professors reply via expert-answers; students send follow-ups via collaborative
+      if (isExpert && isProfessor) await forumService.createExpertAnswer(questionId, { conteudo: text, attachmentId });
       else await forumService.createCollaborativeAnswer(questionId, { conteudo: text, attachmentId });
       setText(''); setFile(null); onSent();
     } catch (e: any) {
@@ -435,7 +480,7 @@ function ChatInput({ questionId, questionType, onSent, prefillText, onPrefillCon
         }}>
           <TextField
             fullWidth multiline maxRows={5}
-            placeholder="Escreva a sua mensagem..."
+            placeholder={isProfessor && isExpert ? 'Escreve a tua resposta ao aluno...' : 'Escreva a sua mensagem...'}
             value={text}
             onChange={e => setText(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
@@ -905,6 +950,9 @@ export default function StudentForumPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isTablet = useMediaQuery(theme.breakpoints.between('md', 'lg'));
 
+  const isProfessor = user?.role === 'Professor';
+
+  // Student state
   const [myQuestions, setMyQuestions] = useState<ForumQuestion[]>([]);
   const [loadingMy, setLoadingMy] = useState(false);
   const [generalQuestions, setGeneralQuestions] = useState<ForumQuestion[]>([]);
@@ -912,10 +960,18 @@ export default function StudentForumPage() {
   const [availableDisciplinas, setAvailableDisciplinas] = useState<{ disciplina: DisciplinaEnum; professorName?: string }[]>([]);
   const [loadingDisciplinas, setLoadingDisciplinas] = useState(false);
 
+  // Professor state
+  const [pendingQuestions, setPendingQuestions] = useState<ForumQuestion[]>([]);
+  const [loadingPending, setLoadingPending] = useState(false);
+  const [answeredQuestions, setAnsweredQuestions] = useState<ForumQuestion[]>([]);
+  const [loadingAnswered, setLoadingAnswered] = useState(false);
+
   const [activeQ, setActiveQ] = useState<ForumQuestion | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [search, setSearch] = useState('');
-  const [sidebarTab, setSidebarTab] = useState<'mine_all' | 'mine_answered' | 'forum'>('mine_all');
+  const [sidebarTab, setSidebarTab] = useState<'mine_all' | 'mine_answered' | 'forum' | 'pending' | 'answered'>(
+    isProfessor ? 'pending' : 'mine_all'
+  );
   const [newOpen, setNewOpen] = useState(false);
   const [accepting, setAccepting] = useState<number | null>(null);
   const [prefillText, setPrefillText] = useState('');
@@ -932,7 +988,38 @@ export default function StudentForumPage() {
       .finally(() => setLoadingGeneral(false));
   };
 
-  useEffect(() => { loadMyQuestions(); loadGeneralQuestions(); }, []);
+  const loadProfessorPending = () => {
+    setLoadingPending(true);
+    forumService.listProfessorPending().then(setPendingQuestions).finally(() => setLoadingPending(false));
+  };
+
+  const loadProfessorAnswered = () => {
+    setLoadingAnswered(true);
+    forumService.listProfessorAnswered().then(setAnsweredQuestions).finally(() => setLoadingAnswered(false));
+  };
+
+  useEffect(() => {
+    if (isProfessor) {
+      loadProfessorPending();
+      loadProfessorAnswered();
+    } else {
+      loadMyQuestions();
+      loadGeneralQuestions();
+    }
+  }, []);
+
+  // Auto-open a question when navigated here from Dashboard (e.g. recent questions click)
+  const navState = location.state as { openQuestionId?: number } | null;
+  useEffect(() => {
+    const qid = navState?.openQuestionId;
+    if (!qid) return;
+    setLoadingDetail(true);
+    forumService.getQuestion(qid)
+      .then(detail => { setActiveQ(detail); })
+      .finally(() => setLoadingDetail(false));
+    // Clear state so back-navigation doesn't re-open
+    window.history.replaceState({}, '');
+  }, [navState?.openQuestionId]);
 
   useEffect(() => {
     if (!user) return;
@@ -977,8 +1064,13 @@ export default function StudentForumPage() {
     if (!activeQ) return;
     forumService.getQuestion(activeQ.id).then(detail => {
       setActiveQ(detail);
-      setMyQuestions(prev => prev.map(q => q.id === detail.id ? detail : q));
-      setGeneralQuestions(prev => prev.map(q => q.id === detail.id ? detail : q));
+      if (isProfessor) {
+        loadProfessorPending();
+        loadProfessorAnswered();
+      } else {
+        setMyQuestions(prev => prev.map(q => q.id === detail.id ? detail : q));
+        setGeneralQuestions(prev => prev.map(q => q.id === detail.id ? detail : q));
+      }
     });
   };
 
@@ -992,15 +1084,15 @@ export default function StudentForumPage() {
 
   const getFilteredList = () => {
     let list: ForumQuestion[] = [];
-    if (sidebarTab === 'mine_all') {
+    if (isProfessor) {
+      list = sidebarTab === 'pending' ? pendingQuestions : answeredQuestions;
+    } else if (sidebarTab === 'mine_all') {
       list = myQuestions.filter(q => q.questionType === 'ESPECIALIZADO');
     } else if (sidebarTab === 'mine_answered') {
-      // Perguntas com respostas não lidas (professor respondeu mas aluno ainda não abriu)
       list = myQuestions.filter(hasUnread);
     } else {
       list = generalQuestions.filter(q => q.questionType === 'COLABORATIVO');
     }
-
     return list
       .filter(q => q.createdBy?.toLowerCase() !== 'system')
       .filter(q => !search || q.titulo.toLowerCase().includes(search.toLowerCase())
@@ -1009,6 +1101,8 @@ export default function StudentForumPage() {
 
   const sidebarList = getFilteredList();
 
+  const countPending = pendingQuestions.filter(q => q.createdBy?.toLowerCase() !== 'system').length;
+  const countProfAnswered = answeredQuestions.filter(q => q.createdBy?.toLowerCase() !== 'system').length;
   const countAnswered = myQuestions.filter(q =>
     q.createdBy?.toLowerCase() !== 'system' && hasUnread(q)
   ).length;
@@ -1050,23 +1144,27 @@ export default function StudentForumPage() {
                 </Box>
                 <Box>
                   <Typography fontWeight={800} color="white" variant="subtitle1" sx={{ lineHeight: 1.1, fontSize: 16 }}>smartSAE</Typography>
-                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontWeight: 700, letterSpacing: 0.5 }}>PORTAL DE SUPORTE</Typography>
+                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontWeight: 700, letterSpacing: 0.5 }}>
+                    {isProfessor ? 'PORTAL DO PROFESSOR' : 'PORTAL DE SUPORTE'}
+                  </Typography>
                 </Box>
               </Stack>
 
-              <Tooltip title="Nova Pergunta">
-                <IconButton 
-                  onClick={() => setNewOpen(true)}
-                  sx={{ 
-                    bgcolor: '#38BDF8', color: '#0F172A',
-                    '&:hover': { bgcolor: '#7DD3FC', transform: 'rotate(90deg)' },
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    width: 40, height: 40, borderRadius: 2
-                  }}
-                >
-                  <AddCircleIcon sx={{ fontSize: 24 }} />
-                </IconButton>
-              </Tooltip>
+              {!isProfessor && (
+                <Tooltip title="Nova Pergunta">
+                  <IconButton
+                    onClick={() => setNewOpen(true)}
+                    sx={{
+                      bgcolor: '#38BDF8', color: '#0F172A',
+                      '&:hover': { bgcolor: '#7DD3FC', transform: 'rotate(90deg)' },
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      width: 40, height: 40, borderRadius: 2
+                    }}
+                  >
+                    <AddCircleIcon sx={{ fontSize: 24 }} />
+                  </IconButton>
+                </Tooltip>
+              )}
             </Stack>
 
             <TextField
@@ -1093,38 +1191,53 @@ export default function StudentForumPage() {
         </Box>
 
         {/* Horizontal Session Filters */}
-        <Box sx={{ 
-          px: 1, py: 1.5, bgcolor: '#F8FAFC', borderBottom: '1px solid rgba(0,0,0,0.05)',
-          display: 'flex', gap: 0.2, whiteSpace: 'nowrap',
-          overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' }
-        }}>
-          {[
-            { key: 'mine_all', label: 'Minhas', count: countMine },
-            { key: 'mine_answered', label: 'Respondidas', count: countAnswered },
-            { key: 'forum', label: 'Fórum da Turma', count: countForum },
-          ].map((item) => (
-            <Chip
-              key={item.key}
-              label={`${item.label}${item.count > 0 ? ` (${item.count})` : ''}`}
-              onClick={() => setSidebarTab(item.key as any)}
-              sx={{
-                px: 0, height: 32, borderRadius: 2,
-                bgcolor: sidebarTab === item.key ? '#2563EB' : 'transparent',
-                color: sidebarTab === item.key ? 'white' : '#64748B',
-                fontWeight: 800, fontSize: 10.5,
-                border: '1px solid',
-                borderColor: sidebarTab === item.key ? '#2563EB' : 'transparent',
-                '&:hover': { bgcolor: sidebarTab === item.key ? '#1E40AF' : 'rgba(0,0,0,0.05)' },
-                transition: 'all 0.2s',
-                '& .MuiChip-label': { px: 1 }
-              }}
-            />
-          ))}
-        </Box>
+        {(() => {
+          const tabs = isProfessor
+            ? [
+                { key: 'pending',  label: 'Pendentes',   count: countPending },
+                { key: 'answered', label: 'Respondidas', count: countProfAnswered },
+              ]
+            : [
+                { key: 'mine_all',      label: 'Minhas',          count: countMine },
+                { key: 'mine_answered', label: 'Respondidas',     count: countAnswered },
+                { key: 'forum',         label: 'Fórum da Turma',  count: countForum },
+              ];
+          const activeColor = isProfessor ? '#7C3AED' : '#2563EB';
+          const activeHover = isProfessor ? '#6D28D9' : '#1E40AF';
+          return (
+            <Box sx={{
+              px: 1, py: 1.5, bgcolor: '#F8FAFC', borderBottom: '1px solid rgba(0,0,0,0.05)',
+              display: 'flex', gap: 0.2, whiteSpace: 'nowrap',
+              overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' }
+            }}>
+              {tabs.map((item) => (
+                <Chip
+                  key={item.key}
+                  label={`${item.label}${item.count > 0 ? ` (${item.count})` : ''}`}
+                  onClick={() => setSidebarTab(item.key as any)}
+                  sx={{
+                    px: 0, height: 32, borderRadius: 2,
+                    bgcolor: sidebarTab === item.key ? activeColor : 'transparent',
+                    color: sidebarTab === item.key ? 'white' : '#64748B',
+                    fontWeight: 800, fontSize: 10.5,
+                    border: '1px solid',
+                    borderColor: sidebarTab === item.key ? activeColor : 'transparent',
+                    '&:hover': { bgcolor: sidebarTab === item.key ? activeHover : 'rgba(0,0,0,0.05)' },
+                    transition: 'all 0.2s',
+                    '& .MuiChip-label': { px: 1 }
+                  }}
+                />
+              ))}
+            </Box>
+          );
+        })()}
 
         {/* Question list */}
         <Box sx={{ flex: 1, overflowY: 'auto' }}>
-          {(sidebarTab === 'mine_all' || sidebarTab === 'mine_answered' ? loadingMy : loadingGeneral) ? (
+          {(isProfessor
+            ? (sidebarTab === 'pending' ? loadingPending : loadingAnswered)
+            : (sidebarTab === 'mine_all' || sidebarTab === 'mine_answered' ? loadingMy : loadingGeneral)
+          ) ? (
             <Box display="flex" justifyContent="center" pt={4}><CircularProgress size={24} /></Box>
           ) : sidebarList.length === 0 ? (
             <Box sx={{ p: 4, textAlign: 'center' }}>
@@ -1219,6 +1332,7 @@ export default function StudentForumPage() {
               isOwner={isOwner}
               onAccept={handleAccept}
               accepting={accepting}
+              onRefresh={reloadActiveQ}
             />
           )}
 

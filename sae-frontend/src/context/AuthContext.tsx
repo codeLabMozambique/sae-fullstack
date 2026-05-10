@@ -1,7 +1,8 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { loginUser, registerStudent, registerProfessor } from '../services/authService';
 import type { LoginRequest, StudentRegisterRequest, ProfessorRegisterRequest, AuthResponse } from '../services/authService';
+import { forumService } from '../services/forumService';
 
 interface AuthUser {
   userId: number;
@@ -31,6 +32,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const isAuthenticated = !!token && !!user;
+
+  // Heartbeat: keep professor marked as online while the app is open
+  useEffect(() => {
+    if (!user || !user.role.includes('PROFESSOR')) return;
+    forumService.professorHeartbeat().catch(() => {});
+    const interval = setInterval(() => {
+      forumService.professorHeartbeat().catch(() => {});
+    }, 90_000);
+    const handleUnload = () => { forumService.professorGoOffline().catch(() => {}); };
+    window.addEventListener('beforeunload', handleUnload);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('beforeunload', handleUnload);
+    };
+  }, [user?.username, user?.role]);
 
   const login = async (data: LoginRequest): Promise<AuthUser> => {
     const response: AuthResponse = await loginUser(data);

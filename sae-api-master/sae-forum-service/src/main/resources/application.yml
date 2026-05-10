@@ -46,6 +46,10 @@ forum:
     from: ${MAIL_FROM:projectompe@gmail.com}
     base-url: ${APP_BASE_URL:http://localhost:5173}
 
+anthropic:
+  api:
+    key: ${ANTHROPIC_API_KEY:}
+
 smartsae:
   security:
     allowed-origin: "*"

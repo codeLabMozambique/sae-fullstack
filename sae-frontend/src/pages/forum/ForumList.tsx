@@ -19,6 +19,15 @@ import {
   type DisciplinaEnum, type ForumQuestion, type ProfessorInfo,
 } from '../../types/forum';
 
+function formatLastSeen(iso?: string): string {
+  if (!iso) return '';
+  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (diff < 1) return 'agora';
+  if (diff < 60) return `${diff}min atrás`;
+  if (diff < 1440) return `${Math.floor(diff / 60)}h atrás`;
+  return new Date(iso).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' });
+}
+
 function formatRelative(dateStr: string): string {
   const d = new Date(dateStr);
   const now = new Date();
@@ -106,7 +115,11 @@ const DisciplineCard: React.FC<{
                 flexShrink: 0,
               }} />
               <Typography variant="caption" color="text.secondary" fontSize="0.6rem" noWrap>
-                {profLabel}
+                {onlineCount > 0
+                  ? profLabel
+                  : professors && professors.length > 0 && professors[0].lastSeen
+                    ? `Último: ${formatLastSeen(professors[0].lastSeen)}`
+                    : profLabel}
               </Typography>
             </Stack>
           )}
@@ -133,6 +146,9 @@ const QuestionRow: React.FC<{
   const preview = rawDesc === '_'
     ? 'Aguarda resposta...'
     : rawDesc.slice(0, 80) + (rawDesc.length > 80 ? '...' : '');
+  const isAnsweredByProf = isCollab
+    && question.status === 'FECHADA'
+    && (question.collaborativeAnswers ?? []).some(a => a.validationStatus === 'VALIDADA');
 
   return (
     <Box
@@ -154,11 +170,16 @@ const QuestionRow: React.FC<{
         <Stack direction="row" alignItems="center" spacing={1} mb={0.3}>
           <Typography variant="body2" fontWeight={700} color="#111827" noWrap>{label}</Typography>
           <Chip
-            label={question.status === 'FECHADA' ? 'Encerrada' : 'Aberta'}
+            label={
+              isAnsweredByProf ? 'Respondida pelo prof.' :
+              question.status === 'FECHADA' ? 'Encerrada' : 'Aberta'
+            }
             size="small"
             sx={{
-              bgcolor: question.status === 'FECHADA' ? '#F3F4F6' : '#DCFCE7',
-              color: question.status === 'FECHADA' ? '#9CA3AF' : '#16A34A',
+              bgcolor: isAnsweredByProf ? '#DBEAFE'
+                : question.status === 'FECHADA' ? '#F3F4F6' : '#DCFCE7',
+              color: isAnsweredByProf ? '#1D4ED8'
+                : question.status === 'FECHADA' ? '#9CA3AF' : '#16A34A',
               fontWeight: 700, fontSize: '0.58rem', height: 15,
               '& .MuiChip-label': { px: 0.5 },
             }}
@@ -337,11 +358,12 @@ const ForumList: React.FC = () => {
   const { user } = useAuth();
   const isProfessor = user?.role === 'Professor';
 
-  // Quando se acede via /professor/forum/pending ou /professor/forum/answered,
-  // abre directamente na Caixa de Entrada do professor com o sub-tab correcto.
-  const [tab, setTab] = useState(() =>
-    location.pathname.includes('/professor/forum') ? 1 : 0
-  );
+  // Professors always use the chat interface at /professor/forum
+  useEffect(() => {
+    if (isProfessor) navigate('/professor/forum', { replace: true });
+  }, [isProfessor]);
+
+  const [tab, setTab] = useState(0);
 
   // Inline form state
   const [selectedDisc, setSelectedDisc] = useState<DisciplinaEnum | null>(null);
