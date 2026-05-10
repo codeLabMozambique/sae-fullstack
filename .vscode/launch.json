@@ -2,97 +2,90 @@
     "configurations": [
         {
             "type": "java",
-            "name": "Spring Boot-AcademicServiceApplication<sae-academic-service>",
-            "request": "launch",
-            "cwd": "${workspaceFolder}",
-            "mainClass": "codelab.api.smart.sae.AcademicServiceApplication",
-            "projectName": "sae-academic-service",
-            "args": "",
-            "envFile": "${workspaceFolder}/.env",
-            "vmArgs": " -Dcom.sun.management.jmxremote"
-        },
-        {
-            "type": "java",
-            "name": "Spring Boot-GatewayApplication<sae-api-gateway>",
+            "name": "Gateway",
             "request": "launch",
             "cwd": "${workspaceFolder}",
             "mainClass": "codelab.api.smart.sae.GatewayApplication",
             "projectName": "sae-api-gateway",
-            "args": "",
             "envFile": "${workspaceFolder}/.env",
-            "vmArgs": " -Dcom.sun.management.jmxremote -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=sae-api-gateway"
+            "console": "internalConsole",
+            "vmArgs": "-Dspring.application.admin.enabled=true -Dspring.boot.project.name=sae-api-gateway"
         },
         {
             "type": "java",
-            "name": "Spring Boot-SmartSAEApplication<sae-auth-service>",
+            "name": "Auth Service",
             "request": "launch",
             "cwd": "${workspaceFolder}",
             "mainClass": "codelab.api.smart.sae.SmartSAEApplication",
             "projectName": "sae-auth-service",
-            "args": "",
             "envFile": "${workspaceFolder}/.env",
-            "vmArgs": " -Dcom.sun.management.jmxremote -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=sae-auth-service"
+            "console": "internalConsole",
+            "vmArgs": "-Dspring.application.admin.enabled=true -Dspring.boot.project.name=sae-auth-service"
         },
         {
             "type": "java",
-            "name": "Spring Boot-PasswordGenerator<sae-common>",
-            "request": "launch",
-            "cwd": "${workspaceFolder}",
-            "mainClass": "codelab.api.smart.sae.framework.util.PasswordGenerator",
-            "projectName": "sae-common",
-            "args": "",
-            "envFile": "${workspaceFolder}/.env",
-            "vmArgs": " -Dcom.sun.management.jmxremote"
-        },
-        {
-            "type": "java",
-            "name": "Spring Boot-AiServiceApplication<sae-ai-service>",
-            "request": "launch",
-            "cwd": "${workspaceFolder}",
-            "mainClass": "codelab.api.smart.sae.AiServiceApplication",
-            "projectName": "sae-ai-service",
-            "args": "",
-            "envFile": "${workspaceFolder}/.env"
-        },
-        {
-            "type": "java",
-            "name": "Spring Boot-ContentServiceApplication<sae-content-service>",
+            "name": "Content Service",
             "request": "launch",
             "cwd": "${workspaceFolder}",
             "mainClass": "codelab.api.smart.sae.ContentServiceApplication",
             "projectName": "sae-content-service",
-            "args": "",
-            "envFile": "${workspaceFolder}/.env"
+            "envFile": "${workspaceFolder}/.env",
+            "console": "internalConsole",
+            "vmArgs": "-Dspring.application.admin.enabled=true -Dspring.boot.project.name=sae-content-service"
         },
         {
             "type": "java",
-            "name": "Spring Boot-ForumServiceApplication<sae-forum-service>",
+            "name": "Forum Service",
             "request": "launch",
             "cwd": "${workspaceFolder}",
             "mainClass": "codelab.api.smart.sae.ForumServiceApplication",
             "projectName": "sae-forum-service",
-            "args": "",
-            "envFile": "${workspaceFolder}/.env"
+            "envFile": "${workspaceFolder}/.env",
+            "console": "internalConsole",
+            "vmArgs": "-Dspring.application.admin.enabled=true -Dspring.boot.project.name=sae-forum-service"
         },
         {
             "type": "java",
-            "name": "Spring Boot-QuizServiceApplication<sae-quiz-service>",
+            "name": "Quiz Service",
             "request": "launch",
             "cwd": "${workspaceFolder}",
             "mainClass": "codelab.api.smart.sae.QuizServiceApplication",
             "projectName": "sae-quiz-service",
-            "args": "",
-            "envFile": "${workspaceFolder}/.env"
+            "envFile": "${workspaceFolder}/.env",
+            "console": "internalConsole",
+            "vmArgs": "-Dspring.application.admin.enabled=true -Dspring.boot.project.name=sae-quiz-service"
         },
         {
             "type": "java",
-            "name": "Spring Boot-ContentServiceApplication<sae-content-service>",
+            "name": "Academic Service",
             "request": "launch",
             "cwd": "${workspaceFolder}",
-            "mainClass": "codelab.api.smart.sae.ContentServiceApplication",
-            "projectName": "sae-content-service",
-            "args": "",
-            "envFile": "${workspaceFolder}/.env"
+            "mainClass": "codelab.api.smart.sae.AcademicServiceApplication",
+            "projectName": "sae-academic-service",
+            "envFile": "${workspaceFolder}/.env",
+            "console": "internalConsole",
+            "vmArgs": "-Dspring.application.admin.enabled=true -Dspring.boot.project.name=sae-academic-service"
+        },
+        {
+            "type": "java",
+            "name": "AI Service",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "codelab.api.smart.sae.AiServiceApplication",
+            "projectName": "sae-ai-service",
+            "envFile": "${workspaceFolder}/.env",
+            "console": "internalConsole",
+            "vmArgs": "-Dspring.application.admin.enabled=true -Dspring.boot.project.name=sae-ai-service"
+        },
+        {
+            "type": "java",
+            "name": "Password Generator (util)",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "codelab.api.smart.sae.framework.util.PasswordGenerator",
+            "projectName": "sae-common",
+            "envFile": "${workspaceFolder}/.env",
+            "console": "internalConsole"
         }
     ]
 }

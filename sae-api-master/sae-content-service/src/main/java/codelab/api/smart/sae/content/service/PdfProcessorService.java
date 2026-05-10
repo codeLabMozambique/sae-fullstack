@@ -2,6 +2,7 @@ package codelab.api.smart.sae.content.service;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,19 @@ public class PdfProcessorService {
         } catch (IOException e) {
             logger.error("Erro ao contar páginas do PDF: {}", e.getMessage());
             return 0;
+        }
+    }
+
+    public String extractTextFromPages(byte[] fileBytes, int startPage, int endPage) {
+        try (PDDocument document = PDDocument.load(new ByteArrayInputStream(fileBytes))) {
+            PDFTextStripper stripper = new PDFTextStripper();
+            int total = document.getNumberOfPages();
+            stripper.setStartPage(Math.max(1, startPage));
+            stripper.setEndPage(Math.min(total, endPage));
+            return stripper.getText(document);
+        } catch (IOException e) {
+            logger.error("Erro ao extrair texto do PDF: {}", e.getMessage());
+            return "";
         }
     }
 

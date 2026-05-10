@@ -1,0 +1,50 @@
+package codelab.api.smart.sae.quiz.dto;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+public class QuizAdminDTO {
+    private Long id;
+    private String titulo;
+    private String descricao;
+    private String disciplina;
+    private String disciplinaLabel;
+    private Integer tempoLimiteMinutos;
+    private boolean active;
+    private String createdBy;
+    private LocalDateTime createdAt;
+    private List<QuizQuestionAdminDTO> questions;
+    private String contentId;
+    private Integer startPage;
+    private Integer endPage;
+    private boolean aiGenerated;
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getTitulo() { return titulo; }
+    public void setTitulo(String titulo) { this.titulo = titulo; }
+    public String getDescricao() { return descricao; }
+    public void setDescricao(String descricao) { this.descricao = descricao; }
+    public String getDisciplina() { return disciplina; }
+    public void setDisciplina(String disciplina) { this.disciplina = disciplina; }
+    public String getDisciplinaLabel() { return disciplinaLabel; }
+    public void setDisciplinaLabel(String disciplinaLabel) { this.disciplinaLabel = disciplinaLabel; }
+    public Integer getTempoLimiteMinutos() { return tempoLimiteMinutos; }
+    public void setTempoLimiteMinutos(Integer t) { this.tempoLimiteMinutos = t; }
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
+    public String getCreatedBy() { return createdBy; }
+    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public List<QuizQuestionAdminDTO> getQuestions() { return questions; }
+    public void setQuestions(List<QuizQuestionAdminDTO> questions) { this.questions = questions; }
+    public String getContentId() { return contentId; }
+    public void setContentId(String contentId) { this.contentId = contentId; }
+    public Integer getStartPage() { return startPage; }
+    public void setStartPage(Integer startPage) { this.startPage = startPage; }
+    public Integer getEndPage() { return endPage; }
+    public void setEndPage(Integer endPage) { this.endPage = endPage; }
+    public boolean isAiGenerated() { return aiGenerated; }
+    public void setAiGenerated(boolean aiGenerated) { this.aiGenerated = aiGenerated; }
+}

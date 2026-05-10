@@ -95,6 +95,15 @@ public class FileStorageService {
         }
     }
 
+    public byte[] getFileBytes(String fileName) {
+        try (InputStream is = getFile(fileName)) {
+            return is.readAllBytes();
+        } catch (Exception e) {
+            logger.error("Erro ao ler bytes do MinIO: {}", e.getMessage());
+            throw new RuntimeException("Falha ao ler ficheiro", e);
+        }
+    }
+
     public void deleteFile(String fileName) {
         try {
             minioClient.removeObject(

@@ -15,3 +15,11 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
+content:
+  service:
+    url: http://localhost:8082
+
+anthropic:
+  api:
+    key: ${ANTHROPIC_API_KEY:}

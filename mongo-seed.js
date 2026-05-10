@@ -13,6 +13,9 @@ print("=== Seeding MongoDB sae_content ===");
 
 // ------------------------------------------------------------
 // 1. CATEGORIAS (árvore hierárquica)
+
+//PARA EXECUTAR USA O COMANDO:
+//Get-Content "caminho\ficheiro.js" | docker exec -i sae-mongodb mongosh sae_content
 // ------------------------------------------------------------
 
 // Garante que a colecção existe

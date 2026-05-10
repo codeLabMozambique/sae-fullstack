@@ -35,6 +35,7 @@ import {
   BarChart as StatsIcon,
   Class as ClassIcon,
   MenuBook as MenuBookIcon,
+  Quiz as QuizIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import OfflineIndicator from '../OfflineIndicator';
@@ -63,6 +64,7 @@ function menuIcon(code: string): React.ReactNode {
   if (code === '03') return <SchoolIcon />;        // Área do Professor
   if (code === '04') return <DashboardIcon />;     // Área do Aluno
   if (code === '05') return <HomeIcon />;          // Início (Guest)
+  if (code.includes('QUIZ')) return <QuizIcon />; // Quiz (all roles)
   // Legacy
   if (code.startsWith('ADM-001')) return <GroupIcon />;
   if (code.startsWith('ADM-002')) return <SchoolIcon />;
@@ -91,6 +93,7 @@ function iconByRoute(route: string): React.ReactNode | null {
   if (/\/dashboard/.test(route))            return <DashboardIcon />;
   if (/\/my-classes/.test(route))           return <ClassIcon />;
   if (/\/students/.test(route))             return <StudentsIcon />;
+  if (/\/quiz/.test(route))                return <QuizIcon />;
   if (/\/forum/.test(route))               return <ForumIcon />;
   if (/\/questions/.test(route))            return <ForumIcon />;
   if (/\/stats/.test(route))               return <StatsIcon />;

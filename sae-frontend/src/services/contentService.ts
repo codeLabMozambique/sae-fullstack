@@ -378,3 +378,36 @@ export async function deleteProfessorContent(id: string): Promise<void> {
 export async function deleteAdminContent(id: string): Promise<void> {
   await api.delete(`/content/api/admin/contents/${id}`);
 }
+
+// ────────────────────────────────────────────────────────────
+// Secções de conteúdo (divisão por trimestre/capítulo)
+// ────────────────────────────────────────────────────────────
+
+export interface ContentSection {
+  id: string;
+  contentId: string;
+  sectionName: string;
+  trimester?: number;
+  startPage: number;
+  endPage: number;
+  position?: number;
+}
+
+export async function listSections(contentId: string): Promise<ContentSection[]> {
+  const { data } = await api.get<ContentSection[]>(`/content/api/contents/${contentId}/sections`);
+  return data;
+}
+
+export async function createSection(contentId: string, section: Omit<ContentSection, 'id' | 'contentId'>): Promise<ContentSection> {
+  const { data } = await api.post<ContentSection>(`/content/api/contents/${contentId}/sections`, section);
+  return data;
+}
+
+export async function updateSection(contentId: string, sectionId: string, section: Partial<ContentSection>): Promise<ContentSection> {
+  const { data } = await api.put<ContentSection>(`/content/api/contents/${contentId}/sections/${sectionId}`, section);
+  return data;
+}
+
+export async function deleteSection(contentId: string, sectionId: string): Promise<void> {
+  await api.delete(`/content/api/contents/${contentId}/sections/${sectionId}`);
+}

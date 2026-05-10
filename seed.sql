@@ -590,12 +590,64 @@ UNION ALL SELECT 'disciplines',       COUNT(*) FROM disciplines
 UNION ALL SELECT 'content_logs',      COUNT(*) FROM content_logs;
 
 -- ============================================================
+-- 14. QUIZ SERVICE — Menus de Preparação para Exame
+-- IDs 90-110 (não colide com biblioteca 40-85)
+-- ============================================================
+
+INSERT INTO app_transaction (id, status, code, type, label, router_link, position, parent_id) VALUES
+
+-- ── STUDENT — Preparação para Exame ─────────────────────────
+(90, 1, 'STD-QUIZ',       'HEADER',    'Preparação Exame',    '/student/quiz',               5, NULL),
+(91, 1, 'STD-QUIZ-001',   'MENU_ITEM', 'Escolher Quiz',       '/student/quiz',               1, 90),
+(92, 1, 'STD-QUIZ-002',   'MENU_ITEM', 'Os Meus Resultados',  '/student/quiz/results',       2, 90),
+
+-- ── PROFESSOR — Gestão de Quizzes ───────────────────────────
+(95, 1, 'PRF-QUIZ',       'HEADER',    'Quizzes',             '/professor/quiz',             5, NULL),
+(96, 1, 'PRF-QUIZ-001',   'MENU_ITEM', 'Gerir Quizzes',       '/professor/quiz/manage',      1, 95),
+(97, 1, 'PRF-QUIZ-002',   'MENU_ITEM', 'Criar Quiz',          '/professor/quiz/create',      2, 95),
+
+-- ── ADMIN — Gestão de Quizzes ────────────────────────────────
+(100, 1, 'ADM-QUIZ',      'HEADER',    'Quizzes',             '/admin/quiz',                 4, NULL),
+(101, 1, 'ADM-QUIZ-001',  'MENU_ITEM', 'Gerir Quizzes',       '/admin/quiz/manage',          1, 100),
+(102, 1, 'ADM-QUIZ-002',  'MENU_ITEM', 'Criar Quiz',          '/admin/quiz/create',          2, 100)
+
+ON CONFLICT (id) DO UPDATE SET
+    status      = EXCLUDED.status,
+    code        = EXCLUDED.code,
+    type        = EXCLUDED.type,
+    label       = EXCLUDED.label,
+    router_link = EXCLUDED.router_link,
+    position    = EXCLUDED.position,
+    parent_id   = EXCLUDED.parent_id;
+
+SELECT setval(pg_get_serial_sequence('app_transaction', 'id'), 500);
+
+-- ── Role mappings for quiz menus ─────────────────────────────
+INSERT INTO role_transaction (id, status, role, app_transaction_id) VALUES
+(90,  1, 'STUDENT',   90),
+(91,  1, 'STUDENT',   91),
+(92,  1, 'STUDENT',   92),
+(95,  1, 'PROFESSOR', 95),
+(96,  1, 'PROFESSOR', 96),
+(97,  1, 'PROFESSOR', 97),
+(100, 1, 'ADMIN',     100),
+(101, 1, 'ADMIN',     101),
+(102, 1, 'ADMIN',     102)
+
+ON CONFLICT (id) DO UPDATE SET
+    status             = EXCLUDED.status,
+    role               = EXCLUDED.role,
+    app_transaction_id = EXCLUDED.app_transaction_id;
+
+SELECT setval(pg_get_serial_sequence('role_transaction', 'id'), 500);
+
+-- ============================================================
 -- FIM DO SEED PostgreSQL
 --
 -- ⚠️  MongoDB também precisa de seed (categorias da biblioteca).
 --    Ver ficheiro: mongo-seed.js
 --    Correr com:
---      docker exec -i sae-mongodb mongosh sae_content < mongo-seed.js
+--      Get-Content "caminho\ficheiro.js" | docker exec -i sae-mongodb mongosh sae_content
 --
 -- ⚠️  CONTEÚDOS (PDFs) requerem ficheiros reais no MinIO. Não são
 --    seedados via SQL/JSON — fazer upload via:

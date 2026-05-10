@@ -47,3 +47,5 @@ spring:
           uri: http://localhost:8084
           predicates:
             - Path=/quiz/**
+          filters:
+            - StripPrefix=1

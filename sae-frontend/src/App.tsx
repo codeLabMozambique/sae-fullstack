@@ -18,6 +18,8 @@ import ProfessorAssignmentsPage from './pages/admin/academic/ProfessorAssignment
 import ProfessorClassesPage from './pages/professor/ProfessorClassesPage';
 import ProfessorGradesPage from './pages/professor/ProfessorGradesPage';
 import StudentForumPage from './pages/student/StudentForumPage';
+import StudentQuizPage from './pages/student/StudentQuizPage';
+import ProfessorQuizPage from './pages/professor/ProfessorQuizPage';
 import UsersListPage from './pages/admin/users/UsersListPage';
 import ProfessorClassroomsPage from './pages/professor/ProfessorClassroomsPage';
 
@@ -112,6 +114,10 @@ function App() {
             <Route path="/student/forum/new" element={<Layout><StudentForumPage /></Layout>} />
             <Route path="/student/forum/questions" element={<Layout><StudentForumPage /></Layout>} />
 
+            {/* ── STUDENT — Quizzes ─────────────────────────── */}
+            <Route path="/student/quiz" element={<Layout><StudentQuizPage /></Layout>} />
+            <Route path="/student/quiz/results" element={<Layout><StudentQuizPage /></Layout>} />
+
             {/* ── STUDENT — Biblioteca ───────────────────────── */}
             <Route path="/student/library" element={<Layout><Biblioteca /></Layout>} />
             <Route path="/student/library/categories" element={<Layout><Categorias /></Layout>} />
@@ -127,6 +133,11 @@ function App() {
             <Route path="/professor/forum" element={<Layout><StudentForumPage /></Layout>} />
             <Route path="/professor/forum/pending" element={<Layout><StudentForumPage /></Layout>} />
             <Route path="/professor/forum/answered" element={<Layout><StudentForumPage /></Layout>} />
+
+            {/* ── PROFESSOR — Quizzes ───────────────────────── */}
+            <Route path="/professor/quiz" element={<Layout><ProfessorQuizPage /></Layout>} />
+            <Route path="/professor/quiz/manage" element={<Layout><ProfessorQuizPage /></Layout>} />
+            <Route path="/professor/quiz/create" element={<Layout><ProfessorQuizPage /></Layout>} />
             <Route path="/professor/my-classes" element={<Layout><ProfessorClassroomsPage /></Layout>} />
             <Route path="/professor/students" element={<Layout><ProfessorClassroomsPage /></Layout>} />
             <Route path="/professor/classes" element={<Layout><ProfessorClassesPage /></Layout>} />
@@ -146,6 +157,11 @@ function App() {
             {/* ── ADMIN — Biblioteca ─────────────────────────── */}
             <Route path="/admin/library" element={<Layout><Biblioteca /></Layout>} />
             <Route path="/admin/forum" element={<Layout><ForumList /></Layout>} />
+
+            {/* ── ADMIN — Quizzes ───────────────────────────── */}
+            <Route path="/admin/quiz" element={<Layout><ProfessorQuizPage /></Layout>} />
+            <Route path="/admin/quiz/manage" element={<Layout><ProfessorQuizPage /></Layout>} />
+            <Route path="/admin/quiz/create" element={<Layout><ProfessorQuizPage /></Layout>} />
 
             {/* ── ADMIN — Aliases para rotas do menu dinâmico ── */}
             <Route path="/admin/schools" element={<Layout><SchoolsPage /></Layout>} />
