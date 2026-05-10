@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Repository
 public class CustomContentRepositoryImpl implements CustomContentRepository {
@@ -53,6 +54,23 @@ public class CustomContentRepositoryImpl implements CustomContentRepository {
         query.with(pageable);
         List<Content> contents = mongoTemplate.find(query, Content.class);
 
+        return new PageImpl<>(contents, pageable, total);
+    }
+
+    @Override
+    public Page<Content> searchByText(String query, Pageable pageable) {
+        Pattern regex = Pattern.compile(Pattern.quote(query), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+        Criteria criteria = new Criteria().orOperator(
+            Criteria.where("title").regex(regex),
+            Criteria.where("description").regex(regex),
+            Criteria.where("discipline").regex(regex),
+            Criteria.where("publisher").regex(regex),
+            Criteria.where("tags").regex(regex)
+        );
+        Query q = new Query(criteria);
+        long total = mongoTemplate.count(q, Content.class);
+        q.with(pageable);
+        List<Content> contents = mongoTemplate.find(q, Content.class);
         return new PageImpl<>(contents, pageable, total);
     }
 }

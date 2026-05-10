@@ -38,13 +38,20 @@ public class ReadingHistoryResource {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
             Principal principal) {
-        
+
         if (principal == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         if (discipline != null && from != null && to != null) {
             return ResponseEntity.ok(readingHistoryService.getFilteredHistory(principal.getName(), discipline, from, to));
         }
-        
+
         return ResponseEntity.ok(readingHistoryService.getUserHistory(principal.getName()));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable String id, Principal principal) {
+        if (principal == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        readingHistoryService.deleteEntry(principal.getName(), id);
+        return ResponseEntity.noContent().build();
     }
 }

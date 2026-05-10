@@ -11,4 +11,5 @@ import java.util.List;
 public interface ReadingHistoryRepository extends MongoRepository<ReadingHistory, String> {
     List<ReadingHistory> findByUserIdOrderByReadAtDesc(String userId);
     List<ReadingHistory> findByUserIdAndDisciplineAndReadAtBetween(String userId, String discipline, LocalDateTime from, LocalDateTime to);
+    void deleteByIdAndUserId(String id, String userId);
 }

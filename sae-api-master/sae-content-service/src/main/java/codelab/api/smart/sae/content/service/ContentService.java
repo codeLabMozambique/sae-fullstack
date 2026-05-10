@@ -40,10 +40,7 @@ public class ContentService {
     }
 
     public Page<Content> search(String query, Pageable pageable) {
-        org.springframework.data.mongodb.core.query.TextCriteria criteria = org.springframework.data.mongodb.core.query.TextCriteria
-                .forDefaultLanguage()
-                .matchingAny(query.split(" "));
-        return contentRepository.findBy(criteria, pageable);
+        return contentRepository.searchByText(query, pageable);
     }
 
     @CacheEvict(value = "contents", key = "#id")

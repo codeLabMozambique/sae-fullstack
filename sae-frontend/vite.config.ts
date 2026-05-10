@@ -8,6 +8,9 @@ export default defineConfig({
   define: {
     global: 'globalThis',
   },
+  optimizeDeps: {
+    exclude: ['pdfjs-dist'],
+  },
   plugins: [
     react(),
     tailwindcss(),

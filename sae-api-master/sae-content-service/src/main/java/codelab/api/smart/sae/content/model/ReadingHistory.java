@@ -18,6 +18,9 @@ public class ReadingHistory {
     @Field("content_id")
     private String contentId;
 
+    @Field("content_title")
+    private String contentTitle;
+
     @Field("discipline")
     private String discipline;
 
@@ -42,6 +45,9 @@ public class ReadingHistory {
 
     public String getContentId() { return contentId; }
     public void setContentId(String contentId) { this.contentId = contentId; }
+
+    public String getContentTitle() { return contentTitle; }
+    public void setContentTitle(String contentTitle) { this.contentTitle = contentTitle; }
 
     public String getDiscipline() { return discipline; }
     public void setDiscipline(String discipline) { this.discipline = discipline; }

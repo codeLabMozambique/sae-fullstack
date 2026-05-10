@@ -17,12 +17,10 @@ import {
   RecordVoiceOver as VoiceIcon,
 } from '@mui/icons-material';
 import * as pdfjsLib from 'pdfjs-dist';
-// O Vite resolve o worker para um URL servido pelo dev server
-import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { useReadingTracker } from '../../hooks/useReadingTracker';
 import { useTextToSpeech } from '../../hooks/useTextToSpeech';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 interface Props {
   url: string;
