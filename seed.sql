@@ -642,6 +642,95 @@ ON CONFLICT (id) DO UPDATE SET
 SELECT setval(pg_get_serial_sequence('role_transaction', 'id'), 500);
 
 -- ============================================================
+-- 16. SCHOOL_ADMIN_PROFILE — Tabela de perfil do administrador de escola
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS school_admin_profile (
+    ID                 BIGSERIAL PRIMARY KEY,
+    STATUS             SMALLINT DEFAULT 1,
+    CREATED_BY         BIGINT,
+    CREATED_DATE       TIMESTAMP,
+    LAST_MODIFIED_BY   BIGINT,
+    LAST_MODIFIED_DATE TIMESTAMP,
+    USER_ID            BIGINT REFERENCES sae_user(ID),
+    SCHOOL_ID          BIGINT REFERENCES ac_school(ID)
+);
+
+-- ============================================================
+-- 15. SCHOOL_ADMIN — Role multi-escola
+-- Cada escola tem o seu próprio administrador com scope limitado.
+-- IDs app_transaction: 200+   IDs role_transaction: 200+
+-- ============================================================
+
+-- 15.1 Atualizar constraint para aceitar o novo role
+ALTER TABLE role_transaction DROP CONSTRAINT IF EXISTS role_transaction_role_check;
+ALTER TABLE role_transaction ADD CONSTRAINT role_transaction_role_check
+CHECK (role IN ('ADMIN', 'STUDENT', 'PROFESSOR', 'ROOT', 'GUEST', 'SCHOOL_ADMIN'));
+
+-- 15.2 APP_TRANSACTION — Dashboard exclusivo do SCHOOL_ADMIN
+INSERT INTO app_transaction (id, status, code, type, label, router_link, position, parent_id) VALUES
+(200, 1, 'SADM-000',     'HEADER',    'Dashboard',        '/school-admin/dashboard',        1, NULL),
+(201, 1, 'SADM-000-001', 'MENU_ITEM', 'Visão Geral',      '/school-admin/dashboard',        1, 200),
+(202, 1, 'SADM-000-002', 'MENU_ITEM', 'Estatísticas',     '/school-admin/dashboard/stats',  2, 200)
+
+ON CONFLICT (id) DO UPDATE SET
+    status      = EXCLUDED.status,
+    code        = EXCLUDED.code,
+    type        = EXCLUDED.type,
+    label       = EXCLUDED.label,
+    router_link = EXCLUDED.router_link,
+    position    = EXCLUDED.position,
+    parent_id   = EXCLUDED.parent_id;
+
+SELECT setval(pg_get_serial_sequence('app_transaction', 'id'), 500);
+
+-- 15.3 ROLE_TRANSACTION — Mapeamento completo do SCHOOL_ADMIN
+-- Dashboard próprio (200-202) + menus partilhados com ADMIN (sem Escolas=26 e Níveis=27)
+INSERT INTO role_transaction (id, status, role, app_transaction_id) VALUES
+
+-- Dashboard exclusivo
+(200, 1, 'SCHOOL_ADMIN', 200),
+(201, 1, 'SCHOOL_ADMIN', 201),
+(202, 1, 'SCHOOL_ADMIN', 202),
+
+-- Utilizadores (reutiliza entradas ADMIN)
+(210, 1, 'SCHOOL_ADMIN', 20),
+(211, 1, 'SCHOOL_ADMIN', 22),
+(212, 1, 'SCHOOL_ADMIN', 23),
+
+-- Académico — sem Escolas (26) e sem Níveis de Ensino (27)
+(213, 1, 'SCHOOL_ADMIN', 21),
+(214, 1, 'SCHOOL_ADMIN', 24),
+(215, 1, 'SCHOOL_ADMIN', 25),
+(216, 1, 'SCHOOL_ADMIN', 28),
+
+-- Biblioteca (reutiliza entradas ADMIN)
+(217, 1, 'SCHOOL_ADMIN', 60),
+(218, 1, 'SCHOOL_ADMIN', 61),
+(219, 1, 'SCHOOL_ADMIN', 62),
+(220, 1, 'SCHOOL_ADMIN', 63),
+(221, 1, 'SCHOOL_ADMIN', 64),
+(222, 1, 'SCHOOL_ADMIN', 65),
+(223, 1, 'SCHOOL_ADMIN', 66),
+(224, 1, 'SCHOOL_ADMIN', 72),
+
+-- Quizzes (reutiliza entradas ADMIN)
+(225, 1, 'SCHOOL_ADMIN', 100),
+(226, 1, 'SCHOOL_ADMIN', 101),
+(227, 1, 'SCHOOL_ADMIN', 102)
+
+ON CONFLICT (id) DO UPDATE SET
+    status             = EXCLUDED.status,
+    role               = EXCLUDED.role,
+    app_transaction_id = EXCLUDED.app_transaction_id;
+
+SELECT setval(pg_get_serial_sequence('role_transaction', 'id'), 500);
+
+
+ALTER TABLE ac_SUBJECT ADD COLUMN CLASS_LEVEL_ID BIGINT NULL;
+ALTER TABLE ac_SUBJECT ADD COLUMN SCHOOL_ID BIGINT NULL;
+
+-- ============================================================
 -- FIM DO SEED PostgreSQL
 --
 -- ⚠️  MongoDB também precisa de seed (categorias da biblioteca).

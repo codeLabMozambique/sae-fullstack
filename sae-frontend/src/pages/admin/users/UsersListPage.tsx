@@ -11,6 +11,7 @@ import {
   Person as PersonIcon, School as SchoolIcon,
 } from '@mui/icons-material';
 import api from '../../../services/api';
+import { useAuth } from '../../../context/AuthContext';
 
 /* ── Types ── */
 interface UserDTO {
@@ -100,13 +101,14 @@ const cancelBtn = {
 } as const;
 
 /* ── Helpers ── */
-const ROLES = ['ADMIN', 'PROFESSOR', 'STUDENT'];
+const ROLES = ['ADMIN', 'SCHOOL_ADMIN', 'PROFESSOR', 'STUDENT'];
 
 const roleChip: Record<string, { label: string; bg: string; color: string }> = {
-  ADMIN:     { label: 'Admin',     bg: 'rgba(156,39,176,0.1)', color: '#7b1fa2' },
-  PROFESSOR: { label: 'Professor', bg: 'rgba(21,101,192,0.1)', color: '#1565c0' },
-  STUDENT:   { label: 'Estudante', bg: 'rgba(0,166,81,0.1)',   color: '#00A651' },
-  GUEST:     { label: 'Visitante', bg: 'rgba(158,158,158,0.1)', color: '#616161' },
+  ADMIN:        { label: 'Admin',          bg: 'rgba(156,39,176,0.1)',  color: '#7b1fa2' },
+  SCHOOL_ADMIN: { label: 'Admin de Escola', bg: 'rgba(0,125,60,0.1)',   color: '#007d3c' },
+  PROFESSOR:    { label: 'Professor',      bg: 'rgba(21,101,192,0.1)',  color: '#1565c0' },
+  STUDENT:      { label: 'Estudante',      bg: 'rgba(0,166,81,0.1)',    color: '#00A651' },
+  GUEST:        { label: 'Visitante',      bg: 'rgba(158,158,158,0.1)', color: '#616161' },
 };
 
 function initials(name?: string) {
@@ -139,6 +141,11 @@ const dialogPaperSx = {
 
 /* ════════════════════════════════════════════════════════════════ */
 const UsersListPage: React.FC = () => {
+  const { user: authUser } = useAuth();
+  const isSchoolAdmin = authUser?.role === 'Administrador de Escola' || authUser?.role === 'SCHOOL_ADMIN';
+
+  const [schoolAdminSchoolId, setSchoolAdminSchoolId] = useState<number | null>(null);
+
   const [users, setUsers]     = useState<UserDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
@@ -185,7 +192,8 @@ const UsersListPage: React.FC = () => {
   const load = async () => {
     try {
       setLoading(true); setError(null);
-      const { data } = await api.get<UserDTO[]>('/auth/users/all');
+      const endpoint = isSchoolAdmin ? '/auth/users/my-school/members' : '/auth/users/all';
+      const { data } = await api.get<UserDTO[]>(endpoint);
       setUsers(data);
     } catch { setError('Erro ao carregar utilizadores.'); }
     finally   { setLoading(false); }
@@ -201,6 +209,11 @@ const UsersListPage: React.FC = () => {
       setClassrooms(cls.data);
       setClassLevels(lvl.data);
     }).catch(() => {});
+    if (isSchoolAdmin) {
+      api.get<{ schoolId: number }>('/auth/users/school-admin-profile')
+        .then(r => setSchoolAdminSchoolId(r.data.schoolId))
+        .catch(() => {});
+    }
   }, []);
 
   const filtered = useMemo(() => users.filter(u => {
@@ -221,16 +234,22 @@ const UsersListPage: React.FC = () => {
     studUpdate.schoolId ? classrooms.filter(c => c.schoolId === Number(studUpdate.schoolId)) : classrooms,
     [classrooms, studUpdate.schoolId]);
 
+  const allowedRoles = isSchoolAdmin ? ['PROFESSOR', 'STUDENT'] : ROLES;
+
   /* ── Create ── */
   const openCreate = () => {
-    setCreateForm({ fullname: '', nTelefone: '', email: '', password: '', schoolId: '', department: '', specialization: '', institutionalContact: '', classroomId: '', grade: '', age: '' });
-    setCreateRole('ADMIN');
+    const defaultSchoolId = isSchoolAdmin && schoolAdminSchoolId ? String(schoolAdminSchoolId) : '';
+    setCreateForm({ fullname: '', nTelefone: '', email: '', password: '', schoolId: defaultSchoolId, department: '', specialization: '', institutionalContact: '', classroomId: '', grade: '', age: '' });
+    setCreateRole(isSchoolAdmin ? 'PROFESSOR' : 'ADMIN');
     setCreateOpen(true);
   };
 
   const handleCreate = async () => {
     if (!createForm.fullname.trim() || !createForm.nTelefone.trim() || !createForm.password.trim()) {
       setError('Nome, telefone e password são obrigatórios.'); return;
+    }
+    if (createRole === 'SCHOOL_ADMIN' && !createForm.schoolId) {
+      setError('É obrigatório selecionar uma escola para o Administrador de Escola.'); return;
     }
     try {
       setCreating(true); setError(null);
@@ -250,6 +269,12 @@ const UsersListPage: React.FC = () => {
           classroomId: createForm.classroomId ? Number(createForm.classroomId) : null,
           grade: createForm.grade,
           age: createForm.age ? Number(createForm.age) : null,
+        });
+      } else if (createRole === 'SCHOOL_ADMIN') {
+        await api.post('/auth/users/signup/school-admin', {
+          fullname: createForm.fullname, nTelefone: createForm.nTelefone,
+          email: createForm.email, password: createForm.password,
+          schoolId: Number(createForm.schoolId),
         });
       } else {
         await api.post('/auth/users/signup', {
@@ -470,6 +495,13 @@ const UsersListPage: React.FC = () => {
                               </IconButton>
                             </Tooltip>
                           )}
+                          {u.role === 'SCHOOL_ADMIN' && (
+                            <Tooltip title="Administrador de Escola" placement="top">
+                              <IconButton size="small" sx={{ color: '#007d3c', '&:hover': { bgcolor: 'rgba(0,125,60,0.08)' }, cursor: 'default' }}>
+                                <SchoolIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
                         </TableCell>
                       </TableRow>
                     );
@@ -503,7 +535,7 @@ const UsersListPage: React.FC = () => {
             <FormControl size="small" fullWidth sx={inputSx}>
               <InputLabel>Role *</InputLabel>
               <Select label="Role *" value={createRole} onChange={e => setCreateRole(e.target.value)}>
-                {ROLES.map(r => <MenuItem key={r} value={r}>{roleChip[r]?.label ?? r}</MenuItem>)}
+                {allowedRoles.map(r => <MenuItem key={r} value={r}>{roleChip[r]?.label ?? r}</MenuItem>)}
               </Select>
             </FormControl>
             <TextField label="Nome completo *" size="small" fullWidth value={createForm.fullname}
@@ -517,9 +549,20 @@ const UsersListPage: React.FC = () => {
             <TextField label="Password *" type="password" size="small" fullWidth value={createForm.password}
               onChange={e => setCreateForm(p => ({ ...p, password: e.target.value }))} sx={inputSx} />
 
+            {createRole === 'SCHOOL_ADMIN' && (
+              <FormControl size="small" fullWidth sx={inputSx} required>
+                <InputLabel>Escola *</InputLabel>
+                <Select label="Escola *" value={createForm.schoolId}
+                  onChange={e => setCreateForm(p => ({ ...p, schoolId: String(e.target.value) }))}>
+                  <MenuItem value=""><em>— Selecionar escola —</em></MenuItem>
+                  {schools.map(s => <MenuItem key={s.id} value={String(s.id)}>{s.name}</MenuItem>)}
+                </Select>
+              </FormControl>
+            )}
+
             {createRole === 'PROFESSOR' && (
               <>
-                <FormControl size="small" fullWidth sx={inputSx}>
+                <FormControl size="small" fullWidth sx={inputSx} disabled={isSchoolAdmin}>
                   <InputLabel>Escola</InputLabel>
                   <Select label="Escola" value={createForm.schoolId}
                     onChange={e => setCreateForm(p => ({ ...p, schoolId: String(e.target.value) }))}>
@@ -541,7 +584,7 @@ const UsersListPage: React.FC = () => {
             {createRole === 'STUDENT' && (
               <>
                 <Box sx={{ display: 'flex', gap: 2 }}>
-                  <FormControl size="small" fullWidth sx={inputSx}>
+                  <FormControl size="small" fullWidth sx={inputSx} disabled={isSchoolAdmin}>
                     <InputLabel>Escola</InputLabel>
                     <Select label="Escola" value={createForm.schoolId}
                       onChange={e => setCreateForm(p => ({ ...p, schoolId: String(e.target.value), classroomId: '' }))}>

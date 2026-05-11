@@ -42,6 +42,7 @@ import Leitor from './pages/biblioteca/Leitor';
 // Forum & Dashboard (for dynamic-menu routes)
 import Dashboard from './pages/Dashboard';
 import ChatIA from './pages/ChatIA';
+import SchoolAdminDashboardPage from './pages/school-admin/SchoolAdminDashboardPage';
 
 import { testBackendConnection } from './services/api';
 
@@ -55,6 +56,7 @@ function RootRedirect() {
   if (!isAuthenticated) return <Navigate to="/biblioteca" replace />;
   // Autenticado: encaminha para o dashboard apropriado
   const role = user?.role || '';
+  if (role === 'Administrador de Escola' || role === 'SCHOOL_ADMIN') return <Navigate to="/school-admin/dashboard" replace />;
   if (role.includes('ADMIN') || role.includes('Administrador')) return <Navigate to="/admin/library" replace />;
   if (role.includes('PROFESSOR') || role.includes('Professor')) return <Navigate to="/professor/dashboard" replace />;
   return <Navigate to="/student/dashboard" replace />;
@@ -203,6 +205,10 @@ function App() {
                 <MainLayout><ProfessorAssignmentsPage /></MainLayout>
               </ProtectedRoute>
             } />
+
+            {/* ── SCHOOL_ADMIN — Dashboard ───────────────────── */}
+            <Route path="/school-admin/dashboard" element={<Layout><SchoolAdminDashboardPage /></Layout>} />
+            <Route path="/school-admin/dashboard/stats" element={<Layout><SchoolAdminDashboardPage /></Layout>} />
 
             {/* Admin — Users */}
             <Route path="/admin/users/list" element={

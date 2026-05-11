@@ -12,5 +12,6 @@ public enum UserRoles {
     STUDENT,
     PROFESSOR,
     ROOT,
-    GUEST
+    GUEST,
+    SCHOOL_ADMIN
 }

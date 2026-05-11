@@ -25,6 +25,7 @@ import codelab.api.smart.sae.user.dto.AuthenticationResponseDTO;
 import codelab.api.smart.sae.user.dto.ProfessorInfoDTO;
 import codelab.api.smart.sae.user.dto.ProfessorProfileDTO;
 import codelab.api.smart.sae.user.dto.ProfessorRegisterDTO;
+import codelab.api.smart.sae.user.dto.SchoolAdminRegisterDTO;
 import codelab.api.smart.sae.user.dto.UserListDTO;
 import codelab.api.smart.sae.user.dto.UserUpdateDTO;
 import codelab.api.smart.sae.user.dto.ProfessorProfileUpdateDTO;
@@ -33,6 +34,7 @@ import codelab.api.smart.sae.user.dto.StudentProfileUpdateDTO;
 import codelab.api.smart.sae.user.dto.RegisterRequestDTO;
 import codelab.api.smart.sae.user.dto.StudentRegisterDTO;
 import codelab.api.smart.sae.user.model.ProfessorProfileEntity;
+import codelab.api.smart.sae.user.model.SchoolAdminProfileEntity;
 import codelab.api.smart.sae.user.model.StudentProfileEntity;
 import codelab.api.smart.sae.user.model.UserEntity;
 import codelab.api.smart.sae.user.service.UserService;
@@ -83,14 +85,30 @@ public class UserResource {
         return new ResponseEntity<>(profile, HttpStatus.CREATED);
     }
 
+    @PostMapping("/signup/school-admin")
+    public ResponseEntity<?> signupSchoolAdmin(@RequestBody SchoolAdminRegisterDTO registerRequest) throws Exception {
+        SchoolAdminProfileEntity profile = userService.createSchoolAdmin(registerRequest);
+        return new ResponseEntity<>(profile, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/school-admin-profile")
+    public ResponseEntity<?> getSchoolAdminProfile(Authentication auth) {
+        return ResponseEntity.ok(userService.getSchoolAdminProfile(auth.getName()));
+    }
+
+    @GetMapping("/my-school/members")
+    public ResponseEntity<List<UserListDTO>> getMySchoolMembers(Authentication auth) {
+        return ResponseEntity.ok(userService.getUsersBySchool(auth.getName()));
+    }
+
     @GetMapping("/all")
     public ResponseEntity<List<UserListDTO>> getAllUsers() {
         return ResponseEntity.ok(userService.findAllUsers());
     }
 
     @GetMapping("/professors")
-    public ResponseEntity<List<ProfessorProfileDTO>> getProfessors() {
-        return ResponseEntity.ok(userService.findAllProfessors());
+    public ResponseEntity<List<ProfessorProfileDTO>> getProfessors(Authentication auth) {
+        return ResponseEntity.ok(userService.findProfessors(auth));
     }
 
     @PutMapping("/update")

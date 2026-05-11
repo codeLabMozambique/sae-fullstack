@@ -23,6 +23,24 @@ public class SubjectService {
                 .collect(Collectors.toList());
     }
 
+    public List<SubjectDTO> findBySchool(Long schoolId) {
+        return subjectRepository.findByStatusAndSchoolId(EntityState.ACTIVE, schoolId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<SubjectDTO> findByClassLevel(Long classLevelId) {
+        return subjectRepository.findByStatusAndClassLevelId(EntityState.ACTIVE, classLevelId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<SubjectDTO> findBySchoolAndClassLevel(Long schoolId, Long classLevelId) {
+        return subjectRepository.findByStatusAndSchoolIdAndClassLevelId(EntityState.ACTIVE, schoolId, classLevelId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
     public SubjectDTO findById(Long id) {
         return subjectRepository.findById(id)
                 .map(this::convertToDTO)
@@ -60,6 +78,8 @@ public class SubjectService {
         dto.setName(entity.getName());
         dto.setDescription(entity.getDescription());
         dto.setCode(entity.getCode());
+        dto.setClassLevelId(entity.getClassLevelId());
+        dto.setSchoolId(entity.getSchoolId());
         return dto;
     }
 
@@ -67,5 +87,7 @@ public class SubjectService {
         entity.setName(dto.getName());
         entity.setDescription(dto.getDescription());
         entity.setCode(dto.getCode());
+        entity.setClassLevelId(dto.getClassLevelId());
+        entity.setSchoolId(dto.getSchoolId());
     }
 }

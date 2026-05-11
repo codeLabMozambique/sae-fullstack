@@ -14,6 +14,8 @@ import {
   professorAssignmentService, professorService, classroomService, subjectService,
   type ProfessorAssignmentDTO, type ProfessorDTO, type ClassroomDTO, type SubjectDTO,
 } from '../../../services/academicService';
+import api from '../../../services/api';
+import { useAuth } from '../../../context/AuthContext';
 
 const ACCENT = '#00A651';
 const PRIMARY = '#0A1628';
@@ -60,6 +62,10 @@ const avatarColor = (id: number) => {
 };
 
 const ProfessorAssignmentsPage: React.FC = () => {
+  const { user: authUser } = useAuth();
+  const isSchoolAdmin = authUser?.role === 'Administrador de Escola';
+  const [schoolAdminSchoolId, setSchoolAdminSchoolId] = useState<number | null>(null);
+
   const [assignments, setAssignments] = useState<ProfessorAssignmentDTO[]>([]);
   const [professors, setProfessors]   = useState<ProfessorDTO[]>([]);
   const [classrooms, setClassrooms]   = useState<ClassroomDTO[]>([]);
@@ -75,18 +81,48 @@ const ProfessorAssignmentsPage: React.FC = () => {
   const [page, setPage]               = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const load = async () => {
+  const load = async (sid?: number) => {
+    const schoolId = sid ?? schoolAdminSchoolId;
     try {
       setLoading(true); setError(null);
       const [asgn, profs, cls, subj] = await Promise.all([
-        professorAssignmentService.findAll(), professorService.findAll(),
-        classroomService.findAll(), subjectService.findAll(),
+        professorAssignmentService.findAll(),
+        professorService.findAll(),
+        isSchoolAdmin && schoolId ? classroomService.findBySchool(schoolId) : classroomService.findAll(),
+        isSchoolAdmin && schoolId ? subjectService.findBySchool(schoolId) : subjectService.findAll(),
       ]);
       setAssignments(asgn); setProfessors(profs); setClassrooms(cls); setSubjects(subj);
     } catch { setError('Erro ao carregar dados. Verifique a ligação ao servidor.'); }
     finally { setLoading(false); }
   };
-  useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        setLoading(true); setError(null);
+        if (isSchoolAdmin) {
+          const profileRes = await api.get<{ schoolId: number }>('/auth/users/school-admin-profile');
+          const sid = profileRes.data.schoolId;
+          setSchoolAdminSchoolId(sid);
+          const [asgn, profs, cls, subj] = await Promise.all([
+            professorAssignmentService.findAll(),
+            professorService.findAll(),
+            classroomService.findBySchool(sid),
+            subjectService.findBySchool(sid),
+          ]);
+          setAssignments(asgn); setProfessors(profs); setClassrooms(cls); setSubjects(subj);
+        } else {
+          const [asgn, profs, cls, subj] = await Promise.all([
+            professorAssignmentService.findAll(), professorService.findAll(),
+            classroomService.findAll(), subjectService.findAll(),
+          ]);
+          setAssignments(asgn); setProfessors(profs); setClassrooms(cls); setSubjects(subj);
+        }
+      } catch { setError('Erro ao carregar dados. Verifique a ligação ao servidor.'); }
+      finally { setLoading(false); }
+    };
+    init();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useMemo(() => assignments.filter(a => {
     const prof = professors.find(p => p.id === a.professorId);
@@ -190,14 +226,14 @@ const ProfessorAssignmentsPage: React.FC = () => {
 
         {/* ── Table ── */}
         <Box sx={{ ...glass, borderRadius: 3, overflow: 'hidden' }} className="animate-fade-in">
-          <Box sx={{ px: 3, py: 2, background: 'linear-gradient(135deg,#0A1628 0%,#1e3a5f 100%)', display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ p: 0.8, borderRadius: 1.5, background: 'rgba(0,166,81,0.15)', border: '1px solid rgba(0,166,81,0.2)', display: 'flex' }}>
-              <AssignIcon sx={{ color: '#4caf50', fontSize: 20 }} />
+          <Box sx={{ px: 3, py: 2, background: 'rgba(248,250,252,0.8)', borderBottom: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ p: 0.8, borderRadius: 1.5, background: 'rgba(0,166,81,0.1)', border: '1px solid rgba(0,166,81,0.2)', display: 'flex' }}>
+              <AssignIcon sx={{ color: ACCENT, fontSize: 20 }} />
             </Box>
-            <Typography variant="h6" color="white" sx={{ flex: 1 }}>Lista de Atribuições</Typography>
+            <Typography variant="h6" color={PRIMARY} sx={{ flex: 1 }}>Lista de Atribuições</Typography>
             {!loading && (
               <Chip label={`${assignments.length} registo${assignments.length !== 1 ? 's' : ''}`} size="small"
-                sx={{ bgcolor: 'rgba(0,166,81,0.15)', color: '#4caf50', border: '1px solid rgba(0,166,81,0.25)' }} />
+                sx={{ bgcolor: 'rgba(0,166,81,0.1)', color: ACCENT, border: '1px solid rgba(0,166,81,0.2)' }} />
             )}
           </Box>
 
@@ -333,25 +369,36 @@ const ProfessorAssignmentsPage: React.FC = () => {
           <FormControl fullWidth size="small" sx={inputSx}>
             <InputLabel>Turma *</InputLabel>
             <Select value={form.classroomId || ''} label="Turma *"
-              onChange={e => setForm(p => ({ ...p, classroomId: Number(e.target.value) }))}>
+              onChange={e => setForm(p => ({ ...p, classroomId: Number(e.target.value), subjectId: 0 }))}>
               {classrooms.map(c => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
             </Select>
           </FormControl>
 
-          <FormControl fullWidth size="small" sx={inputSx}>
-            <InputLabel>Disciplina *</InputLabel>
-            <Select value={form.subjectId || ''} label="Disciplina *"
-              onChange={e => setForm(p => ({ ...p, subjectId: Number(e.target.value) }))}>
-              {subjects.map(s => (
-                <MenuItem key={s.id} value={s.id}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {s.code && <Chip label={s.code} size="small" sx={{ height: 18, fontSize: '0.65rem', bgcolor: 'rgba(0,166,81,0.1)', color: ACCENT }} />}
-                    <Typography variant="body2">{s.name}</Typography>
-                  </Box>
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          {(() => {
+            const selectedClassroom = classrooms.find(c => c.id === form.classroomId);
+            const availableSubjects = selectedClassroom?.classLevelId
+              ? subjects.filter(s => s.classLevelId === selectedClassroom.classLevelId)
+              : subjects;
+            return (
+              <FormControl fullWidth size="small" sx={inputSx} disabled={!form.classroomId}>
+                <InputLabel>Disciplina *</InputLabel>
+                <Select value={form.subjectId || ''} label="Disciplina *"
+                  onChange={e => setForm(p => ({ ...p, subjectId: Number(e.target.value) }))}>
+                  {availableSubjects.length === 0
+                    ? <MenuItem disabled value="">Nenhuma disciplina para este nível</MenuItem>
+                    : availableSubjects.map(s => (
+                      <MenuItem key={s.id} value={s.id}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {s.code && <Chip label={s.code} size="small" sx={{ height: 18, fontSize: '0.65rem', bgcolor: 'rgba(0,166,81,0.1)', color: ACCENT }} />}
+                          <Typography variant="body2">{s.name}</Typography>
+                        </Box>
+                      </MenuItem>
+                    ))
+                  }
+                </Select>
+              </FormControl>
+            );
+          })()}
 
           {/* Summary preview */}
           {form.professorId > 0 && form.classroomId > 0 && form.subjectId > 0 && (

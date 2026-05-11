@@ -42,7 +42,7 @@ public class SecurityConfig {
                 .permitAll()
                 .requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/my-student-profile"))
                 .authenticated()
-                // Allow professors and students to read user lists needed for classroom/forum features
+                // Allow professors, students and school admins to read user lists
                 .requestMatchers(
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/all"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/professors"),
@@ -50,7 +50,12 @@ public class SecurityConfig {
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/students-by-classroom"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/student-profile-by-username"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/by-username"))
-                .hasAnyAuthority(UserRoles.ADMIN.name(), UserRoles.PROFESSOR.name(), UserRoles.STUDENT.name())
+                .hasAnyAuthority(UserRoles.ADMIN.name(), UserRoles.PROFESSOR.name(), UserRoles.STUDENT.name(), UserRoles.SCHOOL_ADMIN.name())
+                // School admin endpoints
+                .requestMatchers(
+                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/school-admin-profile"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/my-school/members"))
+                .hasAnyAuthority(UserRoles.ADMIN.name(), UserRoles.SCHOOL_ADMIN.name())
                 // All other GET /users/** requires ADMIN
                 .requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/**"))
                 .hasAnyAuthority(UserRoles.ADMIN.name())

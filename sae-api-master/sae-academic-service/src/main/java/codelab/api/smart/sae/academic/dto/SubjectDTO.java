@@ -9,6 +9,8 @@ public class SubjectDTO implements Serializable {
     private String name;
     private String description;
     private String code;
+    private Long classLevelId;
+    private Long schoolId;
 
     public SubjectDTO() {}
 
@@ -23,4 +25,10 @@ public class SubjectDTO implements Serializable {
 
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }
+
+    public Long getClassLevelId() { return classLevelId; }
+    public void setClassLevelId(Long classLevelId) { this.classLevelId = classLevelId; }
+
+    public Long getSchoolId() { return schoolId; }
+    public void setSchoolId(Long schoolId) { this.schoolId = schoolId; }
 }

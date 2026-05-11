@@ -172,14 +172,14 @@ const SchoolsPage: React.FC = () => {
         {/* ── Table card ── */}
         <Box sx={{ ...glass, borderRadius: 3, overflow: 'hidden' }} className="animate-fade-in">
           {/* card header */}
-          <Box sx={{ px: 3, py: 2, background: 'linear-gradient(135deg,#0A1628 0%,#1e3a5f 100%)', display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ p: 0.8, borderRadius: 1.5, background: 'rgba(0,166,81,0.15)', border: '1px solid rgba(0,166,81,0.2)', display: 'flex' }}>
-              <SchoolIcon sx={{ color: '#4caf50', fontSize: 20 }} />
+          <Box sx={{ px: 3, py: 2, background: 'rgba(248,250,252,0.8)', borderBottom: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ p: 0.8, borderRadius: 1.5, background: 'rgba(0,166,81,0.1)', border: '1px solid rgba(0,166,81,0.2)', display: 'flex' }}>
+              <SchoolIcon sx={{ color: ACCENT, fontSize: 20 }} />
             </Box>
-            <Typography variant="h6" color="white" sx={{ flex: 1 }}>Lista de Escolas</Typography>
+            <Typography variant="h6" color={PRIMARY} sx={{ flex: 1 }}>Lista de Escolas</Typography>
             {!loading && (
               <Chip label={`${schools.length} registo${schools.length !== 1 ? 's' : ''}`} size="small"
-                sx={{ bgcolor: 'rgba(0,166,81,0.15)', color: '#4caf50', border: '1px solid rgba(0,166,81,0.25)' }} />
+                sx={{ bgcolor: 'rgba(0,166,81,0.1)', color: ACCENT, border: '1px solid rgba(0,166,81,0.2)' }} />
             )}
           </Box>
 

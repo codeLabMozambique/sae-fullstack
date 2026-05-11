@@ -15,6 +15,8 @@ import {
   classroomService, schoolService, classLevelService,
   type ClassroomDTO, type SchoolDTO, type ClassLevelDTO,
 } from '../../../services/academicService';
+import api from '../../../services/api';
+import { useAuth } from '../../../context/AuthContext';
 
 const ACCENT = '#00A651';
 const PRIMARY = '#0A1628';
@@ -58,6 +60,10 @@ const shiftStyle: Record<string, { bg: string; color: string; border: string; ic
 const emptyForm: ClassroomDTO = { name: '', schoolId: 0, classLevelId: 0, shift: '', academicYear: '' };
 
 const ClassroomsPage: React.FC = () => {
+  const { user: authUser } = useAuth();
+  const isSchoolAdmin = authUser?.role === 'Administrador de Escola';
+  const [schoolAdminSchoolId, setSchoolAdminSchoolId] = useState<number | null>(null);
+
   const [classrooms, setClassrooms] = useState<ClassroomDTO[]>([]);
   const [schools, setSchools]       = useState<SchoolDTO[]>([]);
   const [levels, setLevels]         = useState<ClassLevelDTO[]>([]);
@@ -74,15 +80,40 @@ const ClassroomsPage: React.FC = () => {
   const [page, setPage]               = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
+  // Reload after save/deactivate — schoolAdminSchoolId is already set in state by then
   const load = async () => {
     try {
       setLoading(true); setError(null);
-      const [cls, sch, lvl] = await Promise.all([classroomService.findAll(), schoolService.findAll(), classLevelService.findAll()]);
+      const cls = (isSchoolAdmin && schoolAdminSchoolId)
+        ? await classroomService.findBySchool(schoolAdminSchoolId)
+        : await classroomService.findAll();
+      const [sch, lvl] = await Promise.all([schoolService.findAll(), classLevelService.findAll()]);
       setClassrooms(cls); setSchools(sch); setLevels(lvl);
     } catch { setError('Erro ao carregar dados. Verifique a ligação ao servidor.'); }
     finally { setLoading(false); }
   };
-  useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        setLoading(true); setError(null);
+        const [sch, lvl] = await Promise.all([schoolService.findAll(), classLevelService.findAll()]);
+        setSchools(sch); setLevels(lvl);
+        if (isSchoolAdmin) {
+          const profileRes = await api.get<{ schoolId: number }>('/auth/users/school-admin-profile');
+          const sid = profileRes.data.schoolId;
+          setSchoolAdminSchoolId(sid);
+          const cls = await classroomService.findBySchool(sid);
+          setClassrooms(cls);
+        } else {
+          const cls = await classroomService.findAll();
+          setClassrooms(cls);
+        }
+      } catch { setError('Erro ao carregar dados. Verifique a ligação ao servidor.'); }
+      finally { setLoading(false); }
+    };
+    init();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const years = useMemo(() =>
     [...new Set(classrooms.map(c => c.academicYear).filter(Boolean))].sort().reverse(), [classrooms]);
@@ -99,7 +130,11 @@ const ClassroomsPage: React.FC = () => {
 
   useEffect(() => { setPage(0); }, [search, schoolFilter, shiftFilter, yearFilter]);
 
-  const openCreate  = () => { setEditing(null); setForm(emptyForm); setDialogOpen(true); };
+  const openCreate  = () => {
+    setEditing(null);
+    setForm({ ...emptyForm, schoolId: isSchoolAdmin && schoolAdminSchoolId ? schoolAdminSchoolId : 0 });
+    setDialogOpen(true);
+  };
   const openEdit    = (r: ClassroomDTO) => { setEditing(r); setForm({ ...r }); setDialogOpen(true); };
   const closeDialog = () => { setDialogOpen(false); setEditing(null); setForm(emptyForm); };
 
@@ -166,13 +201,15 @@ const ClassroomsPage: React.FC = () => {
             } }}
             sx={{ flex: 1, minWidth: 220, ...inputSx }}
           />
-          <FormControl size="small" sx={{ minWidth: 150, ...inputSx }}>
-            <InputLabel>Escola</InputLabel>
-            <Select value={schoolFilter} label="Escola" onChange={e => setSchoolFilter(e.target.value as string)}>
-              <MenuItem value="">Todas</MenuItem>
-              {schools.map(s => <MenuItem key={s.id} value={String(s.id)}>{s.name}</MenuItem>)}
-            </Select>
-          </FormControl>
+          {!isSchoolAdmin && (
+            <FormControl size="small" sx={{ minWidth: 150, ...inputSx }}>
+              <InputLabel>Escola</InputLabel>
+              <Select value={schoolFilter} label="Escola" onChange={e => setSchoolFilter(e.target.value as string)}>
+                <MenuItem value="">Todas</MenuItem>
+                {schools.map(s => <MenuItem key={s.id} value={String(s.id)}>{s.name}</MenuItem>)}
+              </Select>
+            </FormControl>
+          )}
           <FormControl size="small" sx={{ minWidth: 120, ...inputSx }}>
             <InputLabel>Turno</InputLabel>
             <Select value={shiftFilter} label="Turno" onChange={e => setShiftFilter(e.target.value as string)}>
@@ -198,14 +235,14 @@ const ClassroomsPage: React.FC = () => {
 
         {/* ── Table ── */}
         <Box sx={{ ...glass, borderRadius: 3, overflow: 'hidden' }} className="animate-fade-in">
-          <Box sx={{ px: 3, py: 2, background: 'linear-gradient(135deg,#0A1628 0%,#1e3a5f 100%)', display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ p: 0.8, borderRadius: 1.5, background: 'rgba(0,166,81,0.15)', border: '1px solid rgba(0,166,81,0.2)', display: 'flex' }}>
-              <ClassroomIcon sx={{ color: '#4caf50', fontSize: 20 }} />
+          <Box sx={{ px: 3, py: 2, background: 'rgba(248,250,252,0.8)', borderBottom: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ p: 0.8, borderRadius: 1.5, background: 'rgba(0,166,81,0.1)', border: '1px solid rgba(0,166,81,0.2)', display: 'flex' }}>
+              <ClassroomIcon sx={{ color: ACCENT, fontSize: 20 }} />
             </Box>
-            <Typography variant="h6" color="white" sx={{ flex: 1 }}>Lista de Turmas</Typography>
+            <Typography variant="h6" color={PRIMARY} sx={{ flex: 1 }}>Lista de Turmas</Typography>
             {!loading && (
               <Chip label={`${classrooms.length} registo${classrooms.length !== 1 ? 's' : ''}`} size="small"
-                sx={{ bgcolor: 'rgba(0,166,81,0.15)', color: '#4caf50', border: '1px solid rgba(0,166,81,0.25)' }} />
+                sx={{ bgcolor: 'rgba(0,166,81,0.1)', color: ACCENT, border: '1px solid rgba(0,166,81,0.2)' }} />
             )}
           </Box>
 
@@ -323,7 +360,7 @@ const ClassroomsPage: React.FC = () => {
             onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
             placeholder="Ex: Turma A — 10ª Classe" fullWidth size="small" sx={inputSx} />
 
-          <FormControl fullWidth size="small" sx={inputSx}>
+          <FormControl fullWidth size="small" sx={inputSx} disabled={isSchoolAdmin}>
             <InputLabel>Escola *</InputLabel>
             <Select value={form.schoolId || ''} label="Escola *"
               onChange={e => setForm(p => ({ ...p, schoolId: Number(e.target.value) }))}>

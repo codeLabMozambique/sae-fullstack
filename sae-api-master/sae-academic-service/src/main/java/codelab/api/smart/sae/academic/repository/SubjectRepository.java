@@ -10,4 +10,7 @@ import java.util.List;
 @Repository
 public interface SubjectRepository extends JpaRepository<SubjectEntity, Long> {
     List<SubjectEntity> findByStatus(EntityState status);
+    List<SubjectEntity> findByStatusAndSchoolId(EntityState status, Long schoolId);
+    List<SubjectEntity> findByStatusAndClassLevelId(EntityState status, Long classLevelId);
+    List<SubjectEntity> findByStatusAndSchoolIdAndClassLevelId(EntityState status, Long schoolId, Long classLevelId);
 }

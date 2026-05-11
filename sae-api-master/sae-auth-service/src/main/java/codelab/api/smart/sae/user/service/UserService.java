@@ -37,7 +37,10 @@ import codelab.api.smart.sae.user.enums.UserRoles;
 import codelab.api.smart.sae.user.model.ProfessorProfileEntity;
 import codelab.api.smart.sae.user.model.StudentProfileEntity;
 import codelab.api.smart.sae.user.model.UserEntity;
+import codelab.api.smart.sae.user.dto.SchoolAdminRegisterDTO;
+import codelab.api.smart.sae.user.model.SchoolAdminProfileEntity;
 import codelab.api.smart.sae.user.repository.ProfessorProfileRepository;
+import codelab.api.smart.sae.user.repository.SchoolAdminProfileRepository;
 import codelab.api.smart.sae.user.repository.StudentProfileRepository;
 import codelab.api.smart.sae.user.repository.UserRepository;
 
@@ -65,6 +68,9 @@ public class UserService {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private SchoolAdminProfileRepository schoolAdminProfileRepository;
 
     // @Autowired
     // private OTPManager otpManager;
@@ -366,18 +372,35 @@ public class UserService {
 
     public List<ProfessorProfileDTO> findAllProfessors() {
         return professorProfileRepository.findAll().stream()
-                .map(p -> new ProfessorProfileDTO(
-                        p.getUser().getId(),
-                        p.getUser().getFullname(),
-                        p.getUser().getUsername(),
-                        p.getUser().getEmail(),
-                        p.getSchoolId(),
-                        p.getDepartment(),
-                        p.getSpecialization(),
-                        p.getInstitutionalContact(),
-                        p.isOnline(),
-                        p.getLastSeen()))
+                .map(this::toProfessorDTO)
                 .collect(Collectors.toList());
+    }
+
+    public List<ProfessorProfileDTO> findProfessors(org.springframework.security.core.Authentication auth) {
+        boolean isSchoolAdmin = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals(UserRoles.SCHOOL_ADMIN.name()));
+        if (isSchoolAdmin) {
+            SchoolAdminProfileEntity admin = schoolAdminProfileRepository.findByUserUsername(auth.getName())
+                    .orElseThrow(() -> new BusinessException("Perfil de administrador de escola não encontrado"));
+            return professorProfileRepository.findBySchoolId(admin.getSchoolId()).stream()
+                    .map(this::toProfessorDTO)
+                    .collect(Collectors.toList());
+        }
+        return findAllProfessors();
+    }
+
+    private ProfessorProfileDTO toProfessorDTO(ProfessorProfileEntity p) {
+        return new ProfessorProfileDTO(
+                p.getUser().getId(),
+                p.getUser().getFullname(),
+                p.getUser().getUsername(),
+                p.getUser().getEmail(),
+                p.getSchoolId(),
+                p.getDepartment(),
+                p.getSpecialization(),
+                p.getInstitutionalContact(),
+                p.isOnline(),
+                p.getLastSeen());
     }
 
     public UserEntity getLoggedUser() {
@@ -451,6 +474,71 @@ public class UserService {
             p.setLastSeen(LocalDateTime.now());
             professorProfileRepository.save(p);
         });
+    }
+
+    @Transactional
+    public SchoolAdminProfileEntity createSchoolAdmin(SchoolAdminRegisterDTO request) {
+        if (userRepository.existsByUsername(request.getNTelefone()))
+            throw new BusinessException("Já existe uma conta com este número de telefone");
+        if (userRepository.existsByEmail(request.getEmail()))
+            throw new BusinessException("Já existe uma conta com este email");
+
+        UserEntity user = new UserEntity();
+        user.setFullname(request.getFullname());
+        user.setUsername(request.getNTelefone());
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setEnabled(true);
+        user.setCreatedDate(LocalDateTime.now());
+
+        List<RoleTransactionEntity> roles = roleTransactionRepository
+                .findByRoleAndAppTransactionTypeOrderByAppTransactionCode(UserRoles.SCHOOL_ADMIN, MenuType.HEADER);
+        if (roles.isEmpty())
+            throw new BusinessException("Erro de configuração do sistema: Role SCHOOL_ADMIN não encontrada.");
+        user.setRole(roles.get(0));
+
+        userRepository.save(user);
+        if (request.getEmail() != null && !request.getEmail().isBlank())
+            emailService.sendCredentials(request.getEmail(), request.getFullname(),
+                    request.getNTelefone(), request.getPassword(), "Administrador de Escola");
+
+        SchoolAdminProfileEntity profile = new SchoolAdminProfileEntity();
+        profile.setUser(user);
+        profile.setSchoolId(request.getSchoolId());
+        return schoolAdminProfileRepository.save(profile);
+    }
+
+    public java.util.Map<String, Object> getSchoolAdminProfile(String username) {
+        SchoolAdminProfileEntity p = schoolAdminProfileRepository.findByUserUsername(username)
+                .orElseThrow(() -> new BusinessException("Perfil de administrador de escola não encontrado"));
+        java.util.Map<String, Object> out = new java.util.HashMap<>();
+        out.put("userId", p.getUser().getId());
+        out.put("schoolId", p.getSchoolId());
+        out.put("fullName", p.getUser().getFullname());
+        out.put("username", p.getUser().getUsername());
+        return out;
+    }
+
+    public List<UserListDTO> getUsersBySchool(String username) {
+        SchoolAdminProfileEntity admin = schoolAdminProfileRepository.findByUserUsername(username)
+                .orElseThrow(() -> new BusinessException("Perfil de administrador de escola não encontrado"));
+        Long schoolId = admin.getSchoolId();
+
+        List<UserListDTO> result = new ArrayList<>();
+
+        professorProfileRepository.findBySchoolId(schoolId).forEach(p ->
+            result.add(new UserListDTO(
+                p.getUser().getId(), p.getUser().getUsername(), p.getUser().getFullname(),
+                p.getUser().getEmail(), p.getUser().getUsername(),
+                UserRoles.PROFESSOR.name(), p.getUser().isEnabled() ? 1 : 0)));
+
+        studentProfileRepository.findBySchoolId(schoolId).forEach(s ->
+            result.add(new UserListDTO(
+                s.getUser().getId(), s.getUser().getUsername(), s.getUser().getFullname(),
+                s.getUser().getEmail(), s.getUser().getUsername(),
+                UserRoles.STUDENT.name(), s.getUser().isEnabled() ? 1 : 0)));
+
+        return result;
     }
 
     private String normalize(String input) {

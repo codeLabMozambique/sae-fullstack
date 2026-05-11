@@ -21,26 +21,31 @@ public class ClassroomResource {
         return ResponseEntity.ok(classroomService.findAllActive());
     }
 
+    @GetMapping("/by-school/{schoolId}")
+    public ResponseEntity<List<ClassroomDTO>> findBySchool(@PathVariable Long schoolId) {
+        return ResponseEntity.ok(classroomService.findBySchool(schoolId));
+    }
+
     @PostMapping("/details")
     public ResponseEntity<ClassroomDTO> findById(@RequestBody ClassroomDTO request) {
         ClassroomDTO dto = classroomService.findById(request.getId());
         return dto != null ? ResponseEntity.ok(dto) : ResponseEntity.notFound().build();
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ADMIN','SCHOOL_ADMIN')")
     @PostMapping("/save")
     public ResponseEntity<ClassroomDTO> save(@RequestBody ClassroomDTO dto) {
         return ResponseEntity.ok(classroomService.save(dto));
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ADMIN','SCHOOL_ADMIN')")
     @PostMapping("/update")
     public ResponseEntity<ClassroomDTO> update(@RequestBody ClassroomDTO dto) {
         ClassroomDTO updated = classroomService.update(dto);
         return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ADMIN','SCHOOL_ADMIN')")
     @PostMapping("/deactivate")
     public ResponseEntity<Void> deactivate(@RequestBody ClassroomDTO request) {
         classroomService.deactivate(request.getId());

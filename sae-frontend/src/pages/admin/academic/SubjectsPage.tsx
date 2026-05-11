@@ -3,14 +3,16 @@ import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, TablePagination, Chip, Button, IconButton, Dialog, DialogTitle,
   DialogContent, TextField, Alert, CircularProgress, Tooltip,
-  InputAdornment,
+  InputAdornment, FormControl, InputLabel, Select, MenuItem,
 } from '@mui/material';
 import {
   Add as AddIcon, Edit as EditIcon, Block as BlockIcon,
   MenuBook as SubjectIcon, Search as SearchIcon, Close as CloseIcon,
   FilterList as FilterIcon, Tag as CodeIcon,
 } from '@mui/icons-material';
-import { subjectService, type SubjectDTO } from '../../../services/academicService';
+import { subjectService, classLevelService, type SubjectDTO, type ClassLevelDTO } from '../../../services/academicService';
+import api from '../../../services/api';
+import { useAuth } from '../../../context/AuthContext';
 
 const ACCENT = '#00A651';
 const PRIMARY = '#0A1628';
@@ -43,10 +45,15 @@ const gradBtn = {
   borderRadius: '10px', textTransform: 'none' as const, fontWeight: 700,
 } as const;
 
-const emptyForm: SubjectDTO = { name: '', description: '', code: '' };
+const emptyForm: SubjectDTO = { name: '', description: '', code: '', classLevelId: undefined, schoolId: undefined };
 
 const SubjectsPage: React.FC = () => {
+  const { user: authUser } = useAuth();
+  const isSchoolAdmin = authUser?.role === 'Administrador de Escola';
+  const [schoolAdminSchoolId, setSchoolAdminSchoolId] = useState<number | null>(null);
+
   const [subjects, setSubjects]     = useState<SubjectDTO[]>([]);
+  const [classLevels, setClassLevels] = useState<ClassLevelDTO[]>([]);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -54,32 +61,67 @@ const SubjectsPage: React.FC = () => {
   const [form, setForm]             = useState<SubjectDTO>(emptyForm);
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch]         = useState('');
+  const [levelFilter, setLevelFilter] = useState('');
   const [page, setPage]             = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const load = async () => {
-    try { setLoading(true); setError(null); setSubjects(await subjectService.findAll()); }
+  const load = async (sid?: number) => {
+    const schoolId = sid ?? schoolAdminSchoolId;
+    try {
+      setLoading(true); setError(null);
+      const [subj, lvl] = await Promise.all([
+        isSchoolAdmin && schoolId ? subjectService.findBySchool(schoolId) : subjectService.findAll(),
+        classLevelService.findAll(),
+      ]);
+      setSubjects(subj); setClassLevels(lvl);
+    }
     catch { setError('Erro ao carregar disciplinas. Verifique a ligação ao servidor.'); }
     finally { setLoading(false); }
   };
-  useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        setLoading(true); setError(null);
+        if (isSchoolAdmin) {
+          const profileRes = await api.get<{ schoolId: number }>('/auth/users/school-admin-profile');
+          const sid = profileRes.data.schoolId;
+          setSchoolAdminSchoolId(sid);
+          const [subj, lvl] = await Promise.all([subjectService.findBySchool(sid), classLevelService.findAll()]);
+          setSubjects(subj); setClassLevels(lvl);
+        } else {
+          const [subj, lvl] = await Promise.all([subjectService.findAll(), classLevelService.findAll()]);
+          setSubjects(subj); setClassLevels(lvl);
+        }
+      } catch { setError('Erro ao carregar disciplinas. Verifique a ligação ao servidor.'); }
+      finally { setLoading(false); }
+    };
+    init();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useMemo(() => subjects.filter(s => {
     const q = search.toLowerCase();
-    return !q
+    const matchText = !q
       || s.name.toLowerCase().includes(q)
       || (s.code ?? '').toLowerCase().includes(q)
       || (s.description ?? '').toLowerCase().includes(q);
-  }), [subjects, search]);
+    const matchLevel = !levelFilter || String(s.classLevelId) === levelFilter;
+    return matchText && matchLevel;
+  }), [subjects, search, levelFilter]);
 
-  useEffect(() => { setPage(0); }, [search]);
+  useEffect(() => { setPage(0); }, [search, levelFilter]);
 
-  const openCreate  = () => { setEditing(null); setForm(emptyForm); setDialogOpen(true); };
+  const openCreate  = () => {
+    setEditing(null);
+    setForm({ ...emptyForm, schoolId: isSchoolAdmin && schoolAdminSchoolId ? schoolAdminSchoolId : undefined });
+    setDialogOpen(true);
+  };;
   const openEdit    = (r: SubjectDTO) => { setEditing(r); setForm({ ...r }); setDialogOpen(true); };
   const closeDialog = () => { setDialogOpen(false); setEditing(null); setForm(emptyForm); };
 
   const handleSubmit = async () => {
     if (!form.name.trim()) { setError('O nome da disciplina é obrigatório.'); return; }
+    if (!form.classLevelId) { setError('Seleccione o nível de classe.'); return; }
     try {
       setSubmitting(true); setError(null);
       editing?.id ? await subjectService.update({ ...form, id: editing.id }) : await subjectService.save(form);
@@ -133,7 +175,7 @@ const SubjectsPage: React.FC = () => {
         {error && <Alert severity="error" sx={{ mb: 2.5, borderRadius: 2, ...glass }} onClose={() => setError(null)}>{error}</Alert>}
 
         {/* ── Search ── */}
-        <Box sx={{ ...glass, borderRadius: 3, p: 2, mb: 2.5, display: 'flex', gap: 2, alignItems: 'center' }}>
+        <Box sx={{ ...glass, borderRadius: 3, p: 2, mb: 2.5, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
           <FilterIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
           <TextField
             size="small" placeholder="Pesquisar por nome, código ou descrição…"
@@ -144,10 +186,17 @@ const SubjectsPage: React.FC = () => {
                 <InputAdornment position="end"><IconButton size="small" onClick={() => setSearch('')}><CloseIcon sx={{ fontSize: 15 }} /></IconButton></InputAdornment>
               ) : null,
             } }}
-            sx={{ flex: 1, maxWidth: 420, ...inputSx }}
+            sx={{ flex: 1, minWidth: 200, maxWidth: 360, ...inputSx }}
           />
-          {search && (
-            <Button size="small" onClick={() => setSearch('')} sx={{ color: 'text.secondary', textTransform: 'none', fontSize: '0.8rem' }}>
+          <FormControl size="small" sx={{ minWidth: 160, ...inputSx }}>
+            <InputLabel>Nível de Classe</InputLabel>
+            <Select value={levelFilter} label="Nível de Classe" onChange={e => setLevelFilter(e.target.value as string)}>
+              <MenuItem value="">Todos os níveis</MenuItem>
+              {classLevels.map(l => <MenuItem key={l.id} value={String(l.id)}>{l.name}</MenuItem>)}
+            </Select>
+          </FormControl>
+          {(search || levelFilter) && (
+            <Button size="small" onClick={() => { setSearch(''); setLevelFilter(''); }} sx={{ color: 'text.secondary', textTransform: 'none', fontSize: '0.8rem' }}>
               Limpar
             </Button>
           )}
@@ -157,14 +206,14 @@ const SubjectsPage: React.FC = () => {
 
         {/* ── Table ── */}
         <Box sx={{ ...glass, borderRadius: 3, overflow: 'hidden' }} className="animate-fade-in">
-          <Box sx={{ px: 3, py: 2, background: 'linear-gradient(135deg,#0A1628 0%,#1e3a5f 100%)', display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ p: 0.8, borderRadius: 1.5, background: 'rgba(0,166,81,0.15)', border: '1px solid rgba(0,166,81,0.2)', display: 'flex' }}>
-              <SubjectIcon sx={{ color: '#4caf50', fontSize: 20 }} />
+          <Box sx={{ px: 3, py: 2, background: 'rgba(248,250,252,0.8)', borderBottom: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ p: 0.8, borderRadius: 1.5, background: 'rgba(0,166,81,0.1)', border: '1px solid rgba(0,166,81,0.2)', display: 'flex' }}>
+              <SubjectIcon sx={{ color: ACCENT, fontSize: 20 }} />
             </Box>
-            <Typography variant="h6" color="white" sx={{ flex: 1 }}>Lista de Disciplinas</Typography>
+            <Typography variant="h6" color={PRIMARY} sx={{ flex: 1 }}>Lista de Disciplinas</Typography>
             {!loading && (
               <Chip label={`${subjects.length} registo${subjects.length !== 1 ? 's' : ''}`} size="small"
-                sx={{ bgcolor: 'rgba(0,166,81,0.15)', color: '#4caf50', border: '1px solid rgba(0,166,81,0.25)' }} />
+                sx={{ bgcolor: 'rgba(0,166,81,0.1)', color: ACCENT, border: '1px solid rgba(0,166,81,0.2)' }} />
             )}
           </Box>
 
@@ -178,7 +227,7 @@ const SubjectsPage: React.FC = () => {
               <Table sx={{ minWidth: 560 }}>
                 <TableHead>
                   <TableRow sx={{ background: 'rgba(0,0,0,0.025)' }}>
-                    {['Código', 'Nome', 'Descrição', 'Ações'].map(h => (
+                    {['Código', 'Nome', 'Nível', 'Descrição', 'Ações'].map(h => (
                       <TableCell key={h} sx={{ fontWeight: 700, color: '#475569', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: 0.7, py: 1.5 }}>{h}</TableCell>
                     ))}
                   </TableRow>
@@ -186,18 +235,19 @@ const SubjectsPage: React.FC = () => {
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} sx={{ border: 'none', py: 0 }}>
+                      <TableCell colSpan={5} sx={{ border: 'none', py: 0 }}>
                         <Box sx={{ textAlign: 'center', py: 8 }}>
                           <SubjectIcon sx={{ fontSize: 52, color: 'rgba(0,0,0,0.08)', mb: 1.5 }} />
                           <Typography color="text.secondary" fontWeight={500}>Nenhuma disciplina encontrada</Typography>
                           <Typography variant="body2" color="text.disabled" sx={{ mt: 0.5 }}>
-                            {search ? 'Tente ajustar o termo de pesquisa' : 'Crie a primeira disciplina clicando em "Nova Disciplina"'}
+                            {(search || levelFilter) ? 'Tente ajustar os filtros de pesquisa' : 'Crie a primeira disciplina clicando em "Nova Disciplina"'}
                           </Typography>
                         </Box>
                       </TableCell>
                     </TableRow>
                   ) : filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(row => {
                     const { bg, color } = row.code ? codeColor(row.code) : { bg: 'rgba(0,0,0,0.05)', color: '#757575' };
+                    const levelName = classLevels.find(l => l.id === row.classLevelId)?.name;
                     return (
                       <TableRow key={row.id} sx={{ transition: 'background .15s', '&:hover': { background: 'rgba(0,166,81,0.035)' } }}>
                         <TableCell sx={{ py: 1.5, width: 120 }}>
@@ -212,7 +262,13 @@ const SubjectsPage: React.FC = () => {
                         <TableCell sx={{ py: 1.5 }}>
                           <Typography fontWeight={600} color={PRIMARY} variant="body2">{row.name}</Typography>
                         </TableCell>
-                        <TableCell sx={{ color: '#475569', maxWidth: 340, py: 1.5 }}>
+                        <TableCell sx={{ py: 1.5 }}>
+                          {levelName
+                            ? <Chip label={levelName} size="small" sx={{ bgcolor: 'rgba(37,99,235,0.08)', color: '#2563EB', border: '1px solid rgba(37,99,235,0.2)' }} />
+                            : <Typography variant="body2" color="text.disabled">—</Typography>
+                          }
+                        </TableCell>
+                        <TableCell sx={{ color: '#475569', maxWidth: 280, py: 1.5 }}>
                           <Typography variant="body2" noWrap title={row.description}>
                             {row.description || '—'}
                           </Typography>
@@ -277,19 +333,28 @@ const SubjectsPage: React.FC = () => {
               <TextField label="Código" value={form.code ?? ''}
                 onChange={e => setForm(p => ({ ...p, code: e.target.value }))}
                 placeholder="Ex: MAT" fullWidth size="small"
-                inputProps={{ maxLength: 20 }} sx={inputSx}
+                slotProps={{ htmlInput: { maxLength: 20 } }} sx={inputSx}
                 helperText="Máx. 20 caracteres" />
             </Box>
             <TextField label="Nome *" value={form.name}
               onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
               placeholder="Ex: Matemática" fullWidth size="small" sx={inputSx} />
           </Box>
+          <FormControl fullWidth size="small" sx={inputSx}>
+            <InputLabel>Nível de Classe *</InputLabel>
+            <Select
+              value={form.classLevelId ?? ''}
+              label="Nível de Classe *"
+              onChange={e => setForm(p => ({ ...p, classLevelId: Number(e.target.value) || undefined }))}>
+              {classLevels.map(l => <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>)}
+            </Select>
+          </FormControl>
           <TextField
             label="Descrição" value={form.description ?? ''}
             onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
             placeholder="Breve descrição da disciplina e seus objectivos…"
             fullWidth size="small" multiline rows={3}
-            inputProps={{ maxLength: 1000 }} sx={inputSx}
+            slotProps={{ htmlInput: { maxLength: 1000 } }} sx={inputSx}
             helperText={`${(form.description ?? '').length}/1000`}
           />
         </DialogContent>

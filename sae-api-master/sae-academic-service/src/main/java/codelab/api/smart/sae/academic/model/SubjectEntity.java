@@ -28,6 +28,12 @@ public class SubjectEntity extends UpdatableEntity {
     @Column(name = "CODE", length = 20)
     private String code;
 
+    @Column(name = "CLASS_LEVEL_ID")
+    private Long classLevelId;
+
+    @Column(name = "SCHOOL_ID")
+    private Long schoolId;
+
     public SubjectEntity() {}
 
     public Long getId() { return id; }
@@ -41,4 +47,10 @@ public class SubjectEntity extends UpdatableEntity {
 
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }
+
+    public Long getClassLevelId() { return classLevelId; }
+    public void setClassLevelId(Long classLevelId) { this.classLevelId = classLevelId; }
+
+    public Long getSchoolId() { return schoolId; }
+    public void setSchoolId(Long schoolId) { this.schoolId = schoolId; }
 }

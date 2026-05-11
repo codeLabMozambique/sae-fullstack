@@ -21,26 +21,42 @@ public class SubjectResource {
         return ResponseEntity.ok(subjectService.findAllActive());
     }
 
+    @GetMapping("/by-school/{schoolId}")
+    public ResponseEntity<List<SubjectDTO>> findBySchool(@PathVariable Long schoolId) {
+        return ResponseEntity.ok(subjectService.findBySchool(schoolId));
+    }
+
+    @GetMapping("/by-school/{schoolId}/by-class-level/{classLevelId}")
+    public ResponseEntity<List<SubjectDTO>> findBySchoolAndClassLevel(
+            @PathVariable Long schoolId, @PathVariable Long classLevelId) {
+        return ResponseEntity.ok(subjectService.findBySchoolAndClassLevel(schoolId, classLevelId));
+    }
+
+    @GetMapping("/by-class-level/{classLevelId}")
+    public ResponseEntity<List<SubjectDTO>> findByClassLevel(@PathVariable Long classLevelId) {
+        return ResponseEntity.ok(subjectService.findByClassLevel(classLevelId));
+    }
+
     @PostMapping("/details")
     public ResponseEntity<SubjectDTO> findById(@RequestBody SubjectDTO request) {
         SubjectDTO dto = subjectService.findById(request.getId());
         return dto != null ? ResponseEntity.ok(dto) : ResponseEntity.notFound().build();
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ADMIN','SCHOOL_ADMIN')")
     @PostMapping("/save")
     public ResponseEntity<SubjectDTO> save(@RequestBody SubjectDTO dto) {
         return ResponseEntity.ok(subjectService.save(dto));
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ADMIN','SCHOOL_ADMIN')")
     @PostMapping("/update")
     public ResponseEntity<SubjectDTO> update(@RequestBody SubjectDTO dto) {
         SubjectDTO updated = subjectService.update(dto);
         return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ADMIN','SCHOOL_ADMIN')")
     @PostMapping("/deactivate")
     public ResponseEntity<Void> deactivate(@RequestBody SubjectDTO request) {
         subjectService.deactivate(request.getId());

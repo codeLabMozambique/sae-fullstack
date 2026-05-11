@@ -18,4 +18,5 @@ public interface StudentProfileRepository extends JpaRepository<StudentProfileEn
     Optional<StudentProfileEntity> findByUsername(@Param("username") String username);
 
     List<StudentProfileEntity> findByClassroomId(Long classroomId);
+    List<StudentProfileEntity> findBySchoolId(Long schoolId);
 }

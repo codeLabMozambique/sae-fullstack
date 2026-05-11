@@ -19,6 +19,7 @@ public class UserRoleValidator {
         roleTranslations.put("ADMIN", "Administrador");
         roleTranslations.put("STUDENT", "Estudante");
         roleTranslations.put("ROOT", "Root");
+        roleTranslations.put("SCHOOL_ADMIN", "Administrador de Escola");
     }
 
     public static String validate(String role) {

@@ -33,6 +33,12 @@ public class ClassroomService {
                 .collect(Collectors.toList());
     }
 
+    public List<ClassroomDTO> findBySchool(Long schoolId) {
+        return classroomRepository.findBySchoolIdAndStatus(schoolId, EntityState.ACTIVE).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
     public ClassroomDTO findById(Long id) {
         return classroomRepository.findById(id)
                 .map(this::convertToDTO)

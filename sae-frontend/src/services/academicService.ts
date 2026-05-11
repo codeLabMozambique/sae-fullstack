@@ -31,6 +31,8 @@ export interface SubjectDTO {
   name: string;
   description?: string;
   code?: string;
+  classLevelId?: number;
+  schoolId?: number;
 }
 
 export interface ClassroomDTO {
@@ -65,6 +67,10 @@ export const schoolService = {
 
 export const subjectService = {
   findAll: () => api.get<SubjectDTO[]>('/academic/subject/all').then(r => r.data),
+  findBySchool: (schoolId: number) => api.get<SubjectDTO[]>(`/academic/subject/by-school/${schoolId}`).then(r => r.data),
+  findByClassLevel: (classLevelId: number) => api.get<SubjectDTO[]>(`/academic/subject/by-class-level/${classLevelId}`).then(r => r.data),
+  findBySchoolAndClassLevel: (schoolId: number, classLevelId: number) =>
+    api.get<SubjectDTO[]>(`/academic/subject/by-school/${schoolId}/by-class-level/${classLevelId}`).then(r => r.data),
   save: (dto: SubjectDTO) => api.post<SubjectDTO>('/academic/subject/save', dto).then(r => r.data),
   update: (dto: SubjectDTO) => api.post<SubjectDTO>('/academic/subject/update', dto).then(r => r.data),
   deactivate: (id: number) => api.post('/academic/subject/deactivate', { id }),
@@ -72,6 +78,7 @@ export const subjectService = {
 
 export const classroomService = {
   findAll: () => api.get<ClassroomDTO[]>('/academic/classroom/all').then(r => r.data),
+  findBySchool: (schoolId: number) => api.get<ClassroomDTO[]>(`/academic/classroom/by-school/${schoolId}`).then(r => r.data),
   save: (dto: ClassroomDTO) => api.post<ClassroomDTO>('/academic/classroom/save', dto).then(r => r.data),
   update: (dto: ClassroomDTO) => api.post<ClassroomDTO>('/academic/classroom/update', dto).then(r => r.data),
   deactivate: (id: number) => api.post('/academic/classroom/deactivate', { id }),
