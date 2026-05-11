@@ -1,5 +1,8 @@
 server:
   port: ${SERVER_PORT:8083}
+  error:
+    include-message: always
+    include-binding-errors: always
 
 spring:
   application:
@@ -41,6 +44,8 @@ forum:
     allowed-origins: ${WS_ORIGINS:http://localhost:5173,http://localhost:8080}
   auth-service:
     url: ${AUTH_SERVICE_URL:http://localhost:8081}
+  academic-service:
+    url: ${ACADEMIC_SERVICE_URL:http://localhost:8085}
   mail:
     enabled: ${MAIL_ENABLED:false}
     from: ${MAIL_FROM:projectompe@gmail.com}

@@ -36,9 +36,15 @@ public class AuthServiceClient {
             String[] specializations = restTemplate.getForObject(url, String[].class);
             log.info("Auth service returned specializations: {}", (Object) specializations);
             
+            if (specializations == null) {
+                log.warn("Auth service returned null specializations for professor '{}'", professorUsername);
+                return true; // Fallback
+            }
+
             String normalizedArea = normalize(disciplina.name());
             for (String spec : specializations) {
                 String normalizedSpec = normalize(spec);
+                if (normalizedSpec.isEmpty()) continue; // null/vazio não pode matchar tudo
                 log.info("Comparing normalized spec '{}' with normalized area '{}'", normalizedSpec, normalizedArea);
                 if (normalizedSpec.contains(normalizedArea) || normalizedArea.contains(normalizedSpec)) {
                     log.info("Match found!");
@@ -65,6 +71,7 @@ public class AuthServiceClient {
             List<String> disciplines = new java.util.ArrayList<>();
             for (String spec : specs) {
                 String normalizedSpec = normalize(spec);
+                if (normalizedSpec.isEmpty()) continue; // null/vazio não pode matchar tudo
                 for (codelab.api.smart.sae.forum.enums.DisciplinaEnum d : codelab.api.smart.sae.forum.enums.DisciplinaEnum.values()) {
                     String normalizedEnum = normalize(d.name());
                     if (normalizedSpec.contains(normalizedEnum) || normalizedEnum.contains(normalizedSpec)) {
@@ -75,19 +82,38 @@ public class AuthServiceClient {
                     }
                 }
             }
-            if (disciplines.isEmpty()) {
-                // Fallback: sem disciplinas reconhecidas → inclui todas (consistente com canProfessorAnswerArea)
-                for (codelab.api.smart.sae.forum.enums.DisciplinaEnum d : codelab.api.smart.sae.forum.enums.DisciplinaEnum.values()) {
-                    disciplines.add(d.name());
-                }
-            }
-            return disciplines;
+            return disciplines; // lista vazia → professor sem especialidade registada não vê nada
         } catch (Exception e) {
             log.warn("Não foi possível resolver disciplinas do professor '{}': {}", professorUsername, e.getMessage());
-            return Arrays.stream(codelab.api.smart.sae.forum.enums.DisciplinaEnum.values())
-                .map(Enum::name)
-                .collect(java.util.stream.Collectors.toList());
+            return Collections.emptyList();
         }
+    }
+
+    public Long getStudentClassroomId(String username, String jwtToken) {
+        try {
+            String url = authServiceUrl + "/users/student-profile-by-username?username=" + username;
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.set("Authorization", jwtToken);
+            org.springframework.http.HttpEntity<Void> entity = new org.springframework.http.HttpEntity<>(headers);
+            org.springframework.http.ResponseEntity<StudentProfileResponse> response =
+                restTemplate.exchange(url,
+                    java.util.Objects.requireNonNull(org.springframework.http.HttpMethod.GET),
+                    entity, StudentProfileResponse.class);
+            StudentProfileResponse body = response.getBody();
+            return body != null ? body.getClassroomId() : null;
+        } catch (Exception e) {
+            log.warn("Não foi possível obter classroomId do estudante '{}': {}", username, e.getMessage());
+            return null;
+        }
+    }
+
+    public static class StudentProfileResponse {
+        private Long classroomId;
+        private String grade;
+        public Long getClassroomId() { return classroomId; }
+        public void setClassroomId(Long classroomId) { this.classroomId = classroomId; }
+        public String getGrade() { return grade; }
+        public void setGrade(String grade) { this.grade = grade; }
     }
 
     public List<ProfessorInfo> getProfessorsByDisciplina(codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina) {

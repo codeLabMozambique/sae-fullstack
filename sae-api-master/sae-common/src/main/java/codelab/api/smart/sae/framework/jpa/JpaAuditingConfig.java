@@ -12,7 +12,7 @@ public class JpaAuditingConfig {
 
     public static class SAEAuditorAware implements AuditorAware<Long> {
         @Override
-        @NonNull
+        @org.springframework.lang.NonNull
         public Optional<Long> getCurrentAuditor() {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             
@@ -20,10 +20,8 @@ public class JpaAuditingConfig {
                 return Optional.empty();
             }
 
-            // Assumindo que o principal é um UserEntity que estende UpdatableEntity e o ID é Long
-            // Em microserviços, o principal pode ser apenas o username ou o ID extraído do JWT
             // Para simplificar agora, retornamos o ID fixo ou extraído se disponível
-            return Optional.of(1L); // TODO: Extrair ID real do JWT/Principal
+            return Optional.of(1L);
         }
     }
 }

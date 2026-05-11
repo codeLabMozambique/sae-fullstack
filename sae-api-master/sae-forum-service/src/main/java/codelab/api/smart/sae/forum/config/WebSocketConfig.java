@@ -15,15 +15,15 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private String[] allowedOrigins;
 
     @Override
-    public void configureMessageBroker(MessageBrokerRegistry registry) {
+    public void configureMessageBroker(@org.springframework.lang.NonNull MessageBrokerRegistry registry) {
         registry.enableSimpleBroker("/topic");
         registry.setApplicationDestinationPrefixes("/app");
     }
 
     @Override
-    public void registerStompEndpoints(StompEndpointRegistry registry) {
+    public void registerStompEndpoints(@org.springframework.lang.NonNull StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-            .setAllowedOrigins(allowedOrigins)
+            .setAllowedOrigins(java.util.Objects.requireNonNull(allowedOrigins))
             .withSockJS();
     }
 }

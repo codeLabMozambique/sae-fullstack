@@ -8,10 +8,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class EventPublisherService {
 
-    @Autowired
+    @Autowired(required = false)
     private RabbitTemplate rabbitTemplate;
 
     public void publishContentCreated(String contentId, String title, String author) {
+        if (rabbitTemplate == null) return;
         java.util.HashMap<String, Object> message = new java.util.HashMap<>();
         message.put("id", contentId);
         message.put("title", title != null ? title : "");
@@ -21,6 +22,7 @@ public class EventPublisherService {
     }
 
     public void publishReadingProgress(String userId, String contentId, int page) {
+        if (rabbitTemplate == null) return;
         java.util.HashMap<String, Object> message = new java.util.HashMap<>();
         message.put("userId", userId != null ? userId : "");
         message.put("contentId", contentId != null ? contentId : "");

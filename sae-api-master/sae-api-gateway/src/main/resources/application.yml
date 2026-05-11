@@ -33,6 +33,8 @@ spring:
           uri: http://localhost:8082
           predicates:
             - Path=/content/**
+          filters:
+            - StripPrefix=1
 
         # SERVIÇO DE FÓRUM (8083)
         - id: sae-forum-service

@@ -2,6 +2,7 @@ package codelab.api.smart.sae.framework.security;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.http.HttpEntity;
@@ -20,7 +21,6 @@ import codelab.api.smart.sae.user.dto.AuthenticationRequestDTO;
 @Service
 public class ApiGatewayService {
 
-	// TODO: move to database
 	public static final String GATEWAY_AUTH_URL = "http://172.31.4.65:8081/gatewayapi/services/api/v1.0/secure/autenticate";
 
 	public static final String GATEWAY_REQUEST_URL = "http://172.31.4.65:8081/gatewayapi/services/api/v1.0/request";
@@ -43,11 +43,18 @@ public class ApiGatewayService {
 
 		HttpEntity<AuthenticationRequestDTO> request = new HttpEntity<>(new AuthenticationRequestDTO(), headers);
 
-		ResponseEntity<String> response = restTemplate.exchange(ApiGatewayService.GATEWAY_AUTH_URL, HttpMethod.POST,
+		ResponseEntity<String> response = restTemplate.exchange(
+				ApiGatewayService.GATEWAY_AUTH_URL,
+				java.util.Objects.requireNonNull(HttpMethod.POST),
 				request,
 				String.class);
 
-		return response.getHeaders().get("Authorization").get(0);
+		HttpHeaders responseHeaders = response.getHeaders();
+		List<String> authHeaders = responseHeaders.get("Authorization");
+		if (authHeaders == null || authHeaders.isEmpty()) {
+			throw new RuntimeException("Authorization header missing in gateway response");
+		}
+		return authHeaders.get(0);
 
 	}
 
@@ -92,7 +99,7 @@ public class ApiGatewayService {
 		} catch (URISyntaxException e) {
 			return ResponseEntity.of(Optional.empty());
 		}
-		return ResponseEntity.of(optional);
+		return ResponseEntity.of(java.util.Objects.requireNonNull(optional));
 	}
 
 }

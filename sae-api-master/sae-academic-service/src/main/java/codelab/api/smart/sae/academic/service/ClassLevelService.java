@@ -23,7 +23,7 @@ public class ClassLevelService {
                 .collect(Collectors.toList());
     }
 
-    public ClassLevelDTO findById(Long id) {
+    public ClassLevelDTO findById(@org.springframework.lang.NonNull Long id) {
         return classLevelRepository.findById(id)
                 .map(this::convertToDTO)
                 .orElse(null);
@@ -47,7 +47,7 @@ public class ClassLevelService {
     }
 
     @Transactional
-    public void deactivate(Long id) {
+    public void deactivate(@org.springframework.lang.NonNull Long id) {
         classLevelRepository.findById(id).ifPresent(entity -> {
             entity.setStatus(EntityState.INACTIVE);
             classLevelRepository.save(entity);

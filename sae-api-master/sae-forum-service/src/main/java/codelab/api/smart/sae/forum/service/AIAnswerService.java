@@ -85,10 +85,14 @@ public class AIAnswerService {
                 "max_tokens", 1024,
                 "messages", List.of(Map.of("role", "user", "content", prompt)));
 
-            ResponseEntity<Map> resp = rest.exchange(
-                ANTHROPIC_URL, HttpMethod.POST, new HttpEntity<>(body, h), Map.class);
+            ResponseEntity<Map<String, Object>> resp = rest.exchange(
+                ANTHROPIC_URL, HttpMethod.POST, new HttpEntity<>(body, h), 
+                new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
 
-            List<?> content = (List<?>) resp.getBody().get("content");
+            Map<String, Object> responseBody = resp.getBody();
+            if (responseBody == null) return "Nao foi possivel gerar uma resposta automatica.";
+            
+            List<?> content = (List<?>) responseBody.get("content");
             if (content != null && !content.isEmpty())
                 return (String) ((Map<?, ?>) content.get(0)).get("text");
 

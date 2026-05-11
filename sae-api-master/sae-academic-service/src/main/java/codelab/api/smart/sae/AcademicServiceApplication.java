@@ -4,7 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.ComponentScan;
-
+import org.springframework.context.annotation.FilterType;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 
 /**
@@ -14,7 +14,13 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
  */
 @SpringBootApplication
 @EntityScan(basePackages = {"codelab.api.smart.sae"})
-@ComponentScan(basePackages = {"codelab.api.smart.sae"})
+@ComponentScan(
+    basePackages = {"codelab.api.smart.sae"},
+    excludeFilters = @ComponentScan.Filter(
+        type = FilterType.ASSIGNABLE_TYPE,
+        classes = codelab.api.smart.sae.framework.security.SecurityConfig.class
+    )
+)
 @EnableMethodSecurity
 public class AcademicServiceApplication {
 

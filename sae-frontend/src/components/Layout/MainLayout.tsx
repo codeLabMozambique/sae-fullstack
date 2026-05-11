@@ -286,6 +286,7 @@ const MainLayout: React.FC<Props> = ({ children }) => {
   const [subInfo, setSubInfo] = useState<string | null>(null);
   const navigate  = useNavigate();
   const location  = useLocation();
+  const isForumPage = location.pathname.includes('/forum');
   const { user, logout } = useAuth();
 
   const dynamicMenus = (user?.menus ?? []) as MenuDTO[];
@@ -382,7 +383,7 @@ const MainLayout: React.FC<Props> = ({ children }) => {
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', width: '100vw', maxWidth: '100vw', overflow: 'hidden' }}>
       {/* Top App Bar (mobile only) */}
       <AppBar position="fixed" sx={{ display: { sm: 'none' }, bgcolor: '#001B33', boxShadow: 'none' }}>
         <Toolbar>
@@ -420,22 +421,30 @@ const MainLayout: React.FC<Props> = ({ children }) => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 4,
+          minWidth: 0,
+          p: isForumPage ? 0 : 4,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
+          maxWidth: { sm: `calc(100% - ${drawerWidth}px)` },
           mt: { xs: '64px', sm: 0 },
-          minHeight: '100vh',
-          bgcolor: '#f0f2f5',
+          minHeight: isForumPage ? undefined : '100vh',
+          height: isForumPage ? { xs: 'calc(100vh - 64px)', sm: '100vh' } : undefined,
+          bgcolor: isForumPage ? 'white' : '#f0f2f5',
+          overflow: isForumPage ? 'hidden' : undefined,
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
-        {/* Top bar (desktop) */}
-        <Box sx={{ display: { xs: 'none', sm: 'flex' }, justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-          <Box>
-            <Typography variant="h5" fontWeight={700} color="#0A1628">{currentPage}</Typography>
-            <Typography variant="caption" color="text.secondary">
-              Bem-vindo de volta, {user?.fullName || user?.username}
-            </Typography>
+        {/* Top bar (desktop) — hidden on forum pages */}
+        {!isForumPage && (
+          <Box sx={{ display: { xs: 'none', sm: 'flex' }, justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+            <Box>
+              <Typography variant="h5" fontWeight={700} color="#0A1628">{currentPage}</Typography>
+              <Typography variant="caption" color="text.secondary">
+                Bem-vindo de volta, {user?.fullName || user?.username}
+              </Typography>
+            </Box>
           </Box>
-        </Box>
+        )}
         {children}
       </Box>
 

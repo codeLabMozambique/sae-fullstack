@@ -113,4 +113,8 @@ export const forumService = {
   // Assistente IA: gera resposta automática para uma questão especializada
   requestAIAnswer: (questionId: number): Promise<ExpertAnswer> =>
     api.post<ExpertAnswer>(`${BASE}/questions/${questionId}/ai-answer`).then(r => r.data),
+
+  // Disciplinas filtradas pelo nível/grupo do utilizador autenticado (vem da BD)
+  getDisciplinesForMe: (): Promise<string[]> =>
+    api.get<string[]>(`${BASE}/disciplines/for-me`).then(r => r.data),
 };

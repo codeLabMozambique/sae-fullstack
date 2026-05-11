@@ -75,7 +75,7 @@ public class QuizService {
         quiz.setDisciplina(parseDisciplina(dto.getDisciplina()));
         quiz.setTempoLimiteMinutos(dto.getTempoLimiteMinutos());
         quiz.setCreatedBy(createdBy);
-        return toAdminDTO(quizRepository.save(quiz));
+        return toAdminDTO(java.util.Objects.requireNonNull(quizRepository.save(quiz)));
     }
 
     // ── Update ────────────────────────────────────────────────────
@@ -86,7 +86,7 @@ public class QuizService {
         quiz.setDescricao(dto.getDescricao());
         quiz.setDisciplina(parseDisciplina(dto.getDisciplina()));
         quiz.setTempoLimiteMinutos(dto.getTempoLimiteMinutos());
-        return toAdminDTO(quizRepository.save(quiz));
+        return toAdminDTO(java.util.Objects.requireNonNull(quizRepository.save(quiz)));
     }
 
     // ── Delete ────────────────────────────────────────────────────
@@ -101,7 +101,7 @@ public class QuizService {
         QuizEntity quiz = quizRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Quiz não encontrado"));
         quiz.setActive(!quiz.isActive());
-        return toSummary(quizRepository.save(quiz));
+        return toSummary(java.util.Objects.requireNonNull(quizRepository.save(quiz)));
     }
 
     // ── Add question ──────────────────────────────────────────────
@@ -113,7 +113,7 @@ public class QuizService {
         q.setQuiz(quiz);
         q.setEnunciado(dto.getEnunciado());
         q.setOrdemNumero(quiz.getQuestions().size() + 1);
-        q = questionRepository.save(q);
+        q = java.util.Objects.requireNonNull(questionRepository.save(q));
 
         for (CreateOptionDTO optDto : dto.getOptions()) {
             QuizOptionEntity opt = new QuizOptionEntity();
@@ -121,7 +121,7 @@ public class QuizService {
             opt.setTexto(optDto.getTexto());
             opt.setLetra(optDto.getLetra().toUpperCase());
             opt.setCorreta(optDto.isCorreta());
-            optionRepository.save(opt);
+            java.util.Objects.requireNonNull(optionRepository.save(opt));
         }
 
         return toAdminDTO(quizRepository.findById(quizId).get());

@@ -23,9 +23,12 @@ public class ContentServiceClient {
         try {
             String url = contentServiceUrl + "/api/contents/" + contentId +
                     "/sections/text?startPage=" + startPage + "&endPage=" + endPage;
-            ResponseEntity<Map> resp = rest.getForEntity(url, Map.class);
-            if (resp.getBody() != null && resp.getBody().containsKey("text")) {
-                return (String) resp.getBody().get("text");
+            ResponseEntity<Map<String, Object>> resp = rest.exchange(
+                    url, org.springframework.http.HttpMethod.GET, null, 
+                    new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
+            Map<String, Object> body = resp.getBody();
+            if (body != null && body.containsKey("text")) {
+                return (String) body.get("text");
             }
         } catch (Exception e) {
             log.error("Erro ao extrair texto do content service: {}", e.getMessage());
@@ -36,11 +39,14 @@ public class ContentServiceClient {
     public ContentInfo getContentInfo(String contentId) {
         try {
             String url = contentServiceUrl + "/api/contents/" + contentId;
-            ResponseEntity<Map> resp = rest.getForEntity(url, Map.class);
-            if (resp.getBody() != null) {
+            ResponseEntity<Map<String, Object>> resp = rest.exchange(
+                    url, org.springframework.http.HttpMethod.GET, null, 
+                    new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
+            Map<String, Object> body = resp.getBody();
+            if (body != null) {
                 ContentInfo info = new ContentInfo();
-                info.setTitle(String.valueOf(resp.getBody().getOrDefault("title", "Livro")));
-                Object disc = resp.getBody().get("discipline");
+                info.setTitle(String.valueOf(body.getOrDefault("title", "Livro")));
+                Object disc = body.get("discipline");
                 info.setDiscipline(disc != null ? String.valueOf(disc) : null);
                 return info;
             }

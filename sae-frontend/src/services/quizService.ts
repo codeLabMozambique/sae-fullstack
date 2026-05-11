@@ -49,4 +49,7 @@ export const quizService = {
 
   generateFromContent: (dto: GenerateFromContentDTO): Promise<QuizAdmin> =>
     api.post<QuizAdmin>(`${BASE}/quizzes/generate-from-content`, dto).then(r => r.data),
+
+  getDisciplinesAll: (): Promise<string[]> =>
+    api.get<string[]>('/quiz/disciplines/all').then(r => r.data),
 };
