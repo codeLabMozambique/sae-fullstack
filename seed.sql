@@ -361,7 +361,7 @@ INSERT INTO app_transaction (id, status, code, type, label, router_link, positio
 (50, 1, 'PRF-LIB',       'HEADER',    'Biblioteca',         '/professor/library',                3, NULL),
 (51, 1, 'PRF-LIB-001',   'MENU_ITEM', 'Pesquisar',          '/professor/library',                1, 50),
 (52, 1, 'PRF-LIB-002',   'MENU_ITEM', 'Os Meus Conteúdos',  '/professor/library/my-content',     2, 50),
-(53, 1, 'PRF-LIB-003',   'MENU_ITEM', 'Carregar Novo',      '/professor/library/upload',         3, 50),
+-- 'Carregar Novo' removido conforme pedido
 (54, 1, 'PRF-LIB-004',   'MENU_ITEM', 'Categorias',         '/professor/library/categories',     4, 50),
 (55, 1, 'PRF-LIB-005',   'MENU_ITEM', 'Favoritos',          '/professor/library/favorites',      5, 50),
 (56, 1, 'PRF-LIB-006',   'MENU_ITEM', 'Continuar a Ler',    '/professor/library/progress',       6, 50),
@@ -425,7 +425,7 @@ INSERT INTO role_transaction (id, status, role, app_transaction_id) VALUES
 (50, 1, 'PROFESSOR', 50),
 (51, 1, 'PROFESSOR', 51),
 (52, 1, 'PROFESSOR', 52),
-(53, 1, 'PROFESSOR', 53),
+-- (53, 1, 'PROFESSOR', 53), -- Removido
 (54, 1, 'PROFESSOR', 54),
 (55, 1, 'PROFESSOR', 55),
 (56, 1, 'PROFESSOR', 56),
@@ -609,7 +609,16 @@ INSERT INTO app_transaction (id, status, code, type, label, router_link, positio
 -- ── ADMIN — Gestão de Quizzes ────────────────────────────────
 (100, 1, 'ADM-QUIZ',      'HEADER',    'Quizzes',             '/admin/quiz',                 4, NULL),
 (101, 1, 'ADM-QUIZ-001',  'MENU_ITEM', 'Gerir Quizzes',       '/admin/quiz/manage',          1, 100),
-(102, 1, 'ADM-QUIZ-002',  'MENU_ITEM', 'Criar Quiz',          '/admin/quiz/create',          2, 100)
+(102, 1, 'ADM-QUIZ-002',  'MENU_ITEM', 'Criar Quiz',          '/admin/quiz/create',          2, 100),
+
+-- ── STUDENT — Tarefas (Assignments) ─────────────────────────
+(110, 1, 'STD-ASG',       'HEADER',    'Tarefas',             '/student/assignments',        6, NULL),
+(111, 1, 'STD-ASG-001',   'MENU_ITEM', 'Minhas Tarefas',      '/student/assignments',        1, 110),
+(112, 1, 'STD-ASG-002',   'MENU_ITEM', 'Histórico Entregas',  '/student/submissions',        2, 110),
+
+-- ── PROFESSOR — Tarefas (Assignments) ───────────────────────
+(115, 1, 'PRF-ASG',       'HEADER',    'Tarefas',             '/professor/assignments',      6, NULL),
+(116, 1, 'PRF-ASG-001',   'MENU_ITEM', 'Gerir Tarefas',       '/professor/assignments',      1, 115)
 
 ON CONFLICT (id) DO UPDATE SET
     status      = EXCLUDED.status,
@@ -632,7 +641,14 @@ INSERT INTO role_transaction (id, status, role, app_transaction_id) VALUES
 (97,  1, 'PROFESSOR', 97),
 (100, 1, 'ADMIN',     100),
 (101, 1, 'ADMIN',     101),
-(102, 1, 'ADMIN',     102)
+(102, 1, 'ADMIN',     102),
+
+-- Tarefas
+(110, 1, 'STUDENT',   110),
+(111, 1, 'STUDENT',   111),
+(112, 1, 'STUDENT',   112),
+(115, 1, 'PROFESSOR', 115),
+(116, 1, 'PROFESSOR', 116)
 
 ON CONFLICT (id) DO UPDATE SET
     status             = EXCLUDED.status,
