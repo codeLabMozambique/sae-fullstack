@@ -54,6 +54,7 @@ public class PendingAnswersScheduler {
 
         // Group by question area for targeted notification
         Map<Long, List<CollaborativeAnswerEntity>> byQuestion = pending.stream()
+            .filter(a -> a.getQuestionId() != null)
             .collect(Collectors.groupingBy(CollaborativeAnswerEntity::getQuestionId));
 
         StringBuilder body = new StringBuilder();

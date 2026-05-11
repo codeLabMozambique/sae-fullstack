@@ -40,6 +40,7 @@ public class ClassroomService {
     }
 
     public ClassroomDTO findById(Long id) {
+
         return classroomRepository.findById(id)
                 .map(this::convertToDTO)
                 .orElse(null);
@@ -55,15 +56,15 @@ public class ClassroomService {
 
     @Transactional
     public ClassroomDTO update(ClassroomDTO dto) {
-        return classroomRepository.findById(dto.getId())
+        return classroomRepository.findById(java.util.Objects.requireNonNull(dto.getId()))
                 .map(entity -> {
                     updateEntityFromDTO(entity, dto);
-                    return convertToDTO(classroomRepository.save(entity));
+                    return convertToDTO(java.util.Objects.requireNonNull(classroomRepository.save(entity)));
                 }).orElse(null);
     }
 
     @Transactional
-    public void deactivate(Long id) {
+    public void deactivate(@org.springframework.lang.NonNull Long id) {
         classroomRepository.findById(id).ifPresent(entity -> {
             entity.setStatus(EntityState.INACTIVE);
             classroomRepository.save(entity);
@@ -87,13 +88,13 @@ public class ClassroomService {
         entity.setAcademicYear(dto.getAcademicYear());
 
         if (dto.getSchoolId() != null) {
-            SchoolEntity school = schoolRepository.findById(dto.getSchoolId())
+            SchoolEntity school = schoolRepository.findById(java.util.Objects.requireNonNull(dto.getSchoolId()))
                     .orElseThrow(() -> new RuntimeException("School not found"));
             entity.setSchool(school);
         }
 
         if (dto.getClassLevelId() != null) {
-            ClassLevelEntity classLevel = classLevelRepository.findById(dto.getClassLevelId())
+            ClassLevelEntity classLevel = classLevelRepository.findById(java.util.Objects.requireNonNull(dto.getClassLevelId()))
                     .orElseThrow(() -> new RuntimeException("Class Level not found"));
             entity.setClassLevel(classLevel);
         }

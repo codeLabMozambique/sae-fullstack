@@ -23,12 +23,11 @@ public class QuizAttemptService {
     @Autowired private QuizRepository quizRepository;
     @Autowired private QuizAttemptRepository attemptRepository;
     @Autowired private QuizAttemptAnswerRepository answerRepository;
-    @Autowired private QuizOptionRepository optionRepository;
     @Autowired private QuizService quizService;
 
     // ── Start attempt ─────────────────────────────────────────────
     public StartAttemptResponseDTO startAttempt(Long quizId, String username) {
-        QuizEntity quiz = quizRepository.findById(quizId)
+        QuizEntity quiz = quizRepository.findById(java.util.Objects.requireNonNull(quizId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Quiz não encontrado"));
         if (!quiz.isActive())
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quiz não está disponível");
@@ -36,7 +35,7 @@ public class QuizAttemptService {
         QuizAttemptEntity attempt = new QuizAttemptEntity();
         attempt.setQuizId(quizId);
         attempt.setStudentUsername(username);
-        attempt = attemptRepository.save(attempt);
+        attempt = java.util.Objects.requireNonNull(attemptRepository.save(attempt));
 
         StartAttemptResponseDTO response = new StartAttemptResponseDTO();
         response.setAttemptId(attempt.getId());
@@ -46,14 +45,14 @@ public class QuizAttemptService {
 
     // ── Submit attempt ────────────────────────────────────────────
     public QuizResultDTO submitAttempt(Long attemptId, SubmitAttemptDTO dto, String username) {
-        QuizAttemptEntity attempt = attemptRepository.findById(attemptId)
+        QuizAttemptEntity attempt = attemptRepository.findById(java.util.Objects.requireNonNull(attemptId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tentativa não encontrada"));
         if (!attempt.getStudentUsername().equals(username))
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado");
         if (attempt.isCompleted())
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tentativa já submetida");
 
-        QuizEntity quiz = quizRepository.findById(attempt.getQuizId())
+        QuizEntity quiz = quizRepository.findById(java.util.Objects.requireNonNull(attempt.getQuizId()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Quiz não encontrado"));
 
         Map<Long, Long> submittedAnswers = dto.getAnswers() == null ? Map.of() :
@@ -78,7 +77,7 @@ public class QuizAttemptService {
             ans.setQuestionId(question.getId());
             ans.setSelectedOptionId(selectedId);
             ans.setCorrect(isCorrect);
-            savedAnswers.add(answerRepository.save(ans));
+            savedAnswers.add(java.util.Objects.requireNonNull(answerRepository.save(ans)));
         }
 
         int total = quiz.getQuestions().size();
@@ -89,7 +88,7 @@ public class QuizAttemptService {
         attempt.setTotalQuestions(total);
         attempt.setCorrectAnswers(correct);
         attempt.setScore(score);
-        attemptRepository.save(attempt);
+        attemptRepository.save(java.util.Objects.requireNonNull(attempt));
 
         return buildResult(attempt, quiz, savedAnswers);
     }
@@ -97,14 +96,14 @@ public class QuizAttemptService {
     // ── Get result ────────────────────────────────────────────────
     @Transactional(readOnly = true)
     public QuizResultDTO getResult(Long attemptId, String username) {
-        QuizAttemptEntity attempt = attemptRepository.findById(attemptId)
+        QuizAttemptEntity attempt = attemptRepository.findById(java.util.Objects.requireNonNull(attemptId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tentativa não encontrada"));
         if (!attempt.getStudentUsername().equals(username))
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado");
         if (!attempt.isCompleted())
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tentativa ainda não submetida");
 
-        QuizEntity quiz = quizRepository.findById(attempt.getQuizId())
+        QuizEntity quiz = quizRepository.findById(java.util.Objects.requireNonNull(attempt.getQuizId()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Quiz não encontrado"));
         List<QuizAttemptAnswerEntity> answers = answerRepository.findByAttemptId(attemptId);
         return buildResult(attempt, quiz, answers);
@@ -114,7 +113,7 @@ public class QuizAttemptService {
     @Transactional(readOnly = true)
     public List<QuizSummaryDTO> getMyAttempts(String username) {
         return attemptRepository.findByStudentUsernameAndCompleted(username, true).stream()
-                .map(a -> quizRepository.findById(a.getQuizId()).map(q -> {
+                .map(a -> quizRepository.findById(java.util.Objects.requireNonNull(a.getQuizId())).map(q -> {
                     QuizSummaryDTO s = quizService.toSummary(q);
                     s.setMyAttempts(1);
                     s.setBestScore(a.getScore());

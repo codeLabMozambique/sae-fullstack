@@ -21,8 +21,6 @@ public class PasswordGenerator {
 	public static String generate() {
 		
 		SecureRandom random = new SecureRandom();
-		
-        if (length < 1) throw new IllegalArgumentException();
 
         StringBuilder sb = new StringBuilder(length);
         for (int i = 0; i < length; i++) {

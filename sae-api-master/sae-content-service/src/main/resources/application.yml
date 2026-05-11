@@ -1,12 +1,14 @@
 server:
   port: 8082
+
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  application:
+    name: sae-content-service
   tomcat:
     max-swallow-size: 100MB
     max-http-form-post-size: 100MB
-
-spring:
-  application:
-    name: sae-content-service
   servlet:
     multipart:
       enabled: true

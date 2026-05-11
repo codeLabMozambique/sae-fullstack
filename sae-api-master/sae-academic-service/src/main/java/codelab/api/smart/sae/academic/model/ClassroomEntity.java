@@ -38,6 +38,9 @@ public class ClassroomEntity extends UpdatableEntity {
     @Column(name = "ACADEMIC_YEAR")
     private String academicYear;
 
+    @Column(name = "TURMA_GROUP")
+    private String turmaGroup;
+
     public ClassroomEntity() {}
 
     public Long getId() { return id; }
@@ -57,4 +60,7 @@ public class ClassroomEntity extends UpdatableEntity {
 
     public String getAcademicYear() { return academicYear; }
     public void setAcademicYear(String academicYear) { this.academicYear = academicYear; }
+
+    public String getTurmaGroup() { return turmaGroup; }
+    public void setTurmaGroup(String turmaGroup) { this.turmaGroup = turmaGroup; }
 }

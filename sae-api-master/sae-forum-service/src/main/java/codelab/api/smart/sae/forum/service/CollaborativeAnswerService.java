@@ -53,7 +53,7 @@ public class CollaborativeAnswerService {
         answer.setAnsweredBy(studentUsername);
         answer.setValidationStatus(ValidationStatus.PENDENTE);
         answer.setAttachmentId(request.getAttachmentId());
-        answer = answerRepository.save(answer);
+        answer = java.util.Objects.requireNonNull(answerRepository.save(answer));
 
         notificationService.notifyNewAnswer(questionId, "COLLABORATIVE");
 

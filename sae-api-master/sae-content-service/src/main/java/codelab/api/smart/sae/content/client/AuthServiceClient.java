@@ -40,8 +40,8 @@ public class AuthServiceClient {
             String url = authServiceUrl + "/users/by-username?username=" +
                     java.net.URLEncoder.encode(username, java.nio.charset.StandardCharsets.UTF_8);
 
-            ResponseEntity<Map> response = restTemplate.exchange(
-                    url, HttpMethod.GET, entity, Map.class);
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    url, HttpMethod.GET, entity, new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 Object name = response.getBody().get("fullName");

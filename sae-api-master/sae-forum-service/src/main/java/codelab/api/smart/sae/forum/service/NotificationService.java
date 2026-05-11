@@ -14,29 +14,29 @@ public class NotificationService {
 
     public void notifyNewQuestion(Long questionId, String area, String titulo) {
         messagingTemplate.convertAndSend(
-            "/topic/questions/" + area,
-            Map.of("event", "NEW_QUESTION", "id", questionId, "summary", titulo)
+            "/topic/questions/" + java.util.Objects.requireNonNull(area),
+            Map.of("event", "NEW_QUESTION", "id", java.util.Objects.requireNonNull(questionId), "summary", java.util.Objects.requireNonNull(titulo))
         );
     }
 
     public void notifyNewAnswer(Long questionId, String type) {
         messagingTemplate.convertAndSend(
-            "/topic/answers/" + questionId,
-            Map.of("event", "NEW_ANSWER", "id", questionId, "type", type)
+            "/topic/answers/" + java.util.Objects.requireNonNull(questionId),
+            Map.of("event", "NEW_ANSWER", "id", java.util.Objects.requireNonNull(questionId), "type", java.util.Objects.requireNonNull(type))
         );
     }
 
     public void notifyAnswerAccepted(Long questionId, Long answerId) {
         messagingTemplate.convertAndSend(
-            "/topic/answers/" + questionId,
-            Map.of("event", "ANSWER_ACCEPTED", "id", answerId, "questionId", questionId)
+            "/topic/answers/" + java.util.Objects.requireNonNull(questionId),
+            Map.of("event", "ANSWER_ACCEPTED", "id", java.util.Objects.requireNonNull(answerId), "questionId", java.util.Objects.requireNonNull(questionId))
         );
     }
 
     public void notifyAnswerValidated(Long questionId, Long answerId) {
         messagingTemplate.convertAndSend(
-            "/topic/validations/" + questionId,
-            Map.of("event", "ANSWER_VALIDATED", "id", answerId, "questionId", questionId)
+            "/topic/validations/" + java.util.Objects.requireNonNull(questionId),
+            Map.of("event", "ANSWER_VALIDATED", "id", java.util.Objects.requireNonNull(answerId), "questionId", java.util.Objects.requireNonNull(questionId))
         );
     }
 }

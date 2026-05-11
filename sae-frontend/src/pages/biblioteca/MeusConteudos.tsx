@@ -94,8 +94,10 @@ const MeusConteudos: React.FC = () => {
                   }}>
                     {c.uploadedByRole && (
                       <Chip size="small" label={c.uploadedByRole}
-                        sx={{ position: 'absolute', top: 8, right: 8,
-                          bgcolor: 'rgba(255,255,255,0.92)', fontSize: '0.6rem', fontWeight: 700 }}
+                        sx={{
+                          position: 'absolute', top: 8, right: 8,
+                          bgcolor: 'rgba(255,255,255,0.92)', fontSize: '0.6rem', fontWeight: 700
+                        }}
                       />
                     )}
                   </Box>

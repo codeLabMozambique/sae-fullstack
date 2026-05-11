@@ -30,7 +30,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 	private JwtUtil jwtUtil;
 
 	@Override
-	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+	protected void doFilterInternal(@org.springframework.lang.NonNull HttpServletRequest request, @org.springframework.lang.NonNull HttpServletResponse response, @org.springframework.lang.NonNull FilterChain chain)
 			throws ServletException, IOException {
 
 		final String authorizationHeader = request.getHeader(JwtUtil.JWT_HEADER);
@@ -51,7 +51,10 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 		
 		if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-			List<String> rolesList = jwtUtil.extractClaim(jwt, claims -> claims.get("roles", List.class));
+			List<?> rawRoles = jwtUtil.extractClaim(jwt, claims -> claims.get("roles", List.class));
+			List<String> rolesList = rawRoles != null ? 
+					rawRoles.stream().map(Object::toString).collect(Collectors.toList()) : 
+					null;
 			List<SimpleGrantedAuthority> authorities = rolesList != null ? 
 					rolesList.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList()) : 
 					Collections.emptyList();

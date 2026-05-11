@@ -14,6 +14,7 @@ import java.time.Duration;
 
 @Configuration
 @EnableCaching
+@org.springframework.context.annotation.Profile("!local")
 public class RedisConfig {
 
     @Bean

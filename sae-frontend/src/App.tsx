@@ -22,6 +22,11 @@ import StudentQuizPage from './pages/student/StudentQuizPage';
 import ProfessorQuizPage from './pages/professor/ProfessorQuizPage';
 import UsersListPage from './pages/admin/users/UsersListPage';
 import ProfessorClassroomsPage from './pages/professor/ProfessorClassroomsPage';
+import ProfessorTasksPage from './pages/professor/ProfessorTasksPage';
+import ProfessorTaskDetailsPage from './pages/professor/ProfessorTaskDetailsPage';
+import StudentTasksPage from './pages/student/StudentTasksPage';
+import StudentTaskDetailsPage from './pages/student/StudentTaskDetailsPage';
+import StudentSubmissionsPage from './pages/student/StudentSubmissionsPage';
 
 // Biblioteca / Content-service pages
 import ForumList from './pages/forum/ForumList';
@@ -116,6 +121,11 @@ function App() {
             <Route path="/student/forum/new" element={<Layout><StudentForumPage /></Layout>} />
             <Route path="/student/forum/questions" element={<Layout><StudentForumPage /></Layout>} />
 
+            {/* ── STUDENT — Tarefas (Assignments) ───────────── */}
+            <Route path="/student/assignments" element={<Layout><StudentTasksPage /></Layout>} />
+            <Route path="/student/assignments/:id" element={<Layout><StudentTaskDetailsPage /></Layout>} />
+            <Route path="/student/submissions" element={<Layout><StudentSubmissionsPage /></Layout>} />
+
             {/* ── STUDENT — Quizzes ─────────────────────────── */}
             <Route path="/student/quiz" element={<Layout><StudentQuizPage /></Layout>} />
             <Route path="/student/quiz/results" element={<Layout><StudentQuizPage /></Layout>} />
@@ -135,6 +145,10 @@ function App() {
             <Route path="/professor/forum" element={<Layout><StudentForumPage /></Layout>} />
             <Route path="/professor/forum/pending" element={<Layout><StudentForumPage /></Layout>} />
             <Route path="/professor/forum/answered" element={<Layout><StudentForumPage /></Layout>} />
+
+            {/* ── PROFESSOR — Tarefas (Assignments) ─────────── */}
+            <Route path="/professor/assignments" element={<Layout><ProfessorTasksPage /></Layout>} />
+            <Route path="/professor/assignments/:id" element={<Layout><ProfessorTaskDetailsPage /></Layout>} />
 
             {/* ── PROFESSOR — Quizzes ───────────────────────── */}
             <Route path="/professor/quiz" element={<Layout><ProfessorQuizPage /></Layout>} />

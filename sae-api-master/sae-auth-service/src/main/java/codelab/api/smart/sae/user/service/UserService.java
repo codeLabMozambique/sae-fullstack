@@ -5,11 +5,9 @@ package codelab.api.smart.sae.user.service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -298,13 +296,13 @@ public class UserService {
 
     @Transactional
     public UserListDTO updateUser(UserUpdateDTO dto) {
-        UserEntity user = userRepository.findById(dto.getUserId())
+        UserEntity user = userRepository.findById(java.util.Objects.requireNonNull(dto.getUserId()))
                 .orElseThrow(() -> new BusinessException("Utilizador não encontrado"));
         if (dto.getFullname() != null && !dto.getFullname().trim().isEmpty())
             user.setFullname(dto.getFullname());
         if (dto.getEmail() != null && !dto.getEmail().trim().isEmpty())
             user.setEmail(dto.getEmail());
-        userRepository.save(user);
+        userRepository.save(java.util.Objects.requireNonNull(user));
         return new UserListDTO(
                 user.getId(), user.getUsername(), user.getFullname(), user.getEmail(),
                 user.getUsername(),
@@ -330,7 +328,7 @@ public class UserService {
         if (dto.getDepartment() != null)           p.setDepartment(dto.getDepartment());
         if (dto.getSpecialization() != null)       p.setSpecialization(dto.getSpecialization());
         if (dto.getInstitutionalContact() != null) p.setInstitutionalContact(dto.getInstitutionalContact());
-        professorProfileRepository.save(p);
+        professorProfileRepository.save(java.util.Objects.requireNonNull(p));
         return new ProfessorProfileDTO(
                 p.getUser().getId(), p.getUser().getFullname(), p.getUser().getUsername(),
                 p.getUser().getEmail(), p.getSchoolId(), p.getDepartment(),
@@ -363,7 +361,7 @@ public class UserService {
         if (dto.getClassroomId() != null) s.setClassroomId(dto.getClassroomId());
         if (dto.getGrade() != null)       s.setGrade(dto.getGrade());
         if (dto.getAge() != null)         s.setAge(dto.getAge());
-        studentProfileRepository.save(s);
+        studentProfileRepository.save(java.util.Objects.requireNonNull(s));
         return new StudentProfileDTO(
                 s.getUser().getId(), s.getUser().getFullname(), s.getUser().getUsername(),
                 s.getUser().getEmail(), s.getSchoolId(), s.getClassroomId(),
@@ -446,7 +444,14 @@ public class UserService {
 
     public String[] getProfessorSpecializations(String username) {
         return professorProfileRepository.findByUserUsername(username)
-            .map(profile -> new String[]{profile.getSpecialization()})
+            .map(profile -> {
+                String spec = profile.getSpecialization();
+                if (spec == null || spec.isBlank()) return new String[]{};
+                return java.util.Arrays.stream(spec.split("[,;/\\n]"))
+                    .map(String::trim)
+                    .filter(s -> !s.isBlank())
+                    .toArray(String[]::new);
+            })
             .orElse(new String[]{});
     }
 

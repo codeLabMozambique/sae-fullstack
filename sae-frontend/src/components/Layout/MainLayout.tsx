@@ -36,6 +36,7 @@ import {
   Class as ClassIcon,
   MenuBook as MenuBookIcon,
   Quiz as QuizIcon,
+  Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import OfflineIndicator from '../OfflineIndicator';
@@ -61,19 +62,11 @@ const staticMenuItems = [
 /* ── Icon map for dynamic menus by code (parent headers) ── */
 function menuIcon(code: string): React.ReactNode {
   if (code === '02') return <AdminIcon />;         // Gestão Académica (Admin)
-  if (code === '03') return <SchoolIcon />;        // Área do Professor
-  if (code === '04') return <DashboardIcon />;     // Área do Aluno
+  if (code === '03' || code === 'PRF-ASG') return <SchoolIcon />; // Área do Professor / Tarefas
+  if (code === '04' || code === 'STD-ASG') return <DashboardIcon />; // Área do Aluno / Tarefas
   if (code === '05') return <HomeIcon />;          // Início (Guest)
   if (code.includes('QUIZ')) return <QuizIcon />; // Quiz (all roles)
-  // Legacy
-  if (code.startsWith('ADM-001')) return <GroupIcon />;
-  if (code.startsWith('ADM-002')) return <SchoolIcon />;
-  if (code.startsWith('STD-001')) return <DashboardIcon />;
-  if (code.startsWith('STD-002')) return <ForumIcon />;
-  if (code.startsWith('PRF-001')) return <SchoolIcon />;
-  if (code.startsWith('PRF-002')) return <ForumIcon />;
-  if (code.startsWith('GST'))     return <HomeIcon />;
-  return <AdminIcon />;
+  return <AssignmentIcon />; // Default para novos módulos de tarefas se não bater
 }
 
 /* ── Route-based icon (preciso e semântico) ── */
@@ -97,6 +90,8 @@ function iconByRoute(route: string): React.ReactNode | null {
   if (/\/forum/.test(route))               return <ForumIcon />;
   if (/\/questions/.test(route))            return <ForumIcon />;
   if (/\/stats/.test(route))               return <StatsIcon />;
+  if (/\/assignments/.test(route))         return <AssignmentIcon />;
+  if (/\/submissions/.test(route))         return <AssignmentIcon />;
   // Admin
   if (/\/schools/.test(route))             return <SchoolIcon />;
   if (/\/classrooms/.test(route))          return <ClassroomIcon />;
@@ -291,6 +286,7 @@ const MainLayout: React.FC<Props> = ({ children }) => {
   const [subInfo, setSubInfo] = useState<string | null>(null);
   const navigate  = useNavigate();
   const location  = useLocation();
+  const isForumPage = location.pathname.includes('/forum');
   const { user, logout } = useAuth();
 
   const dynamicMenus = (user?.menus ?? []) as MenuDTO[];
@@ -387,7 +383,7 @@ const MainLayout: React.FC<Props> = ({ children }) => {
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', width: '100vw', maxWidth: '100vw', overflow: 'hidden' }}>
       {/* Top App Bar (mobile only) */}
       <AppBar position="fixed" sx={{ display: { sm: 'none' }, bgcolor: '#001B33', boxShadow: 'none' }}>
         <Toolbar>
@@ -425,22 +421,30 @@ const MainLayout: React.FC<Props> = ({ children }) => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 4,
+          minWidth: 0,
+          p: isForumPage ? 0 : 4,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
+          maxWidth: { sm: `calc(100% - ${drawerWidth}px)` },
           mt: { xs: '64px', sm: 0 },
-          minHeight: '100vh',
-          bgcolor: '#f0f2f5',
+          minHeight: isForumPage ? undefined : '100vh',
+          height: isForumPage ? { xs: 'calc(100vh - 64px)', sm: '100vh' } : undefined,
+          bgcolor: isForumPage ? 'white' : '#f0f2f5',
+          overflow: isForumPage ? 'hidden' : undefined,
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
-        {/* Top bar (desktop) */}
-        <Box sx={{ display: { xs: 'none', sm: 'flex' }, justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-          <Box>
-            <Typography variant="h5" fontWeight={700} color="#0A1628">{currentPage}</Typography>
-            <Typography variant="caption" color="text.secondary">
-              Bem-vindo de volta, {user?.fullName || user?.username}
-            </Typography>
+        {/* Top bar (desktop) — hidden on forum pages */}
+        {!isForumPage && (
+          <Box sx={{ display: { xs: 'none', sm: 'flex' }, justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+            <Box>
+              <Typography variant="h5" fontWeight={700} color="#0A1628">{currentPage}</Typography>
+              <Typography variant="caption" color="text.secondary">
+                Bem-vindo de volta, {user?.fullName || user?.username}
+              </Typography>
+            </Box>
           </Box>
-        </Box>
+        )}
         {children}
       </Box>
 

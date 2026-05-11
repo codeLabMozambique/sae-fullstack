@@ -361,7 +361,7 @@ INSERT INTO app_transaction (id, status, code, type, label, router_link, positio
 (50, 1, 'PRF-LIB',       'HEADER',    'Biblioteca',         '/professor/library',                3, NULL),
 (51, 1, 'PRF-LIB-001',   'MENU_ITEM', 'Pesquisar',          '/professor/library',                1, 50),
 (52, 1, 'PRF-LIB-002',   'MENU_ITEM', 'Os Meus Conteúdos',  '/professor/library/my-content',     2, 50),
-(53, 1, 'PRF-LIB-003',   'MENU_ITEM', 'Carregar Novo',      '/professor/library/upload',         3, 50),
+-- 'Carregar Novo' removido conforme pedido
 (54, 1, 'PRF-LIB-004',   'MENU_ITEM', 'Categorias',         '/professor/library/categories',     4, 50),
 (55, 1, 'PRF-LIB-005',   'MENU_ITEM', 'Favoritos',          '/professor/library/favorites',      5, 50),
 (56, 1, 'PRF-LIB-006',   'MENU_ITEM', 'Continuar a Ler',    '/professor/library/progress',       6, 50),
@@ -425,7 +425,7 @@ INSERT INTO role_transaction (id, status, role, app_transaction_id) VALUES
 (50, 1, 'PROFESSOR', 50),
 (51, 1, 'PROFESSOR', 51),
 (52, 1, 'PROFESSOR', 52),
-(53, 1, 'PROFESSOR', 53),
+-- (53, 1, 'PROFESSOR', 53), -- Removido
 (54, 1, 'PROFESSOR', 54),
 (55, 1, 'PROFESSOR', 55),
 (56, 1, 'PROFESSOR', 56),
@@ -609,7 +609,16 @@ INSERT INTO app_transaction (id, status, code, type, label, router_link, positio
 -- ── ADMIN — Gestão de Quizzes ────────────────────────────────
 (100, 1, 'ADM-QUIZ',      'HEADER',    'Quizzes',             '/admin/quiz',                 4, NULL),
 (101, 1, 'ADM-QUIZ-001',  'MENU_ITEM', 'Gerir Quizzes',       '/admin/quiz/manage',          1, 100),
-(102, 1, 'ADM-QUIZ-002',  'MENU_ITEM', 'Criar Quiz',          '/admin/quiz/create',          2, 100)
+(102, 1, 'ADM-QUIZ-002',  'MENU_ITEM', 'Criar Quiz',          '/admin/quiz/create',          2, 100),
+
+-- ── STUDENT — Tarefas (Assignments) ─────────────────────────
+(110, 1, 'STD-ASG',       'HEADER',    'Tarefas',             '/student/assignments',        6, NULL),
+(111, 1, 'STD-ASG-001',   'MENU_ITEM', 'Minhas Tarefas',      '/student/assignments',        1, 110),
+(112, 1, 'STD-ASG-002',   'MENU_ITEM', 'Histórico Entregas',  '/student/submissions',        2, 110),
+
+-- ── PROFESSOR — Tarefas (Assignments) ───────────────────────
+(115, 1, 'PRF-ASG',       'HEADER',    'Tarefas',             '/professor/assignments',      6, NULL),
+(116, 1, 'PRF-ASG-001',   'MENU_ITEM', 'Gerir Tarefas',       '/professor/assignments',      1, 115)
 
 ON CONFLICT (id) DO UPDATE SET
     status      = EXCLUDED.status,
@@ -632,7 +641,14 @@ INSERT INTO role_transaction (id, status, role, app_transaction_id) VALUES
 (97,  1, 'PROFESSOR', 97),
 (100, 1, 'ADMIN',     100),
 (101, 1, 'ADMIN',     101),
-(102, 1, 'ADMIN',     102)
+(102, 1, 'ADMIN',     102),
+
+-- Tarefas
+(110, 1, 'STUDENT',   110),
+(111, 1, 'STUDENT',   111),
+(112, 1, 'STUDENT',   112),
+(115, 1, 'PROFESSOR', 115),
+(116, 1, 'PROFESSOR', 116)
 
 ON CONFLICT (id) DO UPDATE SET
     status             = EXCLUDED.status,
@@ -642,6 +658,7 @@ ON CONFLICT (id) DO UPDATE SET
 SELECT setval(pg_get_serial_sequence('role_transaction', 'id'), 500);
 
 -- ============================================================
+
 -- 16. SCHOOL_ADMIN_PROFILE — Tabela de perfil do administrador de escola
 -- ============================================================
 
@@ -729,6 +746,126 @@ SELECT setval(pg_get_serial_sequence('role_transaction', 'id'), 500);
 
 ALTER TABLE ac_SUBJECT ADD COLUMN CLASS_LEVEL_ID BIGINT NULL;
 ALTER TABLE ac_SUBJECT ADD COLUMN SCHOOL_ID BIGINT NULL;
+=======
+-- BLOCO 15 — ESG: Escola Secundária
+-- ============================================================
+INSERT INTO ac_school (id, status, created_by, created_date, last_modified_by, last_modified_date, name, city) VALUES
+(4, 1, 0, NOW(), 0, NOW(), 'Escola Secundária SAE', 'Maputo')
+ON CONFLICT (id) DO NOTHING;
+
+SELECT setval(pg_get_serial_sequence('ac_school', 'id'), 10);
+
+-- ============================================================
+-- BLOCO 16 — ESG: Níveis de Ensino (8ª-12ª Classe)
+-- ============================================================
+INSERT INTO ac_class_level (id, status, created_by, created_date, last_modified_by, last_modified_date, name) VALUES
+(11, 1, 0, NOW(), 0, NOW(), '8ª Classe'),
+(12, 1, 0, NOW(), 0, NOW(), '9ª Classe'),
+(13, 1, 0, NOW(), 0, NOW(), '10ª Classe'),
+(14, 1, 0, NOW(), 0, NOW(), '11ª Classe'),
+(15, 1, 0, NOW(), 0, NOW(), '12ª Classe')
+ON CONFLICT (id) DO NOTHING;
+
+SELECT setval(pg_get_serial_sequence('ac_class_level', 'id'), 20);
+
+-- ============================================================
+-- BLOCO 17 — ESG: Turmas com turma_group
+-- A coluna turma_group é adicionada pelo Hibernate (ddl-auto: update)
+-- mas o ALTER TABLE garante compatibilidade em runs sem serviço activo.
+-- ============================================================
+ALTER TABLE IF EXISTS ac_classroom ADD COLUMN IF NOT EXISTS turma_group VARCHAR(10);
+
+INSERT INTO ac_classroom (id, status, created_by, created_date, last_modified_by, last_modified_date, name, school_id, class_level_id, shift, turma_group) VALUES
+(21, 1, 0, NOW(), 0, NOW(), 'Turma A - 8ª Classe',                      4, 11, 'Manhã', NULL),
+(22, 1, 0, NOW(), 0, NOW(), 'Turma A - 9ª Classe',                      4, 12, 'Manhã', NULL),
+(23, 1, 0, NOW(), 0, NOW(), 'Turma A - 10ª Classe',                     4, 13, 'Manhã', NULL),
+(24, 1, 0, NOW(), 0, NOW(), 'Turma A - 11ª Classe (Letras)',            4, 14, 'Manhã', 'A'),
+(25, 1, 0, NOW(), 0, NOW(), 'Turma B - 11ª Classe (Ciências Bio)',      4, 14, 'Manhã', 'B'),
+(26, 1, 0, NOW(), 0, NOW(), 'Turma C - 11ª Classe (Ciências Exactas)', 4, 14, 'Manhã', 'C'),
+(27, 1, 0, NOW(), 0, NOW(), 'Turma A - 12ª Classe (Letras)',            4, 15, 'Manhã', 'A'),
+(28, 1, 0, NOW(), 0, NOW(), 'Turma B - 12ª Classe (Ciências Bio)',      4, 15, 'Manhã', 'B'),
+(29, 1, 0, NOW(), 0, NOW(), 'Turma C - 12ª Classe (Ciências Exactas)', 4, 15, 'Manhã', 'C')
+ON CONFLICT (id) DO NOTHING;
+
+SELECT setval(pg_get_serial_sequence('ac_classroom', 'id'), 30);
+
+-- ============================================================
+-- BLOCO 18 — Actualizar codes dos subjects existentes
+-- A coluna code é adicionada pelo Hibernate; o ALTER TABLE garante
+-- que este bloco pode ser executado standalone.
+-- ============================================================
+ALTER TABLE IF EXISTS ac_subject ADD COLUMN IF NOT EXISTS code        VARCHAR(20);
+ALTER TABLE IF EXISTS ac_subject ADD COLUMN IF NOT EXISTS description VARCHAR(1000);
+
+UPDATE ac_subject SET code = 'MATEMATICA'  WHERE id = 1  AND (code IS NULL OR code = '');
+UPDATE ac_subject SET code = 'PORTUGUES'   WHERE id = 2  AND (code IS NULL OR code = '');
+UPDATE ac_subject SET code = 'FISICA'      WHERE id = 3  AND (code IS NULL OR code = '');
+UPDATE ac_subject SET code = 'QUIMICA'     WHERE id = 4  AND (code IS NULL OR code = '');
+UPDATE ac_subject SET code = 'HISTORIA'    WHERE id = 5  AND (code IS NULL OR code = '');
+UPDATE ac_subject SET code = 'BIOLOGIA'    WHERE id = 6  AND (code IS NULL OR code = '');
+UPDATE ac_subject SET code = 'INGLES'      WHERE id = 7  AND (code IS NULL OR code = '');
+UPDATE ac_subject SET code = 'INFORMATICA' WHERE id = 8  AND (code IS NULL OR code = '');
+UPDATE ac_subject SET code = 'PROGRAMACAO' WHERE id = 9  AND (code IS NULL OR code = '');
+UPDATE ac_subject SET code = 'ECONOMIA'    WHERE id = 10 AND (code IS NULL OR code = '');
+
+-- ============================================================
+-- BLOCO 19 — Subjects em falta para o currículo ESG
+-- ============================================================
+INSERT INTO ac_subject (id, status, created_by, created_date, last_modified_by, last_modified_date, name, code) VALUES
+(11, 1, 0, NOW(), 0, NOW(), 'Geografia', 'GEOGRAFIA'),
+(12, 1, 0, NOW(), 0, NOW(), 'Filosofia', 'FILOSOFIA')
+ON CONFLICT (id) DO NOTHING;
+
+SELECT setval(pg_get_serial_sequence('ac_subject', 'id'), 20);
+
+-- ============================================================
+-- BLOCO 20 — Currículo ESG: ac_class_level_subject
+-- ⚠️  Esta tabela é criada pelo Hibernate (sae-academic-service).
+--    Iniciar o serviço pelo menos uma vez antes de correr este bloco.
+--
+-- Subject IDs: 1=Mat, 2=Port, 3=Fís, 4=Quím, 5=Hist, 6=Bio,
+--              7=Ingl, 8=Inf, 9=Prog, 10=Econ, 11=Geo, 12=Filos
+-- ============================================================
+INSERT INTO ac_class_level_subject (id, class_level_id, subject_id, turma_group) VALUES
+-- 8ª Classe (comum a todos)
+(1,  11, 1, NULL), (2,  11, 2, NULL), (3,  11, 7, NULL),
+(4,  11, 5, NULL), (5,  11, 11, NULL), (6,  11, 6, NULL),
+-- 9ª Classe (comum a todos)
+(7,  12, 1, NULL), (8,  12, 2, NULL), (9,  12, 7, NULL),
+(10, 12, 5, NULL), (11, 12, 11, NULL), (12, 12, 6, NULL),
+-- 10ª Classe (comum + Física, Química, Informática)
+(13, 13, 1, NULL), (14, 13, 2, NULL), (15, 13, 7, NULL),
+(16, 13, 5, NULL), (17, 13, 11, NULL), (18, 13, 6, NULL),
+(19, 13, 3, NULL), (20, 13, 4, NULL), (21, 13, 8, NULL),
+-- 11ª Grupo A — Letras: Port, Mat, Ingl, Filos, Hist
+(22, 14, 2, 'A'), (23, 14, 1, 'A'), (24, 14, 7, 'A'), (25, 14, 12, 'A'), (26, 14, 5, 'A'),
+-- 11ª Grupo B — Ciências Bio: Port, Mat, Ingl, Filos, Fís, Quím, Bio
+(27, 14, 2, 'B'), (28, 14, 1, 'B'), (29, 14, 7, 'B'), (30, 14, 12, 'B'),
+(31, 14, 3, 'B'), (32, 14, 4, 'B'), (33, 14, 6, 'B'),
+-- 11ª Grupo C — Ciências Exactas: Port, Mat, Ingl, Filos, Fís, Quím
+(34, 14, 2, 'C'), (35, 14, 1, 'C'), (36, 14, 7, 'C'), (37, 14, 12, 'C'),
+(38, 14, 3, 'C'), (39, 14, 4, 'C'),
+-- 12ª Grupo A — Letras
+(40, 15, 2, 'A'), (41, 15, 1, 'A'), (42, 15, 7, 'A'), (43, 15, 12, 'A'), (44, 15, 5, 'A'),
+-- 12ª Grupo B — Ciências Bio
+(45, 15, 2, 'B'), (46, 15, 1, 'B'), (47, 15, 7, 'B'), (48, 15, 12, 'B'),
+(49, 15, 3, 'B'), (50, 15, 4, 'B'), (51, 15, 6, 'B'),
+-- 12ª Grupo C — Ciências Exactas
+(52, 15, 2, 'C'), (53, 15, 1, 'C'), (54, 15, 7, 'C'), (55, 15, 12, 'C'),
+(56, 15, 3, 'C'), (57, 15, 4, 'C')
+ON CONFLICT (id) DO NOTHING;
+
+SELECT setval(pg_get_serial_sequence('ac_class_level_subject', 'id'), 100);
+
+-- ============================================================
+-- BLOCO 21 — Actualizar student de teste para a 10ª Classe
+-- Login: +258841111101
+-- ============================================================
+UPDATE student_profile
+SET classroom_id = 23,
+    school_id    = 4,
+    grade        = '10ª Classe'
+WHERE user_id = (SELECT id FROM sae_user WHERE username = '+258841111101');
 
 -- ============================================================
 -- FIM DO SEED PostgreSQL

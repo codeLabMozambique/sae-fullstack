@@ -35,6 +35,11 @@ public class SubjectResource {
     @GetMapping("/by-class-level/{classLevelId}")
     public ResponseEntity<List<SubjectDTO>> findByClassLevel(@PathVariable Long classLevelId) {
         return ResponseEntity.ok(subjectService.findByClassLevel(classLevelId));
+=======
+    @GetMapping("/by-classroom")
+    public ResponseEntity<List<SubjectDTO>> findByClassroom(
+            @RequestParam @org.springframework.lang.NonNull Long classroomId) {
+        return ResponseEntity.ok(subjectService.findByClassroomId(classroomId));
     }
 
     @PostMapping("/details")

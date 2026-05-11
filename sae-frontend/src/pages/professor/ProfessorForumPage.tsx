@@ -17,6 +17,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import ForumIcon from '@mui/icons-material/Forum';
+import QuizIcon from '@mui/icons-material/Quiz';
 import { useAuth } from '../../context/AuthContext';
 import { forumService } from '../../services/forumService';
 import api from '../../services/api';
@@ -589,7 +590,7 @@ export default function ProfessorForumPage() {
   const isLoading = sidebarTab === 'pending' ? loadingPending : loadingAnswered;
 
   return (
-    <Box sx={{ display: 'flex', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
 
       {/* ── SIDEBAR ─────────────────────────────────────────────────────────── */}
       <Box sx={{
@@ -601,31 +602,25 @@ export default function ProfessorForumPage() {
       }}>
         {/* Header */}
         <Box sx={{
-          px: 3, pt: 3, pb: 2,
-          background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
-          position: 'relative', overflow: 'hidden',
+          px: 3, pt: 2.5, pb: 2,
+          bgcolor: 'white',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
         }}>
-          <Box sx={{
-            position: 'absolute', top: -40, right: -40, width: 120, height: 120,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%)',
-          }} />
-
-          <Stack spacing={2.5} sx={{ position: 'relative', zIndex: 1 }}>
+          <Stack spacing={2}>
             <Stack direction="row" spacing={1.5} alignItems="center">
               <Box sx={{
                 p: 1, borderRadius: 2,
-                bgcolor: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)',
-                display: 'flex', alignItems: 'center', border: '1px solid rgba(255,255,255,0.1)',
+                bgcolor: '#FEF3C7',
+                display: 'flex', alignItems: 'center',
               }}>
-                <ForumIcon sx={{ color: '#F59E0B', fontSize: 22 }} />
+                <QuizIcon sx={{ color: '#D97706', fontSize: 20 }} />
               </Box>
               <Box>
-                <Typography fontWeight={800} color="white" variant="subtitle1" sx={{ lineHeight: 1.1, fontSize: 16 }}>
-                  smartSAE
+                <Typography fontWeight={800} color="#0F172A" variant="subtitle1" sx={{ lineHeight: 1.1, fontSize: 15 }}>
+                  PORTAL DE SUPORTE
                 </Typography>
-                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontWeight: 700, letterSpacing: 0.5 }}>
-                  CAIXA DE ENTRADA
+                <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 600, letterSpacing: 0.4 }}>
+                  Caixa de entrada
                 </Typography>
               </Box>
             </Stack>
@@ -636,17 +631,17 @@ export default function ProfessorForumPage() {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon sx={{ color: 'rgba(255,255,255,0.4)', fontSize: 18 }} />
+                    <SearchIcon sx={{ color: '#94A3B8', fontSize: 18 }} />
                   </InputAdornment>
                 ),
               }}
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 3, color: 'white',
-                  '& fieldset': { border: '1px solid rgba(255,255,255,0.1)' },
-                  '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
-                  '&.Mui-focused fieldset': { borderColor: '#F59E0B', borderWidth: 1.5 },
-                  '& input': { py: 1, fontSize: 13, '&::placeholder': { color: 'rgba(255,255,255,0.3)', opacity: 1 } },
+                  bgcolor: '#F8FAFC', borderRadius: 2, color: '#0F172A',
+                  '& fieldset': { border: '1px solid rgba(0,0,0,0.08)' },
+                  '&:hover fieldset': { borderColor: 'rgba(0,0,0,0.15)' },
+                  '&.Mui-focused fieldset': { borderColor: '#D97706', borderWidth: 1.5 },
+                  '& input': { py: 1, fontSize: 13, color: '#0F172A', '&::placeholder': { color: '#94A3B8', opacity: 1 } },
                 },
               }}
             />
@@ -655,12 +650,13 @@ export default function ProfessorForumPage() {
 
         {/* Tab filters */}
         <Box sx={{
-          px: 1, py: 1.5, bgcolor: '#F8FAFC', borderBottom: '1px solid rgba(0,0,0,0.05)',
-          display: 'flex', gap: 0.5,
+          px: 1, py: 1.5, bgcolor: 'white', borderBottom: '1px solid rgba(0,0,0,0.05)',
+          display: 'flex', gap: 0.2, whiteSpace: 'nowrap',
+          overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' },
         }}>
           {[
-            { key: 'pending', label: 'Pendentes', count: pendingList.length, color: '#F59E0B' },
-            { key: 'answered', label: 'Respondidas', count: answeredList.length, color: '#10B981' },
+            { key: 'pending',  label: 'Pendentes',   count: pendingList.length },
+            { key: 'answered', label: 'Respondidas',  count: answeredList.length },
           ].map(item => (
             <Chip
               key={item.key}
@@ -668,12 +664,12 @@ export default function ProfessorForumPage() {
               onClick={() => setSidebarTab(item.key as SidebarTab)}
               sx={{
                 px: 0, height: 32, borderRadius: 2,
-                bgcolor: sidebarTab === item.key ? item.color : 'transparent',
+                bgcolor: sidebarTab === item.key ? '#D97706' : 'transparent',
                 color: sidebarTab === item.key ? 'white' : '#64748B',
                 fontWeight: 800, fontSize: 10.5,
                 border: '1px solid',
-                borderColor: sidebarTab === item.key ? item.color : 'transparent',
-                '&:hover': { bgcolor: sidebarTab === item.key ? item.color : 'rgba(0,0,0,0.05)' },
+                borderColor: sidebarTab === item.key ? '#D97706' : 'transparent',
+                '&:hover': { bgcolor: sidebarTab === item.key ? '#B45309' : 'rgba(0,0,0,0.05)' },
                 transition: 'all 0.2s',
                 '& .MuiChip-label': { px: 1 },
               }}
@@ -713,7 +709,7 @@ export default function ProfessorForumPage() {
       {/* ── CENTER CHAT ──────────────────────────────────────────────────────── */}
       {activeQ ? (
         <Box sx={{
-          flex: 1,
+          flex: 1, minWidth: 0,
           display: isMobile && !activeQ ? 'none' : 'flex',
           flexDirection: 'column', overflow: 'hidden', bgcolor: 'white',
         }}>
