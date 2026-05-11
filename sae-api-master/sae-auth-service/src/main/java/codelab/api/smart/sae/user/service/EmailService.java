@@ -24,12 +24,12 @@ public class EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setFrom(from);
-            helper.setTo(toEmail);
+            helper.setFrom(java.util.Objects.requireNonNull(from));
+            helper.setTo(java.util.Objects.requireNonNull(toEmail));
             helper.setSubject("SAE — As suas credenciais de acesso");
 
             String html = buildHtml(fullname, username, password, role);
-            helper.setText(html, true);
+            helper.setText(java.util.Objects.requireNonNull(html), true);
 
             mailSender.send(message);
         } catch (Exception e) {

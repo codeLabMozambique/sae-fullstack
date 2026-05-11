@@ -52,7 +52,7 @@ public class ForumQuestionService {
         question.setCreatedBy(authorUsername);
         question.setDisciplina(request.getDisciplina());
 
-        question = questionRepository.save(question);
+        question = java.util.Objects.requireNonNull(questionRepository.save(question));
 
         if (QuestionType.ESPECIALIZADO.equals(request.getQuestionType())) {
             notificationService.notifyNewQuestion(question.getId(), question.getDisciplina().name(), question.getTitulo());
@@ -103,7 +103,7 @@ public class ForumQuestionService {
     public void closeQuestion(Long id) {
         ForumQuestionEntity question = getEntityById(id);
         question.setStatus(QuestionStatus.FECHADA);
-        questionRepository.save(question);
+        questionRepository.save(java.util.Objects.requireNonNull(question));
     }
 
     @Transactional
@@ -115,7 +115,7 @@ public class ForumQuestionService {
         }
 
         question.setStatus(QuestionStatus.FECHADA);
-        questionRepository.save(question);
+        questionRepository.save(java.util.Objects.requireNonNull(question));
     }
 
     @Transactional
@@ -131,7 +131,7 @@ public class ForumQuestionService {
                 room.setQuestionType(QuestionType.COLABORATIVO);
                 room.setStatus(QuestionStatus.ABERTA);
                 room.setCreatedBy("system");
-                return QuestionResponseDTO.from(questionRepository.save(room));
+                return QuestionResponseDTO.from(java.util.Objects.requireNonNull(questionRepository.save(room)));
             });
     }
 
@@ -148,7 +148,7 @@ public class ForumQuestionService {
                 room.setQuestionType(QuestionType.ESPECIALIZADO);
                 room.setStatus(QuestionStatus.ABERTA);
                 room.setCreatedBy(studentUsername);
-                return QuestionResponseDTO.from(questionRepository.save(room));
+                return QuestionResponseDTO.from(java.util.Objects.requireNonNull(questionRepository.save(room)));
             });
     }
 
@@ -165,7 +165,7 @@ public class ForumQuestionService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mensagem não pode estar vazia.");
         }
         question.setDescricao(descricao.trim());
-        questionRepository.save(question);
+        questionRepository.save(java.util.Objects.requireNonNull(question));
     }
 
     /**

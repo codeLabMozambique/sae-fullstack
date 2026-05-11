@@ -35,7 +35,7 @@ public class SchoolService {
                 .collect(Collectors.toList());
     }
 
-    public SchoolDTO findById(Long id) {
+    public SchoolDTO findById(@org.springframework.lang.NonNull Long id) {
         return schoolRepository.findById(id)
                 .map(this::convertToDTO)
                 .orElse(null);
@@ -108,15 +108,15 @@ public class SchoolService {
 
     @Transactional
     public SchoolDTO update(SchoolDTO dto) {
-        return schoolRepository.findById(dto.getId())
+        return schoolRepository.findById(java.util.Objects.requireNonNull(dto.getId()))
                 .map(entity -> {
                     updateEntityFromDTO(entity, dto);
-                    return convertToDTO(schoolRepository.save(entity));
+                    return convertToDTO(java.util.Objects.requireNonNull(schoolRepository.save(entity)));
                 }).orElse(null);
     }
 
     @Transactional
-    public void deactivate(Long id) {
+    public void deactivate(@org.springframework.lang.NonNull Long id) {
         schoolRepository.findById(id).ifPresent(entity -> {
             entity.setStatus(EntityState.INACTIVE);
             schoolRepository.save(entity);
@@ -140,17 +140,6 @@ public class SchoolService {
         entity.setPhone(dto.getPhone());
         entity.setEmail(dto.getEmail());
         entity.setCity(dto.getCity());
-    }
-
-    private ClassroomDTO convertToClassroomDTO(ClassroomEntity entity) {
-        ClassroomDTO dto = new ClassroomDTO();
-        dto.setId(entity.getId());
-        dto.setName(entity.getName());
-        dto.setSchoolId(entity.getSchool().getId());
-        dto.setClassLevelId(entity.getClassLevel().getId());
-        dto.setShift(entity.getShift());
-        dto.setAcademicYear(entity.getAcademicYear());
-        return dto;
     }
 
     private ClassroomFullDTO convertToClassroomFullDTO(ClassroomEntity entity) {
@@ -183,15 +172,6 @@ public class SchoolService {
         dto.setName(entity.getName());
         dto.setDescription(entity.getDescription());
         dto.setCode(entity.getCode());
-        return dto;
-    }
-
-    private ProfessorAssignmentDTO convertToProfessorAssignmentDTO(ProfessorAssignmentEntity entity) {
-        ProfessorAssignmentDTO dto = new ProfessorAssignmentDTO();
-        dto.setId(entity.getId());
-        dto.setProfessorId(entity.getProfessorId());
-        dto.setClassroomId(entity.getClassroom().getId());
-        dto.setSubjectId(entity.getSubject().getId());
         return dto;
     }
 

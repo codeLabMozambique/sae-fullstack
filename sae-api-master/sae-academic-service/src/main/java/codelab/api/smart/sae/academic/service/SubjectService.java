@@ -1,14 +1,21 @@
 package codelab.api.smart.sae.academic.service;
 
 import codelab.api.smart.sae.academic.dto.SubjectDTO;
+import codelab.api.smart.sae.academic.model.ClassLevelSubjectEntity;
+import codelab.api.smart.sae.academic.model.ClassroomEntity;
 import codelab.api.smart.sae.academic.model.SubjectEntity;
+import codelab.api.smart.sae.academic.repository.ClassLevelSubjectRepository;
+import codelab.api.smart.sae.academic.repository.ClassroomRepository;
 import codelab.api.smart.sae.academic.repository.SubjectRepository;
 import codelab.api.smart.sae.framework.jpa.EntityState;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -17,13 +24,19 @@ public class SubjectService {
     @Autowired
     private SubjectRepository subjectRepository;
 
+    @Autowired
+    private ClassroomRepository classroomRepository;
+
+    @Autowired
+    private ClassLevelSubjectRepository classLevelSubjectRepository;
+
     public List<SubjectDTO> findAllActive() {
         return subjectRepository.findByStatus(EntityState.ACTIVE).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    public SubjectDTO findById(Long id) {
+    public SubjectDTO findById(@org.springframework.lang.NonNull Long id) {
         return subjectRepository.findById(id)
                 .map(this::convertToDTO)
                 .orElse(null);
@@ -39,15 +52,40 @@ public class SubjectService {
 
     @Transactional
     public SubjectDTO update(SubjectDTO dto) {
-        return subjectRepository.findById(dto.getId())
+        return subjectRepository.findById(java.util.Objects.requireNonNull(dto.getId()))
                 .map(entity -> {
                     updateEntityFromDTO(entity, dto);
-                    return convertToDTO(subjectRepository.save(entity));
+                    return convertToDTO(java.util.Objects.requireNonNull(subjectRepository.save(entity)));
                 }).orElse(null);
     }
 
+    public List<SubjectDTO> findByClassroomId(Long classroomId) {
+        ClassroomEntity classroom = classroomRepository.findById(classroomId).orElse(null);
+        if (classroom == null) return List.of();
+
+        Long classLevelId = classroom.getClassLevel().getId();
+        String group = classroom.getTurmaGroup();
+
+        // Subjects comuns ao nível (group = null na junction table)
+        Map<Long, SubjectDTO> result = new LinkedHashMap<>();
+        for (ClassLevelSubjectEntity cls : classLevelSubjectRepository.findByClassLevelIdAndTurmaGroupIsNull(classLevelId)) {
+            SubjectEntity s = cls.getSubject();
+            result.put(java.util.Objects.requireNonNull(s.getId()), convertToDTO(s));
+        }
+
+        // Subjects específicos do grupo (A/B/C) para 11ª/12ª classe
+        if (group != null) {
+            for (ClassLevelSubjectEntity cls : classLevelSubjectRepository.findByClassLevelIdAndTurmaGroup(classLevelId, group)) {
+                SubjectEntity s = cls.getSubject();
+                result.put(java.util.Objects.requireNonNull(s.getId()), convertToDTO(s));
+            }
+        }
+
+        return new ArrayList<>(result.values());
+    }
+
     @Transactional
-    public void deactivate(Long id) {
+    public void deactivate(@org.springframework.lang.NonNull Long id) {
         subjectRepository.findById(id).ifPresent(entity -> {
             entity.setStatus(EntityState.INACTIVE);
             subjectRepository.save(entity);

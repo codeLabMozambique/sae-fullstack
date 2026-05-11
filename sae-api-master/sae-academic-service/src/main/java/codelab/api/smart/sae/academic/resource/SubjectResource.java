@@ -21,6 +21,12 @@ public class SubjectResource {
         return ResponseEntity.ok(subjectService.findAllActive());
     }
 
+    @GetMapping("/by-classroom")
+    public ResponseEntity<List<SubjectDTO>> findByClassroom(
+            @RequestParam @org.springframework.lang.NonNull Long classroomId) {
+        return ResponseEntity.ok(subjectService.findByClassroomId(classroomId));
+    }
+
     @PostMapping("/details")
     public ResponseEntity<SubjectDTO> findById(@RequestBody SubjectDTO request) {
         SubjectDTO dto = subjectService.findById(request.getId());

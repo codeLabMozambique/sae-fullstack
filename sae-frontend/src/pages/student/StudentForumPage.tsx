@@ -3,14 +3,11 @@ import { useLocation } from 'react-router-dom';
 import {
   Box, Typography, Stack, Paper, Chip, Avatar,
   Button, Dialog, DialogContent, DialogActions,
-  TextField, Select, MenuItem, FormControl, InputLabel,
-  CircularProgress, Divider, IconButton, Alert, Tooltip, Badge,
-  InputAdornment, useTheme, useMediaQuery, Drawer,
+  TextField, CircularProgress, Divider, IconButton, Alert, Tooltip,
+  InputAdornment, useTheme, useMediaQuery,
 } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SearchIcon from '@mui/icons-material/Search';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import SendIcon from '@mui/icons-material/Send';
 import SchoolIcon from '@mui/icons-material/School';
 import GroupsIcon from '@mui/icons-material/Groups';
@@ -22,9 +19,10 @@ import QuizIcon from '@mui/icons-material/Quiz';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import { useAuth } from '../../context/AuthContext';
 import { forumService } from '../../services/forumService';
-import { professorAssignmentService } from '../../services/academicService';
+import { professorAssignmentService, professorService, schoolService } from '../../services/academicService';
+import type { SchoolDTO } from '../../services/academicService';
 import api from '../../services/api';
-import type { ForumQuestion, DisciplinaEnum, ExpertAnswer, CollaborativeAnswer } from '../../types/forum';
+import type { ForumQuestion, DisciplinaEnum, ExpertAnswer, CollaborativeAnswer, ProfessorInfo } from '../../types/forum';
 import { DISCIPLINA_LABELS, DISCIPLINA_COLOR, DISCIPLINA_EMOJI } from '../../types/forum';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -705,67 +703,85 @@ function DetailPanelCollab({ q }: { q: ForumQuestion }) {
 function NewQuestionDialog({ open, onClose, availableDisciplinas, onCreated }: {
   open: boolean; onClose: () => void;
   availableDisciplinas: { disciplina: DisciplinaEnum; professorName?: string }[];
-  onCreated: () => void;
+  onCreated: (q: ForumQuestion) => void;
 }) {
   const [step, setStep] = useState(1);
   const [disciplina, setDisciplina] = useState<DisciplinaEnum | ''>('');
-  const [type, setType] = useState<'ESPECIALIZADO' | 'COLABORATIVO' | null>(null);
-  const [message, setMessage] = useState('');
-  const [file, setFile] = useState<File | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [schools, setSchools] = useState<SchoolDTO[]>([]);
+  const [loadingSchools, setLoadingSchools] = useState(false);
+  const [disciplinaProfInfos, setDisciplinaProfInfos] = useState<ProfessorInfo[]>([]);
+  const [creating, setCreating] = useState<'ESPECIALIZADO' | 'COLABORATIVO' | null>(null);
   const [error, setError] = useState('');
-  const fileRef = useRef<HTMLInputElement>(null);
 
-  const reset = () => { 
-    setStep(1); setDisciplina(''); setType(null); setMessage(''); setFile(null); setError(''); 
+  const reset = () => {
+    setStep(1); setDisciplina(''); setSchools([]); setDisciplinaProfInfos([]);
+    setCreating(null); setError('');
   };
-  
-  const selected = availableDisciplinas.find(d => d.disciplina === disciplina);
 
-  const handleSubmit = async () => {
-    if (!disciplina || !type || !message.trim()) return;
-    setSaving(true); setError('');
+  // When discipline is selected: fetch professor + school info for step 2
+  useEffect(() => {
+    if (!disciplina) return;
+    setLoadingSchools(true);
+    Promise.all([
+      forumService.getProfessorsByDisciplina(disciplina as DisciplinaEnum),
+      professorService.findAll(),
+      schoolService.findAll(),
+    ]).then(([profInfos, allProfs, allSchools]) => {
+      setDisciplinaProfInfos(profInfos);
+      const profUsernames = new Set(profInfos.map(p => p.username));
+      const matchedProfs = allProfs.filter(p => profUsernames.has(p.username ?? ''));
+      const schoolIds = new Set(matchedProfs.map(p => p.schoolId).filter(Boolean));
+      const filtered = allSchools.filter(s => s.id != null && schoolIds.has(s.id));
+      setSchools(filtered.length > 0 ? filtered : allSchools);
+    }).catch(() => setSchools([])).finally(() => setLoadingSchools(false));
+  }, [disciplina]);
+
+  const handleTypeSelect = async (type: 'ESPECIALIZADO' | 'COLABORATIVO') => {
+    if (!disciplina) return;
+    setCreating(type); setError('');
     try {
-      let attachmentId: string | null = null;
-      if (file) {
-        const att = await uploadAttachment(file, 'forum');
-        attachmentId = att.id;
-      }
-      const titulo = message.split('\n')[0].substring(0, 150).trim()
-        || `Dúvida sobre ${DISCIPLINA_LABELS[disciplina as DisciplinaEnum]}`;
-      await forumService.createQuestion({ titulo, descricao: message.trim(), disciplina: disciplina as DisciplinaEnum, questionType: type });
-      reset(); onCreated(); onClose();
+      const q = type === 'ESPECIALIZADO'
+        ? await forumService.getExpertRoom(disciplina as DisciplinaEnum)
+        : await forumService.getCollaborativeRoom(disciplina as DisciplinaEnum);
+      reset();
+      onCreated(q);
+      onClose();
     } catch (e: any) {
-      setError(e?.response?.data?.message ?? 'Erro ao criar a pergunta.');
-    } finally { setSaving(false); }
+      setError(e?.response?.data?.message ?? 'Erro ao abrir a conversa.');
+    } finally { setCreating(null); }
   };
 
   const handleClose = () => { reset(); onClose(); };
+
+  const stepLabels = [
+    'Seleciona a disciplina da tua dúvida',
+    'Escolhe a escola do professor',
+    'Como queres receber ajuda?',
+  ];
+
+  const onlineProfessor = disciplinaProfInfos.find(p => p.online) ?? disciplinaProfInfos[0] ?? null;
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm"
       PaperProps={{ sx: { borderRadius: 4, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' } }}>
 
-      {/* Header with gradient */}
-      <Box sx={{ 
-        px: 3, pt: 3, pb: 3, 
+      {/* Header */}
+      <Box sx={{
+        px: 3, pt: 3, pb: 3,
         background: 'linear-gradient(135deg, #0f172a 0%, #334155 100%)',
-        color: 'white',
-        position: 'relative'
+        color: 'white', position: 'relative'
       }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
           <Typography fontWeight={800} variant="h6">Nova Conversa</Typography>
           <IconButton size="small" onClick={handleClose} sx={{ color: 'rgba(255,255,255,0.6)' }}><CloseIcon /></IconButton>
         </Stack>
         <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-          {step === 1 ? 'Qual é a disciplina da tua dúvida?' : step === 2 ? 'Como gostarias de obter ajuda?' : 'Escreve a tua mensagem'}
+          {stepLabels[step - 1]}
         </Typography>
-        
-        {/* Progress indicator */}
         <Stack direction="row" spacing={1} mt={2.5}>
           {[1, 2, 3].map(s => (
-            <Box key={s} sx={{ 
-              height: 4, flex: 1, borderRadius: 2, 
+            <Box key={s} sx={{
+              height: 4, flex: 1, borderRadius: 2,
               bgcolor: s <= step ? '#38bdf8' : 'rgba(255,255,255,0.1)',
               transition: 'all 0.3s ease'
             }} />
@@ -773,29 +789,26 @@ function NewQuestionDialog({ open, onClose, availableDisciplinas, onCreated }: {
         </Stack>
       </Box>
 
-      <DialogContent sx={{ p: 4, minHeight: 300, display: 'flex', flexDirection: 'column' }}>
+      <DialogContent sx={{ p: 4, minHeight: 320, display: 'flex', flexDirection: 'column' }}>
         {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
 
-        {/* STEP 1: Disciplina Selection */}
+        {/* STEP 1: Discipline */}
         {step === 1 && (
-          <Box className="animate-fade-in">
+          <Box>
             <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ mb: 2, display: 'block', textTransform: 'uppercase' }}>
               Seleciona a Disciplina
             </Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 1.5 }}>
               {availableDisciplinas.map(({ disciplina: d }) => (
-                <Paper
-                  key={d}
-                  variant="outlined"
+                <Paper key={d} variant="outlined"
                   onClick={() => { setDisciplina(d); setStep(2); }}
                   sx={{
                     p: 2, borderRadius: 3, cursor: 'pointer', textAlign: 'center',
                     transition: 'all 0.2s',
                     borderColor: disciplina === d ? '#38bdf8' : 'divider',
-                    bgcolor: disciplina === d ? 'rgba(56, 189, 248, 0.05)' : 'white',
+                    bgcolor: disciplina === d ? 'rgba(56,189,248,0.05)' : 'white',
                     '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 8px 24px rgba(0,0,0,0.05)', borderColor: '#38bdf8' }
-                  }}
-                >
+                  }}>
                   <Typography sx={{ fontSize: 32, mb: 1 }}>{DISCIPLINA_EMOJI[d]}</Typography>
                   <Typography variant="body2" fontWeight={700}>{DISCIPLINA_LABELS[d]}</Typography>
                 </Paper>
@@ -804,132 +817,113 @@ function NewQuestionDialog({ open, onClose, availableDisciplinas, onCreated }: {
           </Box>
         )}
 
-        {/* STEP 2: Type Selection */}
+        {/* STEP 2: School selection */}
         {step === 2 && (
-          <Box className="animate-fade-in">
+          <Box>
             <Button size="small" onClick={() => setStep(1)} sx={{ mb: 2, color: 'text.secondary', textTransform: 'none' }}>
-              ← Voltar para disciplinas
+              ← Voltar às disciplinas
             </Button>
-            <Typography variant="h6" fontWeight={800} mb={3}>Escolhe o formato da ajuda</Typography>
-            
+            <Stack direction="row" spacing={1.5} alignItems="center" mb={2.5}
+              sx={{ p: 1.5, bgcolor: '#F8FAFC', borderRadius: 2, border: '1px solid #E2E8F0' }}>
+              <Typography sx={{ fontSize: 22 }}>{DISCIPLINA_EMOJI[disciplina as DisciplinaEnum]}</Typography>
+              <Box>
+                <Typography variant="body2" fontWeight={800} color="#1E293B">{DISCIPLINA_LABELS[disciplina as DisciplinaEnum]}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {disciplinaProfInfos.length} professor{disciplinaProfInfos.length !== 1 ? 'es' : ''} disponíve{disciplinaProfInfos.length !== 1 ? 'is' : 'l'}
+                </Typography>
+              </Box>
+            </Stack>
+
+            {loadingSchools ? (
+              <Box display="flex" justifyContent="center" pt={3}><CircularProgress size={28} /></Box>
+            ) : (
+              <Stack spacing={1.5}>
+                {schools.map(school => (
+                  <Paper key={school.id} variant="outlined"
+                    onClick={() => setStep(3)}
+                    sx={{
+                      p: 2, borderRadius: 3, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: 2,
+                      transition: 'all 0.2s',
+                      '&:hover': { borderColor: '#38bdf8', transform: 'translateX(4px)', bgcolor: 'rgba(56,189,248,0.03)' }
+                    }}>
+                    <Avatar sx={{ width: 44, height: 44, bgcolor: '#EFF6FF', color: '#2563EB' }}>
+                      <SchoolIcon />
+                    </Avatar>
+                    <Box flex={1} minWidth={0}>
+                      <Typography variant="body2" fontWeight={700} noWrap>{school.name}</Typography>
+                      <Typography variant="caption" color="text.secondary">{school.city}</Typography>
+                    </Box>
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: onlineProfessor?.online ? '#10B981' : '#94A3B8', flexShrink: 0 }} />
+                  </Paper>
+                ))}
+                {schools.length === 0 && (
+                  <Box sx={{ textAlign: 'center', py: 3 }}>
+                    <Typography variant="body2" color="text.secondary">Nenhuma escola encontrada</Typography>
+                    <Button size="small" sx={{ mt: 1 }} onClick={() => setStep(3)}>Continuar mesmo assim</Button>
+                  </Box>
+                )}
+              </Stack>
+            )}
+          </Box>
+        )}
+
+        {/* STEP 3: Type selection → immediately opens room */}
+        {step === 3 && (
+          <Box>
+            <Button size="small" onClick={() => setStep(2)} sx={{ mb: 2, color: 'text.secondary', textTransform: 'none' }}>
+              ← Voltar às escolas
+            </Button>
+
             <Stack spacing={2}>
-              <Paper 
-                variant="outlined" 
-                onClick={() => { setType('ESPECIALIZADO'); setStep(3); }}
+              {/* Professor card */}
+              <Paper variant="outlined"
+                onClick={() => !creating && handleTypeSelect('ESPECIALIZADO')}
                 sx={{
-                  p: 2.5, borderRadius: 4, cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  border: '2px solid',
-                  borderColor: type === 'ESPECIALIZADO' ? '#1565c0' : 'divider',
-                  bgcolor: type === 'ESPECIALIZADO' ? 'rgba(21, 101, 192, 0.05)' : 'white',
-                  '&:hover': { transform: 'scale(1.01)', boxShadow: '0 10px 30px rgba(0,0,0,0.06)', borderColor: '#1565c0' },
-                  display: 'flex', alignItems: 'center', gap: 3
-                }}
-              >
+                  p: 2.5, borderRadius: 4, cursor: creating ? 'default' : 'pointer',
+                  border: '2px solid', borderColor: '#1565c0',
+                  bgcolor: 'rgba(21,101,192,0.03)',
+                  transition: 'all 0.2s', opacity: creating && creating !== 'ESPECIALIZADO' ? 0.5 : 1,
+                  '&:hover': !creating ? { transform: 'scale(1.01)', boxShadow: '0 10px 30px rgba(21,101,192,0.08)' } : {},
+                  display: 'flex', alignItems: 'center', gap: 2.5
+                }}>
                 <Avatar sx={{ width: 60, height: 60, bgcolor: '#e0f2fe', color: '#1565c0' }}>
-                  <SchoolIcon sx={{ fontSize: 30 }} />
+                  {creating === 'ESPECIALIZADO' ? <CircularProgress size={26} sx={{ color: '#1565c0' }} /> : <SchoolIcon sx={{ fontSize: 30 }} />}
                 </Avatar>
-                <Box>
+                <Box flex={1}>
                   <Typography fontWeight={800} variant="subtitle1" color="#1565c0">Conversa com Professor</Typography>
-                  <Typography variant="body2" color="text.secondary">Privado · Direto ao especialista da área</Typography>
-                  {selected?.professorName && (
-                    <Typography variant="caption" sx={{ mt: 0.5, display: 'block', color: '#1565c0', fontWeight: 600 }}>
-                      Professor: {selected.professorName}
-                    </Typography>
+                  <Typography variant="body2" color="text.secondary" mb={0.5}>Privado · Direto ao especialista da área</Typography>
+                  {onlineProfessor && (
+                    <Stack direction="row" spacing={0.7} alignItems="center">
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: onlineProfessor.online ? '#10B981' : '#94A3B8' }} />
+                      <Typography variant="caption" fontWeight={700} color={onlineProfessor.online ? '#10B981' : '#94A3B8'}>
+                        {onlineProfessor.fullname} · {onlineProfessor.online ? 'Online agora' : 'Offline'}
+                      </Typography>
+                    </Stack>
                   )}
                 </Box>
               </Paper>
 
-              <Paper 
-                variant="outlined" 
-                onClick={() => { setType('COLABORATIVO'); setStep(3); }}
+              {/* Collaborative card */}
+              <Paper variant="outlined"
+                onClick={() => !creating && handleTypeSelect('COLABORATIVO')}
                 sx={{
-                  p: 2.5, borderRadius: 4, cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  border: '2px solid',
-                  borderColor: type === 'COLABORATIVO' ? '#00A651' : 'divider',
-                  bgcolor: type === 'COLABORATIVO' ? 'rgba(0, 166, 81, 0.05)' : 'white',
-                  '&:hover': { transform: 'scale(1.01)', boxShadow: '0 10px 30px rgba(0,0,0,0.06)', borderColor: '#00A651' },
-                  display: 'flex', alignItems: 'center', gap: 3
-                }}
-              >
+                  p: 2.5, borderRadius: 4, cursor: creating ? 'default' : 'pointer',
+                  border: '2px solid', borderColor: '#00A651',
+                  bgcolor: 'rgba(0,166,81,0.03)',
+                  transition: 'all 0.2s', opacity: creating && creating !== 'COLABORATIVO' ? 0.5 : 1,
+                  '&:hover': !creating ? { transform: 'scale(1.01)', boxShadow: '0 10px 30px rgba(0,166,81,0.08)' } : {},
+                  display: 'flex', alignItems: 'center', gap: 2.5
+                }}>
                 <Avatar sx={{ width: 60, height: 60, bgcolor: '#f0fdf4', color: '#00A651' }}>
-                  <GroupsIcon sx={{ fontSize: 30 }} />
+                  {creating === 'COLABORATIVO' ? <CircularProgress size={26} sx={{ color: '#00A651' }} /> : <GroupsIcon sx={{ fontSize: 30 }} />}
                 </Avatar>
-                <Box>
-                  <Typography fontWeight={800} variant="subtitle1" color="#00A651">Fórum Coletivo</Typography>
-                  <Typography variant="body2" color="text.secondary">Público · Ajuda de toda a turma</Typography>
+                <Box flex={1}>
+                  <Typography fontWeight={800} variant="subtitle1" color="#00A651">Fórum da Turma</Typography>
+                  <Typography variant="body2" color="text.secondary">Público · Debate colaborativo com colegas</Typography>
                 </Box>
               </Paper>
             </Stack>
-          </Box>
-        )}
-
-        {/* STEP 3: Message Input */}
-        {step === 3 && (
-          <Box className="animate-fade-in" sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-            <Button size="small" onClick={() => setStep(2)} sx={{ mb: 2, color: 'text.secondary', textTransform: 'none', alignSelf: 'flex-start' }}>
-              ← Alterar formato de ajuda
-            </Button>
-            
-            <Box sx={{ 
-              p: 2, mb: 2, borderRadius: 3, 
-              bgcolor: type === 'COLABORATIVO' ? 'rgba(0, 166, 81, 0.05)' : 'rgba(21, 101, 192, 0.05)',
-              display: 'flex', alignItems: 'center', gap: 1.5,
-              border: '1px solid',
-              borderColor: type === 'COLABORATIVO' ? 'rgba(0, 166, 81, 0.1)' : 'rgba(21, 101, 192, 0.1)'
-            }}>
-              {type === 'COLABORATIVO' ? <GroupsIcon sx={{ color: '#00A651' }} /> : <SchoolIcon sx={{ color: '#1565c0' }} />}
-              <Typography variant="body2" fontWeight={700} color={type === 'COLABORATIVO' ? '#00A651' : '#1565c0'}>
-                {type === 'COLABORATIVO' ? 'Nova Publicação no Fórum' : 'Mensagem Privada ao Professor'}
-              </Typography>
-              <Chip label={DISCIPLINA_LABELS[disciplina as DisciplinaEnum]} size="small" sx={{ ml: 'auto', fontWeight: 700 }} />
-            </Box>
-
-            <Paper variant="outlined" sx={{ borderRadius: 3, p: 2, flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <TextField 
-                fullWidth multiline minRows={5} maxRows={12}
-                placeholder="Escreve a tua dúvida detalhadamente aqui..."
-                value={message} onChange={e => setMessage(e.target.value)}
-                variant="standard" InputProps={{ disableUnderline: true, sx: { fontSize: 15 } }} 
-              />
-              
-              {file && (
-                <Stack direction="row" spacing={1.2} alignItems="center" mt={2}
-                  sx={{ p: 1.2, bgcolor: '#f1f5f9', borderRadius: 2, border: '1px solid #e2e8f0' }}>
-                  <InsertDriveFileIcon fontSize="small" sx={{ color: '#64748b' }} />
-                  <Typography variant="caption" fontWeight={600} flex={1}>{file.name}</Typography>
-                  <IconButton size="small" onClick={() => setFile(null)}><CloseIcon fontSize="small" /></IconButton>
-                </Stack>
-              )}
-
-              <input ref={fileRef} type="file" style={{ display: 'none' }}
-                onChange={e => { if (e.target.files?.[0]) setFile(e.target.files[0]); e.target.value = ''; }} />
-              
-              <Divider sx={{ my: 2 }} />
-              
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Button 
-                  startIcon={<AttachFileIcon />} 
-                  onClick={() => fileRef.current?.click()}
-                  sx={{ textTransform: 'none', color: '#64748b' }}
-                >
-                  Anexar ficheiro
-                </Button>
-                <Button
-                  variant="contained"
-                  disabled={!message.trim() || saving}
-                  onClick={handleSubmit}
-                  sx={{ 
-                    borderRadius: 3, px: 4, py: 1, fontWeight: 800,
-                    bgcolor: type === 'COLABORATIVO' ? '#00A651' : '#1565c0',
-                    '&:hover': { bgcolor: type === 'COLABORATIVO' ? '#008f44' : '#0d47a1' }
-                  }}
-                >
-                  {saving ? <CircularProgress size={20} color="inherit" /> : 'Publicar Agora'}
-                </Button>
-              </Stack>
-            </Paper>
           </Box>
         )}
       </DialogContent>
@@ -975,6 +969,7 @@ export default function StudentForumPage() {
   const [newOpen, setNewOpen] = useState(false);
   const [accepting, setAccepting] = useState<number | null>(null);
   const [prefillText, setPrefillText] = useState('');
+  const [roomProfessor, setRoomProfessor] = useState<ProfessorInfo | null>(null);
 
   const loadMyQuestions = () => {
     setLoadingMy(true);
@@ -1074,6 +1069,36 @@ export default function StudentForumPage() {
     });
   };
 
+  // Fetch professor info for expert rooms
+  useEffect(() => {
+    if (!activeQ || activeQ.questionType !== 'ESPECIALIZADO') {
+      setRoomProfessor(null);
+      return;
+    }
+    forumService.getProfessorsByDisciplina(activeQ.disciplina)
+      .then(profs => setRoomProfessor(profs[0] ?? null))
+      .catch(() => setRoomProfessor(null));
+  }, [activeQ?.id, activeQ?.disciplina]);
+
+  // Poll for new messages every 5 s while a chat is open
+  useEffect(() => {
+    if (!activeQ) return;
+    const id = setInterval(() => {
+      forumService.getQuestion(activeQ.id).then(detail => {
+        setActiveQ(detail);
+        setMyQuestions(prev => prev.map(q => q.id === detail.id ? detail : q));
+        setGeneralQuestions(prev => prev.map(q => q.id === detail.id ? detail : q));
+      }).catch(() => {});
+      // Refresh professor online status
+      if (activeQ.questionType === 'ESPECIALIZADO') {
+        forumService.getProfessorsByDisciplina(activeQ.disciplina)
+          .then(profs => setRoomProfessor(profs[0] ?? null))
+          .catch(() => {});
+      }
+    }, 5000);
+    return () => clearInterval(id);
+  }, [activeQ?.id]);
+
   const handleAccept = async (answerId: number) => {
     setAccepting(answerId);
     try { await forumService.acceptAnswer(answerId); reloadActiveQ(); }
@@ -1110,7 +1135,7 @@ export default function StudentForumPage() {
   const countForum = generalQuestions.filter(q => q.createdBy?.toLowerCase() !== 'system' && q.questionType === 'COLABORATIVO').length;
 
   return (
-    <Box sx={{ display: 'flex', height: 'calc(100vh - 64px)', overflow: 'hidden', position: 'relative' }}>
+    <Box sx={{ display: 'flex', height: '100%', overflow: 'hidden', position: 'relative' }}>
 
       {/* ── SIDEBAR ─────────────────────────────────────────────────────────── */}
       <Box sx={{
@@ -1120,32 +1145,27 @@ export default function StudentForumPage() {
         bgcolor: 'white', borderRight: '1px solid rgba(0,0,0,0.08)',
         zIndex: 20, flexShrink: 0
       }}>
-        <Box sx={{ 
-          px: 3, pt: 3, pb: 2,
-          background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
-          position: 'relative',
-          overflow: 'hidden'
+        <Box sx={{
+          px: 3, pt: 2.5, pb: 2,
+          bgcolor: 'white',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
         }}>
-          {/* Decorative element */}
-          <Box sx={{ 
-            position: 'absolute', top: -40, right: -40, width: 120, height: 120, 
-            borderRadius: '50%', background: 'radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, transparent 70%)' 
-          }} />
-
-          <Stack spacing={2.5} sx={{ position: 'relative', zIndex: 1 }}>
+          <Stack spacing={2}>
             <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="space-between">
               <Stack direction="row" spacing={1.5} alignItems="center">
-                <Box sx={{ 
-                  p: 1, borderRadius: 2, 
-                  bgcolor: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)',
-                  display: 'flex', alignItems: 'center', border: '1px solid rgba(255,255,255,0.1)'
+                <Box sx={{
+                  p: 1, borderRadius: 2,
+                  bgcolor: isProfessor ? '#FEF3C7' : '#EFF6FF',
+                  display: 'flex', alignItems: 'center',
                 }}>
-                  <QuizIcon sx={{ color: '#38BDF8', fontSize: 22 }} />
+                  <QuizIcon sx={{ color: isProfessor ? '#D97706' : '#2563EB', fontSize: 20 }} />
                 </Box>
                 <Box>
-                  <Typography fontWeight={800} color="white" variant="subtitle1" sx={{ lineHeight: 1.1, fontSize: 16 }}>smartSAE</Typography>
-                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontWeight: 700, letterSpacing: 0.5 }}>
-                    {isProfessor ? 'PORTAL DO PROFESSOR' : 'PORTAL DE SUPORTE'}
+                  <Typography fontWeight={800} color="#0F172A" variant="subtitle1" sx={{ lineHeight: 1.1, fontSize: 15 }}>
+                    PORTAL DE SUPORTE
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 600, letterSpacing: 0.4 }}>
+                    {isProfessor ? 'Vista do Professor' : 'As minhas conversas'}
                   </Typography>
                 </Box>
               </Stack>
@@ -1155,13 +1175,12 @@ export default function StudentForumPage() {
                   <IconButton
                     onClick={() => setNewOpen(true)}
                     sx={{
-                      bgcolor: '#38BDF8', color: '#0F172A',
-                      '&:hover': { bgcolor: '#7DD3FC', transform: 'rotate(90deg)' },
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      width: 40, height: 40, borderRadius: 2
+                      bgcolor: '#EFF6FF', color: '#2563EB',
+                      '&:hover': { bgcolor: '#DBEAFE' },
+                      width: 36, height: 36, borderRadius: 2,
                     }}
                   >
-                    <AddCircleIcon sx={{ fontSize: 24 }} />
+                    <AddCircleIcon sx={{ fontSize: 22 }} />
                   </IconButton>
                 </Tooltip>
               )}
@@ -1173,17 +1192,17 @@ export default function StudentForumPage() {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon sx={{ color: 'rgba(255,255,255,0.4)', fontSize: 18 }} />
+                    <SearchIcon sx={{ color: '#94A3B8', fontSize: 18 }} />
                   </InputAdornment>
                 ),
               }}
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 3, color: 'white',
-                  '& fieldset': { border: '1px solid rgba(255,255,255,0.1)' },
-                  '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
-                  '&.Mui-focused fieldset': { borderColor: '#38BDF8', borderWidth: 1.5 },
-                  '& input': { py: 1, fontSize: 13, '&::placeholder': { color: 'rgba(255,255,255,0.3)', opacity: 1 } }
+                  bgcolor: '#F8FAFC', borderRadius: 2, color: '#0F172A',
+                  '& fieldset': { border: '1px solid rgba(0,0,0,0.08)' },
+                  '&:hover fieldset': { borderColor: 'rgba(0,0,0,0.15)' },
+                  '&.Mui-focused fieldset': { borderColor: isProfessor ? '#D97706' : '#2563EB', borderWidth: 1.5 },
+                  '& input': { py: 1, fontSize: 13, color: '#0F172A', '&::placeholder': { color: '#94A3B8', opacity: 1 } },
                 },
               }}
             />
@@ -1206,7 +1225,7 @@ export default function StudentForumPage() {
           const activeHover = isProfessor ? '#6D28D9' : '#1E40AF';
           return (
             <Box sx={{
-              px: 1, py: 1.5, bgcolor: '#F8FAFC', borderBottom: '1px solid rgba(0,0,0,0.05)',
+              px: 1, py: 1.5, bgcolor: 'white', borderBottom: '1px solid rgba(0,0,0,0.05)',
               display: 'flex', gap: 0.2, whiteSpace: 'nowrap',
               overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' }
             }}>
@@ -1258,9 +1277,9 @@ export default function StudentForumPage() {
 
       {/* ── CENTER CHAT ──────────────────────────────────────────────────────── */}
       {activeQ ? (
-        <Box sx={{ 
-          flex: 1, display: isMobile && !activeQ ? 'none' : 'flex', 
-          flexDirection: 'column', overflow: 'hidden', bgcolor: 'white' 
+        <Box sx={{
+          flex: 1, minWidth: 0, display: isMobile && !activeQ ? 'none' : 'flex',
+          flexDirection: 'column', overflow: 'hidden', bgcolor: 'white'
         }}>
           {/* Chat header */}
           <Box sx={{
@@ -1285,20 +1304,40 @@ export default function StudentForumPage() {
               </Avatar>
               <Box flex={1} minWidth={0}>
                 <Typography variant="subtitle1" fontWeight={800} noWrap sx={{ color: '#0F172A', lineHeight: 1.2, fontSize: { xs: 14, md: 16 } }}>
-                  {activeQ.titulo}
+                  {activeQ.questionType === 'ESPECIALIZADO' && roomProfessor
+                    ? roomProfessor.fullname
+                    : activeQ.titulo}
                 </Typography>
                 <Stack direction="row" spacing={1} alignItems="center" mt={0.5}>
-                  <Box sx={{ 
-                    width: 8, height: 8, borderRadius: '50%', 
-                    bgcolor: activeQ.status === 'ABERTA' ? '#10B981' : '#94A3B8' 
-                  }} />
-                  <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, fontSize: { xs: 10, md: 12 } }}>
-                    {activeQ.status === 'ABERTA' ? 'Ativo' : 'Encerrada'}
-                  </Typography>
-                  <Divider orientation="vertical" flexItem sx={{ height: 12, my: 'auto', mx: 0.5 }} />
-                  <Typography variant="caption" sx={{ color: activeQ.questionType === 'ESPECIALIZADO' ? '#2563EB' : '#10B981', fontWeight: 700, fontSize: { xs: 10, md: 12 } }}>
-                    {activeQ.questionType === 'ESPECIALIZADO' ? 'Prof.' : 'Turma'}
-                  </Typography>
+                  {activeQ.questionType === 'ESPECIALIZADO' && roomProfessor ? (
+                    <>
+                      <Box sx={{
+                        width: 8, height: 8, borderRadius: '50%',
+                        bgcolor: roomProfessor.online ? '#10B981' : '#94A3B8'
+                      }} />
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, fontSize: { xs: 10, md: 12 } }}>
+                        {roomProfessor.online ? 'Online' : 'Offline'}
+                      </Typography>
+                      <Divider orientation="vertical" flexItem sx={{ height: 12, my: 'auto', mx: 0.5 }} />
+                      <Typography variant="caption" sx={{ color: DISCIPLINA_COLOR[activeQ.disciplina] ?? '#64748B', fontWeight: 700, fontSize: { xs: 10, md: 12 } }}>
+                        {DISCIPLINA_EMOJI[activeQ.disciplina]} {DISCIPLINA_LABELS[activeQ.disciplina]}
+                      </Typography>
+                    </>
+                  ) : (
+                    <>
+                      <Box sx={{
+                        width: 8, height: 8, borderRadius: '50%',
+                        bgcolor: activeQ.status === 'ABERTA' ? '#10B981' : '#94A3B8'
+                      }} />
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, fontSize: { xs: 10, md: 12 } }}>
+                        {activeQ.status === 'ABERTA' ? 'Ativo' : 'Encerrado'}
+                      </Typography>
+                      <Divider orientation="vertical" flexItem sx={{ height: 12, my: 'auto', mx: 0.5 }} />
+                      <Typography variant="caption" sx={{ color: '#10B981', fontWeight: 700, fontSize: { xs: 10, md: 12 } }}>
+                        {DISCIPLINA_EMOJI[activeQ.disciplina]} {DISCIPLINA_LABELS[activeQ.disciplina]}
+                      </Typography>
+                    </>
+                  )}
                 </Stack>
               </Box>
               
@@ -1398,7 +1437,11 @@ export default function StudentForumPage() {
         open={newOpen}
         onClose={() => setNewOpen(false)}
         availableDisciplinas={loadingDisciplinas ? [] : availableDisciplinas}
-        onCreated={() => { loadMyQuestions(); setSidebarTab('mine_all'); }}
+        onCreated={(q) => {
+          setActiveQ(q);
+          loadMyQuestions();
+          setSidebarTab(q.questionType === 'ESPECIALIZADO' ? 'mine_all' : 'forum');
+        }}
       />
     </Box>
   );

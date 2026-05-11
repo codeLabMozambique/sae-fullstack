@@ -28,8 +28,6 @@ public class AdminContentService {
     @Autowired
     private EventPublisherService eventPublisherService;
 
-    @Autowired
-    private AuthServiceClient authServiceClient;
 
     public Content uploadContent(MultipartFile file, Content metadata, String adminUser) {
         try {

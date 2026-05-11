@@ -1,6 +1,5 @@
 package codelab.api.smart.sae.academic.model;
 
-import codelab.api.smart.sae.framework.jpa.UpdatableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -11,55 +10,36 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "ac_CLASSROOM")
-public class ClassroomEntity extends UpdatableEntity {
-
-    private static final long serialVersionUID = 1L;
+@Table(name = "ac_class_level_subject")
+public class ClassLevelSubjectEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID")
     private Long id;
 
-    @Column(name = "NAME", nullable = false)
-    private String name;
-
-    @ManyToOne
-    @JoinColumn(name = "school_id", nullable = false)
-    private SchoolEntity school;
-
     @ManyToOne
     @JoinColumn(name = "class_level_id", nullable = false)
     private ClassLevelEntity classLevel;
 
-    @Column(name = "SHIFT")
-    private String shift;
+    @ManyToOne
+    @JoinColumn(name = "subject_id", nullable = false)
+    private SubjectEntity subject;
 
-    @Column(name = "ACADEMIC_YEAR")
-    private String academicYear;
-
+    // null = todos os grupos; 'A', 'B', 'C' = grupo específico (11ª/12ª classe)
     @Column(name = "TURMA_GROUP")
     private String turmaGroup;
 
-    public ClassroomEntity() {}
+    public ClassLevelSubjectEntity() {}
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-
-    public SchoolEntity getSchool() { return school; }
-    public void setSchool(SchoolEntity school) { this.school = school; }
-
     public ClassLevelEntity getClassLevel() { return classLevel; }
     public void setClassLevel(ClassLevelEntity classLevel) { this.classLevel = classLevel; }
 
-    public String getShift() { return shift; }
-    public void setShift(String shift) { this.shift = shift; }
-
-    public String getAcademicYear() { return academicYear; }
-    public void setAcademicYear(String academicYear) { this.academicYear = academicYear; }
+    public SubjectEntity getSubject() { return subject; }
+    public void setSubject(SubjectEntity subject) { this.subject = subject; }
 
     public String getTurmaGroup() { return turmaGroup; }
     public void setTurmaGroup(String turmaGroup) { this.turmaGroup = turmaGroup; }

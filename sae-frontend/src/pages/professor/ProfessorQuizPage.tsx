@@ -19,7 +19,7 @@ import {
 import { quizService } from '../../services/quizService';
 import { searchContents, listSections, createSection, updateSection, deleteSection } from '../../services/contentService';
 import type { Content, ContentSection } from '../../services/contentService';
-import { DISCIPLINAS } from '../../types/quiz';
+import { DISCIPLINAS as DISCIPLINAS_FALLBACK } from '../../types/quiz';
 import type { QuizSummary, QuizAdmin, CreateQuizDTO, CreateQuestionDTO, CreateOptionDTO } from '../../types/quiz';
 
 const LETTERS = ['A', 'B', 'C', 'D'];
@@ -64,7 +64,19 @@ export default function ProfessorQuizPage() {
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const [quizDetails, setQuizDetails] = useState<Record<number, QuizAdmin>>({});
 
+  const [disciplinas, setDisciplinas] = useState<{ value: string; label: string }[]>(DISCIPLINAS_FALLBACK);
+
   useEffect(() => { loadQuizzes(); }, []);
+
+  useEffect(() => {
+    const labelMap = Object.fromEntries(DISCIPLINAS_FALLBACK.map(d => [d.value, d.label]));
+    quizService.getDisciplinesAll()
+      .then(list => {
+        if (list && list.length > 0)
+          setDisciplinas(list.map(d => ({ value: d, label: labelMap[d] ?? d })));
+      })
+      .catch(() => {});
+  }, []);
 
   const loadQuizzes = () => {
     setLoading(true);
@@ -596,7 +608,7 @@ export default function ProfessorQuizPage() {
               onChange={e => setQuizForm(p => ({ ...p, descricao: e.target.value }))} />
             <TextField select label="Disciplina *" fullWidth value={quizForm.disciplina}
               onChange={e => setQuizForm(p => ({ ...p, disciplina: e.target.value }))}>
-              {DISCIPLINAS.map(d => <MenuItem key={d.value} value={d.value}>{d.label}</MenuItem>)}
+              {disciplinas.map(d => <MenuItem key={d.value} value={d.value}>{d.label}</MenuItem>)}
             </TextField>
             <TextField type="number" label="Tempo limite (minutos)" fullWidth
               value={quizForm.tempoLimiteMinutos ?? ''}

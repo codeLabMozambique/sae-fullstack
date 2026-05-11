@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogContent, Box, Typography, TextField, Button,
   CircularProgress, Stack, Alert, Avatar, IconButton, Divider,
@@ -10,7 +10,7 @@ import { forumService } from '../../services/forumService';
 import MenuItem from '@mui/material/MenuItem';
 import type { QuestionType, DisciplinaEnum } from '../../types/forum';
 
-const DISCIPLINAS: DisciplinaEnum[] = [
+const DISCIPLINAS_FALLBACK: DisciplinaEnum[] = [
   'MATEMATICA', 'FISICA', 'QUIMICA', 'BIOLOGIA', 'PORTUGUES',
   'HISTORIA', 'GEOGRAFIA', 'INGLES', 'FILOSOFIA', 'INFORMATICA', 'GERAL'
 ];
@@ -51,6 +51,19 @@ const NewQuestion: React.FC<Props> = ({ open, onClose }) => {
   const [questionType, setQuestionType] = useState<QuestionType>('ESPECIALIZADO');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [disciplinas, setDisciplinas] = useState<DisciplinaEnum[]>(DISCIPLINAS_FALLBACK);
+
+  useEffect(() => {
+    if (!open) return;
+    forumService.getDisciplinesForMe()
+      .then(list => {
+        if (list && list.length > 0) {
+          setDisciplinas(list as DisciplinaEnum[]);
+          if (!list.includes(disciplina)) setDisciplina(list[0] as DisciplinaEnum);
+        }
+      })
+      .catch(() => setDisciplinas(DISCIPLINAS_FALLBACK));
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selected = TYPES.find(t => t.value === questionType)!;
 
@@ -285,7 +298,7 @@ const NewQuestion: React.FC<Props> = ({ open, onClose }) => {
             },
           }}
         >
-          {DISCIPLINAS.map((disc) => (
+          {disciplinas.map((disc) => (
             <MenuItem key={disc} value={disc}>
               {disc}
             </MenuItem>

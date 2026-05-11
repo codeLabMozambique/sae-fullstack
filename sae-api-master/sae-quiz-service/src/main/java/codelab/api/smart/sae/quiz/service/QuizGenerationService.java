@@ -74,7 +74,7 @@ public class QuizGenerationService {
         quiz.setEndPage(endPage);
         quiz.setAiGenerated(true);
         quiz.setActive(true);
-        quiz = quizRepository.save(quiz);
+        quiz = java.util.Objects.requireNonNull(quizRepository.save(quiz));
 
         int order = 1;
         for (GeneratedQuestion gq : questions) {
@@ -82,7 +82,7 @@ public class QuizGenerationService {
             q.setQuiz(quiz);
             q.setEnunciado(gq.enunciado);
             q.setOrdemNumero(order++);
-            q = questionRepository.save(q);
+            q = java.util.Objects.requireNonNull(questionRepository.save(q));
             for (GeneratedOption go : gq.options) {
                 QuizOptionEntity opt = new QuizOptionEntity();
                 opt.setQuestion(q);
@@ -127,10 +127,13 @@ public class QuizGenerationService {
             "model", MODEL, "max_tokens", 4096,
             "messages", List.of(Map.of("role", "user", "content", prompt)));
 
-        ResponseEntity<Map> resp = rest.exchange(
-            ANTHROPIC_URL, HttpMethod.POST, new HttpEntity<>(body, h), Map.class);
+        ResponseEntity<Map<String, Object>> resp = rest.exchange(
+            ANTHROPIC_URL, HttpMethod.POST, new HttpEntity<>(body, h), 
+            new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
 
-        List<?> content = (List<?>) resp.getBody().get("content");
+        Map<String, Object> responseBody = resp.getBody();
+        if (responseBody == null) throw new RuntimeException("Empty response from Anthropic API");
+        List<?> content = (List<?>) responseBody.get("content");
         String json = (String) ((Map<?, ?>) content.get(0)).get("text");
         json = json.trim();
         if (json.startsWith("```")) json = json.replaceAll("```json\\n?", "").replaceAll("```\\n?", "").trim();
