@@ -69,18 +69,12 @@ export function assignmentFileUrl(assignmentId: number): string {
 // ────────────────────────────────────────────────────────────
 
 export async function createAssignment(payload: CreateAssignmentPayload): Promise<Assignment> {
-  const fd = new FormData();
-  fd.append('title', payload.title);
-  fd.append('classroomId', payload.classroomId.toString());
-  fd.append('deadline', payload.deadline);
-  fd.append('maxScore', payload.maxScore.toString());
-  if (payload.description) {
-    fd.append('description', new Blob([payload.description], { type: 'text/plain' }));
-  }
-  if (payload.file) fd.append('file', payload.file);
-
-  const { data } = await api.post<Assignment>('/content/api/professor/assignments', fd, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+  const { data } = await api.post<Assignment>('/content/api/professor/assignments', {
+    classroomId: payload.classroomId,
+    title: payload.title,
+    description: payload.description ?? null,
+    deadline: payload.deadline,
+    maxScore: payload.maxScore,
   });
   return data;
 }

@@ -746,7 +746,7 @@ SELECT setval(pg_get_serial_sequence('role_transaction', 'id'), 500);
 
 ALTER TABLE ac_SUBJECT ADD COLUMN CLASS_LEVEL_ID BIGINT NULL;
 ALTER TABLE ac_SUBJECT ADD COLUMN SCHOOL_ID BIGINT NULL;
-=======
+
 -- BLOCO 15 — ESG: Escola Secundária
 -- ============================================================
 INSERT INTO ac_school (id, status, created_by, created_date, last_modified_by, last_modified_date, name, city) VALUES
