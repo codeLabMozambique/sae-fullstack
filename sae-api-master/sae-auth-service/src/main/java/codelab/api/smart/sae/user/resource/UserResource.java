@@ -201,6 +201,14 @@ public class UserResource {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    /** Devolve { userId } dado um username — usado por micro-serviços internos */
+    @GetMapping("/user-id-by-username")
+    public ResponseEntity<java.util.Map<String, Object>> getUserIdByUsername(@RequestParam String username) {
+        return userService.findUserIdByUsername(username)
+                .map(id -> ResponseEntity.ok(java.util.Map.<String, Object>of("userId", id)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @PutMapping("/professor/heartbeat")
     public ResponseEntity<Void> professorHeartbeat(Authentication auth) {
         if (auth == null || auth.getAuthorities().stream()

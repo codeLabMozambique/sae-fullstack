@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import {
   Box, Typography, Card, CardContent, Button, Dialog, DialogTitle, DialogContent,
   DialogActions, TextField, MenuItem, Switch, FormControlLabel, IconButton,
@@ -296,8 +296,8 @@ export default function ProfessorQuizPage() {
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Box sx={{ p: 1.2, bgcolor: '#EDE9FE', borderRadius: 2 }}>
-            <QuizIcon sx={{ color: '#7C3AED', fontSize: 28 }} />
+          <Box sx={{ p: 1.2, bgcolor: '#E8F5E9', borderRadius: 2 }}>
+            <QuizIcon sx={{ color: '#00A651', fontSize: 28 }} />
           </Box>
           <Box>
             <Typography variant="h5" fontWeight={800} color="#0A1628">Gestão de Quizzes</Typography>
@@ -306,13 +306,13 @@ export default function ProfessorQuizPage() {
         </Box>
         {activeTab === 0 && (
           <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateQuiz}
-            sx={{ bgcolor: '#7C3AED', '&:hover': { bgcolor: '#6D28D9' }, textTransform: 'none', fontWeight: 700, borderRadius: 2 }}>
+            sx={{ bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' }, textTransform: 'none', fontWeight: 700, borderRadius: 2 }}>
             Criar Quiz
           </Button>
         )}
         {activeTab === 1 && selectedBook && (
           <Button variant="contained" startIcon={<AddIcon />} onClick={openAddSection}
-            sx={{ bgcolor: '#4F46E5', '&:hover': { bgcolor: '#3730A3' }, textTransform: 'none', fontWeight: 700, borderRadius: 2 }}>
+            sx={{ bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' }, textTransform: 'none', fontWeight: 700, borderRadius: 2 }}>
             Adicionar Secção
           </Button>
         )}
@@ -320,8 +320,8 @@ export default function ProfessorQuizPage() {
 
       <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 2, borderBottom: '1px solid #E5E7EB',
         '& .MuiTab-root': { textTransform: 'none', fontWeight: 600, fontSize: '0.9rem' },
-        '& .Mui-selected': { color: '#7C3AED' },
-        '& .MuiTabs-indicator': { bgcolor: '#7C3AED' } }}>
+        '& .Mui-selected': { color: '#00A651' },
+        '& .MuiTabs-indicator': { bgcolor: '#00A651' } }}>
         <Tab label="Quizzes" icon={<QuizIcon fontSize="small" />} iconPosition="start" />
         <Tab label="Secções de Livros" icon={<BookIcon fontSize="small" />} iconPosition="start" />
       </Tabs>
@@ -332,14 +332,14 @@ export default function ProfessorQuizPage() {
       {/* ── Tab 0: Quizzes ─────────────────────────────────────── */}
       {activeTab === 0 && loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-          <CircularProgress sx={{ color: '#7C3AED' }} />
+          <CircularProgress sx={{ color: '#00A651' }} />
         </Box>
       ) : activeTab === 0 && quizzes.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 8 }}>
-          <QuizIcon sx={{ fontSize: 64, color: '#C4B5FD', mb: 2 }} />
+          <QuizIcon sx={{ fontSize: 64, color: '#A5D6A7', mb: 2 }} />
           <Typography color="text.secondary">Ainda não criaste nenhum quiz.</Typography>
           <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateQuiz} sx={{ mt: 2,
-            bgcolor: '#7C3AED', '&:hover': { bgcolor: '#6D28D9' }, textTransform: 'none' }}>
+            bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' }, textTransform: 'none' }}>
             Criar o primeiro quiz
           </Button>
         </Box>
@@ -353,7 +353,7 @@ export default function ProfessorQuizPage() {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                       <Typography variant="subtitle1" fontWeight={700} color="#0A1628" noWrap>{q.titulo}</Typography>
                       <Chip label={q.disciplinaLabel} size="small"
-                        sx={{ bgcolor: '#EDE9FE', color: '#7C3AED', fontWeight: 600, fontSize: '0.7rem', flexShrink: 0 }} />
+                        sx={{ bgcolor: '#E8F5E9', color: '#00A651', fontWeight: 600, fontSize: '0.7rem', flexShrink: 0 }} />
                     </Box>
                     <Typography variant="caption" color="text.secondary">
                       📝 {q.questionCount} questões
@@ -364,13 +364,13 @@ export default function ProfessorQuizPage() {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
                     <FormControlLabel
                       control={<Switch checked={q.active} onChange={() => toggleActive(q.id)}
-                        sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#7C3AED' },
-                          '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: '#7C3AED' } }} />}
+                        sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#00A651' },
+                          '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: '#00A651' } }} />}
                       label={<Typography variant="caption" fontWeight={600}
-                        color={q.active ? '#059669' : '#9CA3AF'}>{q.active ? 'Ativo' : 'Inativo'}</Typography>}
+                        color={q.active ? '#00A651' : '#9CA3AF'}>{q.active ? 'Ativo' : 'Inativo'}</Typography>}
                     />
                     <Tooltip title="Editar quiz">
-                      <IconButton size="small" onClick={() => openEditQuiz(q)} sx={{ color: '#7C3AED' }}>
+                      <IconButton size="small" onClick={() => openEditQuiz(q)} sx={{ color: '#00A651' }}>
                         <EditIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
@@ -398,10 +398,10 @@ export default function ProfessorQuizPage() {
                         </Typography>
                       ) : (
                         quizDetails[q.id].questions.map((question, idx) => (
-                          <Box key={question.id} sx={{ mb: 2, p: 2, bgcolor: '#F9F8FF', borderRadius: 2,
-                            border: '1px solid #DDD6FE' }}>
+                          <Box key={question.id} sx={{ mb: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 2,
+                            border: '1px solid #C8E6C9' }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                              <Typography variant="body2" fontWeight={600} color="#1E0A3C" sx={{ flex: 1, mr: 1 }}>
+                              <Typography variant="body2" fontWeight={600} color="#0A1628" sx={{ flex: 1, mr: 1 }}>
                                 {idx + 1}. {question.enunciado}
                               </Typography>
                               <IconButton size="small" onClick={() => deleteQuestion(q.id, question.id)}
@@ -413,11 +413,11 @@ export default function ProfessorQuizPage() {
                               {question.options.map(opt => (
                                 <Box key={opt.id} sx={{ display: 'flex', alignItems: 'center', gap: 0.5,
                                   px: 1.5, py: 0.5, borderRadius: 1.5,
-                                  bgcolor: opt.correta ? '#DCFCE7' : '#F3F4F6',
-                                  border: `1px solid ${opt.correta ? '#86EFAC' : '#E5E7EB'}` }}>
-                                  {opt.correta && <CheckIcon sx={{ fontSize: 14, color: '#059669' }} />}
+                                  bgcolor: opt.correta ? '#E8F5E9' : '#F3F4F6',
+                                  border: `1px solid ${opt.correta ? '#A5D6A7' : '#E5E7EB'}` }}>
+                                  {opt.correta && <CheckIcon sx={{ fontSize: 14, color: '#00A651' }} />}
                                   <Typography variant="caption" fontWeight={opt.correta ? 700 : 400}
-                                    color={opt.correta ? '#059669' : '#6B7280'}>
+                                    color={opt.correta ? '#00A651' : '#6B7280'}>
                                     {opt.letra}) {opt.texto}
                                   </Typography>
                                 </Box>
@@ -428,13 +428,13 @@ export default function ProfessorQuizPage() {
                       )}
                       <Button variant="outlined" startIcon={<AddIcon />} size="small"
                         onClick={() => openAddQuestion(q.id)}
-                        sx={{ borderColor: '#7C3AED', color: '#7C3AED', textTransform: 'none', borderRadius: 2 }}>
+                        sx={{ borderColor: '#00A651', color: '#00A651', textTransform: 'none', borderRadius: 2 }}>
                         Adicionar Questão
                       </Button>
                     </Box>
                   ) : (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                      <CircularProgress size={24} sx={{ color: '#7C3AED' }} />
+                      <CircularProgress size={24} sx={{ color: '#00A651' }} />
                     </Box>
                   )}
                 </Collapse>
@@ -465,25 +465,25 @@ export default function ProfessorQuizPage() {
               )}
               {books.length === 0 && !bookSearch.trim() && (
                 <Box sx={{ textAlign: 'center', py: 4 }}>
-                  <BookIcon sx={{ fontSize: 48, color: '#C4B5FD', mb: 1 }} />
+                  <BookIcon sx={{ fontSize: 48, color: '#A5D6A7', mb: 1 }} />
                   <Typography variant="body2" color="text.secondary">Pesquisa um livro para definir as suas secções.</Typography>
                 </Box>
               )}
               {books.map(b => (
                 <Card key={b.id} elevation={0} onClick={() => loadBookSections(b)}
-                  sx={{ border: `2px solid ${selectedBook?.id === b.id ? '#4F46E5' : '#E5E7EB'}`,
+                  sx={{ border: `2px solid ${selectedBook?.id === b.id ? '#00A651' : '#E5E7EB'}`,
                     borderRadius: 2, cursor: 'pointer', transition: 'all 0.15s',
-                    bgcolor: selectedBook?.id === b.id ? '#EEF2FF' : '#fff',
-                    '&:hover': { borderColor: '#818CF8' } }}>
+                    bgcolor: selectedBook?.id === b.id ? '#E8F5E9' : '#fff',
+                    '&:hover': { borderColor: '#4caf50' } }}>
                   <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
                     <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
                       {b.thumbnailUrl ? (
                         <Box component="img" src={b.thumbnailUrl} alt={b.title}
                           sx={{ width: 32, height: 44, objectFit: 'cover', borderRadius: 1, flexShrink: 0 }} />
                       ) : (
-                        <Box sx={{ width: 32, height: 44, bgcolor: '#EDE9FE', borderRadius: 1,
+                        <Box sx={{ width: 32, height: 44, bgcolor: '#E8F5E9', borderRadius: 1,
                           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <BookIcon sx={{ color: '#7C3AED', fontSize: 16 }} />
+                          <BookIcon sx={{ color: '#00A651', fontSize: 16 }} />
                         </Box>
                       )}
                       <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -506,7 +506,7 @@ export default function ProfessorQuizPage() {
                 </Box>
               ) : sectionsLoading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                  <CircularProgress sx={{ color: '#4F46E5' }} />
+                  <CircularProgress sx={{ color: '#00A651' }} />
                 </Box>
               ) : (
                 <Box>
@@ -519,26 +519,26 @@ export default function ProfessorQuizPage() {
                         Ainda não há secções definidas para este livro.
                       </Typography>
                       <Button variant="contained" startIcon={<AddIcon />} onClick={openAddSection}
-                        sx={{ bgcolor: '#4F46E5', '&:hover': { bgcolor: '#3730A3' }, textTransform: 'none', fontWeight: 700 }}>
+                        sx={{ bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' }, textTransform: 'none', fontWeight: 700 }}>
                         Criar primeira secção
                       </Button>
                     </Box>
                   ) : (
                     <Stack spacing={1.5}>
                       {bookSections.map(s => (
-                        <Card key={s.id} elevation={0} sx={{ border: '1px solid #DDD6FE', borderRadius: 2 }}>
+                        <Card key={s.id} elevation={0} sx={{ border: '1px solid #C8E6C9', borderRadius: 2 }}>
                           <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                               {s.trimester && (
                                 <Chip label={`${s.trimester}º Tri`} size="small"
-                                  sx={{ bgcolor: '#EEF2FF', color: '#4F46E5', fontWeight: 700, fontSize: '0.7rem', flexShrink: 0 }} />
+                                  sx={{ bgcolor: '#E8F5E9', color: '#00A651', fontWeight: 700, fontSize: '0.7rem', flexShrink: 0 }} />
                               )}
                               <Typography fontWeight={700} color="#0A1628" sx={{ flex: 1 }}>{s.sectionName}</Typography>
                               <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
                                 págs {s.startPage}–{s.endPage}
                               </Typography>
                               <Tooltip title="Editar">
-                                <IconButton size="small" onClick={() => openEditSection(s)} sx={{ color: '#4F46E5' }}>
+                                <IconButton size="small" onClick={() => openEditSection(s)} sx={{ color: '#00A651' }}>
                                   <EditIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
@@ -591,7 +591,7 @@ export default function ProfessorQuizPage() {
           <Button onClick={() => setSectionDialog(false)} sx={{ textTransform: 'none' }}>Cancelar</Button>
           <Button variant="contained" onClick={saveSection} disabled={savingSection}
             startIcon={savingSection ? <CircularProgress size={16} color="inherit" /> : undefined}
-            sx={{ bgcolor: '#4F46E5', '&:hover': { bgcolor: '#3730A3' }, textTransform: 'none', fontWeight: 700 }}>
+            sx={{ bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' }, textTransform: 'none', fontWeight: 700 }}>
             {savingSection ? 'A guardar...' : 'Guardar'}
           </Button>
         </DialogActions>
@@ -620,7 +620,7 @@ export default function ProfessorQuizPage() {
           <Button onClick={() => setQuizDialog(false)} sx={{ textTransform: 'none' }}>Cancelar</Button>
           <Button variant="contained" onClick={saveQuiz} disabled={savingQuiz}
             startIcon={savingQuiz ? <CircularProgress size={16} color="inherit" /> : undefined}
-            sx={{ bgcolor: '#7C3AED', '&:hover': { bgcolor: '#6D28D9' }, textTransform: 'none', fontWeight: 700 }}>
+            sx={{ bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' }, textTransform: 'none', fontWeight: 700 }}>
             {savingQuiz ? 'A guardar...' : 'Guardar'}
           </Button>
         </DialogActions>
@@ -634,14 +634,14 @@ export default function ProfessorQuizPage() {
             <TextField label="Enunciado da questão *" fullWidth multiline rows={3}
               value={questionForm.enunciado}
               onChange={e => setQuestionForm(p => ({ ...p, enunciado: e.target.value }))} />
-            <Typography variant="subtitle2" fontWeight={700} color="#1E0A3C">
+            <Typography variant="subtitle2" fontWeight={700} color="#0A1628">
               Opções de resposta (marca a correta)
             </Typography>
             {questionForm.options.map((opt, idx) => (
               <Box key={opt.letra} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Box sx={{ minWidth: 32, height: 32, borderRadius: '50%', display: 'flex',
                   alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  bgcolor: opt.correta ? '#7C3AED' : '#E5E7EB' }}>
+                  bgcolor: opt.correta ? '#00A651' : '#E5E7EB' }}>
                   <Typography variant="caption" fontWeight={700}
                     color={opt.correta ? '#fff' : '#6B7280'}>{opt.letra}</Typography>
                 </Box>
@@ -649,11 +649,11 @@ export default function ProfessorQuizPage() {
                   value={opt.texto}
                   onChange={e => setOptionField(idx, 'texto', e.target.value)}
                   sx={{ '& .MuiOutlinedInput-root': {
-                    borderColor: opt.correta ? '#7C3AED' : undefined,
-                    '& fieldset': { borderColor: opt.correta ? '#7C3AED' : undefined } } }} />
+                    borderColor: opt.correta ? '#00A651' : undefined,
+                    '& fieldset': { borderColor: opt.correta ? '#00A651' : undefined } } }} />
                 <Tooltip title={opt.correta ? 'Resposta correta' : 'Marcar como correta'}>
                   <IconButton onClick={() => setOptionField(idx, 'correta', true)}
-                    sx={{ color: opt.correta ? '#7C3AED' : '#D1D5DB', flexShrink: 0 }}>
+                    sx={{ color: opt.correta ? '#00A651' : '#D1D5DB', flexShrink: 0 }}>
                     <CheckIcon />
                   </IconButton>
                 </Tooltip>
@@ -665,7 +665,7 @@ export default function ProfessorQuizPage() {
           <Button onClick={() => setQuestionDialog(false)} sx={{ textTransform: 'none' }}>Cancelar</Button>
           <Button variant="contained" onClick={saveQuestion} disabled={savingQuestion}
             startIcon={savingQuestion ? <CircularProgress size={16} color="inherit" /> : undefined}
-            sx={{ bgcolor: '#7C3AED', '&:hover': { bgcolor: '#6D28D9' }, textTransform: 'none', fontWeight: 700 }}>
+            sx={{ bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' }, textTransform: 'none', fontWeight: 700 }}>
             {savingQuestion ? 'A guardar...' : 'Adicionar Questão'}
           </Button>
         </DialogActions>

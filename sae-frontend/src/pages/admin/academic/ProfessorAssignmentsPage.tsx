@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+﻿import React, { useEffect, useState, useMemo } from 'react';
 import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, TablePagination, Chip, Button, IconButton, Dialog, DialogTitle,
@@ -57,7 +57,7 @@ function initials(name?: string, username?: string): string {
 
 /* deterministic colour per professor id */
 const avatarColor = (id: number) => {
-  const palette = ['#1565c0', '#7b1fa2', '#00838f', '#e65100', '#2e7d32', '#4527a0'];
+  const palette = ['#00A651', '#7b1fa2', '#00838f', '#e65100', '#2e7d32', '#4527a0'];
   return palette[id % palette.length];
 };
 
@@ -169,7 +169,7 @@ const ProfessorAssignmentsPage: React.FC = () => {
       <Box sx={{ position: 'relative', zIndex: 1 }}>
 
         {/* ── Header ── */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg,#0A1628 0%,#1565c0 100%)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, p: 2.5, mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg,#0A1628 0%,#00A651 100%)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, p: 2.5, mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box sx={{ p: 1.2, borderRadius: 2, background: 'rgba(0,166,81,0.15)', border: '1px solid rgba(0,166,81,0.25)', display: 'flex' }}>
               <AssignIcon sx={{ color: '#4caf50', fontSize: 26 }} />
@@ -330,7 +330,7 @@ const ProfessorAssignmentsPage: React.FC = () => {
           paper: { sx: { ...glass, background: 'rgba(255,255,255,0.97)', borderRadius: 4, boxShadow: '0 24px 64px rgba(0,0,0,0.18)', overflow: 'hidden' } },
         }}>
         <DialogTitle sx={{ p: 0 }}>
-          <Box sx={{ px: 3, py: 2.5, background: 'linear-gradient(135deg,#0A1628 0%,#1565c0 100%)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ px: 3, py: 2.5, background: 'linear-gradient(135deg,#0A1628 0%,#00A651 100%)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <AssignIcon sx={{ color: '#4caf50' }} />
               <Typography variant="h6" color="white">Nova Atribuição</Typography>
@@ -408,7 +408,7 @@ const ProfessorAssignmentsPage: React.FC = () => {
               </Typography>
               <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                 <Chip icon={<PersonIcon sx={{ fontSize: '14px !important' }} />} label={profName(form.professorId)} size="small"
-                  sx={{ bgcolor: 'rgba(21,101,192,0.1)', color: '#1565c0' }} />
+                  sx={{ bgcolor: 'rgba(21,101,192,0.1)', color: '#00A651' }} />
                 <Typography variant="caption" color="text.disabled">→</Typography>
                 <Chip label={clsName(form.classroomId)} size="small" sx={{ bgcolor: 'rgba(81,45,168,0.1)', color: '#512da8' }} />
                 <Typography variant="caption" color="text.disabled">→</Typography>

@@ -8,6 +8,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class AuthServiceClient {
@@ -18,76 +19,81 @@ public class AuthServiceClient {
     private String authServiceUrl;
 
     private final RestTemplate restTemplate = new RestTemplate();
-    
+
+    // ── Especializações do professor (legado) ────────────────────────────────
+
     public String[] getProfessorSpecializations(String professorUsername) {
         try {
             String url = authServiceUrl + "/users/professor/" + professorUsername + "/specializations";
             return restTemplate.getForObject(url, String[].class);
         } catch (Exception e) {
-            return new String[]{"Erro ao consultar especializações"};
+            log.warn("Não foi possível obter especializações do professor '{}': {}", professorUsername, e.getMessage());
+            return new String[0];
         }
     }
 
     public boolean canProfessorAnswerArea(String professorUsername, codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina) {
         try {
-            String url = authServiceUrl + "/users/professor/" + professorUsername + "/specializations";
-            log.info("Checking specialization for '{}' at URL: {}", professorUsername, url);
-            
-            String[] specializations = restTemplate.getForObject(url, String[].class);
-            log.info("Auth service returned specializations: {}", (Object) specializations);
-            
-            if (specializations == null) {
-                log.warn("Auth service returned null specializations for professor '{}'", professorUsername);
-                return true; // Fallback
-            }
-
+            String[] specializations = getProfessorSpecializations(professorUsername);
+            if (specializations == null || specializations.length == 0) return true;
             String normalizedArea = normalize(disciplina.name());
             for (String spec : specializations) {
                 String normalizedSpec = normalize(spec);
-                if (normalizedSpec.isEmpty()) continue; // null/vazio não pode matchar tudo
-                log.info("Comparing normalized spec '{}' with normalized area '{}'", normalizedSpec, normalizedArea);
-                if (normalizedSpec.contains(normalizedArea) || normalizedArea.contains(normalizedSpec)) {
-                    log.info("Match found!");
-                    return true;
-                }
+                if (normalizedSpec.isEmpty()) continue;
+                if (normalizedSpec.contains(normalizedArea) || normalizedArea.contains(normalizedSpec)) return true;
             }
-            log.warn("No match found for professor '{}' in area '{}'. Specializations: {}", 
-                professorUsername, disciplina.name(), Arrays.toString(specializations));
             return false;
         } catch (Exception e) {
-            log.warn("Auth service unavailable or error for '{}'. Allowing as fallback. Error: {}",
-                professorUsername, e.getMessage());
+            log.warn("Auth service indisponível para professor '{}'. Fallback: true. Erro: {}", professorUsername, e.getMessage());
             return true;
         }
     }
 
-    /**
-     * Retorna os nomes dos enums DisciplinaEnum correspondentes às especializações do professor.
-     * Usa a mesma normalização de canProfessorAnswerArea para garantir consistência.
-     */
     public List<String> getProfessorDisciplineNames(String professorUsername) {
         try {
             String[] specs = getProfessorSpecializations(professorUsername);
+            if (specs == null) return Collections.emptyList();
             List<String> disciplines = new java.util.ArrayList<>();
             for (String spec : specs) {
                 String normalizedSpec = normalize(spec);
-                if (normalizedSpec.isEmpty()) continue; // null/vazio não pode matchar tudo
+                if (normalizedSpec.isEmpty()) continue;
                 for (codelab.api.smart.sae.forum.enums.DisciplinaEnum d : codelab.api.smart.sae.forum.enums.DisciplinaEnum.values()) {
                     String normalizedEnum = normalize(d.name());
                     if (normalizedSpec.contains(normalizedEnum) || normalizedEnum.contains(normalizedSpec)) {
-                        if (!disciplines.contains(d.name())) {
-                            disciplines.add(d.name());
-                        }
+                        if (!disciplines.contains(d.name())) disciplines.add(d.name());
                         break;
                     }
                 }
             }
-            return disciplines; // lista vazia → professor sem especialidade registada não vê nada
+            return disciplines;
         } catch (Exception e) {
             log.warn("Não foi possível resolver disciplinas do professor '{}': {}", professorUsername, e.getMessage());
             return Collections.emptyList();
         }
     }
+
+    // ── ID do utilizador por username ────────────────────────────────────────
+
+    /**
+     * Devolve o userId (sae_user.id) dado um username.
+     * Chama GET /users/user-id-by-username?username=X
+     */
+    @SuppressWarnings("unchecked")
+    public Long getUserIdByUsername(String username) {
+        try {
+            String url = authServiceUrl + "/users/user-id-by-username?username=" + username;
+            Map<String, Object> body = restTemplate.getForObject(url, Map.class);
+            if (body == null) return null;
+            Object uid = body.get("userId");
+            if (uid instanceof Number) return ((Number) uid).longValue();
+            return null;
+        } catch (Exception e) {
+            log.warn("Não foi possível obter userId do utilizador '{}': {}", username, e.getMessage());
+            return null;
+        }
+    }
+
+    // ── Perfil do estudante ──────────────────────────────────────────────────
 
     public Long getStudentClassroomId(String username, String jwtToken) {
         try {
@@ -99,8 +105,8 @@ public class AuthServiceClient {
                 restTemplate.exchange(url,
                     java.util.Objects.requireNonNull(org.springframework.http.HttpMethod.GET),
                     entity, StudentProfileResponse.class);
-            StudentProfileResponse body = response.getBody();
-            return body != null ? body.getClassroomId() : null;
+            StudentProfileResponse bodyResp = response.getBody();
+            return bodyResp != null ? bodyResp.getClassroomId() : null;
         } catch (Exception e) {
             log.warn("Não foi possível obter classroomId do estudante '{}': {}", username, e.getMessage());
             return null;
@@ -116,14 +122,30 @@ public class AuthServiceClient {
         public void setGrade(String grade) { this.grade = grade; }
     }
 
+    // ── Professores por disciplina ───────────────────────────────────────────
+
     public List<ProfessorInfo> getProfessorsByDisciplina(codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina) {
         try {
             String url = authServiceUrl + "/users/professors/by-discipline?disciplina=" + disciplina.name();
             ProfessorInfo[] result = restTemplate.getForObject(url, ProfessorInfo[].class);
             return result != null ? Arrays.asList(result) : Collections.emptyList();
         } catch (Exception e) {
-            log.warn("Could not fetch professors for disciplina '{}': {}", disciplina, e.getMessage());
+            log.warn("Não foi possível obter professores para disciplina '{}': {}", disciplina, e.getMessage());
             return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Devolve informação de um professor dado o userId (Long).
+     * Chama GET /users/professor-profile?userId=X
+     */
+    public ProfessorInfo getProfessorInfoByUserId(Long userId) {
+        try {
+            String url = authServiceUrl + "/users/professor-profile?userId=" + userId;
+            return restTemplate.getForObject(url, ProfessorInfo.class);
+        } catch (Exception e) {
+            log.warn("Não foi possível obter info do professor userId={}: {}", userId, e.getMessage());
+            return null;
         }
     }
 
@@ -139,7 +161,6 @@ public class AuthServiceClient {
         public boolean isOnline()         { return online; }
         public String getSpecialization() { return specialization; }
         public String getLastSeen()       { return lastSeen; }
-
         public void setUsername(String v)       { this.username = v; }
         public void setFullname(String v)       { this.fullname = v; }
         public void setOnline(boolean v)        { this.online = v; }
@@ -149,13 +170,9 @@ public class AuthServiceClient {
 
     private String normalize(String input) {
         if (input == null) return "";
-        // 1. Para minúsculas e remove espaços nas extremidades
         String str = input.trim().toLowerCase();
-        // 2. Decompõe caracteres acentuados (ex: á -> a + ´)
         str = java.text.Normalizer.normalize(str, java.text.Normalizer.Form.NFD);
-        // 3. Remove os acentos (diacríticos)
         str = str.replaceAll("[\\p{InCombiningDiacriticalMarks}]", "");
-        // 4. Mantém apenas letras e números (remove pontuação, espaços duplos, etc)
         return str.replaceAll("[^a-z0-9]", "");
     }
 }

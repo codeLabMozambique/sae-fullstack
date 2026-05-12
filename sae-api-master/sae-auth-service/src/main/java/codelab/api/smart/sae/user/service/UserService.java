@@ -442,6 +442,10 @@ public class UserService {
         });
     }
 
+    public java.util.Optional<Long> findUserIdByUsername(String username) {
+        return userRepository.findByUsername(username).map(u -> u.getId());
+    }
+
     public String[] getProfessorSpecializations(String username) {
         return professorProfileRepository.findByUserUsername(username)
             .map(profile -> {

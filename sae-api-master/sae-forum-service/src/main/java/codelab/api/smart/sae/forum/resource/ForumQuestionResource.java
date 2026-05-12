@@ -1,6 +1,7 @@
 package codelab.api.smart.sae.forum.resource;
 
 import codelab.api.smart.sae.forum.dto.request.CreateQuestionRequestDTO;
+import codelab.api.smart.sae.forum.dto.response.ForumMemberDTO;
 import codelab.api.smart.sae.forum.dto.response.ForumStatsDTO;
 import codelab.api.smart.sae.forum.dto.response.ProfessorAssistanceStatsDTO;
 import codelab.api.smart.sae.forum.dto.response.QuestionResponseDTO;
@@ -85,18 +86,51 @@ public class ForumQuestionResource {
         return ResponseEntity.noContent().build();
     }
 
-    // EP-12: Obter ou criar sala colaborativa da turma (por disciplina)
+    // EP-12a: Sala colaborativa por disciplina legada (DisciplinaEnum)
     @GetMapping("/rooms/collaborative/{disciplina}")
     public ResponseEntity<QuestionResponseDTO> getCollaborativeRoom(@PathVariable DisciplinaEnum disciplina) {
         return ResponseEntity.ok(questionService.getOrCreateCollaborativeRoom(disciplina));
     }
 
-    // EP-13: Obter ou criar sala privada com professor (por disciplina, específica do aluno)
+    // EP-12b: Sala colaborativa TURMA por subjectId + classroomId
+    @GetMapping("/rooms/collaborative/subject/{subjectId}")
+    public ResponseEntity<QuestionResponseDTO> getCollaborativeRoomBySubject(
+            @PathVariable Long subjectId,
+            @RequestParam(required = false) Long classroomId) {
+        if (classroomId != null) {
+            return ResponseEntity.ok(questionService.getOrCreateCollaborativeRoomBySubject(subjectId, classroomId));
+        }
+        return ResponseEntity.ok(questionService.getOrCreateCollaborativeRoomBySubjectBroadcast(subjectId));
+    }
+
+    // EP-13a: Sala expert por disciplina legada (DisciplinaEnum)
     @GetMapping("/rooms/expert/{disciplina}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<QuestionResponseDTO> getExpertRoom(
             @PathVariable DisciplinaEnum disciplina, Authentication auth) {
         return ResponseEntity.ok(questionService.getOrCreateExpertRoom(disciplina, auth.getName()));
+    }
+
+    // EP-13b: Sala expert TURMA por subjectId + classroomId
+    @GetMapping("/rooms/expert/subject/{subjectId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<QuestionResponseDTO> getExpertRoomBySubject(
+            @PathVariable Long subjectId,
+            @RequestParam(required = false) Long classroomId,
+            Authentication auth) {
+        if (classroomId != null) {
+            return ResponseEntity.ok(questionService.getOrCreateExpertRoomBySubject(subjectId, classroomId, auth.getName()));
+        }
+        return ResponseEntity.ok(questionService.getOrCreateExpertRoomBySubjectBroadcast(subjectId, auth.getName()));
+    }
+
+    // EP-18: Membros do fórum para autocomplete de @mention
+    @GetMapping("/members")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<ForumMemberDTO>> getForumMembers(
+            @RequestParam Long subjectId,
+            @RequestParam(required = false) Long classroomId) {
+        return ResponseEntity.ok(questionService.getForumMembers(subjectId, classroomId));
     }
 
     // EP-15: Listar professores por disciplina (proxy para auth service)

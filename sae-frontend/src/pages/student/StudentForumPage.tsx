@@ -1,5 +1,6 @@
-import { useEffect, useState, useRef } from 'react';
+﻿import { useEffect, useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useSubjects } from '../../hooks/useSubjects';
 import {
   Box, Typography, Stack, Paper, Chip, Avatar,
   Button, Dialog, DialogContent, DialogActions,
@@ -19,10 +20,8 @@ import QuizIcon from '@mui/icons-material/Quiz';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import { useAuth } from '../../context/AuthContext';
 import { forumService } from '../../services/forumService';
-import { professorAssignmentService, professorService, schoolService } from '../../services/academicService';
-import type { SchoolDTO } from '../../services/academicService';
 import api from '../../services/api';
-import type { ForumQuestion, DisciplinaEnum, ExpertAnswer, CollaborativeAnswer, ProfessorInfo } from '../../types/forum';
+import type { ForumQuestion, DisciplinaEnum, ExpertAnswer, CollaborativeAnswer, ProfessorInfo, ForumMember, SubjectInfo } from '../../types/forum';
 import { DISCIPLINA_LABELS, DISCIPLINA_COLOR, DISCIPLINA_EMOJI } from '../../types/forum';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -52,23 +51,6 @@ function hasUnread(q: ForumQuestion): boolean {
   return new Date(latestAt) > new Date(lastSeen);
 }
 
-function normalizeStr(s: string) {
-  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
-}
-
-const DISCIPLINA_KEYS: DisciplinaEnum[] = [
-  'MATEMATICA', 'FISICA', 'QUIMICA', 'BIOLOGIA', 'PORTUGUES',
-  'HISTORIA', 'GEOGRAFIA', 'INGLES', 'FILOSOFIA', 'INFORMATICA', 'GERAL',
-];
-
-function subjectToDisciplina(name: string): DisciplinaEnum | null {
-  const n = normalizeStr(name);
-  for (const key of DISCIPLINA_KEYS) {
-    const k = normalizeStr(key);
-    if (n.includes(k) || k.includes(n)) return key;
-  }
-  return null;
-}
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -394,15 +376,20 @@ function ChatMessages({
 
 // ─── Chat input bar ───────────────────────────────────────────────────────────
 
-function ChatInput({ questionId, questionType, onSent, prefillText, onPrefillConsumed }: {
+function ChatInput({ questionId, questionType, onSent, prefillText, onPrefillConsumed, subjectId, classroomId }: {
   questionId: number; questionType: string; onSent: () => void;
   prefillText?: string; onPrefillConsumed?: () => void;
+  subjectId?: number; classroomId?: number;
 }) {
   const [text, setText] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  // @mention state
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [members, setMembers] = useState<ForumMember[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
@@ -418,6 +405,42 @@ function ChatInput({ questionId, questionType, onSent, prefillText, onPrefillCon
     }
   }, [prefillText]);
 
+  // Load members once when subject is known (for @mention)
+  useEffect(() => {
+    if (!subjectId || members.length > 0) return;
+    setLoadingMembers(true);
+    forumService.getForumMembers(subjectId, classroomId)
+      .then(setMembers)
+      .catch(() => {})
+      .finally(() => setLoadingMembers(false));
+  }, [subjectId, classroomId]);
+
+  const handleTextChange = (val: string) => {
+    setText(val);
+    // Detect @mention trigger: look for the last unfinished @word
+    const atMatch = val.match(/@(\w*)$/);
+    if (atMatch) {
+      setMentionQuery(atMatch[1].toLowerCase());
+    } else {
+      setMentionQuery(null);
+    }
+  };
+
+  const handleMentionSelect = (member: ForumMember) => {
+    // Replace trailing @partial with @username
+    const newText = text.replace(/@\w*$/, `@${member.username} `);
+    setText(newText);
+    setMentionQuery(null);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  const filteredMembers = mentionQuery !== null
+    ? members.filter(m =>
+        m.username.toLowerCase().includes(mentionQuery) ||
+        m.fullname.toLowerCase().includes(mentionQuery)
+      )
+    : [];
+
   const handleSend = async () => {
     if (!text.trim() && !file) return;
     setSending(true); setError('');
@@ -429,19 +452,47 @@ function ChatInput({ questionId, questionType, onSent, prefillText, onPrefillCon
         attachmentId = att.id;
         setUploading(false);
       }
-      // Expert rooms: professors reply via expert-answers; students send follow-ups via collaborative
       if (isExpert && isProfessor) await forumService.createExpertAnswer(questionId, { conteudo: text, attachmentId });
       else await forumService.createCollaborativeAnswer(questionId, { conteudo: text, attachmentId });
-      setText(''); setFile(null); onSent();
+      setText(''); setFile(null); setMentionQuery(null); onSent();
     } catch (e: any) {
       setError(e?.response?.data?.message ?? 'Erro ao enviar.');
     } finally { setSending(false); setUploading(false); }
   };
 
   return (
-    <Box sx={{ px: 3, py: 2, borderTop: '1px solid rgba(0,0,0,0.07)', bgcolor: '#F8FAFC' }}>
+    <Box sx={{ px: 3, py: 2, borderTop: '1px solid rgba(0,0,0,0.07)', bgcolor: '#F8FAFC', position: 'relative' }}>
       {error && <Alert severity="error" sx={{ mb: 1.5, borderRadius: 2 }}>{error}</Alert>}
-      
+
+      {/* @mention autocomplete popup */}
+      {mentionQuery !== null && filteredMembers.length > 0 && (
+        <Paper elevation={4} sx={{
+          position: 'absolute', bottom: '100%', left: 24, right: 24, mb: 1,
+          borderRadius: 2, overflow: 'hidden', maxHeight: 200, overflowY: 'auto',
+          border: '1px solid #E2E8F0', zIndex: 100,
+        }}>
+          {loadingMembers ? (
+            <Box display="flex" justifyContent="center" p={1}><CircularProgress size={18} /></Box>
+          ) : (
+            filteredMembers.map(m => (
+              <Box key={m.username} onClick={() => handleMentionSelect(m)} sx={{
+                px: 2, py: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 1.5,
+                '&:hover': { bgcolor: '#F1F5F9' },
+              }}>
+                <Avatar sx={{ width: 28, height: 28, fontSize: 11, bgcolor: '#DBEAFE', color: '#2563EB' }}>
+                  {initials(m.fullname || m.username)}
+                </Avatar>
+                <Box flex={1} minWidth={0}>
+                  <Typography variant="body2" fontWeight={700} noWrap>{m.fullname}</Typography>
+                  <Typography variant="caption" color="text.secondary">@{m.username}</Typography>
+                </Box>
+                {m.online && <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10B981', flexShrink: 0 }} />}
+              </Box>
+            ))
+          )}
+        </Paper>
+      )}
+
       {file && (
         <Stack direction="row" spacing={1.5} alignItems="center" mb={2}
           sx={{ p: 1.2, bgcolor: 'white', borderRadius: 2.5, border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
@@ -459,29 +510,34 @@ function ChatInput({ questionId, questionType, onSent, prefillText, onPrefillCon
       <Stack direction="row" spacing={1.5} alignItems="flex-end">
         <input ref={fileRef} type="file" style={{ display: 'none' }}
           onChange={e => { if (e.target.files?.[0]) setFile(e.target.files[0]); e.target.value = ''; }} />
-        
+
         <Tooltip title="Anexar">
           <IconButton onClick={() => fileRef.current?.click()}
-            sx={{ 
-              color: '#64748B', mb: 0.5, 
+            sx={{
+              color: '#64748B', mb: 0.5,
               bgcolor: 'white', border: '1px solid #E2E8F0',
-              '&:hover': { bgcolor: '#F1F5F9' } 
+              '&:hover': { bgcolor: '#F1F5F9' }
             }}>
             <AttachFileIcon sx={{ fontSize: 20 }} />
           </IconButton>
         </Tooltip>
 
-        <Paper sx={{ 
-          flex: 1, borderRadius: 4, px: 2, py: 0.8, 
+        <Paper sx={{
+          flex: 1, borderRadius: 4, px: 2, py: 0.8,
           bgcolor: 'white', border: '1px solid #E2E8F0',
           boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
         }}>
           <TextField
             fullWidth multiline maxRows={5}
-            placeholder={isProfessor && isExpert ? 'Escreve a tua resposta ao aluno...' : 'Escreva a sua mensagem...'}
+            placeholder={isProfessor && isExpert ? 'Escreve a tua resposta ao aluno...' : 'Escreva a sua mensagem... (@ para mencionar)'}
             value={text}
-            onChange={e => setText(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+            onChange={e => handleTextChange(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Escape') { setMentionQuery(null); return; }
+              if (e.key === 'Enter' && !e.shiftKey && mentionQuery === null) {
+                e.preventDefault(); handleSend();
+              }
+            }}
             variant="standard"
             inputRef={inputRef}
             InputProps={{ disableUnderline: true }}
@@ -700,49 +756,27 @@ function DetailPanelCollab({ q }: { q: ForumQuestion }) {
 
 // ─── New Question Dialog ──────────────────────────────────────────────────────
 
-function NewQuestionDialog({ open, onClose, availableDisciplinas, onCreated }: {
+function NewQuestionDialog({ open, onClose, subjects, classroomId, onCreated }: {
   open: boolean; onClose: () => void;
-  availableDisciplinas: { disciplina: DisciplinaEnum; professorName?: string }[];
+  subjects: SubjectInfo[]; classroomId: number | null;
   onCreated: (q: ForumQuestion) => void;
 }) {
   const [step, setStep] = useState(1);
-  const [disciplina, setDisciplina] = useState<DisciplinaEnum | ''>('');
-  const [schools, setSchools] = useState<SchoolDTO[]>([]);
-  const [loadingSchools, setLoadingSchools] = useState(false);
-  const [disciplinaProfInfos, setDisciplinaProfInfos] = useState<ProfessorInfo[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState<SubjectInfo | null>(null);
   const [creating, setCreating] = useState<'ESPECIALIZADO' | 'COLABORATIVO' | null>(null);
   const [error, setError] = useState('');
 
   const reset = () => {
-    setStep(1); setDisciplina(''); setSchools([]); setDisciplinaProfInfos([]);
-    setCreating(null); setError('');
+    setStep(1); setSelectedSubject(null); setCreating(null); setError('');
   };
 
-  // When discipline is selected: fetch professor + school info for step 2
-  useEffect(() => {
-    if (!disciplina) return;
-    setLoadingSchools(true);
-    Promise.all([
-      forumService.getProfessorsByDisciplina(disciplina as DisciplinaEnum),
-      professorService.findAll(),
-      schoolService.findAll(),
-    ]).then(([profInfos, allProfs, allSchools]) => {
-      setDisciplinaProfInfos(profInfos);
-      const profUsernames = new Set(profInfos.map(p => p.username));
-      const matchedProfs = allProfs.filter(p => profUsernames.has(p.username ?? ''));
-      const schoolIds = new Set(matchedProfs.map(p => p.schoolId).filter(Boolean));
-      const filtered = allSchools.filter(s => s.id != null && schoolIds.has(s.id));
-      setSchools(filtered.length > 0 ? filtered : allSchools);
-    }).catch(() => setSchools([])).finally(() => setLoadingSchools(false));
-  }, [disciplina]);
-
   const handleTypeSelect = async (type: 'ESPECIALIZADO' | 'COLABORATIVO') => {
-    if (!disciplina) return;
+    if (!selectedSubject) return;
     setCreating(type); setError('');
     try {
       const q = type === 'ESPECIALIZADO'
-        ? await forumService.getExpertRoom(disciplina as DisciplinaEnum)
-        : await forumService.getCollaborativeRoom(disciplina as DisciplinaEnum);
+        ? await forumService.getExpertRoomBySubject(selectedSubject.id, classroomId ?? undefined)
+        : await forumService.getCollaborativeRoomBySubject(selectedSubject.id, classroomId ?? undefined);
       reset();
       onCreated(q);
       onClose();
@@ -755,11 +789,8 @@ function NewQuestionDialog({ open, onClose, availableDisciplinas, onCreated }: {
 
   const stepLabels = [
     'Seleciona a disciplina da tua dúvida',
-    'Escolhe a escola do professor',
     'Como queres receber ajuda?',
   ];
-
-  const onlineProfessor = disciplinaProfInfos.find(p => p.online) ?? disciplinaProfInfos[0] ?? null;
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm"
@@ -779,7 +810,7 @@ function NewQuestionDialog({ open, onClose, availableDisciplinas, onCreated }: {
           {stepLabels[step - 1]}
         </Typography>
         <Stack direction="row" spacing={1} mt={2.5}>
-          {[1, 2, 3].map(s => (
+          {[1, 2].map(s => (
             <Box key={s} sx={{
               height: 4, flex: 1, borderRadius: 2,
               bgcolor: s <= step ? '#38bdf8' : 'rgba(255,255,255,0.1)',
@@ -792,115 +823,76 @@ function NewQuestionDialog({ open, onClose, availableDisciplinas, onCreated }: {
       <DialogContent sx={{ p: 4, minHeight: 320, display: 'flex', flexDirection: 'column' }}>
         {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
 
-        {/* STEP 1: Discipline */}
+        {/* STEP 1: Subject selection */}
         {step === 1 && (
           <Box>
             <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ mb: 2, display: 'block', textTransform: 'uppercase' }}>
               Seleciona a Disciplina
             </Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 1.5 }}>
-              {availableDisciplinas.map(({ disciplina: d }) => (
-                <Paper key={d} variant="outlined"
-                  onClick={() => { setDisciplina(d); setStep(2); }}
-                  sx={{
-                    p: 2, borderRadius: 3, cursor: 'pointer', textAlign: 'center',
-                    transition: 'all 0.2s',
-                    borderColor: disciplina === d ? '#38bdf8' : 'divider',
-                    bgcolor: disciplina === d ? 'rgba(56,189,248,0.05)' : 'white',
-                    '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 8px 24px rgba(0,0,0,0.05)', borderColor: '#38bdf8' }
-                  }}>
-                  <Typography sx={{ fontSize: 32, mb: 1 }}>{DISCIPLINA_EMOJI[d]}</Typography>
-                  <Typography variant="body2" fontWeight={700}>{DISCIPLINA_LABELS[d]}</Typography>
-                </Paper>
-              ))}
-            </Box>
-          </Box>
-        )}
-
-        {/* STEP 2: School selection */}
-        {step === 2 && (
-          <Box>
-            <Button size="small" onClick={() => setStep(1)} sx={{ mb: 2, color: 'text.secondary', textTransform: 'none' }}>
-              ← Voltar às disciplinas
-            </Button>
-            <Stack direction="row" spacing={1.5} alignItems="center" mb={2.5}
-              sx={{ p: 1.5, bgcolor: '#F8FAFC', borderRadius: 2, border: '1px solid #E2E8F0' }}>
-              <Typography sx={{ fontSize: 22 }}>{DISCIPLINA_EMOJI[disciplina as DisciplinaEnum]}</Typography>
-              <Box>
-                <Typography variant="body2" fontWeight={800} color="#1E293B">{DISCIPLINA_LABELS[disciplina as DisciplinaEnum]}</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {disciplinaProfInfos.length} professor{disciplinaProfInfos.length !== 1 ? 'es' : ''} disponíve{disciplinaProfInfos.length !== 1 ? 'is' : 'l'}
-                </Typography>
+            {subjects.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="body2" color="text.secondary">Nenhuma disciplina disponível</Typography>
               </Box>
-            </Stack>
-
-            {loadingSchools ? (
-              <Box display="flex" justifyContent="center" pt={3}><CircularProgress size={28} /></Box>
             ) : (
-              <Stack spacing={1.5}>
-                {schools.map(school => (
-                  <Paper key={school.id} variant="outlined"
-                    onClick={() => setStep(3)}
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 1.5 }}>
+                {subjects.map(s => (
+                  <Paper key={s.id} variant="outlined"
+                    onClick={() => { setSelectedSubject(s); setStep(2); }}
                     sx={{
-                      p: 2, borderRadius: 3, cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', gap: 2,
+                      p: 2, borderRadius: 3, cursor: 'pointer', textAlign: 'center',
                       transition: 'all 0.2s',
-                      '&:hover': { borderColor: '#38bdf8', transform: 'translateX(4px)', bgcolor: 'rgba(56,189,248,0.03)' }
+                      borderColor: selectedSubject?.id === s.id ? '#38bdf8' : 'divider',
+                      bgcolor: selectedSubject?.id === s.id ? 'rgba(56,189,248,0.05)' : 'white',
+                      '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 8px 24px rgba(0,0,0,0.05)', borderColor: '#38bdf8' }
                     }}>
-                    <Avatar sx={{ width: 44, height: 44, bgcolor: '#EFF6FF', color: '#2563EB' }}>
-                      <SchoolIcon />
-                    </Avatar>
-                    <Box flex={1} minWidth={0}>
-                      <Typography variant="body2" fontWeight={700} noWrap>{school.name}</Typography>
-                      <Typography variant="caption" color="text.secondary">{school.city}</Typography>
-                    </Box>
-                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: onlineProfessor?.online ? '#10B981' : '#94A3B8', flexShrink: 0 }} />
+                    <Typography sx={{ fontSize: 28, mb: 1 }}>📚</Typography>
+                    <Typography variant="body2" fontWeight={700} noWrap>{s.name}</Typography>
+                    {s.code && (
+                      <Typography variant="caption" color="text.secondary">{s.code}</Typography>
+                    )}
                   </Paper>
                 ))}
-                {schools.length === 0 && (
-                  <Box sx={{ textAlign: 'center', py: 3 }}>
-                    <Typography variant="body2" color="text.secondary">Nenhuma escola encontrada</Typography>
-                    <Button size="small" sx={{ mt: 1 }} onClick={() => setStep(3)}>Continuar mesmo assim</Button>
-                  </Box>
-                )}
-              </Stack>
+              </Box>
             )}
           </Box>
         )}
 
-        {/* STEP 3: Type selection → immediately opens room */}
-        {step === 3 && (
+        {/* STEP 2: Type selection → immediately opens room */}
+        {step === 2 && selectedSubject && (
           <Box>
-            <Button size="small" onClick={() => setStep(2)} sx={{ mb: 2, color: 'text.secondary', textTransform: 'none' }}>
-              ← Voltar às escolas
+            <Button size="small" onClick={() => setStep(1)} sx={{ mb: 2, color: 'text.secondary', textTransform: 'none' }}>
+              ← Voltar às disciplinas
             </Button>
 
+            <Stack direction="row" spacing={1.5} alignItems="center" mb={3}
+              sx={{ p: 1.5, bgcolor: '#F8FAFC', borderRadius: 2, border: '1px solid #E2E8F0' }}>
+              <Typography sx={{ fontSize: 22 }}>📚</Typography>
+              <Box>
+                <Typography variant="body2" fontWeight={800} color="#1E293B">{selectedSubject.name}</Typography>
+                {selectedSubject.code && (
+                  <Typography variant="caption" color="text.secondary">{selectedSubject.code}</Typography>
+                )}
+              </Box>
+            </Stack>
+
             <Stack spacing={2}>
-              {/* Professor card */}
+              {/* Expert / Professor card */}
               <Paper variant="outlined"
                 onClick={() => !creating && handleTypeSelect('ESPECIALIZADO')}
                 sx={{
                   p: 2.5, borderRadius: 4, cursor: creating ? 'default' : 'pointer',
-                  border: '2px solid', borderColor: '#1565c0',
+                  border: '2px solid', borderColor: '#00A651',
                   bgcolor: 'rgba(21,101,192,0.03)',
                   transition: 'all 0.2s', opacity: creating && creating !== 'ESPECIALIZADO' ? 0.5 : 1,
                   '&:hover': !creating ? { transform: 'scale(1.01)', boxShadow: '0 10px 30px rgba(21,101,192,0.08)' } : {},
                   display: 'flex', alignItems: 'center', gap: 2.5
                 }}>
-                <Avatar sx={{ width: 60, height: 60, bgcolor: '#e0f2fe', color: '#1565c0' }}>
-                  {creating === 'ESPECIALIZADO' ? <CircularProgress size={26} sx={{ color: '#1565c0' }} /> : <SchoolIcon sx={{ fontSize: 30 }} />}
+                <Avatar sx={{ width: 60, height: 60, bgcolor: '#e0f2fe', color: '#00A651' }}>
+                  {creating === 'ESPECIALIZADO' ? <CircularProgress size={26} sx={{ color: '#00A651' }} /> : <SchoolIcon sx={{ fontSize: 30 }} />}
                 </Avatar>
                 <Box flex={1}>
-                  <Typography fontWeight={800} variant="subtitle1" color="#1565c0">Conversa com Professor</Typography>
-                  <Typography variant="body2" color="text.secondary" mb={0.5}>Privado · Direto ao especialista da área</Typography>
-                  {onlineProfessor && (
-                    <Stack direction="row" spacing={0.7} alignItems="center">
-                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: onlineProfessor.online ? '#10B981' : '#94A3B8' }} />
-                      <Typography variant="caption" fontWeight={700} color={onlineProfessor.online ? '#10B981' : '#94A3B8'}>
-                        {onlineProfessor.fullname} · {onlineProfessor.online ? 'Online agora' : 'Offline'}
-                      </Typography>
-                    </Stack>
-                  )}
+                  <Typography fontWeight={800} variant="subtitle1" color="#00A651">Conversa com Professor</Typography>
+                  <Typography variant="body2" color="text.secondary">Privado · Direto ao professor desta disciplina</Typography>
                 </Box>
               </Paper>
 
@@ -920,7 +912,7 @@ function NewQuestionDialog({ open, onClose, availableDisciplinas, onCreated }: {
                 </Avatar>
                 <Box flex={1}>
                   <Typography fontWeight={800} variant="subtitle1" color="#00A651">Fórum da Turma</Typography>
-                  <Typography variant="body2" color="text.secondary">Público · Debate colaborativo com colegas</Typography>
+                  <Typography variant="body2" color="text.secondary">Público · Debate colaborativo com colegas e professor</Typography>
                 </Box>
               </Paper>
             </Stack>
@@ -951,8 +943,20 @@ export default function StudentForumPage() {
   const [loadingMy, setLoadingMy] = useState(false);
   const [generalQuestions, setGeneralQuestions] = useState<ForumQuestion[]>([]);
   const [loadingGeneral, setLoadingGeneral] = useState(false);
-  const [availableDisciplinas, setAvailableDisciplinas] = useState<{ disciplina: DisciplinaEnum; professorName?: string }[]>([]);
-  const [loadingDisciplinas, setLoadingDisciplinas] = useState(false);
+  const [studentClassroomId, setStudentClassroomId] = useState<number | null | undefined>(undefined);
+
+  // Resolve classroomId do perfil do aluno uma vez
+  useEffect(() => {
+    if (!user || isProfessor) { setStudentClassroomId(null); return; }
+    api.get<{ classroomId?: number }>('/auth/users/my-student-profile')
+      .then(res => setStudentClassroomId(res.data?.classroomId ?? null))
+      .catch(() => setStudentClassroomId(null));
+  }, [user?.username, isProfessor]);
+
+  // Disciplinas sincronizadas em tempo real (polling 30 s + foco + visibilidade)
+  const { subjects: availableSubjects, loading: loadingSubjects } = useSubjects(
+    studentClassroomId === undefined ? null : studentClassroomId
+  );
 
   // Professor state
   const [pendingQuestions, setPendingQuestions] = useState<ForumQuestion[]>([]);
@@ -1016,31 +1020,6 @@ export default function StudentForumPage() {
     window.history.replaceState({}, '');
   }, [navState?.openQuestionId]);
 
-  useEffect(() => {
-    if (!user) return;
-    setLoadingDisciplinas(true);
-    api.get<{ classroomId: number }>('/auth/users/my-student-profile')
-      .then(async res => {
-        const classroomId = res.data?.classroomId;
-        if (!classroomId) { setAvailableDisciplinas([]); return; }
-        const assignments = await professorAssignmentService.findByClassroom(classroomId);
-        const seen = new Set<DisciplinaEnum>();
-        const list: { disciplina: DisciplinaEnum; professorName?: string }[] = [];
-        for (const a of assignments) {
-          const d = subjectToDisciplina(a.subjectName);
-          if (d && !seen.has(d)) {
-            seen.add(d);
-            try {
-              const profs = await forumService.getProfessorsByDisciplina(d);
-              list.push({ disciplina: d, professorName: profs[0]?.fullname });
-            } catch { list.push({ disciplina: d }); }
-          }
-        }
-        setAvailableDisciplinas(list);
-      })
-      .catch(() => setAvailableDisciplinas([]))
-      .finally(() => setLoadingDisciplinas(false));
-  }, [user]);
 
   const handleSelectQuestion = (q: ForumQuestion, fromTab?: string) => {
     setActiveQ(q);
@@ -1121,7 +1100,7 @@ export default function StudentForumPage() {
     return list
       .filter(q => q.createdBy?.toLowerCase() !== 'system')
       .filter(q => !search || q.titulo.toLowerCase().includes(search.toLowerCase())
-        || DISCIPLINA_LABELS[q.disciplina].toLowerCase().includes(search.toLowerCase()));
+        || (q.disciplina && DISCIPLINA_LABELS[q.disciplina]?.toLowerCase().includes(search.toLowerCase())));
   };
 
   const sidebarList = getFilteredList();
@@ -1382,6 +1361,8 @@ export default function StudentForumPage() {
               onSent={reloadActiveQ}
               prefillText={prefillText}
               onPrefillConsumed={() => setPrefillText('')}
+              subjectId={activeQ.subjectId ?? undefined}
+              classroomId={activeQ.classroomId ?? undefined}
             />
           )}
         </Box>
@@ -1417,7 +1398,7 @@ export default function StudentForumPage() {
               variant="contained"
               startIcon={<AddCircleIcon />}
               onClick={() => setNewOpen(true)}
-              sx={{ borderRadius: 3, bgcolor: '#1565c0', '&:hover': { bgcolor: '#0d47a1' }, px: 3 }}
+              sx={{ borderRadius: 3, bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' }, px: 3 }}
             >
               Nova Pergunta
             </Button>
@@ -1436,7 +1417,8 @@ export default function StudentForumPage() {
       <NewQuestionDialog
         open={newOpen}
         onClose={() => setNewOpen(false)}
-        availableDisciplinas={loadingDisciplinas ? [] : availableDisciplinas}
+        subjects={loadingSubjects ? [] : availableSubjects}
+        classroomId={studentClassroomId}
         onCreated={(q) => {
           setActiveQ(q);
           loadMyQuestions();

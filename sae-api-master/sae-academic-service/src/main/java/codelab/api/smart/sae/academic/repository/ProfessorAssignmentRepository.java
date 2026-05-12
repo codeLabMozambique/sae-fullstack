@@ -13,4 +13,6 @@ public interface ProfessorAssignmentRepository extends JpaRepository<ProfessorAs
     List<ProfessorAssignmentEntity> findByClassroomIdInAndStatus(List<Long> classroomIds, EntityState status);
     List<ProfessorAssignmentEntity> findByProfessorIdAndStatus(Long professorId, EntityState status);
     List<ProfessorAssignmentEntity> findByClassroom_IdAndStatus(Long classroomId, EntityState status);
+    List<ProfessorAssignmentEntity> findByClassroom_IdAndSubject_IdAndStatus(Long classroomId, Long subjectId, EntityState status);
+    List<ProfessorAssignmentEntity> findBySubject_IdAndStatus(Long subjectId, EntityState status);
 }

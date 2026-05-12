@@ -3,7 +3,7 @@ import type {
   ForumQuestion, ExpertAnswer, CollaborativeAnswer,
   PageResponse, CreateQuestionRequest, CreateAnswerRequest,
   QuestionType, QuestionStatus, DisciplinaEnum, ProfessorInfo,
-  ForumStatsOverview, ProfessorAssistanceStats,
+  ForumStatsOverview, ProfessorAssistanceStats, ForumMember, SubjectInfo,
 } from '../types/forum';
 
 const BASE = '/forum';
@@ -56,13 +56,35 @@ export const forumService = {
   rejectAnswer: (answerId: number): Promise<CollaborativeAnswer> =>
     api.put<CollaborativeAnswer>(`${BASE}/collaborative/answers/${answerId}/reject`).then(r => r.data),
 
-  // EP-12: Obter ou criar sala colaborativa da turma (1 sala por disciplina)
+  // EP-12a: Sala colaborativa legada por DisciplinaEnum
   getCollaborativeRoom: (disciplina: DisciplinaEnum): Promise<ForumQuestion> =>
     api.get<ForumQuestion>(`${BASE}/questions/rooms/collaborative/${disciplina}`).then(r => r.data),
 
-  // EP-13: Obter ou criar sala privada com professor (1 sala por aluno+disciplina)
+  // EP-12b: Sala colaborativa TURMA por subjectId (+ classroomId opcional)
+  getCollaborativeRoomBySubject: (subjectId: number, classroomId?: number): Promise<ForumQuestion> =>
+    api.get<ForumQuestion>(`${BASE}/questions/rooms/collaborative/subject/${subjectId}`, {
+      params: classroomId ? { classroomId } : undefined,
+    }).then(r => r.data),
+
+  // EP-13a: Sala expert legada por DisciplinaEnum
   getExpertRoom: (disciplina: DisciplinaEnum): Promise<ForumQuestion> =>
     api.get<ForumQuestion>(`${BASE}/questions/rooms/expert/${disciplina}`).then(r => r.data),
+
+  // EP-13b: Sala expert TURMA por subjectId (+ classroomId opcional)
+  getExpertRoomBySubject: (subjectId: number, classroomId?: number): Promise<ForumQuestion> =>
+    api.get<ForumQuestion>(`${BASE}/questions/rooms/expert/subject/${subjectId}`, {
+      params: classroomId ? { classroomId } : undefined,
+    }).then(r => r.data),
+
+  // EP-18: Membros do fórum para autocomplete de @mention
+  getForumMembers: (subjectId: number, classroomId?: number): Promise<ForumMember[]> =>
+    api.get<ForumMember[]>(`${BASE}/questions/members`, {
+      params: { subjectId, ...(classroomId ? { classroomId } : {}) },
+    }).then(r => r.data),
+
+  // Disciplinas de uma turma (chama academic service via forum gateway)
+  getSubjectsForClassroom: (classroomId: number): Promise<SubjectInfo[]> =>
+    api.get<SubjectInfo[]>(`/academic/subject/by-classroom`, { params: { classroomId } }).then(r => r.data),
 
   // EP-14: Definir primeira mensagem numa sala expert
   updateFirstMessage: (id: number, descricao: string): Promise<void> =>
@@ -113,6 +135,10 @@ export const forumService = {
   // Assistente IA: gera resposta automática para uma questão especializada
   requestAIAnswer: (questionId: number): Promise<ExpertAnswer> =>
     api.post<ExpertAnswer>(`${BASE}/questions/${questionId}/ai-answer`).then(r => r.data),
+
+  // Todas as disciplinas activas (para professores ou admin)
+  getAllActiveSubjects: (): Promise<SubjectInfo[]> =>
+    api.get<SubjectInfo[]>('/academic/subject/all').then(r => r.data),
 
   // Disciplinas filtradas pelo nível/grupo do utilizador autenticado (vem da BD)
   getDisciplinesForMe: (): Promise<string[]> =>

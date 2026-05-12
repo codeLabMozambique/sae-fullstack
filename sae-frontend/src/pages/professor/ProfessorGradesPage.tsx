@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+﻿import { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   Box, Typography, Stack, Select, MenuItem, FormControl, InputLabel,
   CircularProgress, Paper, Table, TableBody, TableCell, TableContainer,
@@ -37,7 +37,7 @@ function initials(name: string) {
 }
 
 function avatarColor(name: string) {
-  const colors = ['#1565c0', '#2e7d32', '#e65100', '#6a1b9a', '#b71c1c', '#006064', '#33691e'];
+  const colors = ['#00A651', '#2e7d32', '#e65100', '#6a1b9a', '#b71c1c', '#006064', '#33691e'];
   let hash = 0;
   for (const c of name) hash = c.charCodeAt(0) + ((hash << 5) - hash);
   return colors[Math.abs(hash) % colors.length];

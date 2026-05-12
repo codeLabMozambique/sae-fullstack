@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+﻿import React, { useEffect, useState, useMemo } from 'react';
 import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, TablePagination, Chip, Button, IconButton, Dialog, DialogTitle,
@@ -52,7 +52,7 @@ const gradBtn = {
 const SHIFTS = ['Manhã', 'Tarde', 'Noite'];
 
 const shiftStyle: Record<string, { bg: string; color: string; border: string; icon: React.ReactNode }> = {
-  'Manhã': { bg: 'rgba(21,101,192,0.08)', color: '#1565c0', border: 'rgba(21,101,192,0.2)', icon: <MorningIcon sx={{ fontSize: '14px !important' }} /> },
+  'Manhã': { bg: 'rgba(21,101,192,0.08)', color: '#00A651', border: 'rgba(21,101,192,0.2)', icon: <MorningIcon sx={{ fontSize: '14px !important' }} /> },
   'Tarde': { bg: 'rgba(230,81,0,0.08)', color: '#e65100', border: 'rgba(230,81,0,0.2)', icon: <AfternoonIcon sx={{ fontSize: '14px !important' }} /> },
   'Noite': { bg: 'rgba(81,45,168,0.08)', color: '#512da8', border: 'rgba(81,45,168,0.2)', icon: <NightIcon sx={{ fontSize: '14px !important' }} /> },
 };
@@ -170,7 +170,7 @@ const ClassroomsPage: React.FC = () => {
       <Box sx={{ position: 'relative', zIndex: 1 }}>
 
         {/* ── Header ── */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg,#0A1628 0%,#1565c0 100%)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, p: 2.5, mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg,#0A1628 0%,#00A651 100%)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, p: 2.5, mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box sx={{ p: 1.2, borderRadius: 2, background: 'rgba(0,166,81,0.15)', border: '1px solid rgba(0,166,81,0.25)', display: 'flex' }}>
               <ClassroomIcon sx={{ color: '#4caf50', fontSize: 26 }} />
@@ -280,7 +280,7 @@ const ClassroomsPage: React.FC = () => {
                       <TableRow key={row.id} sx={{ transition: 'background .15s', '&:hover': { background: 'rgba(0,166,81,0.035)' } }}>
                         <TableCell sx={{ py: 1.5 }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                            <Avatar sx={{ width: 34, height: 34, bgcolor: 'rgba(21,101,192,0.1)', color: '#1565c0', fontSize: '0.72rem', fontWeight: 800 }}>
+                            <Avatar sx={{ width: 34, height: 34, bgcolor: 'rgba(21,101,192,0.1)', color: '#00A651', fontSize: '0.72rem', fontWeight: 800 }}>
                               {row.name.slice(0, 2).toUpperCase()}
                             </Avatar>
                             <Typography fontWeight={600} color={PRIMARY} variant="body2">{row.name}</Typography>
@@ -344,7 +344,7 @@ const ClassroomsPage: React.FC = () => {
           paper: { sx: { ...glass, background: 'rgba(255,255,255,0.97)', borderRadius: 4, boxShadow: '0 24px 64px rgba(0,0,0,0.18)', overflow: 'hidden' } },
         }}>
         <DialogTitle sx={{ p: 0 }}>
-          <Box sx={{ px: 3, py: 2.5, background: 'linear-gradient(135deg,#0A1628 0%,#1565c0 100%)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ px: 3, py: 2.5, background: 'linear-gradient(135deg,#0A1628 0%,#00A651 100%)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <ClassroomIcon sx={{ color: '#4caf50' }} />
               <Typography variant="h6" color="white">{editing ? 'Editar Turma' : 'Nova Turma'}</Typography>

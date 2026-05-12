@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+﻿import { useEffect, useState, useMemo } from 'react';
 import {
   Box, Typography, Grid, Card, CardContent, CardActionArea,
   Drawer, Avatar, Chip, CircularProgress, Divider,
@@ -127,7 +127,7 @@ export default function ProfessorClassesPage() {
                 <CardActionArea onClick={() => handleOpenClass(cls)} sx={{ p: 0 }}>
                   <Box
                     sx={{
-                      background: 'linear-gradient(135deg, #1565c0 0%, #42a5f5 100%)',
+                      background: 'linear-gradient(135deg, #00A651 0%, #4caf50 100%)',
                       p: 2.5,
                       borderRadius: '12px 12px 0 0',
                     }}

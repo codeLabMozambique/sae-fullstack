@@ -17,11 +17,7 @@ import java.util.Optional;
 @Repository
 public interface ForumQuestionRepository extends JpaRepository<ForumQuestionEntity, Long> {
 
-    /**
-     * Filtro dinâmico com native query para evitar problema do Hibernate 6
-     * com parâmetros enum nulos em JPQL (BindException / type mismatch).
-     * Os enums são passados como String (.name()) pelo serviço.
-     */
+    // ── Filtro dinâmico com native query ────────────────────────────────────
     @Query(
         value = "SELECT * FROM forum_question " +
                 "WHERE (:disciplinaName IS NULL OR area = :disciplinaName) " +
@@ -41,6 +37,7 @@ public interface ForumQuestionRepository extends JpaRepository<ForumQuestionEnti
         Pageable pageable
     );
 
+    // ── Legado: por DisciplinaEnum ───────────────────────────────────────────
     List<ForumQuestionEntity> findByCreatedByOrderByCreatedAtDesc(String createdBy);
 
     List<ForumQuestionEntity> findByDisciplina(DisciplinaEnum disciplina);
@@ -56,4 +53,38 @@ public interface ForumQuestionRepository extends JpaRepository<ForumQuestionEnti
 
     List<ForumQuestionEntity> findByQuestionTypeAndDisciplinaIn(
         QuestionType questionType, List<DisciplinaEnum> disciplinas);
+
+    // ── Por subjectId (novo modelo) ──────────────────────────────────────────
+
+    /** Sala colaborativa de uma turma específica (subjectId + classroomId) */
+    Optional<ForumQuestionEntity> findFirstBySubjectIdAndClassroomIdAndQuestionTypeOrderByCreatedAtAsc(
+        Long subjectId, Long classroomId, QuestionType type);
+
+    /** Sala colaborativa por disciplina (broadcast — sem turma específica) */
+    Optional<ForumQuestionEntity> findFirstBySubjectIdAndQuestionTypeAndClassroomIdIsNullOrderByCreatedAtAsc(
+        Long subjectId, QuestionType type);
+
+    /** Sala expert (1-on-1 aluno+professor) por subjectId + classroomId */
+    Optional<ForumQuestionEntity> findFirstBySubjectIdAndClassroomIdAndQuestionTypeAndCreatedByOrderByCreatedAtAsc(
+        Long subjectId, Long classroomId, QuestionType type, String createdBy);
+
+    /** Sala expert por disciplina (sem turma) */
+    Optional<ForumQuestionEntity> findFirstBySubjectIdAndQuestionTypeAndCreatedByAndClassroomIdIsNullOrderByCreatedAtAsc(
+        Long subjectId, QuestionType type, String createdBy);
+
+    /** Perguntas pendentes ESPECIALIZADO para um conjunto de subjectIds */
+    List<ForumQuestionEntity> findByQuestionTypeAndSubjectIdInAndStatus(
+        QuestionType questionType, List<Long> subjectIds, QuestionStatus status);
+
+    /** Perguntas COLABORATIVO para um conjunto de subjectIds */
+    List<ForumQuestionEntity> findByQuestionTypeAndSubjectIdIn(
+        QuestionType questionType, List<Long> subjectIds);
+
+    /** Perguntas COLABORATIVO de uma turma específica */
+    List<ForumQuestionEntity> findByQuestionTypeAndClassroomIdAndSubjectId(
+        QuestionType questionType, Long classroomId, Long subjectId);
+
+    /** Perguntas de uma turma (para filtro no inbox do professor) */
+    List<ForumQuestionEntity> findByQuestionTypeAndSubjectIdInAndClassroomIdAndStatus(
+        QuestionType questionType, List<Long> subjectIds, Long classroomId, QuestionStatus status);
 }

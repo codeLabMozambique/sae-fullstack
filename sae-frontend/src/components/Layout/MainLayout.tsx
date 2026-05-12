@@ -434,17 +434,6 @@ const MainLayout: React.FC<Props> = ({ children }) => {
           flexDirection: 'column',
         }}
       >
-        {/* Top bar (desktop) — hidden on forum pages */}
-        {!isForumPage && (
-          <Box sx={{ display: { xs: 'none', sm: 'flex' }, justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-            <Box>
-              <Typography variant="h5" fontWeight={700} color="#0A1628">{currentPage}</Typography>
-              <Typography variant="caption" color="text.secondary">
-                Bem-vindo de volta, {user?.fullName || user?.username}
-              </Typography>
-            </Box>
-          </Box>
-        )}
         {children}
       </Box>
 

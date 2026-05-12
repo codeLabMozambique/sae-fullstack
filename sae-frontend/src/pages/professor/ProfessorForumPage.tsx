@@ -21,7 +21,7 @@ import QuizIcon from '@mui/icons-material/Quiz';
 import { useAuth } from '../../context/AuthContext';
 import { forumService } from '../../services/forumService';
 import api from '../../services/api';
-import type { ForumQuestion, ExpertAnswer, CollaborativeAnswer } from '../../types/forum';
+import type { ForumQuestion, ExpertAnswer, CollaborativeAnswer, SubjectInfo } from '../../types/forum';
 import { DISCIPLINA_LABELS, DISCIPLINA_COLOR, DISCIPLINA_EMOJI } from '../../types/forum';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -53,6 +53,22 @@ function formatWait(min: number) {
   return m > 0 ? `${h}h ${m}min` : `${h}h`;
 }
 
+function getSubjectLabel(q: ForumQuestion, subjectsMap: Map<number, SubjectInfo>): string {
+  if (q.subjectId != null) return subjectsMap.get(q.subjectId)?.name ?? `Disciplina #${q.subjectId}`;
+  if (q.disciplina) return DISCIPLINA_LABELS[q.disciplina] ?? q.disciplina;
+  return 'Geral';
+}
+
+function getSubjectEmoji(q: ForumQuestion): string {
+  if (q.disciplina) return DISCIPLINA_EMOJI[q.disciplina] ?? '📚';
+  return '📚';
+}
+
+function getSubjectColor(q: ForumQuestion): string {
+  if (q.disciplina) return DISCIPLINA_COLOR[q.disciplina] ?? '#374151';
+  return '#374151';
+}
+
 interface AttachmentInfo { id: string; originalName: string; contentType: string; size: number }
 
 async function uploadAttachment(file: File, context: string, contextId?: string): Promise<AttachmentInfo> {
@@ -77,7 +93,7 @@ function SidebarItem({
   q: ForumQuestion; active: boolean; onClick: () => void; isPending: boolean;
 }) {
   const isExpert = q.questionType === 'ESPECIALIZADO';
-  const accent = isPending ? '#F59E0B' : '#10B981';
+  const accent = isPending ? '#00A651' : '#4caf50';
   const allAnswers = [...(q.expertAnswers ?? []), ...(q.collaborativeAnswers ?? [])];
   const lastMsg = allAnswers.slice(-1)[0]?.conteudo ?? q.descricao;
   const preview = lastMsg === '_' ? 'A aguardar primeira mensagem...' : lastMsg;
@@ -100,8 +116,8 @@ function SidebarItem({
         <Box sx={{ position: 'relative' }}>
           <Avatar sx={{
             width: 50, height: 50,
-            bgcolor: isExpert ? '#DBEAFE' : '#D1FAE5',
-            color: isExpert ? '#2563EB' : '#10B981',
+            bgcolor: isExpert ? '#E8F5E9' : '#C8E6C9',
+            color: isExpert ? '#008f44' : '#00A651',
             border: `1.5px solid ${active ? accent : 'transparent'}`,
             transition: 'border 0.3s',
           }}>
@@ -111,7 +127,7 @@ function SidebarItem({
             <Box sx={{
               position: 'absolute', bottom: 2, right: 2,
               width: 12, height: 12, borderRadius: '50%',
-              bgcolor: '#F59E0B', border: '2px solid white',
+              bgcolor: '#00A651', border: '2px solid white',
             }} />
           )}
         </Box>
@@ -156,7 +172,7 @@ function ProfessorChatMessages({
 }) {
   const endRef = useRef<HTMLDivElement>(null);
   const isExpert = q.questionType === 'ESPECIALIZADO';
-  const ownBg = isExpert ? '#2563EB' : '#10B981';
+  const ownBg = isExpert ? '#00A651' : '#008f44';
 
   const messages = [
     ...(q.expertAnswers ?? []),
@@ -223,7 +239,7 @@ function ProfessorChatMessages({
                 <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, fontSize: 11 }}>
                   {a.aiGenerated ? '🤖 Assistente IA' : a.answeredBy}
                 </Typography>
-                {a.aiGenerated && <Chip label="IA" size="small" sx={{ height: 14, fontSize: 8, bgcolor: '#E0E7FF', color: '#4F46E5', fontWeight: 800 }} />}
+                {a.aiGenerated && <Chip label="IA" size="small" sx={{ height: 14, fontSize: 8, bgcolor: '#E8F5E9', color: '#00A651', fontWeight: 800 }} />}
               </Stack>
             )}
 
@@ -233,7 +249,7 @@ function ProfessorChatMessages({
               bgcolor: isOwn ? ownBg : 'white',
               color: isOwn ? 'white' : '#1E293B',
               boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-              border: accepted ? '2px solid #10B981' : 'none',
+              border: accepted ? '2px solid #00A651' : 'none',
             }}>
               <Typography sx={{ fontSize: 14.5, lineHeight: 1.5, whiteSpace: 'pre-wrap', fontWeight: 500 }}>
                 {a.conteudo}
@@ -252,7 +268,7 @@ function ProfessorChatMessages({
               )}
 
               <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end" mt={0.5}>
-                {accepted && <CheckCircleIcon sx={{ fontSize: 12, color: isOwn ? 'white' : '#10B981' }} />}
+                {accepted && <CheckCircleIcon sx={{ fontSize: 12, color: isOwn ? 'white' : '#00A651' }} />}
                 <Typography variant="caption" sx={{ opacity: 0.8, fontSize: 10, fontWeight: 700 }}>
                   {new Date(a.createdAt).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}
                 </Typography>
@@ -274,8 +290,8 @@ function ProfessorChatMessages({
                     size="small"
                     sx={{
                       height: 16, fontSize: 9, fontWeight: 800,
-                      bgcolor: collabA.validationStatus === 'VALIDADA' ? '#D1FAE5' : '#FEF3C7',
-                      color: collabA.validationStatus === 'VALIDADA' ? '#065F46' : '#92400E',
+                      bgcolor: collabA.validationStatus === 'VALIDADA' ? '#D1FAE5' : '#E8F5E9',
+                      color: collabA.validationStatus === 'VALIDADA' ? '#065F46' : '#00A651',
                     }}
                   />
                 )}
@@ -302,7 +318,7 @@ function ChatInput({ questionId, questionType, onSent }: {
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const isExpert = questionType === 'ESPECIALIZADO';
-  const accent = isExpert ? '#2563EB' : '#10B981';
+  const accent = isExpert ? '#00A651' : '#4caf50';
 
   const handleSend = async () => {
     if (!text.trim() && !file) return;
@@ -380,7 +396,7 @@ function ChatInput({ questionId, questionType, onSent }: {
             mb: 0.5, bgcolor: accent, color: 'white',
             width: 44, height: 44,
             boxShadow: `0 4px 12px ${accent}40`,
-            '&:hover': { bgcolor: isExpert ? '#1E40AF' : '#059669', transform: 'scale(1.05)' },
+            '&:hover': { bgcolor: isExpert ? '#008f44' : '#4caf50', transform: 'scale(1.05)' },
             '&.Mui-disabled': { bgcolor: '#E2E8F0', color: '#94A3B8', boxShadow: 'none' },
             transition: 'all 0.2s',
           }}
@@ -396,8 +412,8 @@ function ChatInput({ questionId, questionType, onSent }: {
 
 // ─── Right detail panel ────────────────────────────────────────────────────────
 
-function DetailPanel({ q }: { q: ForumQuestion }) {
-  const discColor = DISCIPLINA_COLOR[q.disciplina] ?? '#666';
+function DetailPanel({ q, subjectsMap }: { q: ForumQuestion; subjectsMap: Map<number, SubjectInfo> }) {
+  const discColor = getSubjectColor(q);
   const isExpert = q.questionType === 'ESPECIALIZADO';
   const allAnswers = [...(q.expertAnswers ?? []), ...(q.collaborativeAnswers ?? [])];
   const participants = [q.createdBy, ...allAnswers.map(a => a.answeredBy)]
@@ -411,20 +427,18 @@ function DetailPanel({ q }: { q: ForumQuestion }) {
       borderLeft: '1px solid rgba(0,0,0,0.08)', bgcolor: 'white', overflow: 'hidden',
     }}>
       {/* Header */}
-      <Box sx={{ p: 3, textAlign: 'center', borderBottom: '1px solid #F1F5F9', background: isExpert ? '#EFF6FF' : '#F0FDF4' }}>
+      <Box sx={{ p: 3, textAlign: 'center', borderBottom: '1px solid #F1F5F9', background: '#F0FDF4' }}>
         <Avatar sx={{
           width: 70, height: 70, mx: 'auto', mb: 2,
-          bgcolor: 'white', color: isExpert ? '#2563EB' : '#10B981',
-          boxShadow: isExpert
-            ? '0 4px 12px rgba(37, 99, 235, 0.15)'
-            : '0 4px 12px rgba(16, 185, 129, 0.15)',
+          bgcolor: 'white', color: '#00A651',
+          boxShadow: '0 4px 12px rgba(0, 166, 81, 0.15)',
           border: '2px solid white',
           fontSize: 28, fontWeight: 800,
         }}>
           {initials(q.createdBy)}
         </Avatar>
         <Typography variant="subtitle1" fontWeight={800} sx={{ color: '#0F172A' }}>{q.createdBy}</Typography>
-        <Typography variant="caption" sx={{ color: isExpert ? '#2563EB' : '#10B981', fontWeight: 700 }}>
+        <Typography variant="caption" sx={{ color: '#00A651', fontWeight: 700 }}>
           {isExpert ? 'Sessão Privada' : 'Fórum da Turma'}
         </Typography>
       </Box>
@@ -443,7 +457,7 @@ function DetailPanel({ q }: { q: ForumQuestion }) {
               Disciplina
             </Typography>
             <Chip
-              label={`${DISCIPLINA_EMOJI[q.disciplina]} ${DISCIPLINA_LABELS[q.disciplina]}`}
+              label={`${getSubjectEmoji(q)} ${getSubjectLabel(q, subjectsMap)}`}
               size="small"
               sx={{ bgcolor: discColor + '15', color: discColor, fontWeight: 800, borderRadius: 1 }}
             />
@@ -503,21 +517,21 @@ function DetailPanel({ q }: { q: ForumQuestion }) {
             <Stack key={p} direction="row" spacing={1.5} alignItems="center">
               <Avatar sx={{
                 width: 32, height: 32, fontSize: 11,
-                bgcolor: i === 0 ? '#E0F2FE' : (isExpert ? '#EFF6FF' : '#DCFCE7'),
-                color: i === 0 ? '#0369A1' : (isExpert ? '#2563EB' : '#15803D'),
+                bgcolor: i === 0 ? '#E8F5E9' : '#C8E6C9',
+                color: i === 0 ? '#008f44' : '#00A651',
               }}>
                 {initials(p)}
               </Avatar>
               <Box flex={1} minWidth={0}>
                 <Typography variant="body2" sx={{ fontWeight: 600, color: '#1E293B' }} noWrap>{p}</Typography>
                 <Typography variant="caption" sx={{
-                  color: i === 0 ? '#0369A1' : (isExpert ? '#2563EB' : '#15803D'),
+                  color: i === 0 ? '#008f44' : '#00A651',
                   fontWeight: 700,
                 }}>
                   {i === 0 ? 'Aluno' : 'Professor'}
                 </Typography>
               </Box>
-              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10B981' }} />
+              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#00A651' }} />
             </Stack>
           ))}
         </Stack>
@@ -543,6 +557,7 @@ export default function ProfessorForumPage() {
   const [activeQ, setActiveQ] = useState<ForumQuestion | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [search, setSearch] = useState('');
+  const [subjectsMap, setSubjectsMap] = useState<Map<number, SubjectInfo>>(new Map());
 
   const loadPending = () => {
     setLoadingPending(true);
@@ -558,7 +573,12 @@ export default function ProfessorForumPage() {
       .finally(() => setLoadingAnswered(false));
   };
 
-  useEffect(() => { loadPending(); }, []);
+  useEffect(() => {
+    loadPending();
+    forumService.getAllActiveSubjects().then(list => {
+      setSubjectsMap(new Map(list.map(s => [s.id, s])));
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (sidebarTab === 'answered' && answeredList.length === 0) loadAnswered();
@@ -584,7 +604,7 @@ export default function ProfessorForumPage() {
 
   const currentList = (sidebarTab === 'pending' ? pendingList : answeredList)
     .filter(q => !search || q.titulo.toLowerCase().includes(search.toLowerCase())
-      || DISCIPLINA_LABELS[q.disciplina].toLowerCase().includes(search.toLowerCase())
+      || getSubjectLabel(q, subjectsMap).toLowerCase().includes(search.toLowerCase())
       || q.createdBy.toLowerCase().includes(search.toLowerCase()));
 
   const isLoading = sidebarTab === 'pending' ? loadingPending : loadingAnswered;
@@ -610,10 +630,10 @@ export default function ProfessorForumPage() {
             <Stack direction="row" spacing={1.5} alignItems="center">
               <Box sx={{
                 p: 1, borderRadius: 2,
-                bgcolor: '#FEF3C7',
+                bgcolor: '#00A651',
                 display: 'flex', alignItems: 'center',
               }}>
-                <QuizIcon sx={{ color: '#D97706', fontSize: 20 }} />
+                <QuizIcon sx={{ color: 'white', fontSize: 20 }} />
               </Box>
               <Box>
                 <Typography fontWeight={800} color="#0F172A" variant="subtitle1" sx={{ lineHeight: 1.1, fontSize: 15 }}>
@@ -640,7 +660,7 @@ export default function ProfessorForumPage() {
                   bgcolor: '#F8FAFC', borderRadius: 2, color: '#0F172A',
                   '& fieldset': { border: '1px solid rgba(0,0,0,0.08)' },
                   '&:hover fieldset': { borderColor: 'rgba(0,0,0,0.15)' },
-                  '&.Mui-focused fieldset': { borderColor: '#D97706', borderWidth: 1.5 },
+                  '&.Mui-focused fieldset': { borderColor: '#00A651', borderWidth: 1.5 },
                   '& input': { py: 1, fontSize: 13, color: '#0F172A', '&::placeholder': { color: '#94A3B8', opacity: 1 } },
                 },
               }}
@@ -664,12 +684,12 @@ export default function ProfessorForumPage() {
               onClick={() => setSidebarTab(item.key as SidebarTab)}
               sx={{
                 px: 0, height: 32, borderRadius: 2,
-                bgcolor: sidebarTab === item.key ? '#D97706' : 'transparent',
+                bgcolor: sidebarTab === item.key ? '#00A651' : 'transparent',
                 color: sidebarTab === item.key ? 'white' : '#64748B',
                 fontWeight: 800, fontSize: 10.5,
                 border: '1px solid',
-                borderColor: sidebarTab === item.key ? '#D97706' : 'transparent',
-                '&:hover': { bgcolor: sidebarTab === item.key ? '#B45309' : 'rgba(0,0,0,0.05)' },
+                borderColor: sidebarTab === item.key ? '#00A651' : 'transparent',
+                '&:hover': { bgcolor: sidebarTab === item.key ? '#008f44' : 'rgba(0,0,0,0.05)' },
                 transition: 'all 0.2s',
                 '& .MuiChip-label': { px: 1 },
               }}
@@ -743,17 +763,17 @@ export default function ProfessorForumPage() {
                   </Typography>
                   <Divider orientation="vertical" flexItem sx={{ height: 12, my: 'auto', mx: 0.5 }} />
                   <Chip
-                    label={DISCIPLINA_LABELS[activeQ.disciplina]}
+                    label={`${getSubjectEmoji(activeQ)} ${getSubjectLabel(activeQ, subjectsMap)}`}
                     size="small"
                     sx={{
                       height: 18, fontSize: 10, fontWeight: 700,
-                      bgcolor: (DISCIPLINA_COLOR[activeQ.disciplina] ?? '#666') + '15',
-                      color: DISCIPLINA_COLOR[activeQ.disciplina] ?? '#666',
+                      bgcolor: getSubjectColor(activeQ) + '15',
+                      color: getSubjectColor(activeQ),
                     }}
                   />
                   <Divider orientation="vertical" flexItem sx={{ height: 12, my: 'auto', mx: 0.5 }} />
                   <Typography variant="caption" sx={{
-                    color: activeQ.questionType === 'ESPECIALIZADO' ? '#2563EB' : '#10B981',
+                    color: activeQ.questionType === 'ESPECIALIZADO' ? '#00A651' : '#4caf50',
                     fontWeight: 700, fontSize: { xs: 10, md: 12 },
                   }}>
                     {activeQ.questionType === 'ESPECIALIZADO' ? 'Sessão Privada' : 'Fórum da Turma'}
@@ -765,7 +785,7 @@ export default function ProfessorForumPage() {
                 <Chip
                   label="Aguardando"
                   size="small"
-                  sx={{ bgcolor: '#FEF3C7', color: '#92400E', fontWeight: 800, fontSize: 10 }}
+                  sx={{ bgcolor: '#E8F5E9', color: '#00A651', fontWeight: 800, fontSize: 10 }}
                 />
               )}
             </Stack>
@@ -808,7 +828,7 @@ export default function ProfessorForumPage() {
               boxShadow: '0 20px 40px rgba(0,0,0,0.05)',
               animation: 'morph 8s ease-in-out infinite',
             }}>
-              <ForumIcon sx={{ fontSize: 45, color: '#F59E0B' }} />
+              <ForumIcon sx={{ fontSize: 45, color: '#00A651' }} />
             </Box>
             <style>{`
               @keyframes morph {
@@ -828,7 +848,7 @@ export default function ProfessorForumPage() {
       )}
 
       {/* ── DETAIL PANEL — hidden on mobile and tablet ───────────────────────── */}
-      {!isMobile && !isTablet && activeQ && <DetailPanel q={activeQ} />}
+      {!isMobile && !isTablet && activeQ && <DetailPanel q={activeQ} subjectsMap={subjectsMap} />}
     </Box>
   );
 }
