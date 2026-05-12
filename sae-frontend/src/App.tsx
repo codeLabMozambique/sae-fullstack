@@ -22,6 +22,7 @@ import StudentQuizPage from './pages/student/StudentQuizPage';
 import ProfessorQuizPage from './pages/professor/ProfessorQuizPage';
 import UsersListPage from './pages/admin/users/UsersListPage';
 import ProfessorClassroomsPage from './pages/professor/ProfessorClassroomsPage';
+import DirectorClassroomPage from './pages/professor/DirectorClassroomPage';
 import ProfessorTasksPage from './pages/professor/ProfessorTasksPage';
 import ProfessorTaskDetailsPage from './pages/professor/ProfessorTaskDetailsPage';
 import StudentTasksPage from './pages/student/StudentTasksPage';
@@ -156,6 +157,7 @@ function App() {
             <Route path="/professor/quiz/create" element={<Layout><ProfessorQuizPage /></Layout>} />
             <Route path="/professor/my-classes" element={<Layout><ProfessorClassroomsPage /></Layout>} />
             <Route path="/professor/students" element={<Layout><ProfessorClassroomsPage /></Layout>} />
+            <Route path="/professor/director-classroom" element={<Layout><DirectorClassroomPage /></Layout>} />
             <Route path="/professor/classes" element={<Layout><ProfessorClassesPage /></Layout>} />
             <Route path="/professor/grades" element={<Layout><ProfessorGradesPage /></Layout>} />
 

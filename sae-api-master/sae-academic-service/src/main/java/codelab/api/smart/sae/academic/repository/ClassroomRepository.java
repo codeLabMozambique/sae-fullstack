@@ -11,4 +11,5 @@ import java.util.List;
 public interface ClassroomRepository extends JpaRepository<ClassroomEntity, Long> {
     List<ClassroomEntity> findByStatus(EntityState status);
     List<ClassroomEntity> findBySchoolIdAndStatus(Long schoolId, EntityState status);
+    List<ClassroomEntity> findByDirectorIdAndStatus(Long directorId, EntityState status);
 }

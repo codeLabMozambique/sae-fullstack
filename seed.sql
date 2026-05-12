@@ -868,6 +868,33 @@ SET classroom_id = 23,
 WHERE user_id = (SELECT id FROM sae_user WHERE username = '+258841111101');
 
 -- ============================================================
+-- BLOCO 22 — Director de Turma: coluna + menu do professor
+-- ============================================================
+
+-- Coluna director_id na tabela de turmas (Hibernate cria via ddl-auto;
+-- este ALTER garante compatibilidade em runs sem serviço activo).
+ALTER TABLE IF EXISTS ac_classroom ADD COLUMN IF NOT EXISTS director_id BIGINT NULL;
+
+-- Menu item "Director de Turma" para o role PROFESSOR
+INSERT INTO app_transaction (id, status, code, type, label, router_link, position, parent_id) VALUES
+(230, 1, 'PRF-DIR', 'HEADER', 'Director de Turma', '/professor/director-classroom', 7, NULL)
+ON CONFLICT (id) DO UPDATE SET
+    status      = EXCLUDED.status,
+    code        = EXCLUDED.code,
+    type        = EXCLUDED.type,
+    label       = EXCLUDED.label,
+    router_link = EXCLUDED.router_link,
+    position    = EXCLUDED.position,
+    parent_id   = EXCLUDED.parent_id;
+
+INSERT INTO role_transaction (id, status, role, app_transaction_id) VALUES
+(230, 1, 'PROFESSOR', 230)
+ON CONFLICT (id) DO UPDATE SET
+    status             = EXCLUDED.status,
+    role               = EXCLUDED.role,
+    app_transaction_id = EXCLUDED.app_transaction_id;
+
+-- ============================================================
 -- FIM DO SEED PostgreSQL
 --
 -- ⚠️  MongoDB também precisa de seed (categorias da biblioteca).

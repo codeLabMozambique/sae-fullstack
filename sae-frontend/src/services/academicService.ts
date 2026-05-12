@@ -42,6 +42,7 @@ export interface ClassroomDTO {
   classLevelId: number;
   shift: string;
   academicYear: string;
+  directorId?: number | null;
 }
 
 export interface ProfessorAssignmentDTO {
@@ -79,9 +80,12 @@ export const subjectService = {
 export const classroomService = {
   findAll: () => api.get<ClassroomDTO[]>('/academic/classroom/all').then(r => r.data),
   findBySchool: (schoolId: number) => api.get<ClassroomDTO[]>(`/academic/classroom/by-school/${schoolId}`).then(r => r.data),
+  findByDirector: (directorId: number) => api.get<ClassroomDTO>(`/academic/classroom/by-director`, { params: { directorId } }).then(r => r.data),
   save: (dto: ClassroomDTO) => api.post<ClassroomDTO>('/academic/classroom/save', dto).then(r => r.data),
   update: (dto: ClassroomDTO) => api.post<ClassroomDTO>('/academic/classroom/update', dto).then(r => r.data),
   deactivate: (id: number) => api.post('/academic/classroom/deactivate', { id }),
+  setDirector: (classroomId: number, directorId: number | null) =>
+    api.put<ClassroomDTO>('/academic/classroom/set-director', { classroomId, directorId }).then(r => r.data),
 };
 
 export const professorAssignmentService = {
@@ -127,8 +131,12 @@ export interface StudentProfileDTO {
 export const studentService = {
   findByClassroom: (classroomId: number) =>
     api.get<StudentProfileDTO[]>('/auth/users/students-by-classroom', { params: { classroomId } }).then(r => r.data),
+  findBySchool: (schoolId: number) =>
+    api.get<StudentProfileDTO[]>('/auth/users/students-by-school', { params: { schoolId } }).then(r => r.data),
   findByUsername: (username: string) =>
     api.get<StudentProfileDTO>('/auth/users/student-profile-by-username', { params: { username } }).then(r => r.data),
+  assignToClassroom: (userId: number, classroomId: number | null) =>
+    api.put<StudentProfileDTO>('/auth/users/student-profile', { userId, classroomId }).then(r => r.data),
 };
 
 export interface GradeDTO {

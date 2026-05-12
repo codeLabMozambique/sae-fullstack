@@ -8,6 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/classroom")
@@ -50,5 +51,18 @@ public class ClassroomResource {
     public ResponseEntity<Void> deactivate(@RequestBody ClassroomDTO request) {
         classroomService.deactivate(request.getId());
         return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN','SCHOOL_ADMIN')")
+    @PutMapping("/set-director")
+    public ResponseEntity<ClassroomDTO> setDirector(@RequestBody Map<String, Long> body) {
+        ClassroomDTO dto = classroomService.setDirector(body.get("classroomId"), body.get("directorId"));
+        return dto != null ? ResponseEntity.ok(dto) : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/by-director")
+    public ResponseEntity<ClassroomDTO> findByDirector(@RequestParam Long directorId) {
+        ClassroomDTO dto = classroomService.findByDirectorId(directorId);
+        return dto != null ? ResponseEntity.ok(dto) : ResponseEntity.notFound().build();
     }
 }

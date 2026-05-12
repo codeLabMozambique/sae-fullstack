@@ -11,6 +11,7 @@ public class ClassroomDTO implements Serializable {
     private Long classLevelId;
     private String shift;
     private String academicYear;
+    private Long directorId;
 
     public ClassroomDTO() {}
 
@@ -31,4 +32,7 @@ public class ClassroomDTO implements Serializable {
 
     public String getAcademicYear() { return academicYear; }
     public void setAcademicYear(String academicYear) { this.academicYear = academicYear; }
+
+    public Long getDirectorId() { return directorId; }
+    public void setDirectorId(Long directorId) { this.directorId = directorId; }
 }

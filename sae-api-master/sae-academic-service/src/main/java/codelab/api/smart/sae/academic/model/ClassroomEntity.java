@@ -41,6 +41,9 @@ public class ClassroomEntity extends UpdatableEntity {
     @Column(name = "TURMA_GROUP")
     private String turmaGroup;
 
+    @Column(name = "DIRECTOR_ID")
+    private Long directorId;
+
     public ClassroomEntity() {}
 
     public Long getId() { return id; }
@@ -63,4 +66,7 @@ public class ClassroomEntity extends UpdatableEntity {
 
     public String getTurmaGroup() { return turmaGroup; }
     public void setTurmaGroup(String turmaGroup) { this.turmaGroup = turmaGroup; }
+
+    public Long getDirectorId() { return directorId; }
+    public void setDirectorId(Long directorId) { this.directorId = directorId; }
 }
