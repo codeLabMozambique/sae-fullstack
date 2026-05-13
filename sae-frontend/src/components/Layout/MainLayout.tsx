@@ -18,7 +18,6 @@ import {
   ExpandMore,
   Home as HomeIcon,
   Forum as ForumIcon,
-  Grade as GradeIcon,
   Person as PersonIcon,
   // Biblioteca sub-items
   Search as SearchIcon,
@@ -37,6 +36,7 @@ import {
   MenuBook as MenuBookIcon,
   Quiz as QuizIcon,
   Assignment as AssignmentIcon,
+  Star as DirectorIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import OfflineIndicator from '../OfflineIndicator';
@@ -61,12 +61,14 @@ const staticMenuItems = [
 
 /* ── Icon map for dynamic menus by code (parent headers) ── */
 function menuIcon(code: string): React.ReactNode {
-  if (code === '02') return <AdminIcon />;         // Gestão Académica (Admin)
-  if (code === '03' || code === 'PRF-ASG') return <SchoolIcon />; // Área do Professor / Tarefas
-  if (code === '04' || code === 'STD-ASG') return <DashboardIcon />; // Área do Aluno / Tarefas
-  if (code === '05') return <HomeIcon />;          // Início (Guest)
-  if (code.includes('QUIZ')) return <QuizIcon />; // Quiz (all roles)
-  return <AssignmentIcon />; // Default para novos módulos de tarefas se não bater
+  if (code === '02') return <AdminIcon />;
+  if (code === '03' || code === 'PRF-ASG') return <SchoolIcon />;
+  if (code === '04' || code === 'STD-ASG') return <DashboardIcon />;
+  if (code === '05') return <HomeIcon />;
+  if (code.startsWith('SADM')) return <AdminIcon />;
+  if (code === 'PRF-DIR') return <DirectorIcon />;
+  if (code.includes('QUIZ')) return <QuizIcon />;
+  return <AssignmentIcon />;
 }
 
 /* ── Route-based icon (preciso e semântico) ── */
@@ -82,6 +84,8 @@ function iconByRoute(route: string): React.ReactNode | null {
   if (/\/library$/.test(route))             return <SearchIcon />;
   // Metas
   if (/\/goals/.test(route))                return <GoalsIcon />;
+  // Director de Turma
+  if (/\/director-classroom/.test(route))   return <DirectorIcon />;
   // Professor / Aluno raíz
   if (/\/dashboard/.test(route))            return <DashboardIcon />;
   if (/\/my-classes/.test(route))           return <ClassIcon />;

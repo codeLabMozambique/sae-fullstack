@@ -358,7 +358,7 @@ public class UserService {
         StudentProfileEntity s = studentProfileRepository.findByUser_Id(dto.getUserId())
                 .orElseThrow(() -> new BusinessException("Perfil de estudante não encontrado"));
         if (dto.getSchoolId() != null)    s.setSchoolId(dto.getSchoolId());
-        if (dto.getClassroomId() != null) s.setClassroomId(dto.getClassroomId());
+        s.setClassroomId(dto.getClassroomId()); // null = remove from classroom
         if (dto.getGrade() != null)       s.setGrade(dto.getGrade());
         if (dto.getAge() != null)         s.setAge(dto.getAge());
         studentProfileRepository.save(java.util.Objects.requireNonNull(s));
@@ -415,6 +415,15 @@ public class UserService {
 
     public List<StudentProfileDTO> findStudentsByClassroom(Long classroomId) {
         return studentProfileRepository.findByClassroomId(classroomId).stream()
+                .map(s -> new StudentProfileDTO(
+                        s.getUser().getId(), s.getUser().getFullname(), s.getUser().getUsername(),
+                        s.getUser().getEmail(), s.getSchoolId(), s.getClassroomId(),
+                        s.getGrade(), s.getAge()))
+                .collect(Collectors.toList());
+    }
+
+    public List<StudentProfileDTO> findStudentsBySchool(Long schoolId) {
+        return studentProfileRepository.findBySchoolId(schoolId).stream()
                 .map(s -> new StudentProfileDTO(
                         s.getUser().getId(), s.getUser().getFullname(), s.getUser().getUsername(),
                         s.getUser().getEmail(), s.getSchoolId(), s.getClassroomId(),

@@ -71,6 +71,20 @@ public class ClassroomService {
         });
     }
 
+    @Transactional
+    public ClassroomDTO setDirector(Long classroomId, Long directorId) {
+        return classroomRepository.findById(java.util.Objects.requireNonNull(classroomId))
+                .map(entity -> {
+                    entity.setDirectorId(directorId);
+                    return convertToDTO(java.util.Objects.requireNonNull(classroomRepository.save(entity)));
+                }).orElse(null);
+    }
+
+    public ClassroomDTO findByDirectorId(Long professorId) {
+        List<ClassroomEntity> found = classroomRepository.findByDirectorIdAndStatus(professorId, EntityState.ACTIVE);
+        return found.isEmpty() ? null : convertToDTO(found.get(0));
+    }
+
     private ClassroomDTO convertToDTO(ClassroomEntity entity) {
         ClassroomDTO dto = new ClassroomDTO();
         dto.setId(entity.getId());
@@ -79,6 +93,7 @@ public class ClassroomService {
         dto.setClassLevelId(entity.getClassLevel().getId());
         dto.setShift(entity.getShift());
         dto.setAcademicYear(entity.getAcademicYear());
+        dto.setDirectorId(entity.getDirectorId());
         return dto;
     }
 

@@ -258,12 +258,148 @@ JOIN app_transaction a ON a.code = v.tx_code
 
 ON CONFLICT (role, app_transaction_id) DO NOTHING;
 
+-- ============================================================
+-- BLOCO 15 — ESG: Escola Secundária
+-- ============================================================
+ALTER TABLE IF EXISTS ac_SUBJECT ADD COLUMN IF NOT EXISTS CLASS_LEVEL_ID BIGINT NULL;
+ALTER TABLE IF EXISTS ac_SUBJECT ADD COLUMN IF NOT EXISTS SCHOOL_ID BIGINT NULL;
+
+INSERT INTO ac_school (id, status, created_by, created_date, last_modified_by, last_modified_date, name, city) VALUES
+(4, 1, 0, NOW(), 0, NOW(), 'Escola Secundária SAE', 'Maputo')
+ON CONFLICT (id) DO NOTHING;
+
 -- =============================================================================
 -- VERIFICAÇÃO FINAL
 -- =============================================================================
 SELECT 'app_transaction' AS tabela, COUNT(*) AS total FROM app_transaction
 UNION ALL
 SELECT 'role_transaction', COUNT(*) FROM role_transaction;
+
+-- ============================================================
+-- BLOCO 17 — ESG: Turmas com turma_group
+-- A coluna turma_group é adicionada pelo Hibernate (ddl-auto: update)
+-- mas o ALTER TABLE garante compatibilidade em runs sem serviço activo.
+-- ============================================================
+ALTER TABLE IF EXISTS ac_classroom ADD COLUMN IF NOT EXISTS turma_group VARCHAR(10);
+
+INSERT INTO ac_classroom (id, status, created_by, created_date, last_modified_by, last_modified_date, name, school_id, class_level_id, shift, turma_group) VALUES
+(21, 1, 0, NOW(), 0, NOW(), 'Turma A - 8ª Classe',                      4, 11, 'Manhã', NULL),
+(22, 1, 0, NOW(), 0, NOW(), 'Turma A - 9ª Classe',                      4, 12, 'Manhã', NULL),
+(23, 1, 0, NOW(), 0, NOW(), 'Turma A - 10ª Classe',                     4, 13, 'Manhã', NULL),
+(24, 1, 0, NOW(), 0, NOW(), 'Turma A - 11ª Classe (Letras)',            4, 14, 'Manhã', 'A'),
+(25, 1, 0, NOW(), 0, NOW(), 'Turma B - 11ª Classe (Ciências Bio)',      4, 14, 'Manhã', 'B'),
+(26, 1, 0, NOW(), 0, NOW(), 'Turma C - 11ª Classe (Ciências Exactas)', 4, 14, 'Manhã', 'C'),
+(27, 1, 0, NOW(), 0, NOW(), 'Turma A - 12ª Classe (Letras)',            4, 15, 'Manhã', 'A'),
+(28, 1, 0, NOW(), 0, NOW(), 'Turma B - 12ª Classe (Ciências Bio)',      4, 15, 'Manhã', 'B'),
+(29, 1, 0, NOW(), 0, NOW(), 'Turma C - 12ª Classe (Ciências Exactas)', 4, 15, 'Manhã', 'C')
+ON CONFLICT (id) DO NOTHING;
+
+SELECT setval(pg_get_serial_sequence('ac_classroom', 'id'), 30);
+
+-- ============================================================
+-- BLOCO 18 — Actualizar codes dos subjects existentes
+-- A coluna code é adicionada pelo Hibernate; o ALTER TABLE garante
+-- que este bloco pode ser executado standalone.
+-- ============================================================
+ALTER TABLE IF EXISTS ac_subject ADD COLUMN IF NOT EXISTS code        VARCHAR(20);
+ALTER TABLE IF EXISTS ac_subject ADD COLUMN IF NOT EXISTS description VARCHAR(1000);
+
+UPDATE ac_subject SET code = 'MATEMATICA'  WHERE id = 1  AND (code IS NULL OR code = '');
+UPDATE ac_subject SET code = 'PORTUGUES'   WHERE id = 2  AND (code IS NULL OR code = '');
+UPDATE ac_subject SET code = 'FISICA'      WHERE id = 3  AND (code IS NULL OR code = '');
+UPDATE ac_subject SET code = 'QUIMICA'     WHERE id = 4  AND (code IS NULL OR code = '');
+UPDATE ac_subject SET code = 'HISTORIA'    WHERE id = 5  AND (code IS NULL OR code = '');
+UPDATE ac_subject SET code = 'BIOLOGIA'    WHERE id = 6  AND (code IS NULL OR code = '');
+UPDATE ac_subject SET code = 'INGLES'      WHERE id = 7  AND (code IS NULL OR code = '');
+UPDATE ac_subject SET code = 'INFORMATICA' WHERE id = 8  AND (code IS NULL OR code = '');
+UPDATE ac_subject SET code = 'PROGRAMACAO' WHERE id = 9  AND (code IS NULL OR code = '');
+UPDATE ac_subject SET code = 'ECONOMIA'    WHERE id = 10 AND (code IS NULL OR code = '');
+
+-- ============================================================
+-- BLOCO 19 — Subjects em falta para o currículo ESG
+-- ============================================================
+INSERT INTO ac_subject (id, status, created_by, created_date, last_modified_by, last_modified_date, name, code) VALUES
+(11, 1, 0, NOW(), 0, NOW(), 'Geografia', 'GEOGRAFIA'),
+(12, 1, 0, NOW(), 0, NOW(), 'Filosofia', 'FILOSOFIA')
+ON CONFLICT (id) DO NOTHING;
+
+SELECT setval(pg_get_serial_sequence('ac_subject', 'id'), 20);
+
+-- ============================================================
+-- BLOCO 20 — Currículo ESG: ac_class_level_subject
+-- ⚠️  Esta tabela é criada pelo Hibernate (sae-academic-service).
+--    Iniciar o serviço pelo menos uma vez antes de correr este bloco.
+--
+-- Subject IDs: 1=Mat, 2=Port, 3=Fís, 4=Quím, 5=Hist, 6=Bio,
+--              7=Ingl, 8=Inf, 9=Prog, 10=Econ, 11=Geo, 12=Filos
+-- ============================================================
+INSERT INTO ac_class_level_subject (id, class_level_id, subject_id, turma_group) VALUES
+-- 8ª Classe (comum a todos)
+(1,  11, 1, NULL), (2,  11, 2, NULL), (3,  11, 7, NULL),
+(4,  11, 5, NULL), (5,  11, 11, NULL), (6,  11, 6, NULL),
+-- 9ª Classe (comum a todos)
+(7,  12, 1, NULL), (8,  12, 2, NULL), (9,  12, 7, NULL),
+(10, 12, 5, NULL), (11, 12, 11, NULL), (12, 12, 6, NULL),
+-- 10ª Classe (comum + Física, Química, Informática)
+(13, 13, 1, NULL), (14, 13, 2, NULL), (15, 13, 7, NULL),
+(16, 13, 5, NULL), (17, 13, 11, NULL), (18, 13, 6, NULL),
+(19, 13, 3, NULL), (20, 13, 4, NULL), (21, 13, 8, NULL),
+-- 11ª Grupo A — Letras: Port, Mat, Ingl, Filos, Hist
+(22, 14, 2, 'A'), (23, 14, 1, 'A'), (24, 14, 7, 'A'), (25, 14, 12, 'A'), (26, 14, 5, 'A'),
+-- 11ª Grupo B — Ciências Bio: Port, Mat, Ingl, Filos, Fís, Quím, Bio
+(27, 14, 2, 'B'), (28, 14, 1, 'B'), (29, 14, 7, 'B'), (30, 14, 12, 'B'),
+(31, 14, 3, 'B'), (32, 14, 4, 'B'), (33, 14, 6, 'B'),
+-- 11ª Grupo C — Ciências Exactas: Port, Mat, Ingl, Filos, Fís, Quím
+(34, 14, 2, 'C'), (35, 14, 1, 'C'), (36, 14, 7, 'C'), (37, 14, 12, 'C'),
+(38, 14, 3, 'C'), (39, 14, 4, 'C'),
+-- 12ª Grupo A — Letras
+(40, 15, 2, 'A'), (41, 15, 1, 'A'), (42, 15, 7, 'A'), (43, 15, 12, 'A'), (44, 15, 5, 'A'),
+-- 12ª Grupo B — Ciências Bio
+(45, 15, 2, 'B'), (46, 15, 1, 'B'), (47, 15, 7, 'B'), (48, 15, 12, 'B'),
+(49, 15, 3, 'B'), (50, 15, 4, 'B'), (51, 15, 6, 'B'),
+-- 12ª Grupo C — Ciências Exactas
+(52, 15, 2, 'C'), (53, 15, 1, 'C'), (54, 15, 7, 'C'), (55, 15, 12, 'C'),
+(56, 15, 3, 'C'), (57, 15, 4, 'C')
+ON CONFLICT (id) DO NOTHING;
+
+SELECT setval(pg_get_serial_sequence('ac_class_level_subject', 'id'), 100);
+
+-- ============================================================
+-- BLOCO 21 — Actualizar student de teste para a 10ª Classe
+-- Login: +258841111101
+-- ============================================================
+UPDATE student_profile
+SET classroom_id = 23,
+    school_id    = 4,
+    grade        = '10ª Classe'
+WHERE user_id = (SELECT id FROM sae_user WHERE username = '+258841111101');
+
+-- ============================================================
+-- BLOCO 22 — Director de Turma: coluna + menu do professor
+-- ============================================================
+
+-- Coluna director_id na tabela de turmas (Hibernate cria via ddl-auto;
+-- este ALTER garante compatibilidade em runs sem serviço activo).
+ALTER TABLE IF EXISTS ac_classroom ADD COLUMN IF NOT EXISTS director_id BIGINT NULL;
+
+-- Menu item "Director de Turma" para o role PROFESSOR
+INSERT INTO app_transaction (id, status, code, type, label, router_link, position, parent_id) VALUES
+(230, 1, 'PRF-DIR', 'HEADER', 'Director de Turma', '/professor/director-classroom', 7, NULL)
+ON CONFLICT (id) DO UPDATE SET
+    status      = EXCLUDED.status,
+    code        = EXCLUDED.code,
+    type        = EXCLUDED.type,
+    label       = EXCLUDED.label,
+    router_link = EXCLUDED.router_link,
+    position    = EXCLUDED.position,
+    parent_id   = EXCLUDED.parent_id;
+
+INSERT INTO role_transaction (id, status, role, app_transaction_id) VALUES
+(230, 1, 'PROFESSOR', 230)
+ON CONFLICT (id) DO UPDATE SET
+    status             = EXCLUDED.status,
+    role               = EXCLUDED.role,
+    app_transaction_id = EXCLUDED.app_transaction_id;
 
 -- =============================================================================
 -- NOTA: TODO o restante conteúdo é criado exclusivamente via frontend:
@@ -276,3 +412,7 @@ SELECT 'role_transaction', COUNT(*) FROM role_transaction;
 --   • Quizzes              → /professor/quiz/create
 --   • Conteúdos biblioteca → /admin/library/upload  ou  /professor/library
 -- =============================================================================
+
+-- ============================================================
+-- FIM DO SEED PostgreSQL
+-- ============================================================

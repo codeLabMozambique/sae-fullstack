@@ -182,6 +182,11 @@ public class UserResource {
         return ResponseEntity.ok(userService.findStudentsByClassroom(classroomId));
     }
 
+    @GetMapping("/students-by-school")
+    public ResponseEntity<List<StudentProfileDTO>> getStudentsBySchool(@RequestParam Long schoolId) {
+        return ResponseEntity.ok(userService.findStudentsBySchool(schoolId));
+    }
+
     @GetMapping("/student-profile-by-username")
     public ResponseEntity<StudentProfileDTO> getStudentProfileByUsername(@RequestParam String username) {
         return ResponseEntity.ok(userService.findStudentProfileByUsername(username));

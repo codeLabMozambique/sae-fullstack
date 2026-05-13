@@ -4,16 +4,20 @@ import {
   TableHead, TableRow, TablePagination, Chip, Button, IconButton, Dialog, DialogTitle,
   DialogContent, TextField, Alert, CircularProgress, Tooltip,
   Avatar, InputAdornment, Select, MenuItem, FormControl, InputLabel,
+  Autocomplete, Divider,
 } from '@mui/material';
 import {
   Add as AddIcon, Edit as EditIcon, Block as BlockIcon,
   MeetingRoom as ClassroomIcon, Search as SearchIcon, Close as CloseIcon,
   FilterList as FilterIcon, WbSunny as MorningIcon,
   WbTwilight as AfternoonIcon, NightsStay as NightIcon,
+  People as PeopleIcon, PersonRemove as PersonRemoveIcon,
+  Star as StarIcon,
 } from '@mui/icons-material';
 import {
-  classroomService, schoolService, classLevelService,
-  type ClassroomDTO, type SchoolDTO, type ClassLevelDTO,
+  classroomService, schoolService, classLevelService, studentService,
+  professorService, professorAssignmentService,
+  type ClassroomDTO, type SchoolDTO, type ClassLevelDTO, type StudentProfileDTO, type ProfessorDTO,
 } from '../../../services/academicService';
 import api from '../../../services/api';
 import { useAuth } from '../../../context/AuthContext';
@@ -80,6 +84,23 @@ const ClassroomsPage: React.FC = () => {
   const [page, setPage]               = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
+  const [enrollOpen, setEnrollOpen]             = useState(false);
+  const [enrollClassroom, setEnrollClassroom]   = useState<ClassroomDTO | null>(null);
+  const [enrolledStudents, setEnrolledStudents] = useState<StudentProfileDTO[]>([]);
+  const [schoolStudents, setSchoolStudents]     = useState<StudentProfileDTO[]>([]);
+  const [enrollLoading, setEnrollLoading]       = useState(false);
+  const [selectedStudent, setSelectedStudent]   = useState<StudentProfileDTO | null>(null);
+  const [enrollError, setEnrollError]           = useState<string | null>(null);
+  const [enrollSaving, setEnrollSaving]         = useState(false);
+
+  const [professors, setProfessors]                   = useState<ProfessorDTO[]>([]);
+  const [directorOpen, setDirectorOpen]               = useState(false);
+  const [directorClassroom, setDirectorClassroom]     = useState<ClassroomDTO | null>(null);
+  const [classroomProfessors, setClassroomProfessors] = useState<ProfessorDTO[]>([]);
+  const [directorLoading, setDirectorLoading]         = useState(false);
+  const [directorError, setDirectorError]             = useState<string | null>(null);
+  const [directorSaving, setDirectorSaving]           = useState(false);
+
   // Reload after save/deactivate — schoolAdminSchoolId is already set in state by then
   const load = async () => {
     try {
@@ -87,8 +108,8 @@ const ClassroomsPage: React.FC = () => {
       const cls = (isSchoolAdmin && schoolAdminSchoolId)
         ? await classroomService.findBySchool(schoolAdminSchoolId)
         : await classroomService.findAll();
-      const [sch, lvl] = await Promise.all([schoolService.findAll(), classLevelService.findAll()]);
-      setClassrooms(cls); setSchools(sch); setLevels(lvl);
+      const [sch, lvl, profs] = await Promise.all([schoolService.findAll(), classLevelService.findAll(), professorService.findAll()]);
+      setClassrooms(cls); setSchools(sch); setLevels(lvl); setProfessors(profs);
     } catch { setError('Erro ao carregar dados. Verifique a ligação ao servidor.'); }
     finally { setLoading(false); }
   };
@@ -97,8 +118,8 @@ const ClassroomsPage: React.FC = () => {
     const init = async () => {
       try {
         setLoading(true); setError(null);
-        const [sch, lvl] = await Promise.all([schoolService.findAll(), classLevelService.findAll()]);
-        setSchools(sch); setLevels(lvl);
+        const [sch, lvl, profs] = await Promise.all([schoolService.findAll(), classLevelService.findAll(), professorService.findAll()]);
+        setSchools(sch); setLevels(lvl); setProfessors(profs);
         if (isSchoolAdmin) {
           const profileRes = await api.get<{ schoolId: number }>('/auth/users/school-admin-profile');
           const sid = profileRes.data.schoolId;
@@ -155,6 +176,103 @@ const ClassroomsPage: React.FC = () => {
     try { setError(null); await classroomService.deactivate(id); await load(); }
     catch { setError('Erro ao desativar turma.'); }
   };
+
+  const openEnroll = async (classroom: ClassroomDTO) => {
+    setEnrollClassroom(classroom);
+    setEnrollOpen(true);
+    setEnrollError(null);
+    setSelectedStudent(null);
+    setEnrollLoading(true);
+    try {
+      const [enrolled, all] = await Promise.all([
+        studentService.findByClassroom(classroom.id!),
+        studentService.findBySchool(classroom.schoolId),
+      ]);
+      setEnrolledStudents(enrolled);
+      setSchoolStudents(all);
+    } catch {
+      setEnrollError('Erro ao carregar alunos');
+    } finally {
+      setEnrollLoading(false);
+    }
+  };
+
+  const closeEnroll = () => {
+    setEnrollOpen(false);
+    setEnrollClassroom(null);
+    setSelectedStudent(null);
+  };
+
+  const handleAssign = async () => {
+    if (!selectedStudent || !enrollClassroom) return;
+    try {
+      setEnrollSaving(true);
+      setEnrollError(null);
+      await studentService.assignToClassroom(selectedStudent.userId, enrollClassroom.id!);
+      const [enrolled, all] = await Promise.all([
+        studentService.findByClassroom(enrollClassroom.id!),
+        studentService.findBySchool(enrollClassroom.schoolId),
+      ]);
+      setEnrolledStudents(enrolled);
+      setSchoolStudents(all);
+      setSelectedStudent(null);
+    } catch {
+      setEnrollError('Erro ao matricular aluno');
+    } finally {
+      setEnrollSaving(false);
+    }
+  };
+
+  const handleRemoveStudent = async (student: StudentProfileDTO) => {
+    if (!enrollClassroom) return;
+    if (!window.confirm(`Remover ${student.fullName} desta turma?`)) return;
+    try {
+      setEnrollSaving(true);
+      setEnrollError(null);
+      await studentService.assignToClassroom(student.userId, null);
+      setEnrolledStudents(prev => prev.filter(s => s.userId !== student.userId));
+    } catch {
+      setEnrollError('Erro ao remover aluno');
+    } finally {
+      setEnrollSaving(false);
+    }
+  };
+
+  const openDirector = async (classroom: ClassroomDTO) => {
+    setDirectorClassroom(classroom);
+    setDirectorOpen(true);
+    setDirectorError(null);
+    setDirectorLoading(true);
+    try {
+      const assignments = await professorAssignmentService.findByClassroom(classroom.id!);
+      const assignedIds = new Set(assignments.map(a => a.professorId));
+      setClassroomProfessors(professors.filter(p => assignedIds.has(p.id)));
+    } catch {
+      setDirectorError('Erro ao carregar professores da turma');
+    } finally {
+      setDirectorLoading(false);
+    }
+  };
+
+  const closeDirector = () => { setDirectorOpen(false); setDirectorClassroom(null); };
+
+  const handleSetDirector = async (professorId: number | null) => {
+    if (!directorClassroom) return;
+    try {
+      setDirectorSaving(true);
+      setDirectorError(null);
+      const updated = await classroomService.setDirector(directorClassroom.id!, professorId);
+      setClassrooms(prev => prev.map(c => c.id === updated.id ? updated : c));
+      setDirectorClassroom(updated);
+    } catch {
+      setDirectorError('Erro ao definir director de turma');
+    } finally {
+      setDirectorSaving(false);
+    }
+  };
+
+  const directorName = (id?: number | null) =>
+    id ? (professors.find(p => p.id === id)?.fullName ?? `Prof. #${id}`) : null;
 
   const hasFilters = !!(search || schoolFilter || shiftFilter || yearFilter);
   const clearFilters = () => { setSearch(''); setSchoolFilter(''); setShiftFilter(''); setYearFilter(''); };
@@ -283,7 +401,14 @@ const ClassroomsPage: React.FC = () => {
                             <Avatar sx={{ width: 34, height: 34, bgcolor: 'rgba(21,101,192,0.1)', color: '#00A651', fontSize: '0.72rem', fontWeight: 800 }}>
                               {row.name.slice(0, 2).toUpperCase()}
                             </Avatar>
-                            <Typography fontWeight={600} color={PRIMARY} variant="body2">{row.name}</Typography>
+                            <Box>
+                              <Typography fontWeight={600} color={PRIMARY} variant="body2">{row.name}</Typography>
+                              {directorName(row.directorId) && (
+                                <Typography variant="caption" sx={{ color: ACCENT, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.3 }}>
+                                  <StarIcon sx={{ fontSize: 11 }} />{directorName(row.directorId)}
+                                </Typography>
+                              )}
+                            </Box>
                           </Box>
                         </TableCell>
                         <TableCell sx={{ color: '#475569' }}>
@@ -302,6 +427,18 @@ const ClassroomsPage: React.FC = () => {
                             sx={{ bgcolor: 'rgba(0,0,0,0.04)', color: '#475569', fontWeight: 600, border: '1px solid rgba(0,0,0,0.08)' }} />
                         </TableCell>
                         <TableCell sx={{ py: 1 }}>
+                          <Tooltip title="Alunos" placement="top">
+                            <IconButton size="small" onClick={() => openEnroll(row)}
+                              sx={{ color: ACCENT, mr: 0.5, '&:hover': { bgcolor: 'rgba(0,166,81,0.08)' } }}>
+                              <PeopleIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Director de Turma" placement="top">
+                            <IconButton size="small" onClick={() => openDirector(row)}
+                              sx={{ color: row.directorId ? '#f59e0b' : '#94a3b8', mr: 0.5, '&:hover': { bgcolor: 'rgba(245,158,11,0.08)' } }}>
+                              <StarIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                           <Tooltip title="Editar" placement="top">
                             <IconButton size="small" onClick={() => openEdit(row)} sx={{ color: '#1976d2', mr: 0.5, '&:hover': { bgcolor: 'rgba(25,118,210,0.08)' } }}>
                               <EditIcon fontSize="small" />
@@ -399,6 +536,197 @@ const ClassroomsPage: React.FC = () => {
             {submitting ? <CircularProgress size={18} color="inherit" /> : editing ? 'Actualizar' : 'Salvar'}
           </Button>
         </Box>
+      </Dialog>
+
+      {/* ── Enrollment Dialog ── */}
+      <Dialog open={enrollOpen} onClose={closeEnroll} maxWidth="sm" fullWidth
+        slotProps={{
+          backdrop: { sx: { backdropFilter: 'blur(4px)', backgroundColor: 'rgba(10,22,40,0.55)' } },
+          paper: { sx: { ...glass, background: 'rgba(255,255,255,0.97)', borderRadius: 4, boxShadow: '0 24px 64px rgba(0,0,0,0.18)', overflow: 'hidden' } },
+        }}>
+        <DialogTitle sx={{ p: 0 }}>
+          <Box sx={{ px: 3, py: 2.5, background: 'linear-gradient(135deg,#0A1628 0%,#00A651 100%)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <PeopleIcon sx={{ color: 'rgba(255,255,255,0.9)' }} />
+              <Box>
+                <Typography variant="h6" color="white">Alunos</Typography>
+                {enrollClassroom && (
+                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>{enrollClassroom.name}</Typography>
+                )}
+              </Box>
+            </Box>
+            <IconButton onClick={closeEnroll} size="small" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white', bgcolor: 'rgba(255,255,255,0.1)' } }}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+
+        <DialogContent sx={{ p: 0 }}>
+          {enrollError && (
+            <Alert severity="error" sx={{ m: 2, borderRadius: 2 }} onClose={() => setEnrollError(null)}>{enrollError}</Alert>
+          )}
+          {enrollLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+              <CircularProgress sx={{ color: ACCENT }} />
+            </Box>
+          ) : (
+            <>
+              <Box sx={{ px: 3, pt: 2.5, pb: 1 }}>
+                <Typography variant="subtitle2" color="text.secondary"
+                  sx={{ textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: 1, mb: 1.5 }}>
+                  Matricular Novo Aluno
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Autocomplete
+                    fullWidth
+                    size="small"
+                    options={schoolStudents.filter(s => s.classroomId !== enrollClassroom?.id)}
+                    getOptionLabel={s => `${s.fullName} (${s.username})`}
+                    value={selectedStudent}
+                    onChange={(_, val) => setSelectedStudent(val)}
+                    renderInput={params => (
+                      <TextField {...params} placeholder="Pesquisar aluno da escola…" sx={inputSx} />
+                    )}
+                    noOptionsText="Nenhum aluno disponível"
+                    isOptionEqualToValue={(a, b) => a.userId === b.userId}
+                  />
+                  <Button
+                    variant="contained"
+                    onClick={handleAssign}
+                    disabled={!selectedStudent || enrollSaving}
+                    sx={{ ...gradBtn, px: 2.5, whiteSpace: 'nowrap', minWidth: 110 }}
+                  >
+                    {enrollSaving ? <CircularProgress size={16} color="inherit" /> : 'Matricular'}
+                  </Button>
+                </Box>
+              </Box>
+
+              <Divider sx={{ mt: 2 }} />
+
+              <Box sx={{ px: 3, pt: 2, pb: 0.5 }}>
+                <Typography variant="subtitle2" color="text.secondary"
+                  sx={{ textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: 1 }}>
+                  Alunos Matriculados ({enrolledStudents.length})
+                </Typography>
+              </Box>
+
+              {enrolledStudents.length === 0 ? (
+                <Box sx={{ textAlign: 'center', py: 5, px: 3 }}>
+                  <PeopleIcon sx={{ fontSize: 40, color: 'rgba(0,0,0,0.1)', mb: 1 }} />
+                  <Typography color="text.secondary" variant="body2">
+                    Nenhum aluno matriculado nesta turma.
+                  </Typography>
+                </Box>
+              ) : (
+                <Box sx={{ px: 2, pb: 2, pt: 1, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                  {enrolledStudents.map(s => (
+                    <Box key={s.userId} sx={{
+                      display: 'flex', alignItems: 'center', gap: 1.5,
+                      p: 1.5, borderRadius: 2,
+                      bgcolor: 'rgba(0,166,81,0.04)',
+                      border: '1px solid rgba(0,166,81,0.12)',
+                    }}>
+                      <Avatar sx={{ width: 32, height: 32, bgcolor: 'rgba(0,166,81,0.15)', color: ACCENT, fontSize: '0.7rem', fontWeight: 800 }}>
+                        {s.fullName?.slice(0, 2).toUpperCase() ?? '??'}
+                      </Avatar>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="body2" fontWeight={600} color={PRIMARY} noWrap>{s.fullName}</Typography>
+                        <Typography variant="caption" color="text.secondary">{s.username}</Typography>
+                      </Box>
+                      <Tooltip title="Remover da turma">
+                        <IconButton size="small" onClick={() => handleRemoveStudent(s)}
+                          sx={{ color: '#ef5350', '&:hover': { bgcolor: 'rgba(239,83,80,0.08)' } }}>
+                          <PersonRemoveIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Director Dialog ── */}
+      <Dialog open={directorOpen} onClose={closeDirector} maxWidth="xs" fullWidth
+        slotProps={{
+          backdrop: { sx: { backdropFilter: 'blur(4px)', backgroundColor: 'rgba(10,22,40,0.55)' } },
+          paper: { sx: { ...glass, background: 'rgba(255,255,255,0.97)', borderRadius: 4, boxShadow: '0 24px 64px rgba(0,0,0,0.18)', overflow: 'hidden' } },
+        }}>
+        <DialogTitle sx={{ p: 0 }}>
+          <Box sx={{ px: 3, py: 2.5, background: 'linear-gradient(135deg,#0A1628 0%,#f59e0b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <StarIcon sx={{ color: 'rgba(255,255,255,0.9)' }} />
+              <Box>
+                <Typography variant="h6" color="white">Director de Turma</Typography>
+                {directorClassroom && (
+                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>{directorClassroom.name}</Typography>
+                )}
+              </Box>
+            </Box>
+            <IconButton onClick={closeDirector} size="small" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white', bgcolor: 'rgba(255,255,255,0.1)' } }}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          {directorError && (
+            <Alert severity="error" sx={{ m: 2, borderRadius: 2 }} onClose={() => setDirectorError(null)}>{directorError}</Alert>
+          )}
+          {directorLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+              <CircularProgress sx={{ color: '#f59e0b' }} />
+            </Box>
+          ) : (
+            <Box sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Typography variant="caption" color="text.secondary"
+                sx={{ textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: 1, mb: 0.5 }}>
+                Professores desta turma
+              </Typography>
+              {classroomProfessors.length === 0 ? (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <StarIcon sx={{ fontSize: 36, color: 'rgba(0,0,0,0.1)', mb: 1 }} />
+                  <Typography variant="body2" color="text.secondary">Nenhum professor atribuído a esta turma ainda.</Typography>
+                </Box>
+              ) : (
+                classroomProfessors.map(prof => {
+                  const isDirector = directorClassroom?.directorId === prof.id;
+                  return (
+                    <Box key={prof.id} sx={{
+                      display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5, borderRadius: 2,
+                      bgcolor: isDirector ? 'rgba(245,158,11,0.08)' : 'rgba(0,0,0,0.02)',
+                      border: `1px solid ${isDirector ? 'rgba(245,158,11,0.3)' : 'rgba(0,0,0,0.07)'}`,
+                      cursor: 'pointer', transition: 'all .15s',
+                      '&:hover': { bgcolor: 'rgba(245,158,11,0.06)', borderColor: 'rgba(245,158,11,0.25)' },
+                    }}
+                      onClick={() => !directorSaving && handleSetDirector(isDirector ? null : prof.id)}
+                    >
+                      <Avatar sx={{ width: 34, height: 34, bgcolor: isDirector ? 'rgba(245,158,11,0.2)' : 'rgba(0,0,0,0.06)', color: isDirector ? '#d97706' : '#64748b', fontSize: '0.7rem', fontWeight: 800 }}>
+                        {(prof.fullName ?? prof.username).slice(0, 2).toUpperCase()}
+                      </Avatar>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="body2" fontWeight={600} color={PRIMARY} noWrap>{prof.fullName ?? prof.username}</Typography>
+                        <Typography variant="caption" color="text.secondary">{prof.username}</Typography>
+                      </Box>
+                      {isDirector && (
+                        <Chip label="Director" size="small"
+                          sx={{ bgcolor: 'rgba(245,158,11,0.15)', color: '#d97706', border: '1px solid rgba(245,158,11,0.3)', fontWeight: 700, fontSize: '0.65rem' }} />
+                      )}
+                      {directorSaving && <CircularProgress size={16} sx={{ color: '#f59e0b' }} />}
+                    </Box>
+                  );
+                })
+              )}
+              {directorClassroom?.directorId && (
+                <Button size="small" onClick={() => handleSetDirector(null)} disabled={directorSaving}
+                  sx={{ mt: 1, color: '#ef5350', textTransform: 'none', fontSize: '0.78rem', alignSelf: 'flex-end' }}>
+                  Remover director
+                </Button>
+              )}
+            </Box>
+          )}
+        </DialogContent>
       </Dialog>
     </Box>
   );
