@@ -31,6 +31,9 @@ public class ProfessorProfileEntity extends UpdatableEntity {
     @Column(name = "INSTITUTIONAL_CONTACT")
     private String institutionalContact;
 
+    @Column(name = "PROFESSOR_CODE", unique = true, length = 30)
+    private String professorCode;
+
     @Column(name = "IS_ONLINE")
     private boolean online;
 
@@ -78,6 +81,14 @@ public class ProfessorProfileEntity extends UpdatableEntity {
 
     public void setInstitutionalContact(String institutionalContact) {
         this.institutionalContact = institutionalContact;
+    }
+
+    public String getProfessorCode() {
+        return professorCode;
+    }
+
+    public void setProfessorCode(String professorCode) {
+        this.professorCode = professorCode;
     }
 
     public boolean isOnline() {
