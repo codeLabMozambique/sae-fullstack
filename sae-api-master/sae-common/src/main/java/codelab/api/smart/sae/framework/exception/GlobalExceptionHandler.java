@@ -57,6 +57,17 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.valueOf(ex.getStatusCode().value()), ex.getReason());
     }
 
+    /** Rota inexistente — 404 em vez de cair no handler genérico que devolve 500. */
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNoResource(org.springframework.web.servlet.resource.NoResourceFoundException ex) {
+        return build(HttpStatus.NOT_FOUND, "Recurso não encontrado: " + ex.getResourcePath());
+    }
+
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<Map<String, Object>> handleMethodNotSupported(org.springframework.web.HttpRequestMethodNotSupportedException ex) {
+        return build(HttpStatus.METHOD_NOT_ALLOWED, "Método HTTP não suportado: " + ex.getMethod());
+    }
+
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAccessDenied(org.springframework.security.access.AccessDeniedException ex) {
         return build(HttpStatus.FORBIDDEN, "Você não tem permissão para acessar este recurso.");

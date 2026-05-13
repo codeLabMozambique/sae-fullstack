@@ -3,19 +3,26 @@ package codelab.api.smart.sae.content.resource;
 import codelab.api.smart.sae.content.dto.AssignmentDTO;
 import codelab.api.smart.sae.content.dto.SubmissionDTO;
 import codelab.api.smart.sae.content.service.AssignmentService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Endpoints para o professor gerir tarefas (assignments) e avaliar submissões.
+ *
+ * O endpoint de criação aceita JSON puro (sem anexo) ou multipart/form-data
+ * (com um campo "metadata" em JSON + um campo "file" opcional).
  */
 @RestController
 @RequestMapping("/api/professor/assignments")
@@ -23,14 +30,37 @@ public class ProfessorAssignmentResource {
 
     @Autowired private AssignmentService assignmentService;
 
-    @PostMapping
-    public ResponseEntity<AssignmentDTO> create(
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    /** JSON simples (sem ficheiro). */
+    @PostMapping(consumes = "application/json")
+    public ResponseEntity<AssignmentDTO> createJson(
             @RequestBody Map<String, Object> payload,
             Principal principal,
             HttpServletRequest req) {
         if (principal == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         String token = req.getHeader("Authorization");
-        AssignmentDTO d = assignmentService.createAssignment(payload, principal.getName(), token);
+        AssignmentDTO d = assignmentService.createAssignment(payload, null, principal.getName(), token);
+        return ResponseEntity.status(HttpStatus.CREATED).body(d);
+    }
+
+    /** Multipart com anexo opcional. */
+    @PostMapping(consumes = "multipart/form-data")
+    public ResponseEntity<AssignmentDTO> createMultipart(
+            @RequestPart("metadata") String metadataJson,
+            @RequestPart(value = "file", required = false) MultipartFile file,
+            Principal principal,
+            HttpServletRequest req) {
+        if (principal == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        Map<String, Object> payload;
+        try {
+            payload = objectMapper.readValue(metadataJson, new TypeReference<Map<String, Object>>() {});
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Metadata JSON inválido: " + e.getMessage());
+        }
+        if (payload == null) payload = new HashMap<>();
+        String token = req.getHeader("Authorization");
+        AssignmentDTO d = assignmentService.createAssignment(payload, file, principal.getName(), token);
         return ResponseEntity.status(HttpStatus.CREATED).body(d);
     }
 

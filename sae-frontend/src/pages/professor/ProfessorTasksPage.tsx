@@ -182,7 +182,7 @@ export default function ProfessorTasksPage() {
       ) : (
         <Grid container spacing={3}>
           {assignments.map(a => (
-            <Grid item xs={12} md={6} lg={4} key={a.id}>
+            <Grid size={{ xs: 12, md: 6, lg: 4 }} key={a.id}>
               <Card sx={{ 
                 borderRadius: 4, 
                 border: '1px solid #F3F4F6',
@@ -314,7 +314,7 @@ export default function ProfessorTasksPage() {
             </Box>
 
             <Grid container spacing={2}>
-              <Grid item xs={6}>
+              <Grid size={{ xs: 6 }}>
                 <Typography variant="caption" fontWeight={700} color="textSecondary">DATA LIMITE</Typography>
                 <TextField
                   type="datetime-local"
@@ -326,7 +326,7 @@ export default function ProfessorTasksPage() {
                   sx={{ mt: 1, '& .MuiOutlinedInput-root': { borderRadius: 2.5 } }}
                 />
               </Grid>
-              <Grid item xs={6}>
+              <Grid size={{ xs: 6 }}>
                 <Typography variant="caption" fontWeight={700} color="textSecondary">PONTUAÇÃO MÁXIMA</Typography>
                 <TextField
                   type="number"

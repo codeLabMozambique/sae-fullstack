@@ -51,6 +51,7 @@ import Leitor from './pages/biblioteca/Leitor';
 import Dashboard from './pages/Dashboard';
 import ChatIA from './pages/ChatIA';
 import SchoolAdminDashboardPage from './pages/school-admin/SchoolAdminDashboardPage';
+import ProfilePage from './pages/ProfilePage';
 
 import { testBackendConnection } from './services/api';
 
@@ -116,6 +117,10 @@ function App() {
 
             {/* ── Leitor de PDF embebido (qualquer role) ─────── */}
             <Route path="/leitor/:id" element={<Layout><Leitor /></Layout>} />
+
+            {/* ── Perfil (qualquer role autenticada) ───────── */}
+            <Route path="/perfil" element={<Layout><ProfilePage /></Layout>} />
+            <Route path="/profile" element={<Navigate to="/perfil" replace />} />
 
             {/* ── STUDENT — Dashboard & Fórum ───────────────── */}
             <Route path="/student/dashboard" element={<Layout><Dashboard /></Layout>} />
