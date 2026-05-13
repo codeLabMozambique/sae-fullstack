@@ -1,6 +1,7 @@
 package codelab.api.smart.sae.forum.model;
 
 import codelab.api.smart.sae.forum.enums.DisciplinaEnumConverter;
+import codelab.api.smart.sae.forum.enums.ForumScope;
 import codelab.api.smart.sae.forum.enums.QuestionStatus;
 import codelab.api.smart.sae.forum.enums.QuestionType;
 import jakarta.persistence.*;
@@ -11,14 +12,16 @@ import java.time.LocalDateTime;
 @Table(
     name = "FORUM_QUESTION",
     indexes = {
-        @Index(name = "idx_question_area",   columnList = "AREA"),
-        @Index(name = "idx_question_status", columnList = "status"),
-        @Index(name = "idx_question_type",   columnList = "questionType")
+        @Index(name = "idx_question_area",       columnList = "AREA"),
+        @Index(name = "idx_question_status",     columnList = "status"),
+        @Index(name = "idx_question_type",       columnList = "questionType"),
+        @Index(name = "idx_question_subject",    columnList = "subject_id"),
+        @Index(name = "idx_question_classroom",  columnList = "classroom_id")
     }
 )
 public class ForumQuestionEntity implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,6 +37,27 @@ public class ForumQuestionEntity implements Serializable {
     @Column(name = "TAGS", length = 500)
     private String tags;
 
+    // ── Âmbito do fórum (novo) ───────────────────────────────────────────────
+    @Enumerated(EnumType.STRING)
+    @Column(name = "FORUM_SCOPE", length = 20)
+    private ForumScope forumScope = ForumScope.DISCIPLINA;
+
+    // ── Disciplina via ac_subject (novo — substitui DisciplinaEnum) ──────────
+    @Column(name = "SUBJECT_ID")
+    private Long subjectId;
+
+    // ── Turma e escola (populados apenas quando forumScope = TURMA) ──────────
+    @Column(name = "CLASSROOM_ID")
+    private Long classroomId;
+
+    @Column(name = "SCHOOL_ID")
+    private Long schoolId;
+
+    // ── @Mention: professor mencionado no fórum da turma ────────────────────
+    @Column(name = "MENTIONED_PROFESSOR_USERNAME", length = 100)
+    private String mentionedProfessorUsername;
+
+    // ── Campo legado (mantido para compatibilidade com dados existentes) ──────
     @Convert(converter = DisciplinaEnumConverter.class)
     @Column(name = "AREA", length = 100)
     private codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina;
@@ -66,6 +90,8 @@ public class ForumQuestionEntity implements Serializable {
         updatedAt = LocalDateTime.now();
     }
 
+    // ── Getters / Setters ────────────────────────────────────────────────────
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -77,6 +103,21 @@ public class ForumQuestionEntity implements Serializable {
 
     public String getTags() { return tags; }
     public void setTags(String tags) { this.tags = tags; }
+
+    public ForumScope getForumScope() { return forumScope; }
+    public void setForumScope(ForumScope forumScope) { this.forumScope = forumScope; }
+
+    public Long getSubjectId() { return subjectId; }
+    public void setSubjectId(Long subjectId) { this.subjectId = subjectId; }
+
+    public Long getClassroomId() { return classroomId; }
+    public void setClassroomId(Long classroomId) { this.classroomId = classroomId; }
+
+    public Long getSchoolId() { return schoolId; }
+    public void setSchoolId(Long schoolId) { this.schoolId = schoolId; }
+
+    public String getMentionedProfessorUsername() { return mentionedProfessorUsername; }
+    public void setMentionedProfessorUsername(String mentionedProfessorUsername) { this.mentionedProfessorUsername = mentionedProfessorUsername; }
 
     public codelab.api.smart.sae.forum.enums.DisciplinaEnum getDisciplina() { return disciplina; }
     public void setDisciplina(codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina) { this.disciplina = disciplina; }

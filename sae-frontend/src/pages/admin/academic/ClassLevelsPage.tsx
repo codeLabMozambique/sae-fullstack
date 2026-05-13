@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+﻿import React, { useEffect, useState, useMemo } from 'react';
 import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, TablePagination, Chip, Button, IconButton, Dialog, DialogTitle,
@@ -94,7 +94,7 @@ const ClassLevelsPage: React.FC = () => {
   const badgeColor = (idx: number) => {
     const palettes = [
       { bg: 'rgba(0,166,81,0.1)', color: '#00A651' },
-      { bg: 'rgba(21,101,192,0.1)', color: '#1565c0' },
+      { bg: 'rgba(21,101,192,0.1)', color: '#00A651' },
       { bg: 'rgba(156,39,176,0.1)', color: '#7b1fa2' },
       { bg: 'rgba(230,81,0,0.1)', color: '#e65100' },
       { bg: 'rgba(0,131,143,0.1)', color: '#00838f' },
@@ -110,7 +110,7 @@ const ClassLevelsPage: React.FC = () => {
       <Box sx={{ position: 'relative', zIndex: 1 }}>
 
         {/* ── Page header ── */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg,#0A1628 0%,#1565c0 100%)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, p: 2.5, mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg,#0A1628 0%,#00A651 100%)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, p: 2.5, mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box sx={{ p: 1.2, borderRadius: 2, background: 'rgba(0,166,81,0.15)', border: '1px solid rgba(0,166,81,0.25)', display: 'flex' }}>
               <LevelIcon sx={{ color: '#4caf50', fontSize: 26 }} />
@@ -254,7 +254,7 @@ const ClassLevelsPage: React.FC = () => {
           paper: { sx: { ...glass, background: 'rgba(255,255,255,0.97)', borderRadius: 4, boxShadow: '0 24px 64px rgba(0,0,0,0.18)', overflow: 'hidden' } },
         }}>
         <DialogTitle sx={{ p: 0 }}>
-          <Box sx={{ px: 3, py: 2.5, background: 'linear-gradient(135deg,#0A1628 0%,#1565c0 100%)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ px: 3, py: 2.5, background: 'linear-gradient(135deg,#0A1628 0%,#00A651 100%)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <LevelIcon sx={{ color: '#4caf50' }} />
               <Typography variant="h6" color="white">{editing ? 'Editar Nível' : 'Novo Nível'}</Typography>

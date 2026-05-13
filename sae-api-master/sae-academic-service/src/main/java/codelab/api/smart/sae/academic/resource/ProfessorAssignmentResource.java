@@ -22,6 +22,20 @@ public class ProfessorAssignmentResource {
         return ResponseEntity.ok(professorAssignmentService.findByProfessorId(professorId));
     }
 
+    /** Devolve IDs dos professores que leccionam subjectId na turma classroomId */
+    @GetMapping("/by-classroom-subject")
+    public ResponseEntity<List<Long>> findProfessorIdsByClassroomAndSubject(
+            @RequestParam Long classroomId,
+            @RequestParam Long subjectId) {
+        return ResponseEntity.ok(professorAssignmentService.findProfessorIdsByClassroomAndSubject(classroomId, subjectId));
+    }
+
+    /** Devolve IDs dos professores que leccionam subjectId (em qualquer turma) */
+    @GetMapping("/by-subject")
+    public ResponseEntity<List<Long>> findProfessorIdsBySubject(@RequestParam Long subjectId) {
+        return ResponseEntity.ok(professorAssignmentService.findProfessorIdsBySubject(subjectId));
+    }
+
     @GetMapping("/classroom/{classroomId}")
     public ResponseEntity<List<ProfessorAssignmentDetailDTO>> findByClassroomId(@PathVariable Long classroomId) {
         return ResponseEntity.ok(professorAssignmentService.findByClassroomId(classroomId));

@@ -1,6 +1,7 @@
 export type QuestionType = 'ESPECIALIZADO' | 'COLABORATIVO';
 export type QuestionStatus = 'ABERTA' | 'FECHADA';
 export type ValidationStatus = 'PENDENTE' | 'VALIDADA';
+export type ForumScope = 'TURMA' | 'DISCIPLINA';
 
 export interface ExpertAnswer {
   id: number;
@@ -88,11 +89,32 @@ export const ALL_DISCIPLINAS: DisciplinaEnum[] = [
   'HISTORIA', 'GEOGRAFIA', 'INGLES', 'FILOSOFIA', 'INFORMATICA', 'GERAL',
 ];
 
+export interface ForumMember {
+  username: string;
+  fullname: string;
+  role: 'PROFESSOR' | 'STUDENT';
+  online: boolean;
+}
+
+export interface SubjectInfo {
+  id: number;
+  name: string;
+  code: string;
+  description?: string;
+}
+
 export interface ForumQuestion {
   id: number;
   titulo: string;
   descricao: string;
   tags: string | null;
+  // Novo modelo
+  forumScope?: ForumScope;
+  subjectId?: number | null;
+  classroomId?: number | null;
+  schoolId?: number | null;
+  mentionedProfessorUsername?: string | null;
+  // Legado
   disciplina: DisciplinaEnum;
   questionType: QuestionType;
   status: QuestionStatus;
@@ -143,8 +165,15 @@ export interface NotificationPayload {
 export interface CreateQuestionRequest {
   titulo: string;
   descricao: string;
-  disciplina: DisciplinaEnum;
-  questionType: QuestionType;
+  // Novo modelo
+  forumScope?: ForumScope;
+  subjectId?: number | null;
+  classroomId?: number | null;
+  schoolId?: number | null;
+  mentionedProfessorUsername?: string | null;
+  // Legado
+  disciplina?: DisciplinaEnum;
+  questionType?: QuestionType;
 }
 
 export interface CreateAnswerRequest {

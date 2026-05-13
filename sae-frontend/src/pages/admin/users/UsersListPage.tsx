@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+﻿import React, { useEffect, useState, useMemo } from 'react';
 import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, TablePagination, Chip, Button, IconButton, Dialog, DialogTitle,
@@ -106,7 +106,7 @@ const ROLES = ['ADMIN', 'SCHOOL_ADMIN', 'PROFESSOR', 'STUDENT'];
 const roleChip: Record<string, { label: string; bg: string; color: string }> = {
   ADMIN:        { label: 'Admin',          bg: 'rgba(156,39,176,0.1)',  color: '#7b1fa2' },
   SCHOOL_ADMIN: { label: 'Admin de Escola', bg: 'rgba(0,125,60,0.1)',   color: '#007d3c' },
-  PROFESSOR:    { label: 'Professor',      bg: 'rgba(21,101,192,0.1)',  color: '#1565c0' },
+  PROFESSOR:    { label: 'Professor',      bg: 'rgba(21,101,192,0.1)',  color: '#00A651' },
   STUDENT:      { label: 'Estudante',      bg: 'rgba(0,166,81,0.1)',    color: '#00A651' },
   GUEST:        { label: 'Visitante',      bg: 'rgba(158,158,158,0.1)', color: '#616161' },
 };
@@ -116,13 +116,13 @@ function initials(name?: string) {
   return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
 }
 
-const avatarColors = ['#1565c0','#7b1fa2','#00A651','#e65100','#00838f','#c62828'];
+const avatarColors = ['#00A651','#7b1fa2','#00A651','#e65100','#00838f','#c62828'];
 const avatarColor  = (id: number) => avatarColors[id % avatarColors.length];
 
 /* ── Dialog title bar ── */
 const DialogHeader: React.FC<{ icon: React.ReactNode; title: string; onClose: () => void }> = ({ icon, title, onClose }) => (
   <DialogTitle sx={{ p: 0 }}>
-    <Box sx={{ px: 3, py: 2.5, background: `linear-gradient(135deg,${PRIMARY} 0%,#1565c0 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <Box sx={{ px: 3, py: 2.5, background: `linear-gradient(135deg,${PRIMARY} 0%,#00A651 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
         {icon}
         <Typography variant="h6" color="white">{title}</Typography>
@@ -368,7 +368,7 @@ const UsersListPage: React.FC = () => {
       <Box sx={{ position: 'relative', zIndex: 1 }}>
 
         {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: `linear-gradient(135deg,${PRIMARY} 0%,#1565c0 100%)`, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, p: 2.5, mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: `linear-gradient(135deg,${PRIMARY} 0%,#00A651 100%)`, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, p: 2.5, mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box sx={{ p: 1.2, borderRadius: 2, background: 'rgba(0,166,81,0.15)', border: '1px solid rgba(0,166,81,0.25)', display: 'flex' }}>
               <GroupIcon sx={{ color: '#4caf50', fontSize: 26 }} />

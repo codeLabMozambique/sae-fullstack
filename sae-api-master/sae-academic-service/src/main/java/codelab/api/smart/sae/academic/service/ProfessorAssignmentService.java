@@ -70,6 +70,24 @@ public class ProfessorAssignmentService {
                 .collect(Collectors.toList());
     }
 
+    public List<Long> findProfessorIdsByClassroomAndSubject(Long classroomId, Long subjectId) {
+        return professorAssignmentRepository
+            .findByClassroom_IdAndSubject_IdAndStatus(classroomId, subjectId, EntityState.ACTIVE)
+            .stream()
+            .map(ProfessorAssignmentEntity::getProfessorId)
+            .distinct()
+            .collect(Collectors.toList());
+    }
+
+    public List<Long> findProfessorIdsBySubject(Long subjectId) {
+        return professorAssignmentRepository
+            .findBySubject_IdAndStatus(subjectId, EntityState.ACTIVE)
+            .stream()
+            .map(ProfessorAssignmentEntity::getProfessorId)
+            .distinct()
+            .collect(Collectors.toList());
+    }
+
     public List<ProfessorAssignmentDTO> findAllActive() {
         return professorAssignmentRepository.findByStatus(EntityState.ACTIVE).stream()
                 .map(this::convertToDTO)

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import {
   Box, Typography, Chip, Card, CardContent, Button, Dialog, DialogContent,
   DialogTitle, LinearProgress, Radio, RadioGroup, FormControlLabel, FormControl,
@@ -31,8 +31,8 @@ function formatTime(secs: number): string {
 }
 
 function ScoreBadge({ score }: { score: number }) {
-  const color = score >= 70 ? '#16a34a' : score >= 50 ? '#d97706' : '#dc2626';
-  const bg = score >= 70 ? '#dcfce7' : score >= 50 ? '#fef3c7' : '#fee2e2';
+  const color = score >= 70 ? '#00A651' : score >= 50 ? '#d97706' : '#dc2626';
+  const bg = score >= 70 ? '#E8F5E9' : score >= 50 ? '#fef3c7' : '#fee2e2';
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 3 }}>
       <Box sx={{ width: 120, height: 120, borderRadius: '50%', bgcolor: bg, border: `6px solid ${color}`,
@@ -223,15 +223,15 @@ export default function StudentQuizPage() {
   if (view === 'browse') return (
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-        <Box sx={{ p: 1.2, bgcolor: '#EDE9FE', borderRadius: 2 }}>
-          <QuizIcon sx={{ color: '#7C3AED', fontSize: 28 }} />
+        <Box sx={{ p: 1.2, bgcolor: '#E8F5E9', borderRadius: 2 }}>
+          <QuizIcon sx={{ color: '#00A651', fontSize: 28 }} />
         </Box>
         <Box sx={{ flex: 1 }}>
           <Typography variant="h5" fontWeight={800} color="#0A1628">Preparação para Exame</Typography>
           <Typography variant="body2" color="text.secondary">Escolhe uma disciplina e inicia o teu quiz</Typography>
         </Box>
         <Button variant="contained" startIcon={<AIIcon />} onClick={openGenDialog}
-          sx={{ bgcolor: '#4F46E5', '&:hover': { bgcolor: '#3730A3' }, borderRadius: 2,
+          sx={{ bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' }, borderRadius: 2,
             textTransform: 'none', fontWeight: 700, whiteSpace: 'nowrap' }}>
           Gerar Quiz com IA
         </Button>
@@ -243,8 +243,8 @@ export default function StudentQuizPage() {
       <Dialog open={genDialog} onClose={() => setGenDialog(false)} maxWidth="sm" fullWidth
         PaperProps={{ sx: { borderRadius: 3 } }}>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1 }}>
-          <Box sx={{ p: 0.8, bgcolor: '#EEF2FF', borderRadius: 1.5 }}>
-            <AIIcon sx={{ color: '#4F46E5', fontSize: 22 }} />
+          <Box sx={{ p: 0.8, bgcolor: '#E8F5E9', borderRadius: 1.5 }}>
+            <AIIcon sx={{ color: '#00A651', fontSize: 22 }} />
           </Box>
           <Box sx={{ flex: 1 }}>
             <Typography fontWeight={800} color="#0A1628">Gerar Quiz com IA</Typography>
@@ -261,7 +261,7 @@ export default function StudentQuizPage() {
 
           {/* Book picker */}
           <Typography variant="subtitle2" fontWeight={700} color="#374151" sx={{ mb: 1 }}>
-            <BookIcon sx={{ fontSize: 16, mr: 0.5, verticalAlign: 'middle', color: '#4F46E5' }} />
+            <BookIcon sx={{ fontSize: 16, mr: 0.5, verticalAlign: 'middle', color: '#00A651' }} />
             Seleciona um livro
           </Typography>
           {myProgress.length === 0 ? (
@@ -272,18 +272,18 @@ export default function StudentQuizPage() {
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
               {myProgress.map(p => (
                 <Box key={p.contentId} onClick={() => setSelectedProgress(p)}
-                  sx={{ p: 1.5, border: `2px solid ${selectedProgress?.contentId === p.contentId ? '#4F46E5' : '#E5E7EB'}`,
+                  sx={{ p: 1.5, border: `2px solid ${selectedProgress?.contentId === p.contentId ? '#00A651' : '#E5E7EB'}`,
                     borderRadius: 2, cursor: 'pointer', transition: 'all 0.15s',
-                    bgcolor: selectedProgress?.contentId === p.contentId ? '#EEF2FF' : '#fff',
-                    '&:hover': { borderColor: '#818CF8', bgcolor: '#F5F3FF' } }}>
+                    bgcolor: selectedProgress?.contentId === p.contentId ? '#E8F5E9' : '#fff',
+                    '&:hover': { borderColor: '#4caf50', bgcolor: '#F1F8E9' } }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     {p.thumbnailUrl ? (
                       <Box component="img" src={p.thumbnailUrl} alt={p.contentTitle}
                         sx={{ width: 36, height: 50, objectFit: 'cover', borderRadius: 1, flexShrink: 0 }} />
                     ) : (
-                      <Box sx={{ width: 36, height: 50, bgcolor: '#EDE9FE', borderRadius: 1, display: 'flex',
+                      <Box sx={{ width: 36, height: 50, bgcolor: '#E8F5E9', borderRadius: 1, display: 'flex',
                         alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <BookIcon sx={{ color: '#7C3AED', fontSize: 18 }} />
+                        <BookIcon sx={{ color: '#00A651', fontSize: 18 }} />
                       </Box>
                     )}
                     <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -295,7 +295,7 @@ export default function StudentQuizPage() {
                       </Typography>
                     </Box>
                     {selectedProgress?.contentId === p.contentId && (
-                      <CheckIcon sx={{ color: '#4F46E5', flexShrink: 0 }} />
+                      <CheckIcon sx={{ color: '#00A651', flexShrink: 0 }} />
                     )}
                   </Box>
                 </Box>
@@ -316,9 +316,9 @@ export default function StudentQuizPage() {
                     variant={genSectionName === s.sectionName ? 'filled' : 'outlined'}
                     size="small"
                     sx={{ fontWeight: genSectionName === s.sectionName ? 700 : 400,
-                      bgcolor: genSectionName === s.sectionName ? '#4F46E5' : 'transparent',
-                      color: genSectionName === s.sectionName ? '#fff' : '#4F46E5',
-                      borderColor: '#4F46E5' }}
+                      bgcolor: genSectionName === s.sectionName ? '#00A651' : 'transparent',
+                      color: genSectionName === s.sectionName ? '#fff' : '#00A651',
+                      borderColor: '#00A651' }}
                   />
                 ))}
               </Box>
@@ -359,7 +359,7 @@ export default function StudentQuizPage() {
           <Button fullWidth variant="contained" disabled={!selectedProgress || generating}
             onClick={handleGenerate}
             startIcon={generating ? <CircularProgress size={16} color="inherit" /> : <AIIcon />}
-            sx={{ bgcolor: '#4F46E5', '&:hover': { bgcolor: '#3730A3' }, borderRadius: 2,
+            sx={{ bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' }, borderRadius: 2,
               textTransform: 'none', fontWeight: 700, py: 1.2 }}>
             {generating ? 'A gerar quiz...' : 'Gerar Quiz'}
           </Button>
@@ -373,29 +373,29 @@ export default function StudentQuizPage() {
           onClick={() => setDisciplina('')}
           variant={disciplina === '' ? 'filled' : 'outlined'}
           sx={{ fontWeight: disciplina === '' ? 700 : 400,
-            bgcolor: disciplina === '' ? '#7C3AED' : 'transparent',
-            color: disciplina === '' ? '#fff' : '#7C3AED',
-            borderColor: '#7C3AED' }}
+            bgcolor: disciplina === '' ? '#00A651' : 'transparent',
+            color: disciplina === '' ? '#fff' : '#00A651',
+            borderColor: '#00A651' }}
         />
         {DISCIPLINAS.map(d => (
           <Chip key={d.value} label={d.label}
             onClick={() => setDisciplina(d.value)}
             variant={disciplina === d.value ? 'filled' : 'outlined'}
             sx={{ fontWeight: disciplina === d.value ? 700 : 400,
-              bgcolor: disciplina === d.value ? '#7C3AED' : 'transparent',
-              color: disciplina === d.value ? '#fff' : '#7C3AED',
-              borderColor: '#7C3AED' }}
+              bgcolor: disciplina === d.value ? '#00A651' : 'transparent',
+              color: disciplina === d.value ? '#fff' : '#00A651',
+              borderColor: '#00A651' }}
           />
         ))}
       </Box>
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-          <CircularProgress sx={{ color: '#7C3AED' }} />
+          <CircularProgress sx={{ color: '#00A651' }} />
         </Box>
       ) : quizzes.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 8 }}>
-          <QuizIcon sx={{ fontSize: 64, color: '#C4B5FD', mb: 2 }} />
+          <QuizIcon sx={{ fontSize: 64, color: '#A5D6A7', mb: 2 }} />
           <Typography color="text.secondary">Nenhum quiz disponível para esta disciplina.</Typography>
         </Box>
       ) : (
@@ -406,12 +406,12 @@ export default function StudentQuizPage() {
               <CardContent sx={{ p: 2.5 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                   <Chip label={q.disciplinaLabel} size="small"
-                    sx={{ bgcolor: '#EDE9FE', color: '#7C3AED', fontWeight: 600, fontSize: '0.7rem' }} />
+                    sx={{ bgcolor: '#E8F5E9', color: '#00A651', fontWeight: 600, fontSize: '0.7rem' }} />
                   {q.bestScore !== null && q.bestScore !== undefined && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <TrophyIcon sx={{ fontSize: 14, color: q.bestScore >= 70 ? '#16a34a' : '#d97706' }} />
+                      <TrophyIcon sx={{ fontSize: 14, color: q.bestScore >= 70 ? '#00A651' : '#d97706' }} />
                       <Typography variant="caption" fontWeight={700}
-                        color={q.bestScore >= 70 ? '#16a34a' : '#d97706'}>{q.bestScore}%</Typography>
+                        color={q.bestScore >= 70 ? '#00A651' : '#d97706'}>{q.bestScore}%</Typography>
                     </Box>
                   )}
                 </Box>
@@ -444,7 +444,7 @@ export default function StudentQuizPage() {
                   disabled={loading || q.questionCount === 0}
                   onClick={() => handleStart(q)}
                   startIcon={q.myAttempts > 0 ? <ReplayIcon /> : <QuizIcon />}
-                  sx={{ bgcolor: '#7C3AED', '&:hover': { bgcolor: '#6D28D9' }, borderRadius: 2,
+                  sx={{ bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' }, borderRadius: 2,
                     textTransform: 'none', fontWeight: 700 }}>
                   {q.myAttempts > 0 ? 'Repetir Quiz' : 'Iniciar Quiz'}
                 </Button>
@@ -459,7 +459,7 @@ export default function StudentQuizPage() {
   // ── Taking View ──────────────────────────────────────────────
   if (view === 'taking' && activeQuiz && currentQuestion) return (
     <Dialog open fullScreen>
-      <DialogTitle sx={{ bgcolor: '#1E0A3C', color: '#fff', p: 0 }}>
+      <DialogTitle sx={{ bgcolor: '#0A1628', color: '#fff', p: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2, pb: 1.5 }}>
           <Box sx={{ flex: 1 }}>
             <Typography variant="subtitle1" fontWeight={700}>{activeQuiz.titulo}</Typography>
@@ -469,7 +469,7 @@ export default function StudentQuizPage() {
           </Box>
           {timeLeft !== null && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5,
-              color: timeLeft <= 60 ? '#f87171' : '#a78bfa' }}>
+              color: timeLeft <= 60 ? '#f87171' : '#4caf50' }}>
               <TimerIcon fontSize="small" />
               <Typography fontWeight={700}>{formatTime(timeLeft)}</Typography>
             </Box>
@@ -481,10 +481,10 @@ export default function StudentQuizPage() {
           </Tooltip>
         </Box>
         <LinearProgress variant="determinate" value={(currentIdx + 1) / totalQ * 100}
-          sx={{ height: 4, bgcolor: 'rgba(255,255,255,0.15)', '& .MuiLinearProgress-bar': { bgcolor: '#A78BFA' } }} />
+          sx={{ height: 4, bgcolor: 'rgba(255,255,255,0.15)', '& .MuiLinearProgress-bar': { bgcolor: '#4caf50' } }} />
       </DialogTitle>
 
-      <DialogContent sx={{ bgcolor: '#F9F8FF', display: 'flex', flexDirection: 'column',
+      <DialogContent sx={{ bgcolor: '#f5f5f5', display: 'flex', flexDirection: 'column',
         alignItems: 'center', pt: 4, pb: 2 }}>
         {error && <Alert severity="error" sx={{ mb: 2, width: '100%', maxWidth: 720 }} onClose={() => setError('')}>{error}</Alert>}
 
@@ -500,9 +500,9 @@ export default function StudentQuizPage() {
           </Box>
 
           {/* Question card */}
-          <Card elevation={0} sx={{ border: '1px solid #DDD6FE', borderRadius: 3, mb: 2 }}>
+          <Card elevation={0} sx={{ border: '1px solid #C8E6C9', borderRadius: 3, mb: 2 }}>
             <CardContent sx={{ p: 3 }}>
-              <Typography variant="h6" fontWeight={700} color="#1E0A3C" sx={{ mb: 3, lineHeight: 1.5 }}>
+              <Typography variant="h6" fontWeight={700} color="#0A1628" sx={{ mb: 3, lineHeight: 1.5 }}>
                 {currentQuestion.enunciado}
               </Typography>
 
@@ -513,22 +513,22 @@ export default function StudentQuizPage() {
                   {currentQuestion.options.map(opt => (
                     <Box key={opt.id} onClick={() => handleAnswer(currentQuestion.id, opt.id)}
                       sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, p: 1.5, mb: 1,
-                        border: `2px solid ${answers[currentQuestion.id] === opt.id ? '#7C3AED' : '#E5E7EB'}`,
+                        border: `2px solid ${answers[currentQuestion.id] === opt.id ? '#00A651' : '#E5E7EB'}`,
                         borderRadius: 2, cursor: 'pointer', transition: 'all 0.15s',
-                        bgcolor: answers[currentQuestion.id] === opt.id ? '#F5F3FF' : '#fff',
-                        '&:hover': { borderColor: '#A78BFA', bgcolor: '#FAF5FF' } }}>
+                        bgcolor: answers[currentQuestion.id] === opt.id ? '#F1F8E9' : '#fff',
+                        '&:hover': { borderColor: '#4caf50', bgcolor: '#E8F5E9' } }}>
                       <FormControlLabel value={opt.id.toString()} control={<Radio sx={{ p: 0,
-                        color: '#9CA3AF', '&.Mui-checked': { color: '#7C3AED' } }} />} label="" sx={{ m: 0 }} />
+                        color: '#9CA3AF', '&.Mui-checked': { color: '#00A651' } }} />} label="" sx={{ m: 0 }} />
                       <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, flex: 1 }}>
                         <Box sx={{ minWidth: 28, height: 28, borderRadius: '50%', display: 'flex',
                           alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                          bgcolor: answers[currentQuestion.id] === opt.id ? '#7C3AED' : '#E5E7EB' }}>
+                          bgcolor: answers[currentQuestion.id] === opt.id ? '#00A651' : '#E5E7EB' }}>
                           <Typography variant="caption" fontWeight={700}
                             color={answers[currentQuestion.id] === opt.id ? '#fff' : '#6B7280'}>
                             {opt.letra}
                           </Typography>
                         </Box>
-                        <Typography sx={{ mt: 0.2, color: '#1E0A3C', lineHeight: 1.5 }}>{opt.texto}</Typography>
+                        <Typography sx={{ mt: 0.2, color: '#0A1628', lineHeight: 1.5 }}>{opt.texto}</Typography>
                       </Box>
                     </Box>
                   ))}
@@ -541,20 +541,20 @@ export default function StudentQuizPage() {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
             <Button variant="outlined" disabled={currentIdx === 0}
               onClick={() => setCurrentIdx(i => i - 1)}
-              sx={{ borderColor: '#7C3AED', color: '#7C3AED', textTransform: 'none', flex: 1 }}>
+              sx={{ borderColor: '#00A651', color: '#00A651', textTransform: 'none', flex: 1 }}>
               ← Anterior
             </Button>
 
             {currentIdx < totalQ - 1 ? (
               <Button variant="contained" onClick={() => setCurrentIdx(i => i + 1)}
-                sx={{ bgcolor: '#7C3AED', '&:hover': { bgcolor: '#6D28D9' }, textTransform: 'none', flex: 1 }}>
+                sx={{ bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' }, textTransform: 'none', flex: 1 }}>
                 Próxima →
               </Button>
             ) : (
               <Button variant="contained" disabled={submitting}
                 onClick={handleSubmit}
                 startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : undefined}
-                sx={{ bgcolor: '#059669', '&:hover': { bgcolor: '#047857' }, textTransform: 'none', flex: 1, fontWeight: 700 }}>
+                sx={{ bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' }, textTransform: 'none', flex: 1, fontWeight: 700 }}>
                 {submitting ? 'A submeter...' : 'Terminar Quiz'}
               </Button>
             )}
@@ -566,11 +566,11 @@ export default function StudentQuizPage() {
               <Box key={q.id} onClick={() => setCurrentIdx(i)}
                 sx={{ width: 32, height: 32, borderRadius: '50%', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  border: `2px solid ${i === currentIdx ? '#7C3AED' : answers[q.id] ? '#059669' : '#D1D5DB'}`,
-                  bgcolor: i === currentIdx ? '#7C3AED' : answers[q.id] ? '#DCFCE7' : '#fff',
+                  border: `2px solid ${i === currentIdx ? '#00A651' : answers[q.id] ? '#00A651' : '#D1D5DB'}`,
+                  bgcolor: i === currentIdx ? '#00A651' : answers[q.id] ? '#E8F5E9' : '#fff',
                   transition: 'all 0.15s' }}>
                 <Typography variant="caption" fontWeight={700}
-                  color={i === currentIdx ? '#fff' : answers[q.id] ? '#059669' : '#9CA3AF'}>
+                  color={i === currentIdx ? '#fff' : answers[q.id] ? '#00A651' : '#9CA3AF'}>
                   {i + 1}
                 </Typography>
               </Box>
@@ -585,8 +585,8 @@ export default function StudentQuizPage() {
   if (view === 'result' && result) return (
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-        <Box sx={{ p: 1.2, bgcolor: '#EDE9FE', borderRadius: 2 }}>
-          <QuizIcon sx={{ color: '#7C3AED', fontSize: 28 }} />
+        <Box sx={{ p: 1.2, bgcolor: '#E8F5E9', borderRadius: 2 }}>
+          <QuizIcon sx={{ color: '#00A651', fontSize: 28 }} />
         </Box>
         <Box>
           <Typography variant="h5" fontWeight={800} color="#0A1628">Resultado do Quiz</Typography>
@@ -600,7 +600,7 @@ export default function StudentQuizPage() {
           <Divider sx={{ my: 2 }} />
           <Box sx={{ display: 'flex', justifyContent: 'space-around' }}>
             <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="h5" fontWeight={800} color="#059669">{result.correctAnswers}</Typography>
+              <Typography variant="h5" fontWeight={800} color="#00A651">{result.correctAnswers}</Typography>
               <Typography variant="caption" color="text.secondary">Corretas</Typography>
             </Box>
             <Box sx={{ textAlign: 'center' }}>
@@ -608,7 +608,7 @@ export default function StudentQuizPage() {
               <Typography variant="caption" color="text.secondary">Erradas</Typography>
             </Box>
             <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="h5" fontWeight={800} color="#7C3AED">{result.totalQuestions}</Typography>
+              <Typography variant="h5" fontWeight={800} color="#00A651">{result.totalQuestions}</Typography>
               <Typography variant="caption" color="text.secondary">Total</Typography>
             </Box>
             <Box sx={{ textAlign: 'center' }}>
@@ -619,12 +619,12 @@ export default function StudentQuizPage() {
           <Divider sx={{ my: 2 }} />
           <Stack direction="row" spacing={1.5} justifyContent="center">
             <Button variant="outlined" onClick={() => setShowReview(!showReview)}
-              sx={{ borderColor: '#7C3AED', color: '#7C3AED', textTransform: 'none', fontWeight: 600 }}>
+              sx={{ borderColor: '#00A651', color: '#00A651', textTransform: 'none', fontWeight: 600 }}>
               {showReview ? 'Ocultar revisão' : 'Rever respostas'}
             </Button>
             <Button variant="contained" startIcon={<ReplayIcon />}
               onClick={resetToBrowse}
-              sx={{ bgcolor: '#7C3AED', '&:hover': { bgcolor: '#6D28D9' }, textTransform: 'none', fontWeight: 700 }}>
+              sx={{ bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' }, textTransform: 'none', fontWeight: 700 }}>
               Fazer outro quiz
             </Button>
           </Stack>
@@ -637,11 +637,11 @@ export default function StudentQuizPage() {
           <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Revisão das Questões</Typography>
           {result.questionResults.map((qr, i) => (
             <Card key={qr.questionId} elevation={0}
-              sx={{ border: `1px solid ${qr.correct ? '#BBF7D0' : '#FECACA'}`, borderRadius: 2, mb: 2 }}>
+              sx={{ border: `1px solid ${qr.correct ? '#C8E6C9' : '#FECACA'}`, borderRadius: 2, mb: 2 }}>
               <CardContent sx={{ p: 2.5 }}>
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1.5 }}>
                   {qr.correct
-                    ? <CheckIcon sx={{ color: '#059669', mt: 0.3, flexShrink: 0 }} />
+                    ? <CheckIcon sx={{ color: '#00A651', mt: 0.3, flexShrink: 0 }} />
                     : <CancelIcon sx={{ color: '#dc2626', mt: 0.3, flexShrink: 0 }} />}
                   <Typography fontWeight={600} color="#0A1628">
                     {i + 1}. {qr.enunciado}
@@ -657,7 +657,7 @@ export default function StudentQuizPage() {
                     Sem resposta
                   </Typography>
                 )}
-                <Typography variant="body2" sx={{ ml: 4, color: '#059669' }}>
+                <Typography variant="body2" sx={{ ml: 4, color: '#00A651' }}>
                   ✓ Resposta correta: <strong>{qr.correctOptionLetra}) {qr.correctOptionTexto}</strong>
                 </Typography>
               </CardContent>
