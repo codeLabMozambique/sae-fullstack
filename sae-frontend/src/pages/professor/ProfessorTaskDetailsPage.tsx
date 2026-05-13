@@ -21,10 +21,11 @@ import {
   Card,
   CardContent,
   Divider,
+  LinearProgress,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
-  CloudDownload as DownloadIcon,
+  Visibility as ViewIcon,
   CheckCircle as CheckIcon,
   Edit as EditIcon,
   Schedule as ScheduleIcon,
@@ -41,6 +42,7 @@ import {
   submissionFileUrl,
   assignmentFileUrl,
 } from '../../services/assignmentService';
+import FileViewerDialog from '../../components/FileViewerDialog';
 
 export default function ProfessorTaskDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -52,6 +54,9 @@ export default function ProfessorTaskDetailsPage() {
   const [error, setError] = useState<string | null>(null);
   const [gradingId, setGradingId] = useState<number | null>(null);
   const [gradeInput, setGradeInput] = useState<string>('');
+
+  // Visualizador inline (anti-download)
+  const [viewer, setViewer] = useState<{ url: string; name: string; title: string } | null>(null);
 
   useEffect(() => {
     if (id) fetchData(Number(id));
@@ -118,7 +123,7 @@ export default function ProfessorTaskDetailsPage() {
 
       <Grid container spacing={3}>
         {/* Sumário da Tarefa */}
-        <Grid item xs={12} lg={4}>
+        <Grid size={{ xs: 12, lg: 4 }}>
           <Card sx={{ borderRadius: 4, border: '1px solid #F3F4F6', position: 'sticky', top: 20 }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="overline" color="textSecondary" fontWeight={700}>DETALHES DA TAREFA</Typography>
@@ -149,13 +154,15 @@ export default function ProfessorTaskDetailsPage() {
                   <Button
                     variant="outlined"
                     size="small"
-                    startIcon={<DownloadIcon />}
-                    href={assignmentFileUrl(assignment.id)}
-                    target="_blank"
-                    download
+                    startIcon={<ViewIcon />}
+                    onClick={() => setViewer({
+                      url: assignmentFileUrl(assignment.id),
+                      name: assignment.fileOriginalName || 'material.pdf',
+                      title: 'Material de apoio',
+                    })}
                     sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
                   >
-                    Descarregar Anexo
+                    Ver anexo
                   </Button>
                 </Box>
               )}
@@ -179,7 +186,7 @@ export default function ProfessorTaskDetailsPage() {
         </Grid>
 
         {/* Tabela de Submissões */}
-        <Grid item xs={12} lg={8}>
+        <Grid size={{ xs: 12, lg: 8 }}>
           <Paper sx={{ borderRadius: 4, overflow: 'hidden', border: '1px solid #F3F4F6' }} elevation={0}>
             {submissions.length === 0 ? (
               <Box p={6} textAlign="center">
@@ -218,15 +225,17 @@ export default function ProfessorTaskDetailsPage() {
                         </TableCell>
                         <TableCell>
                           {sub.fileOriginalName ? (
-                            <Tooltip title={sub.fileOriginalName}>
+                            <Tooltip title={`Ver ${sub.fileOriginalName}`}>
                               <IconButton
                                 size="small"
                                 sx={{ color: '#1E40AF', bgcolor: 'rgba(30,64,175,0.05)' }}
-                                href={submissionFileUrl(sub.id)}
-                                target="_blank"
-                                download
+                                onClick={() => setViewer({
+                                  url: submissionFileUrl(sub.id),
+                                  name: sub.fileOriginalName || 'anexo',
+                                  title: `Submissão de ${sub.studentName || sub.studentUsername}`,
+                                })}
                               >
-                                <DownloadIcon fontSize="small" />
+                                <ViewIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
                           ) : (
@@ -278,6 +287,15 @@ export default function ProfessorTaskDetailsPage() {
           </Paper>
         </Grid>
       </Grid>
+
+      {/* Visualizador inline — política da plataforma: sem download */}
+      <FileViewerDialog
+        open={!!viewer}
+        onClose={() => setViewer(null)}
+        url={viewer?.url || ''}
+        fileName={viewer?.name}
+        title={viewer?.title}
+      />
     </Box>
   );
 }

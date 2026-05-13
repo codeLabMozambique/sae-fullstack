@@ -357,7 +357,16 @@ const MainLayout: React.FC<Props> = ({ children }) => {
       {/* User section */}
       <Box sx={{ p: 2, bgcolor: '#001B33' }}>
         <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)', mb: 2 }} />
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 1 }}>
+        <Box
+          sx={{
+            display: 'flex', alignItems: 'center', gap: 1.5, px: 1, py: 0.5,
+            borderRadius: 1.5, cursor: 'pointer',
+            transition: 'background 0.15s',
+            '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' },
+          }}
+          onClick={() => navigate('/perfil')}
+          title="Ver / editar perfil"
+        >
           <Avatar sx={{ bgcolor: '#00A651', width: 36, height: 36, fontSize: '0.85rem', fontWeight: 700 }}>
             {userInitials}
           </Avatar>
@@ -376,7 +385,7 @@ const MainLayout: React.FC<Props> = ({ children }) => {
           </Box>
           <IconButton
             size="small"
-            onClick={handleLogout}
+            onClick={(e) => { e.stopPropagation(); handleLogout(); }}
             sx={{ color: 'rgba(255,255,255,0.4)', '&:hover': { color: '#f44336' } }}
           >
             <LogoutIcon fontSize="small" />
