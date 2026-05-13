@@ -21,6 +21,8 @@ import StudentForumPage from './pages/student/StudentForumPage';
 import StudentQuizPage from './pages/student/StudentQuizPage';
 import ProfessorQuizPage from './pages/professor/ProfessorQuizPage';
 import UsersListPage from './pages/admin/users/UsersListPage';
+import ProfessorsPage from './pages/admin/users/ProfessorsPage';
+import StudentsEnrollmentPage from './pages/admin/users/StudentsEnrollmentPage';
 import ProfessorClassroomsPage from './pages/professor/ProfessorClassroomsPage';
 import DirectorClassroomPage from './pages/professor/DirectorClassroomPage';
 import ProfessorTasksPage from './pages/professor/ProfessorTasksPage';
@@ -186,6 +188,8 @@ function App() {
             <Route path="/admin/classrooms" element={<Layout><ClassroomsPage /></Layout>} />
             <Route path="/admin/subjects" element={<Layout><SubjectsPage /></Layout>} />
             <Route path="/admin/users" element={<Layout><UsersListPage /></Layout>} />
+            <Route path="/admin/students" element={<Layout><StudentsEnrollmentPage /></Layout>} />
+            <Route path="/admin/professors" element={<Layout><ProfessorsPage /></Layout>} />
             <Route path="/admin/library/contents" element={<Layout><MeusConteudos /></Layout>} />
             <Route path="/admin/library/upload" element={<Layout><UploadConteudo /></Layout>} />
             <Route path="/admin/library/batch" element={<Layout><AdminBatchUpload /></Layout>} />
@@ -225,6 +229,8 @@ function App() {
             {/* ── SCHOOL_ADMIN — Dashboard ───────────────────── */}
             <Route path="/school-admin/dashboard" element={<Layout><SchoolAdminDashboardPage /></Layout>} />
             <Route path="/school-admin/dashboard/stats" element={<Layout><SchoolAdminDashboardPage /></Layout>} />
+            <Route path="/school-admin/students" element={<Layout><StudentsEnrollmentPage /></Layout>} />
+            <Route path="/school-admin/professors" element={<Layout><ProfessorsPage /></Layout>} />
 
             {/* Admin — Users */}
             <Route path="/admin/users/list" element={

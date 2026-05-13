@@ -868,7 +868,48 @@ SET classroom_id = 23,
 WHERE user_id = (SELECT id FROM sae_user WHERE username = '+258841111101');
 
 -- ============================================================
--- BLOCO 22 — Director de Turma: coluna + menu do professor
+-- BLOCO 22 — Matrícula de Estudantes + Professores (menus)
+-- ============================================================
+
+-- Menus SCHOOL_ADMIN: Estudantes e Professores
+INSERT INTO app_transaction (id, status, code, type, label, router_link, position, parent_id) VALUES
+(231, 1, 'SADM-STD',     'HEADER',    'Estudantes',   '/school-admin/students',   2, NULL),
+(232, 1, 'SADM-STD-001', 'MENU_ITEM', 'Matrícula',    '/school-admin/students',   1, 231),
+(233, 1, 'SADM-PRF',     'HEADER',    'Professores',  '/school-admin/professors', 3, NULL),
+(234, 1, 'SADM-PRF-001', 'MENU_ITEM', 'Ver Perfis',   '/school-admin/professors', 1, 233)
+ON CONFLICT (id) DO UPDATE SET
+    status      = EXCLUDED.status, code        = EXCLUDED.code,
+    type        = EXCLUDED.type,   label       = EXCLUDED.label,
+    router_link = EXCLUDED.router_link, position = EXCLUDED.position,
+    parent_id   = EXCLUDED.parent_id;
+
+INSERT INTO role_transaction (id, status, role, app_transaction_id) VALUES
+(231, 1, 'SCHOOL_ADMIN', 231),
+(232, 1, 'SCHOOL_ADMIN', 232),
+(233, 1, 'SCHOOL_ADMIN', 233),
+(234, 1, 'SCHOOL_ADMIN', 234)
+ON CONFLICT (id) DO UPDATE SET
+    status = EXCLUDED.status, role = EXCLUDED.role,
+    app_transaction_id = EXCLUDED.app_transaction_id;
+
+-- Menus ADMIN: Estudantes e Professores (sob Utilizadores)
+INSERT INTO app_transaction (id, status, code, type, label, router_link, position, parent_id) VALUES
+(235, 1, 'ADM-STD',     'MENU_ITEM', 'Estudantes',  '/admin/students',   5, 20),
+(236, 1, 'ADM-PRF-LST', 'MENU_ITEM', 'Professores', '/admin/professors', 6, 20)
+ON CONFLICT (id) DO UPDATE SET
+    status = EXCLUDED.status, code = EXCLUDED.code, type = EXCLUDED.type,
+    label = EXCLUDED.label, router_link = EXCLUDED.router_link,
+    position = EXCLUDED.position, parent_id = EXCLUDED.parent_id;
+
+INSERT INTO role_transaction (id, status, role, app_transaction_id) VALUES
+(235, 1, 'ADMIN', 235),
+(236, 1, 'ADMIN', 236)
+ON CONFLICT (id) DO UPDATE SET
+    status = EXCLUDED.status, role = EXCLUDED.role,
+    app_transaction_id = EXCLUDED.app_transaction_id;
+
+-- ============================================================
+-- BLOCO 23 — Director de Turma: coluna + menu do professor
 -- ============================================================
 
 -- Coluna director_id na tabela de turmas (Hibernate cria via ddl-auto;

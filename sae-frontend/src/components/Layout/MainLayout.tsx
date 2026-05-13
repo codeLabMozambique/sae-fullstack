@@ -84,8 +84,10 @@ function iconByRoute(route: string): React.ReactNode | null {
   if (/\/library$/.test(route))             return <SearchIcon />;
   // Metas
   if (/\/goals/.test(route))                return <GoalsIcon />;
-  // Director de Turma
+  // Director de Turma / Matrícula / Professores
   if (/\/director-classroom/.test(route))   return <DirectorIcon />;
+  if (/\/students/.test(route))             return <StudentsIcon />;
+  if (/\/professors/.test(route))           return <PersonIcon />;
   // Professor / Aluno raíz
   if (/\/dashboard/.test(route))            return <DashboardIcon />;
   if (/\/my-classes/.test(route))           return <ClassIcon />;

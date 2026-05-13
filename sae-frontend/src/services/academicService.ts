@@ -10,6 +10,7 @@ export interface ProfessorDTO {
   specialization?: string;
   institutionalContact?: string;
   online?: boolean;
+  professorCode?: string;
 }
 
 export interface ClassLevelDTO {
@@ -126,9 +127,11 @@ export interface StudentProfileDTO {
   classroomId?: number;
   grade?: string;
   age?: number;
+  enrollmentCode?: string;
 }
 
 export const studentService = {
+  findAll: () => api.get<StudentProfileDTO[]>('/auth/users/students').then(r => r.data),
   findByClassroom: (classroomId: number) =>
     api.get<StudentProfileDTO[]>('/auth/users/students-by-classroom', { params: { classroomId } }).then(r => r.data),
   findBySchool: (schoolId: number) =>
