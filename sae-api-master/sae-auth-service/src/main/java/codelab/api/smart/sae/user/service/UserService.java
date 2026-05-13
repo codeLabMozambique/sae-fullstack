@@ -443,12 +443,58 @@ public class UserService {
     public java.util.Optional<java.util.Map<String, Object>> findBasicByUsername(String username) {
         return userRepository.findByUsername(username).map(u -> {
             java.util.Map<String, Object> out = new java.util.HashMap<>();
+            out.put("id", u.getId());
             out.put("username", u.getUsername());
             out.put("fullName", u.getFullname());
             out.put("role", u.getRole() != null && u.getRole().getRole() != null
                     ? u.getRole().getRole().name() : null);
             return out;
         });
+    }
+
+    /** Devolve o email do utilizador, se existir. */
+    public java.util.Optional<String> findEmailByUsername(String username) {
+        return userRepository.findByUsername(username).map(UserEntity::getEmail);
+    }
+
+    /** Actualiza nome e/ou email do utilizador autenticado. */
+    @Transactional
+    public void updateMyProfile(String username, String fullName, String email) {
+        UserEntity u = userRepository.findByUsername(username)
+                .orElseThrow(() -> new BusinessException("Utilizador não encontrado"));
+        if (fullName != null && !fullName.isBlank()) {
+            u.setFullname(fullName.trim());
+        }
+        if (email != null) {
+            String newEmail = email.trim();
+            if (!newEmail.isEmpty() && !newEmail.equalsIgnoreCase(u.getEmail())) {
+                if (userRepository.existsByEmail(newEmail)) {
+                    throw new BusinessException("Já existe uma conta com este email");
+                }
+                u.setEmail(newEmail);
+            } else if (newEmail.isEmpty()) {
+                u.setEmail(null);
+            }
+        }
+        userRepository.save(u);
+    }
+
+    /** Muda a password do próprio utilizador (verifica a actual). */
+    @Transactional
+    public void changeMyPassword(String username, String currentPassword, String newPassword) {
+        if (currentPassword == null || currentPassword.isBlank()) {
+            throw new BusinessException("Password actual obrigatória");
+        }
+        if (newPassword == null || newPassword.length() < 6) {
+            throw new BusinessException("Nova password deve ter no mínimo 6 caracteres");
+        }
+        UserEntity u = userRepository.findByUsername(username)
+                .orElseThrow(() -> new BusinessException("Utilizador não encontrado"));
+        if (!passwordEncoder.matches(currentPassword, u.getPassword())) {
+            throw new BusinessException("Password actual incorrecta");
+        }
+        u.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(u);
     }
 
     public String[] getProfessorSpecializations(String username) {

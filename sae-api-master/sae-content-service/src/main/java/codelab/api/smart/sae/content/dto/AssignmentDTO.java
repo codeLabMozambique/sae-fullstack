@@ -14,6 +14,9 @@ public class AssignmentDTO {
     public String createdBy;
     public String createdByName;
     public LocalDateTime createdAt;
+    public String fileName;
+    public String fileOriginalName;
+    public String fileUrl;
 
     /** Quando o pedido é feito pelo estudante, vem populada com a sua submissão (se existir). */
     public SubmissionDTO mySubmission;
@@ -33,6 +36,11 @@ public class AssignmentDTO {
         d.createdBy = a.getCreatedBy();
         d.createdByName = a.getCreatedByName();
         d.createdAt = a.getCreatedAt();
+        d.fileName = a.getFileName();
+        d.fileOriginalName = a.getFileOriginalName();
+        d.fileUrl = a.getFileName() != null
+                ? "/api/assignments/" + a.getId() + "/file"
+                : null;
         return d;
     }
 }

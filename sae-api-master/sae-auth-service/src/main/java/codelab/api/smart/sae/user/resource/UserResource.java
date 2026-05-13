@@ -206,6 +206,50 @@ public class UserResource {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    // ════════════════════════════════════════════════════════════
+    // PERFIL PRÓPRIO — qualquer utilizador autenticado
+    // ════════════════════════════════════════════════════════════
+
+    /** Devolve os dados do utilizador autenticado (username, fullName, email, role). */
+    @GetMapping("/me")
+    public ResponseEntity<java.util.Map<String, Object>> getMyProfile(Authentication auth) {
+        if (auth == null) return ResponseEntity.status(401).build();
+        return userService.findBasicByUsername(auth.getName())
+                .map(m -> {
+                    // Acrescentar email
+                    userService.findEmailByUsername(auth.getName()).ifPresent(e -> m.put("email", e));
+                    return ResponseEntity.ok(m);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /** Actualiza nome e email do próprio utilizador autenticado. */
+    @PutMapping("/me")
+    public ResponseEntity<java.util.Map<String, Object>> updateMyProfile(
+            @RequestBody java.util.Map<String, String> payload,
+            Authentication auth) {
+        if (auth == null) return ResponseEntity.status(401).build();
+        userService.updateMyProfile(auth.getName(),
+                payload.get("fullName"), payload.get("email"));
+        return userService.findBasicByUsername(auth.getName())
+                .map(m -> {
+                    userService.findEmailByUsername(auth.getName()).ifPresent(e -> m.put("email", e));
+                    return ResponseEntity.ok(m);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /** Muda a password do próprio utilizador (precisa de password actual). */
+    @PutMapping("/me/password")
+    public ResponseEntity<java.util.Map<String, String>> changeMyPassword(
+            @RequestBody java.util.Map<String, String> payload,
+            Authentication auth) {
+        if (auth == null) return ResponseEntity.status(401).build();
+        userService.changeMyPassword(auth.getName(),
+                payload.get("currentPassword"), payload.get("newPassword"));
+        return ResponseEntity.ok(java.util.Map.of("message", "Password actualizada"));
+    }
+
     @PutMapping("/professor/heartbeat")
     public ResponseEntity<Void> professorHeartbeat(Authentication auth) {
         if (auth == null || auth.getAuthorities().stream()

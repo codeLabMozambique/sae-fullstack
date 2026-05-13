@@ -32,7 +32,8 @@ public class AssignmentService {
 
     // ── Professor ──────────────────────────────────────────────
 
-    public AssignmentDTO createAssignment(Map<String, Object> payload, String professorUsername, String token) {
+    public AssignmentDTO createAssignment(Map<String, Object> payload, MultipartFile file,
+                                          String professorUsername, String token) {
         if (payload == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Payload em falta");
 
         Long classroomId = asLong(payload.get("classroomId"));
@@ -55,7 +56,29 @@ public class AssignmentService {
         a.setCreatedBy(professorUsername);
         a.setCreatedByName(authServiceClient.getUserFullName(professorUsername, token));
 
+        // Anexo opcional (livro/documento de apoio)
+        if (file != null && !file.isEmpty()) {
+            if (file.getSize() > MAX_FILE_SIZE) {
+                throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE,
+                        "Ficheiro excede 25 MB");
+            }
+            try {
+                String key = "assignments/" + UUID.randomUUID() + "_" + sanitize(file.getOriginalFilename());
+                fileStorageService.saveFileWithKey(file.getBytes(), key, file.getContentType());
+                a.setFileName(key);
+                a.setFileOriginalName(file.getOriginalFilename());
+            } catch (java.io.IOException e) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Falha ao guardar ficheiro");
+            }
+        }
+
         return AssignmentDTO.from(assignmentRepository.save(a));
+    }
+
+    /** Devolve a entidade Assignment (para servir o ficheiro de apoio). */
+    public Assignment getAssignmentEntity(Long id) {
+        return assignmentRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tarefa não encontrada"));
     }
 
     public List<AssignmentDTO> listForProfessor(String professorUsername, Long classroomIdFilter) {
@@ -88,6 +111,10 @@ public class AssignmentService {
             }
         }
         submissionRepository.deleteAll(subs);
+        // Ficheiro de apoio da tarefa
+        if (a.getFileName() != null) {
+            try { fileStorageService.deleteFile(a.getFileName()); } catch (Exception ignored) { /* noop */ }
+        }
         assignmentRepository.delete(a);
     }
 
