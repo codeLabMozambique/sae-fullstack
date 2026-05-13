@@ -628,13 +628,7 @@ export default function ProfessorForumPage() {
         }}>
           <Stack spacing={2}>
             <Stack direction="row" spacing={1.5} alignItems="center">
-              <Box sx={{
-                p: 1, borderRadius: 2,
-                bgcolor: '#00A651',
-                display: 'flex', alignItems: 'center',
-              }}>
-                <QuizIcon sx={{ color: 'white', fontSize: 20 }} />
-              </Box>
+              <QuizIcon sx={{ color: '#00A651', fontSize: 22 }} />
               <Box>
                 <Typography fontWeight={800} color="#0F172A" variant="subtitle1" sx={{ lineHeight: 1.1, fontSize: 15 }}>
                   PORTAL DE SUPORTE
@@ -670,31 +664,34 @@ export default function ProfessorForumPage() {
 
         {/* Tab filters */}
         <Box sx={{
-          px: 1, py: 1.5, bgcolor: 'white', borderBottom: '1px solid rgba(0,0,0,0.05)',
-          display: 'flex', gap: 0.2, whiteSpace: 'nowrap',
-          overflowX: 'auto', '&::-webkit-scrollbar': { display: 'none' },
+          px: 2, bgcolor: 'white', borderBottom: '1px solid rgba(0,0,0,0.07)',
+          display: 'flex', gap: 0, whiteSpace: 'nowrap',
         }}>
           {[
             { key: 'pending',  label: 'Pendentes',   count: pendingList.length },
             { key: 'answered', label: 'Respondidas',  count: answeredList.length },
-          ].map(item => (
-            <Chip
-              key={item.key}
-              label={`${item.label}${item.count > 0 ? ` (${item.count})` : ''}`}
-              onClick={() => setSidebarTab(item.key as SidebarTab)}
-              sx={{
-                px: 0, height: 32, borderRadius: 2,
-                bgcolor: sidebarTab === item.key ? '#00A651' : 'transparent',
-                color: sidebarTab === item.key ? 'white' : '#64748B',
-                fontWeight: 800, fontSize: 10.5,
-                border: '1px solid',
-                borderColor: sidebarTab === item.key ? '#00A651' : 'transparent',
-                '&:hover': { bgcolor: sidebarTab === item.key ? '#008f44' : 'rgba(0,0,0,0.05)' },
-                transition: 'all 0.2s',
-                '& .MuiChip-label': { px: 1 },
-              }}
-            />
-          ))}
+          ].map(item => {
+            const isActive = sidebarTab === item.key;
+            return (
+              <Box
+                key={item.key}
+                component="button"
+                onClick={() => setSidebarTab(item.key as SidebarTab)}
+                sx={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  px: 1.5, py: 1.2,
+                  color: isActive ? '#00A651' : '#A5D6A7',
+                  fontWeight: 800, fontSize: 11,
+                  fontFamily: 'inherit',
+                  borderBottom: `2px solid ${isActive ? '#00A651' : 'transparent'}`,
+                  transition: 'all 0.18s',
+                  '&:hover': { color: '#00A651', borderBottom: '2px solid #00A651' },
+                }}
+              >
+                {item.label}{item.count > 0 ? ` (${item.count})` : ''}
+              </Box>
+            );
+          })}
         </Box>
 
         {/* Question list */}
