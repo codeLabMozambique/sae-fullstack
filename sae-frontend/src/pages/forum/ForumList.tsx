@@ -14,10 +14,12 @@ import DoneAllIcon from '@mui/icons-material/DoneAll';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { forumService } from '../../services/forumService';
 import { useAuth } from '../../context/AuthContext';
-import {
-  ALL_DISCIPLINAS, DISCIPLINA_LABELS, DISCIPLINA_EMOJI, DISCIPLINA_COLOR,
-  type DisciplinaEnum, type ForumQuestion, type ProfessorInfo,
-} from '../../types/forum';
+import api from '../../services/api';
+import type { ForumQuestion, SubjectInfo } from '../../types/forum';
+import { DISCIPLINA_LABELS, DISCIPLINA_EMOJI, DISCIPLINA_COLOR } from '../../types/forum';
+import { useSubjects } from '../../hooks/useSubjects';
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatLastSeen(iso?: string): string {
   if (!iso) return '';
@@ -30,8 +32,7 @@ function formatLastSeen(iso?: string): string {
 
 function formatRelative(dateStr: string): string {
   const d = new Date(dateStr);
-  const now = new Date();
-  const diff = Math.floor((now.getTime() - d.getTime()) / 60000);
+  const diff = Math.floor((Date.now() - d.getTime()) / 60000);
   if (diff < 1) return 'agora';
   if (diff < 60) return `${diff}min`;
   if (diff < 1440) return `${Math.floor(diff / 60)}h`;
@@ -48,50 +49,51 @@ function initials(name: string): string {
     .toUpperCase() || '?';
 }
 
-/* ─── Discipline card ─────────────────────────────────────────── */
-const DisciplineCard: React.FC<{
-  disciplina: DisciplinaEnum;
-  onClick: (d: DisciplinaEnum) => void;
+/** Devolve o nome da disciplina/subject de uma questão (novo modelo e legado) */
+function getQuestionSubjectLabel(q: ForumQuestion, subjectsMap: Map<number, SubjectInfo>): string {
+  if (q.subjectId != null) {
+    const s = subjectsMap.get(q.subjectId);
+    if (s) return s.name;
+  }
+  if (q.disciplina) return DISCIPLINA_LABELS[q.disciplina] ?? q.disciplina;
+  return q.titulo;
+}
+
+function getQuestionSubjectEmoji(q: ForumQuestion): string {
+  if (q.disciplina && DISCIPLINA_EMOJI[q.disciplina]) return DISCIPLINA_EMOJI[q.disciplina];
+  return '📚';
+}
+
+function getQuestionSubjectColor(q: ForumQuestion): string {
+  if (q.disciplina && DISCIPLINA_COLOR[q.disciplina]) return DISCIPLINA_COLOR[q.disciplina];
+  return '#374151';
+}
+
+/* ─── Subject card (dinâmico — vem da BD) ────────────────────────── */
+const SubjectCard: React.FC<{
+  subject: SubjectInfo;
+  onClick: (s: SubjectInfo) => void;
   selected?: boolean;
   loading?: boolean;
-  professors?: ProfessorInfo[];
-  loadingProfessors?: boolean;
-}> = ({ disciplina, onClick, selected, loading, professors, loadingProfessors }) => {
-  const color = DISCIPLINA_COLOR[disciplina];
-  const emoji = DISCIPLINA_EMOJI[disciplina];
-  const label = DISCIPLINA_LABELS[disciplina];
-
-  const onlineCount = professors?.filter(p => p.online).length ?? 0;
-  const profLabel = professors == null
-    ? null
-    : professors.length === 0
-      ? null
-      : professors.length === 1
-        ? professors[0].fullname.split(' ')[0]
-        : `${professors.length} professores`;
+}> = ({ subject, onClick, selected, loading }) => {
+  const color = '#2563EB';
 
   return (
     <Box
-      onClick={() => !loading && onClick(disciplina)}
+      onClick={() => !loading && onClick(subject)}
       sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        p: 2.5,
-        borderRadius: 3,
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        p: 2.5, borderRadius: 3,
         border: selected ? `2px solid ${color}` : `2px solid ${color}25`,
         bgcolor: selected ? `${color}18` : `${color}08`,
         cursor: loading ? 'wait' : 'pointer',
-        transition: 'all 0.18s',
-        minHeight: 110,
+        transition: 'all 0.18s', minHeight: 100,
         userSelect: 'none',
         boxShadow: selected ? `0 4px 16px ${color}30` : 'none',
         '&:hover': {
-          border: `2px solid ${color}60`,
-          bgcolor: `${color}14`,
-          transform: 'translateY(-2px)',
-          boxShadow: `0 6px 20px ${color}25`,
+          border: `2px solid ${color}60`, bgcolor: `${color}14`,
+          transform: 'translateY(-2px)', boxShadow: `0 6px 20px ${color}25`,
         },
         '&:active': { transform: 'scale(0.97)' },
       }}
@@ -100,28 +102,14 @@ const DisciplineCard: React.FC<{
         <CircularProgress size={28} sx={{ color }} />
       ) : (
         <>
-          <Typography fontSize="2rem" mb={0.75} lineHeight={1}>{emoji}</Typography>
-          <Typography variant="body2" fontWeight={700} color={color} textAlign="center" fontSize="0.82rem">
-            {label}
+          <Typography fontSize="1.8rem" mb={0.75} lineHeight={1}>📚</Typography>
+          <Typography variant="body2" fontWeight={700} color={color} textAlign="center" fontSize="0.82rem" noWrap sx={{ maxWidth: '100%' }}>
+            {subject.name}
           </Typography>
-          {/* Professor info row */}
-          {loadingProfessors ? (
-            <CircularProgress size={10} sx={{ color, mt: 0.75 }} />
-          ) : profLabel != null && (
-            <Stack direction="row" alignItems="center" spacing={0.4} mt={0.75}>
-              <Box sx={{
-                width: 7, height: 7, borderRadius: '50%',
-                bgcolor: onlineCount > 0 ? '#16A34A' : '#9CA3AF',
-                flexShrink: 0,
-              }} />
-              <Typography variant="caption" color="text.secondary" fontSize="0.6rem" noWrap>
-                {onlineCount > 0
-                  ? profLabel
-                  : professors && professors.length > 0 && professors[0].lastSeen
-                    ? `Último: ${formatLastSeen(professors[0].lastSeen)}`
-                    : profLabel}
-              </Typography>
-            </Stack>
+          {subject.code && (
+            <Typography variant="caption" color="text.secondary" fontSize="0.6rem" noWrap>
+              {subject.code}
+            </Typography>
           )}
           {selected && <CheckCircleIcon sx={{ fontSize: 14, color, mt: 0.5 }} />}
         </>
@@ -130,22 +118,21 @@ const DisciplineCard: React.FC<{
   );
 };
 
-/* ─── Question row (list item) ────────────────────────────────── */
+/* ─── Question row (list item) ────────────────────────────────────── */
 const QuestionRow: React.FC<{
   question: ForumQuestion;
   onClick: () => void;
   isCollab: boolean;
-}> = ({ question, onClick, isCollab }) => {
-  const color = DISCIPLINA_COLOR[question.disciplina] ?? '#374151';
-  const label = DISCIPLINA_LABELS[question.disciplina];
-  const emoji = DISCIPLINA_EMOJI[question.disciplina];
+  subjectsMap: Map<number, SubjectInfo>;
+}> = ({ question, onClick, isCollab, subjectsMap }) => {
+  const color = getQuestionSubjectColor(question);
+  const label = getQuestionSubjectLabel(question, subjectsMap);
+  const emoji = getQuestionSubjectEmoji(question);
   const msgCount = isCollab
     ? (question.collaborativeAnswers?.length ?? 0)
     : (question.expertAnswers?.length ?? 0);
   const rawDesc = question.descricao ?? '';
-  const preview = rawDesc === '_'
-    ? 'Aguarda resposta...'
-    : rawDesc.slice(0, 80) + (rawDesc.length > 80 ? '...' : '');
+  const preview = rawDesc === '_' ? 'Aguarda resposta...' : rawDesc.slice(0, 80) + (rawDesc.length > 80 ? '...' : '');
   const isAnsweredByProf = isCollab
     && question.status === 'FECHADA'
     && (question.collaborativeAnswers ?? []).some(a => a.validationStatus === 'VALIDADA');
@@ -156,8 +143,7 @@ const QuestionRow: React.FC<{
       sx={{
         display: 'flex', alignItems: 'center', gap: 2,
         px: 2.5, py: 1.75, cursor: 'pointer',
-        borderBottom: '1px solid #F3F4F6',
-        transition: 'background 0.15s',
+        borderBottom: '1px solid #F3F4F6', transition: 'background 0.15s',
         '&:hover': { bgcolor: '#F9FAFB' },
         '&:last-child': { borderBottom: 'none' },
       }}
@@ -176,10 +162,8 @@ const QuestionRow: React.FC<{
             }
             size="small"
             sx={{
-              bgcolor: isAnsweredByProf ? '#DBEAFE'
-                : question.status === 'FECHADA' ? '#F3F4F6' : '#DCFCE7',
-              color: isAnsweredByProf ? '#1D4ED8'
-                : question.status === 'FECHADA' ? '#9CA3AF' : '#16A34A',
+              bgcolor: isAnsweredByProf ? '#DBEAFE' : question.status === 'FECHADA' ? '#F3F4F6' : '#DCFCE7',
+              color: isAnsweredByProf ? '#1D4ED8' : question.status === 'FECHADA' ? '#9CA3AF' : '#16A34A',
               fontWeight: 700, fontSize: '0.58rem', height: 15,
               '& .MuiChip-label': { px: 0.5 },
             }}
@@ -204,18 +188,20 @@ const QuestionRow: React.FC<{
   );
 };
 
-/* ─── Inbox row (professor) ───────────────────────────────────── */
+/* ─── Inbox row (professor) ───────────────────────────────────────── */
 const InboxRow: React.FC<{
   question: ForumQuestion;
   onClick: () => void;
-  alsoInPending?: boolean;
-}> = ({ question, onClick, alsoInPending }) => {
-  const color = DISCIPLINA_COLOR[question.disciplina] ?? '#374151';
+  subjectsMap: Map<number, SubjectInfo>;
+}> = ({ question, onClick, subjectsMap }) => {
   const isCollab = question.questionType === 'COLABORATIVO';
+  const label = getQuestionSubjectLabel(question, subjectsMap);
+  const emoji = getQuestionSubjectEmoji(question);
   const rawDesc = question.descricao ?? '';
   const preview = rawDesc === '_' ? 'Aguarda resposta...' : rawDesc.slice(0, 90) + (rawDesc.length > 90 ? '...' : '');
-  const avatarContent = isCollab ? DISCIPLINA_EMOJI[question.disciplina] : initials(question.createdBy);
-  const title = isCollab ? `Chat da Turma · ${DISCIPLINA_LABELS[question.disciplina]}` : question.createdBy;
+  const avatarContent = isCollab ? emoji : initials(question.createdBy);
+  const title = isCollab ? `Chat da Turma · ${label}` : question.createdBy;
+  const color = '#2563EB';
 
   return (
     <Box
@@ -226,13 +212,13 @@ const InboxRow: React.FC<{
         borderBottom: '1px solid #f1f5f9',
         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         '&:hover': { bgcolor: '#f8fafc', transform: 'translateX(4px)' },
-        '&:active': { transform: 'translateX(2px)' }
+        '&:active': { transform: 'translateX(2px)' },
       }}
     >
-      <Avatar sx={{ 
-        bgcolor: `${color}10`, color, fontWeight: 800, width: 48, height: 48, 
+      <Avatar sx={{
+        bgcolor: `${color}10`, color, fontWeight: 800, width: 48, height: 48,
         fontSize: isCollab ? '1.4rem' : '1rem', flexShrink: 0,
-        border: `1px solid ${color}20`
+        border: `1px solid ${color}20`,
       }}>
         {avatarContent}
       </Avatar>
@@ -266,9 +252,9 @@ const InboxRow: React.FC<{
   );
 };
 
-/* ─── Inline question form ────────────────────────────────────── */
+/* ─── Inline question form ────────────────────────────────────────── */
 const InlineForm: React.FC<{
-  disciplina: DisciplinaEnum;
+  subject: SubjectInfo;
   isCollab: boolean;
   submitting: boolean;
   error: string;
@@ -277,14 +263,11 @@ const InlineForm: React.FC<{
   onSend: () => void;
   onCancel: () => void;
   onClearError: () => void;
-}> = ({ disciplina, isCollab, submitting, error, value, onChange, onSend, onCancel, onClearError }) => {
-  const color = DISCIPLINA_COLOR[disciplina];
-  const label = DISCIPLINA_LABELS[disciplina];
-  const emoji = DISCIPLINA_EMOJI[disciplina];
+}> = ({ subject, isCollab, submitting, error, value, onChange, onSend, onCancel, onClearError }) => {
+  const color = '#2563EB';
 
   return (
     <Box sx={{ mt: 2, bgcolor: `${color}08`, border: `1px solid ${color}30`, borderRadius: 3, overflow: 'hidden' }}>
-      {/* Header */}
       <Box sx={{ bgcolor: `${color}15`, px: 2.5, py: 1.5, display: 'flex', alignItems: 'center', gap: 1.5, borderBottom: `1px solid ${color}20` }}>
         {isCollab ? (
           <GroupsIcon sx={{ fontSize: 20, color }} />
@@ -295,7 +278,7 @@ const InlineForm: React.FC<{
         )}
         <Box sx={{ flex: 1 }}>
           <Typography variant="body2" fontWeight={700} color={color}>
-            {isCollab ? `${emoji} ${label} — Chat da Turma` : `@Prof. de ${label}`}
+            {isCollab ? `📚 ${subject.name} — Chat da Turma` : `@Prof. de ${subject.name}`}
           </Typography>
           <Typography variant="caption" color="text.secondary">
             {isCollab
@@ -312,16 +295,13 @@ const InlineForm: React.FC<{
         )}
       </Box>
 
-      {/* Body */}
       <Box sx={{ p: 2.5 }}>
-        {error && (
-          <Alert severity="error" sx={{ mb: 1.5 }} onClose={onClearError}>{error}</Alert>
-        )}
+        {error && <Alert severity="error" sx={{ mb: 1.5 }} onClose={onClearError}>{error}</Alert>}
         <TextField
           fullWidth multiline rows={4} autoFocus
           placeholder={isCollab
-            ? `Escreve a tua mensagem para a turma de ${label}...`
-            : `Descreve a tua dúvida ao professor de ${label}...`}
+            ? `Escreve a tua mensagem para a turma de ${subject.name}...`
+            : `Descreve a tua dúvida ao professor de ${subject.name}...`}
           value={value}
           onChange={e => onChange(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); onSend(); } }}
@@ -351,28 +331,42 @@ const InlineForm: React.FC<{
   );
 };
 
-/* ─── Main component ──────────────────────────────────────────── */
+/* ─── Main component ──────────────────────────────────────────────── */
 const ForumList: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
   const isProfessor = user?.role === 'Professor';
 
-  // Professors always use the chat interface at /professor/forum
   useEffect(() => {
     if (isProfessor) navigate('/professor/forum', { replace: true });
   }, [isProfessor]);
 
   const [tab, setTab] = useState(0);
 
+  // classroomId resolvido a partir do perfil do aluno (null = professor/admin)
+  const [classroomId, setClassroomId] = useState<number | null | undefined>(undefined);
+
+  useEffect(() => {
+    if (!user) return;
+    api.get<{ classroomId?: number }>('/auth/users/my-student-profile')
+      .then(res => setClassroomId(res.data?.classroomId ?? null))
+      .catch(() => setClassroomId(null));
+  }, [user?.username]);
+
+  // Disciplinas sincronizadas em tempo real (polling 30 s + foco + visibilidade)
+  const { subjects, subjectsMap, loading: loadingSubjects } = useSubjects(
+    classroomId === undefined ? null : classroomId
+  );
+
   // Inline form state
-  const [selectedDisc, setSelectedDisc] = useState<DisciplinaEnum | null>(null);
+  const [selectedSubject, setSelectedSubject] = useState<SubjectInfo | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
 
-  // Professor direct-navigate loading
-  const [loadingDisc, setLoadingDisc] = useState<DisciplinaEnum | null>(null);
+  // Loading state for professor room navigation
+  const [loadingSubjectId, setLoadingSubjectId] = useState<number | null>(null);
   const [topError, setTopError] = useState('');
 
   // Questions from DB
@@ -380,7 +374,7 @@ const ForumList: React.FC = () => {
   const [expertQuestions, setExpertQuestions] = useState<ForumQuestion[]>([]);
   const [loadingQ, setLoadingQ] = useState(false);
 
-  // Professor inbox — pendentes / respondidas
+  // Professor inbox
   const [pendingQ, setPendingQ] = useState<ForumQuestion[]>([]);
   const [answeredQ, setAnsweredQ] = useState<ForumQuestion[]>([]);
   const [pendingLoading, setPendingLoading] = useState(false);
@@ -391,11 +385,6 @@ const ForumList: React.FC = () => {
     location.pathname.includes('/forum/answered') ? 1 : 0
   );
 
-  // Professors by discipline (expert tab)
-  const [professorsByDisc, setProfessorsByDisc] = useState<Partial<Record<DisciplinaEnum, ProfessorInfo[]>>>({});
-  const [loadingProfessors, setLoadingProfessors] = useState(false);
-  const [professorsLoaded, setProfessorsLoaded] = useState(false);
-
   const formRef = useRef<HTMLDivElement>(null);
 
   const loadCollabQuestions = useCallback(async () => {
@@ -403,7 +392,7 @@ const ForumList: React.FC = () => {
     try {
       const res = await forumService.listQuestions({ questionType: 'COLABORATIVO', size: 30 });
       setCollabQuestions(res.content);
-    } catch { /* silent — questions list is best-effort */ }
+    } catch { /* silent */ }
     finally { setLoadingQ(false); }
   }, []);
 
@@ -421,8 +410,7 @@ const ForumList: React.FC = () => {
     setPendingLoading(true);
     try {
       const data = await forumService.listProfessorPending();
-      setPendingQ(data);
-      setPendingLoaded(true);
+      setPendingQ(data); setPendingLoaded(true);
     } catch { /* silent */ }
     finally { setPendingLoading(false); }
   }, [pendingLoaded]);
@@ -432,39 +420,17 @@ const ForumList: React.FC = () => {
     setAnsweredLoading(true);
     try {
       const data = await forumService.listProfessorAnswered();
-      setAnsweredQ(data);
-      setAnsweredLoaded(true);
+      setAnsweredQ(data); setAnsweredLoaded(true);
     } catch { /* silent */ }
     finally { setAnsweredLoading(false); }
   }, [answeredLoaded]);
 
-  const loadProfessors = useCallback(async () => {
-    if (professorsLoaded) return;
-    setLoadingProfessors(true);
-    try {
-      const results = await Promise.all(
-        ALL_DISCIPLINAS.map(d =>
-          forumService.getProfessorsByDisciplina(d)
-            .then(list => ({ d, list }))
-            .catch(() => ({ d, list: [] as ProfessorInfo[] }))
-        )
-      );
-      const map: Partial<Record<DisciplinaEnum, ProfessorInfo[]>> = {};
-      results.forEach(({ d, list }) => { map[d] = list; });
-      setProfessorsByDisc(map);
-      setProfessorsLoaded(true);
-    } finally {
-      setLoadingProfessors(false);
-    }
-  }, [professorsLoaded]);
-
   useEffect(() => {
     if (tab === 0) loadCollabQuestions();
     else if (isProfessor) loadPending();
-    else { loadExpertQuestions(); loadProfessors(); }
-  }, [tab, isProfessor, loadCollabQuestions, loadExpertQuestions, loadPending, loadProfessors]);
+    else loadExpertQuestions();
+  }, [tab, isProfessor, loadCollabQuestions, loadExpertQuestions, loadPending]);
 
-  // Carregar respondidas quando o subtab começa em 1 (acesso directo via URL /forum/answered)
   useEffect(() => {
     if (tab === 1 && inboxSubTab === 1 && isProfessor) loadAnswered();
   }, [tab, inboxSubTab, isProfessor, loadAnswered]);
@@ -476,81 +442,68 @@ const ForumList: React.FC = () => {
 
   const pendingIds = useMemo(() => new Set(pendingQ.map(q => q.id)), [pendingQ]);
 
-  // Scroll form into view when a discipline is selected
   useEffect(() => {
-    if (selectedDisc) {
+    if (selectedSubject) {
       setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
     }
-  }, [selectedDisc]);
+  }, [selectedSubject]);
 
   const resetForm = () => {
-    setSelectedDisc(null);
-    setNewMessage('');
-    setFormError('');
+    setSelectedSubject(null); setNewMessage(''); setFormError('');
   };
 
   const handleTabChange = (_: React.SyntheticEvent, v: number) => {
-    setTab(v);
-    resetForm();
-    setTopError('');
+    setTab(v); resetForm(); setTopError('');
   };
 
-  const handleDisciplineClick = (disciplina: DisciplinaEnum) => {
+  const handleSubjectClick = (subject: SubjectInfo) => {
     if (isProfessor) {
-      // Professors go straight into the collaborative room
-      navigateProfessorToRoom(disciplina);
+      navigateProfessorToRoom(subject);
       return;
     }
-    // Toggle: clicking the same card again closes the form
-    if (selectedDisc === disciplina) {
-      resetForm();
-      return;
-    }
-    setSelectedDisc(disciplina);
-    setNewMessage('');
-    setFormError('');
+    if (selectedSubject?.id === subject.id) { resetForm(); return; }
+    setSelectedSubject(subject);
+    setNewMessage(''); setFormError('');
   };
 
-  const navigateProfessorToRoom = async (disciplina: DisciplinaEnum) => {
-    setLoadingDisc(disciplina);
+  const navigateProfessorToRoom = async (subject: SubjectInfo) => {
+    setLoadingSubjectId(subject.id);
     setTopError('');
     try {
-      const room = await forumService.getCollaborativeRoom(disciplina);
+      const room = await forumService.getCollaborativeRoomBySubject(subject.id, classroomId ?? undefined);
       navigate(`/app/forum/room/${room.id}`);
     } catch (e: any) {
-      setTopError(e?.response?.data?.message || 'Não foi possível aceder à sala. Verifica se o servidor está activo.');
+      setTopError(e?.response?.data?.message || 'Não foi possível aceder à sala.');
     } finally {
-      setLoadingDisc(null);
+      setLoadingSubjectId(null);
     }
   };
 
   const handleSendCollab = async () => {
-    if (!selectedDisc || !newMessage.trim()) return;
-    setSubmitting(true);
-    setFormError('');
+    if (!selectedSubject || !newMessage.trim()) return;
+    setSubmitting(true); setFormError('');
     try {
-      const room = await forumService.getCollaborativeRoom(selectedDisc);
+      const room = await forumService.getCollaborativeRoomBySubject(selectedSubject.id, classroomId ?? undefined);
       await forumService.createCollaborativeAnswer(room.id, { conteudo: newMessage.trim() });
       navigate(`/app/forum/room/${room.id}`);
     } catch (e: any) {
-      setFormError(e?.response?.data?.message || 'Não foi possível enviar. Verifica se o servidor está activo.');
+      setFormError(e?.response?.data?.message || 'Não foi possível enviar.');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleSendExpert = async () => {
-    if (!selectedDisc || !newMessage.trim()) return;
-    setSubmitting(true);
-    setFormError('');
+    if (!selectedSubject || !newMessage.trim()) return;
+    setSubmitting(true); setFormError('');
     try {
-      const room = await forumService.getExpertRoom(selectedDisc);
+      const room = await forumService.getExpertRoomBySubject(selectedSubject.id, classroomId ?? undefined);
       if (room.descricao === '_') {
         await forumService.updateFirstMessage(room.id, newMessage.trim());
       }
       navigate(`/app/forum/room/${room.id}`);
     } catch (e: any) {
-      setFormError(e?.response?.data?.message || 'Não foi possível criar a conversa. Verifica se o servidor está activo.');
+      setFormError(e?.response?.data?.message || 'Não foi possível criar a conversa.');
     } finally {
       setSubmitting(false);
     }
@@ -569,10 +522,10 @@ const ForumList: React.FC = () => {
             {isProfessor ? 'Gere as tuas interações com os alunos' : 'Escolhe como queres obter suporte hoje'}
           </Typography>
         </Box>
-        <Box sx={{ 
-          position: 'absolute', top: -40, right: -40, width: 180, height: 180, 
+        <Box sx={{
+          position: 'absolute', top: -40, right: -40, width: 180, height: 180,
           background: 'radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, transparent 70%)',
-          borderRadius: '50%'
+          borderRadius: '50%',
         }} />
       </Box>
 
@@ -613,26 +566,33 @@ const ForumList: React.FC = () => {
                 : 'Clica numa disciplina para entrar · O professor receberá notificação das tuas mensagens'}
             </Typography>
 
-            {/* Discipline grid */}
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 1.5 }}>
-              {ALL_DISCIPLINAS.map(d => (
-                <DisciplineCard
-                  key={d}
-                  disciplina={d}
-                  onClick={handleDisciplineClick}
-                  selected={selectedDisc === d}
-                  loading={loadingDisc === d}
-                />
-              ))}
-            </Box>
+            {loadingSubjects ? (
+              <Box display="flex" justifyContent="center" py={4}><CircularProgress size={28} /></Box>
+            ) : subjects.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="body2" color="text.secondary">Nenhuma disciplina disponível para o teu perfil</Typography>
+              </Box>
+            ) : (
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 1.5 }}>
+                {subjects.map(s => (
+                  <SubjectCard
+                    key={s.id}
+                    subject={s}
+                    onClick={handleSubjectClick}
+                    selected={selectedSubject?.id === s.id}
+                    loading={loadingSubjectId === s.id}
+                  />
+                ))}
+              </Box>
+            )}
 
             {/* Inline form (students only) */}
             {!isProfessor && (
-              <Collapse in={!!selectedDisc}>
+              <Collapse in={!!selectedSubject}>
                 <Box ref={formRef}>
-                  {selectedDisc && (
+                  {selectedSubject && (
                     <InlineForm
-                      disciplina={selectedDisc}
+                      subject={selectedSubject}
                       isCollab
                       submitting={submitting}
                       error={formError}
@@ -647,8 +607,8 @@ const ForumList: React.FC = () => {
               </Collapse>
             )}
 
-            {/* Questions list (hidden while form is open) */}
-            {!selectedDisc && (
+            {/* Questions list */}
+            {!selectedSubject && (
               <Box sx={{ mt: 3 }}>
                 <Divider sx={{ mb: 2 }}>
                   <Typography variant="caption" color="text.secondary" fontWeight={600}>
@@ -674,6 +634,7 @@ const ForumList: React.FC = () => {
                         key={q.id}
                         question={q}
                         isCollab
+                        subjectsMap={subjectsMap}
                         onClick={() => navigate(`/app/forum/room/${q.id}`)}
                       />
                     ))}
@@ -691,26 +652,30 @@ const ForumList: React.FC = () => {
               Clica numa disciplina · Conversa privada directamente com o professor da área
             </Typography>
 
-            {/* Discipline grid */}
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 1.5 }}>
-              {ALL_DISCIPLINAS.map(d => (
-                <DisciplineCard
-                  key={d}
-                  disciplina={d}
-                  onClick={handleDisciplineClick}
-                  selected={selectedDisc === d}
-                  professors={professorsByDisc[d]}
-                  loadingProfessors={loadingProfessors && !professorsLoaded}
-                />
-              ))}
-            </Box>
+            {loadingSubjects ? (
+              <Box display="flex" justifyContent="center" py={4}><CircularProgress size={28} /></Box>
+            ) : subjects.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="body2" color="text.secondary">Nenhuma disciplina disponível</Typography>
+              </Box>
+            ) : (
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 1.5 }}>
+                {subjects.map(s => (
+                  <SubjectCard
+                    key={s.id}
+                    subject={s}
+                    onClick={handleSubjectClick}
+                    selected={selectedSubject?.id === s.id}
+                  />
+                ))}
+              </Box>
+            )}
 
-            {/* Inline form */}
-            <Collapse in={!!selectedDisc}>
+            <Collapse in={!!selectedSubject}>
               <Box ref={formRef}>
-                {selectedDisc && (
+                {selectedSubject && (
                   <InlineForm
-                    disciplina={selectedDisc}
+                    subject={selectedSubject}
                     isCollab={false}
                     submitting={submitting}
                     error={formError}
@@ -724,8 +689,7 @@ const ForumList: React.FC = () => {
               </Box>
             </Collapse>
 
-            {/* Student's expert conversations */}
-            {!selectedDisc && (
+            {!selectedSubject && (
               <Box sx={{ mt: 3 }}>
                 <Divider sx={{ mb: 2 }}>
                   <Typography variant="caption" color="text.secondary" fontWeight={600}>
@@ -740,9 +704,6 @@ const ForumList: React.FC = () => {
                   <Box sx={{ textAlign: 'center', py: 4 }}>
                     <SchoolIcon sx={{ fontSize: 36, color: '#E5E7EB', mb: 1, display: 'block', mx: 'auto' }} />
                     <Typography variant="body2" color="text.secondary">Ainda não iniciaste nenhuma conversa</Typography>
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      Clica numa disciplina acima para começar
-                    </Typography>
                   </Box>
                 ) : (
                   <Box sx={{ borderRadius: 2, overflow: 'hidden', border: '1px solid #F3F4F6' }}>
@@ -751,6 +712,7 @@ const ForumList: React.FC = () => {
                         key={q.id}
                         question={q}
                         isCollab={false}
+                        subjectsMap={subjectsMap}
                         onClick={() => navigate(`/app/forum/room/${q.id}`)}
                       />
                     ))}
@@ -764,7 +726,6 @@ const ForumList: React.FC = () => {
         {/* ── Tab 1: Caixa de Entrada (professors) ── */}
         {tab === 1 && isProfessor && (
           <Box>
-            {/* Sub-tabs: Pendentes / Respondidas */}
             <Box sx={{ borderBottom: '1px solid #F3F4F6', px: 2, bgcolor: '#FAFAFA' }}>
               <Tabs
                 value={inboxSubTab}
@@ -787,7 +748,6 @@ const ForumList: React.FC = () => {
               </Tabs>
             </Box>
 
-            {/* Pendentes */}
             {inboxSubTab === 0 && (
               pendingLoading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -797,22 +757,19 @@ const ForumList: React.FC = () => {
                 <Box sx={{ textAlign: 'center', py: 10 }}>
                   <CheckCircleIcon sx={{ fontSize: 52, color: '#D1FAE5', mb: 1.5 }} />
                   <Typography fontWeight={600} color="text.secondary">Sem perguntas pendentes</Typography>
-                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-                    Todas as perguntas da sua especialidade foram respondidas
-                  </Typography>
                 </Box>
               ) : (
                 pendingQ.map(q => (
                   <InboxRow
                     key={q.id}
                     question={q}
+                    subjectsMap={subjectsMap}
                     onClick={() => navigate(`/app/forum/room/${q.id}`)}
                   />
                 ))
               )
             )}
 
-            {/* Respondidas */}
             {inboxSubTab === 1 && (
               answeredLoading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -822,17 +779,14 @@ const ForumList: React.FC = () => {
                 <Box sx={{ textAlign: 'center', py: 10 }}>
                   <InboxIcon sx={{ fontSize: 52, color: '#E5E7EB', mb: 1.5 }} />
                   <Typography fontWeight={600} color="text.secondary">Ainda não respondeu nenhuma pergunta</Typography>
-                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-                    As suas respostas aparecerão aqui
-                  </Typography>
                 </Box>
               ) : (
                 answeredQ.map(q => (
                   <InboxRow
                     key={q.id}
                     question={q}
+                    subjectsMap={subjectsMap}
                     onClick={() => navigate(`/app/forum/room/${q.id}`)}
-                    alsoInPending={pendingIds.has(q.id)}
                   />
                 ))
               )

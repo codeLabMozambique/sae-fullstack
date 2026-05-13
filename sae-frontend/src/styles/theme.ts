@@ -2,9 +2,9 @@ import { createTheme } from '@mui/material/styles';
 
 const theme = createTheme({
   palette: {
-    primary: { main: '#1565c0', light: '#42a5f5', dark: '#0d47a1', contrastText: '#fff' },
-    secondary: { main: '#00A651', light: '#4caf50', dark: '#008f44', contrastText: '#fff' },
-    background: { default: '#f0f4ff', paper: 'rgba(255,255,255,0.85)' },
+    primary: { main: '#00A651', light: '#4caf50', dark: '#008f44', contrastText: '#fff' },
+    secondary: { main: '#0A1628', light: '#334155', dark: '#020c1b', contrastText: '#fff' },
+    background: { default: '#f5f5f5', paper: '#ffffff' },
     text: { primary: '#0A1628', secondary: '#475569' },
     error: { main: '#ef5350' },
   },
@@ -42,7 +42,7 @@ const theme = createTheme({
         root: {
           borderRadius: 16,
           backgroundImage: 'none',
-          boxShadow: '0 8px 32px rgba(31,38,135,0.08)',
+          boxShadow: '0 8px 32px rgba(0,100,50,0.08)',
           border: '1px solid rgba(255,255,255,0.85)',
         },
       },

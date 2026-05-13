@@ -3,10 +3,12 @@ package codelab.api.smart.sae.forum.service;
 import codelab.api.smart.sae.forum.dto.request.CreateQuestionRequestDTO;
 import codelab.api.smart.sae.forum.dto.response.CollaborativeAnswerResponseDTO;
 import codelab.api.smart.sae.forum.dto.response.ExpertAnswerResponseDTO;
+import codelab.api.smart.sae.forum.dto.response.ForumMemberDTO;
 import codelab.api.smart.sae.forum.dto.response.ForumStatsDTO;
 import codelab.api.smart.sae.forum.dto.response.ProfessorAssistanceStatsDTO;
 import codelab.api.smart.sae.forum.dto.response.QuestionResponseDTO;
 import codelab.api.smart.sae.forum.enums.DisciplinaEnum;
+import codelab.api.smart.sae.forum.enums.ForumScope;
 import codelab.api.smart.sae.forum.enums.QuestionStatus;
 import codelab.api.smart.sae.forum.enums.QuestionType;
 import codelab.api.smart.sae.forum.model.ExpertAnswerEntity;
@@ -30,6 +32,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -41,6 +44,9 @@ public class ForumQuestionService {
     @Autowired private CollaborativeAnswerRepository collaborativeAnswerRepository;
     @Autowired private NotificationService notificationService;
     @Autowired private AuthServiceClient authServiceClient;
+    @Autowired private AcademicServiceClient academicServiceClient;
+
+    // ── Criar pergunta ───────────────────────────────────────────────────────
 
     @Transactional
     public QuestionResponseDTO create(CreateQuestionRequestDTO request, String authorUsername) {
@@ -50,26 +56,38 @@ public class ForumQuestionService {
         question.setQuestionType(request.getQuestionType());
         question.setStatus(QuestionStatus.ABERTA);
         question.setCreatedBy(authorUsername);
+
+        // Novo modelo
+        question.setForumScope(request.getForumScope());
+        question.setSubjectId(request.getSubjectId());
+        question.setClassroomId(request.getClassroomId());
+        question.setSchoolId(request.getSchoolId());
+        question.setMentionedProfessorUsername(request.getMentionedProfessorUsername());
+
+        // Legado (compatibilidade)
         question.setDisciplina(request.getDisciplina());
 
-        question = java.util.Objects.requireNonNull(questionRepository.save(question));
+        question = Objects.requireNonNull(questionRepository.save(question));
 
         if (QuestionType.ESPECIALIZADO.equals(request.getQuestionType())) {
-            notificationService.notifyNewQuestion(question.getId(), question.getDisciplina().name(), question.getTitulo());
+            String area = request.getSubjectId() != null
+                ? "subject-" + request.getSubjectId()
+                : (request.getDisciplina() != null ? request.getDisciplina().name() : "GERAL");
+            notificationService.notifyNewQuestion(question.getId(), area, question.getTitulo());
         }
 
         return QuestionResponseDTO.from(question);
     }
 
-    public Page<QuestionResponseDTO> list(codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina, QuestionType questionType, QuestionStatus status, Pageable pageable) {
-        // O Hibernate 6 anexa a ordenação do Pageable à native query usando o nome do campo Java
-        // (ex: "createdAt") em vez do nome da coluna DB ("created_at"), quebrando no PostgreSQL.
-        // A native query já tem ORDER BY created_at DESC, por isso removemos o sort do Pageable.
+    // ── Listar / detalhe ─────────────────────────────────────────────────────
+
+    public Page<QuestionResponseDTO> list(DisciplinaEnum disciplina, QuestionType questionType,
+                                          QuestionStatus status, Pageable pageable) {
         Pageable unsorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
         return questionRepository.findWithFilters(
-            disciplina     != null ? disciplina.name()     : null,
-            questionType   != null ? questionType.name()   : null,
-            status         != null ? status.name()         : null,
+            disciplina   != null ? disciplina.name()   : null,
+            questionType != null ? questionType.name() : null,
+            status       != null ? status.name()       : null,
             unsorted
         ).map(QuestionResponseDTO::from);
     }
@@ -77,21 +95,7 @@ public class ForumQuestionService {
     public QuestionResponseDTO getById(Long id) {
         ForumQuestionEntity question = questionRepository.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pergunta não encontrada"));
-
-        QuestionResponseDTO dto = QuestionResponseDTO.from(question);
-
-        List<ExpertAnswerResponseDTO> expertAnswers =
-            expertAnswerRepository.findByQuestionIdOrderByCreatedAtAsc(id).stream()
-                .map(ExpertAnswerResponseDTO::from).toList();
-        List<CollaborativeAnswerResponseDTO> collabAnswers =
-            collaborativeAnswerRepository.findByQuestionIdOrderByCreatedAtAsc(id).stream()
-                .map(CollaborativeAnswerResponseDTO::from).toList();
-
-        dto.setExpertAnswers(expertAnswers);
-        dto.setCollaborativeAnswers(collabAnswers);
-        dto.setResponseTimeMinutes(computeResponseTime(question.getCreatedAt(), expertAnswers, collabAnswers));
-
-        return dto;
+        return enrichWithAnswers(question);
     }
 
     public ForumQuestionEntity getEntityById(Long id) {
@@ -99,27 +103,115 @@ public class ForumQuestionService {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pergunta não encontrada"));
     }
 
+    // ── Fechar pergunta ──────────────────────────────────────────────────────
+
     @Transactional
     public void closeQuestion(Long id) {
         ForumQuestionEntity question = getEntityById(id);
         question.setStatus(QuestionStatus.FECHADA);
-        questionRepository.save(java.util.Objects.requireNonNull(question));
+        questionRepository.save(Objects.requireNonNull(question));
     }
 
     @Transactional
     public void closeQuestionByUser(Long id, String username) {
         ForumQuestionEntity question = getEntityById(id);
-
         if (!question.getCreatedBy().equals(username)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Apenas o autor pode fechar esta pergunta.");
         }
-
         question.setStatus(QuestionStatus.FECHADA);
-        questionRepository.save(java.util.Objects.requireNonNull(question));
+        questionRepository.save(Objects.requireNonNull(question));
     }
 
+    // ── Salas colaborativas por subjectId (novo modelo) ─────────────────────
+
+    /** TURMA: sala colaborativa específica de uma turma + disciplina */
     @Transactional
-    public QuestionResponseDTO getOrCreateCollaborativeRoom(codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina) {
+    public QuestionResponseDTO getOrCreateCollaborativeRoomBySubject(Long subjectId, Long classroomId) {
+        return questionRepository
+            .findFirstBySubjectIdAndClassroomIdAndQuestionTypeOrderByCreatedAtAsc(
+                subjectId, classroomId, QuestionType.COLABORATIVO)
+            .map(QuestionResponseDTO::from)
+            .orElseGet(() -> {
+                ForumQuestionEntity room = new ForumQuestionEntity();
+                room.setTitulo("Chat da Turma - Disciplina #" + subjectId);
+                room.setDescricao("Sala de chat colaborativo para a turma");
+                room.setSubjectId(subjectId);
+                room.setClassroomId(classroomId);
+                room.setForumScope(ForumScope.TURMA);
+                room.setQuestionType(QuestionType.COLABORATIVO);
+                room.setStatus(QuestionStatus.ABERTA);
+                room.setCreatedBy("system");
+                return QuestionResponseDTO.from(Objects.requireNonNull(questionRepository.save(room)));
+            });
+    }
+
+    /** DISCIPLINA: sala colaborativa broadcast (sem turma específica) */
+    @Transactional
+    public QuestionResponseDTO getOrCreateCollaborativeRoomBySubjectBroadcast(Long subjectId) {
+        return questionRepository
+            .findFirstBySubjectIdAndQuestionTypeAndClassroomIdIsNullOrderByCreatedAtAsc(
+                subjectId, QuestionType.COLABORATIVO)
+            .map(QuestionResponseDTO::from)
+            .orElseGet(() -> {
+                ForumQuestionEntity room = new ForumQuestionEntity();
+                room.setTitulo("Chat Global - Disciplina #" + subjectId);
+                room.setDescricao("Sala de chat colaborativo geral para a disciplina");
+                room.setSubjectId(subjectId);
+                room.setForumScope(ForumScope.DISCIPLINA);
+                room.setQuestionType(QuestionType.COLABORATIVO);
+                room.setStatus(QuestionStatus.ABERTA);
+                room.setCreatedBy("system");
+                return QuestionResponseDTO.from(Objects.requireNonNull(questionRepository.save(room)));
+            });
+    }
+
+    // ── Salas expert (1-on-1) por subjectId (novo modelo) ───────────────────
+
+    /** TURMA: sala expert do aluno numa turma + disciplina */
+    @Transactional
+    public QuestionResponseDTO getOrCreateExpertRoomBySubject(Long subjectId, Long classroomId, String studentUsername) {
+        return questionRepository
+            .findFirstBySubjectIdAndClassroomIdAndQuestionTypeAndCreatedByOrderByCreatedAtAsc(
+                subjectId, classroomId, QuestionType.ESPECIALIZADO, studentUsername)
+            .map(QuestionResponseDTO::from)
+            .orElseGet(() -> {
+                ForumQuestionEntity room = new ForumQuestionEntity();
+                room.setTitulo("Chat com Professor - Disciplina #" + subjectId);
+                room.setDescricao("_");
+                room.setSubjectId(subjectId);
+                room.setClassroomId(classroomId);
+                room.setForumScope(ForumScope.TURMA);
+                room.setQuestionType(QuestionType.ESPECIALIZADO);
+                room.setStatus(QuestionStatus.ABERTA);
+                room.setCreatedBy(studentUsername);
+                return QuestionResponseDTO.from(Objects.requireNonNull(questionRepository.save(room)));
+            });
+    }
+
+    /** DISCIPLINA: sala expert broadcast do aluno (sem turma) */
+    @Transactional
+    public QuestionResponseDTO getOrCreateExpertRoomBySubjectBroadcast(Long subjectId, String studentUsername) {
+        return questionRepository
+            .findFirstBySubjectIdAndQuestionTypeAndCreatedByAndClassroomIdIsNullOrderByCreatedAtAsc(
+                subjectId, QuestionType.ESPECIALIZADO, studentUsername)
+            .map(QuestionResponseDTO::from)
+            .orElseGet(() -> {
+                ForumQuestionEntity room = new ForumQuestionEntity();
+                room.setTitulo("Chat com Professor - Disciplina #" + subjectId);
+                room.setDescricao("_");
+                room.setSubjectId(subjectId);
+                room.setForumScope(ForumScope.DISCIPLINA);
+                room.setQuestionType(QuestionType.ESPECIALIZADO);
+                room.setStatus(QuestionStatus.ABERTA);
+                room.setCreatedBy(studentUsername);
+                return QuestionResponseDTO.from(Objects.requireNonNull(questionRepository.save(room)));
+            });
+    }
+
+    // ── Salas legado por DisciplinaEnum ──────────────────────────────────────
+
+    @Transactional
+    public QuestionResponseDTO getOrCreateCollaborativeRoom(DisciplinaEnum disciplina) {
         return questionRepository
             .findFirstByDisciplinaAndQuestionTypeOrderByCreatedAtAsc(disciplina, QuestionType.COLABORATIVO)
             .map(QuestionResponseDTO::from)
@@ -131,14 +223,15 @@ public class ForumQuestionService {
                 room.setQuestionType(QuestionType.COLABORATIVO);
                 room.setStatus(QuestionStatus.ABERTA);
                 room.setCreatedBy("system");
-                return QuestionResponseDTO.from(java.util.Objects.requireNonNull(questionRepository.save(room)));
+                return QuestionResponseDTO.from(Objects.requireNonNull(questionRepository.save(room)));
             });
     }
 
     @Transactional
-    public QuestionResponseDTO getOrCreateExpertRoom(codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina, String studentUsername) {
+    public QuestionResponseDTO getOrCreateExpertRoom(DisciplinaEnum disciplina, String studentUsername) {
         return questionRepository
-            .findFirstByDisciplinaAndQuestionTypeAndCreatedByOrderByCreatedAtAsc(disciplina, QuestionType.ESPECIALIZADO, studentUsername)
+            .findFirstByDisciplinaAndQuestionTypeAndCreatedByOrderByCreatedAtAsc(
+                disciplina, QuestionType.ESPECIALIZADO, studentUsername)
             .map(QuestionResponseDTO::from)
             .orElseGet(() -> {
                 ForumQuestionEntity room = new ForumQuestionEntity();
@@ -148,9 +241,11 @@ public class ForumQuestionService {
                 room.setQuestionType(QuestionType.ESPECIALIZADO);
                 room.setStatus(QuestionStatus.ABERTA);
                 room.setCreatedBy(studentUsername);
-                return QuestionResponseDTO.from(java.util.Objects.requireNonNull(questionRepository.save(room)));
+                return QuestionResponseDTO.from(Objects.requireNonNull(questionRepository.save(room)));
             });
     }
+
+    // ── Primeira mensagem da sala expert ─────────────────────────────────────
 
     @Transactional
     public void updateFirstMessage(Long id, String descricao, String username) {
@@ -165,28 +260,54 @@ public class ForumQuestionService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mensagem não pode estar vazia.");
         }
         question.setDescricao(descricao.trim());
-        questionRepository.save(java.util.Objects.requireNonNull(question));
+        questionRepository.save(Objects.requireNonNull(question));
     }
 
-    /**
-     * Perguntas PENDENTES para o professor:
-     * – ESPECIALIZADO: nas disciplinas do professor, sem resposta dele ainda
-     * – COLABORATIVO: nas disciplinas do professor, em que o professor ainda não postou
-     */
-    public List<QuestionResponseDTO> getProfessorPending(String professorUsername) {
-        List<DisciplinaEnum> disciplines = resolveDisciplinas(professorUsername);
-        if (disciplines.isEmpty()) return List.of();
+    // ── Membros do fórum para @mention ───────────────────────────────────────
 
-        // ESPECIALIZADO abertas sem resposta do professor
+    /**
+     * Devolve a lista de professores do fórum para autocomplete do @mention.
+     * Para TURMA: professores atribuídos à turma + disciplina.
+     * Para DISCIPLINA (ou sem classroomId): todos os professores da disciplina.
+     */
+    public List<ForumMemberDTO> getForumMembers(Long subjectId, Long classroomId) {
+        List<Long> professorIds = classroomId != null
+            ? academicServiceClient.getProfessorIdsByClassroomAndSubject(classroomId, subjectId)
+            : academicServiceClient.getProfessorIdsBySubject(subjectId);
+
+        return professorIds.stream()
+            .map(authServiceClient::getProfessorInfoByUserId)
+            .filter(Objects::nonNull)
+            .map(info -> new ForumMemberDTO(
+                info.getUsername(),
+                info.getFullname(),
+                "PROFESSOR",
+                info.isOnline()
+            ))
+            .collect(Collectors.toList());
+    }
+
+    // ── Inbox do professor ────────────────────────────────────────────────────
+
+    public List<QuestionResponseDTO> getProfessorPending(String professorUsername) {
+        List<Long> subjectIds = resolveSubjectIds(professorUsername);
+
+        if (subjectIds.isEmpty()) {
+            // Fallback legado
+            List<DisciplinaEnum> disciplines = resolveDisciplinasLegacy(professorUsername);
+            if (disciplines.isEmpty()) return List.of();
+            return buildPendingFromDisciplinas(disciplines, professorUsername);
+        }
+
         List<ForumQuestionEntity> expert = questionRepository
-            .findByQuestionTypeAndDisciplinaInAndStatus(QuestionType.ESPECIALIZADO, disciplines, QuestionStatus.ABERTA)
+            .findByQuestionTypeAndSubjectIdInAndStatus(
+                QuestionType.ESPECIALIZADO, subjectIds, QuestionStatus.ABERTA)
             .stream()
             .filter(q -> !expertAnswerRepository.existsByQuestionIdAndAnsweredBy(q.getId(), professorUsername))
             .collect(Collectors.toList());
 
-        // COLABORATIVO sem post do professor
         List<ForumQuestionEntity> collab = questionRepository
-            .findByQuestionTypeAndDisciplinaIn(QuestionType.COLABORATIVO, disciplines)
+            .findByQuestionTypeAndSubjectIdIn(QuestionType.COLABORATIVO, subjectIds)
             .stream()
             .filter(q -> !collaborativeAnswerRepository.existsByQuestionIdAndAnsweredBy(q.getId(), professorUsername))
             .collect(Collectors.toList());
@@ -197,30 +318,32 @@ public class ForumQuestionService {
         return combined.stream().map(this::enrichWithAnswers).collect(Collectors.toList());
     }
 
-    /**
-     * Perguntas RESPONDIDAS pelo professor:
-     * – Questões onde o professor deu uma resposta expert
-     * – COLABORATIVO das disciplinas do professor com qualquer resposta (aluno ou professor)
-     */
     public List<QuestionResponseDTO> getProfessorAnswered(String professorUsername) {
-        List<DisciplinaEnum> disciplines = resolveDisciplinas(professorUsername);
+        List<Long> subjectIds = resolveSubjectIds(professorUsername);
 
-        // Questões em que o professor respondeu via expert answer
         List<Long> expertIds = expertAnswerRepository.findByAnsweredBy(professorUsername)
             .stream().map(ExpertAnswerEntity::getQuestionId).distinct().collect(Collectors.toList());
         List<ForumQuestionEntity> expertAnswered = expertIds.isEmpty()
             ? List.of()
             : questionRepository.findAllById(expertIds);
 
-        // COLABORATIVO das disciplinas do professor com pelo menos uma resposta
-        List<ForumQuestionEntity> collabWithAnswers = disciplines.isEmpty()
-            ? List.of()
-            : questionRepository.findByQuestionTypeAndDisciplinaIn(QuestionType.COLABORATIVO, disciplines)
+        List<ForumQuestionEntity> collabWithAnswers;
+        if (!subjectIds.isEmpty()) {
+            collabWithAnswers = questionRepository
+                .findByQuestionTypeAndSubjectIdIn(QuestionType.COLABORATIVO, subjectIds)
                 .stream()
                 .filter(q -> collaborativeAnswerRepository.existsByQuestionId(q.getId()))
                 .collect(Collectors.toList());
+        } else {
+            // Fallback legado
+            List<DisciplinaEnum> disciplines = resolveDisciplinasLegacy(professorUsername);
+            collabWithAnswers = disciplines.isEmpty() ? List.of()
+                : questionRepository.findByQuestionTypeAndDisciplinaIn(QuestionType.COLABORATIVO, disciplines)
+                    .stream()
+                    .filter(q -> collaborativeAnswerRepository.existsByQuestionId(q.getId()))
+                    .collect(Collectors.toList());
+        }
 
-        // Combinar sem duplicados
         Map<Long, ForumQuestionEntity> map = new LinkedHashMap<>();
         expertAnswered.forEach(q -> map.put(q.getId(), q));
         collabWithAnswers.forEach(q -> map.put(q.getId(), q));
@@ -230,10 +353,14 @@ public class ForumQuestionService {
         return result.stream().map(this::enrichWithAnswers).collect(Collectors.toList());
     }
 
+    // ── Perguntas do aluno ────────────────────────────────────────────────────
+
     public List<QuestionResponseDTO> getMyQuestions(String username) {
         return questionRepository.findByCreatedByOrderByCreatedAtDesc(username)
             .stream().map(this::enrichWithAnswers).collect(Collectors.toList());
     }
+
+    // ── Estatísticas ─────────────────────────────────────────────────────────
 
     public ForumStatsDTO getStatsOverview() {
         List<ForumQuestionEntity> all = questionRepository.findAll();
@@ -242,6 +369,7 @@ public class ForumQuestionService {
         stats.setTotalQuestions((long) all.size());
 
         stats.setTotalByDisciplina(all.stream()
+            .filter(q -> q.getDisciplina() != null)
             .collect(Collectors.groupingBy(q -> q.getDisciplina().name(), TreeMap::new, Collectors.counting())));
 
         stats.setTotalByType(all.stream()
@@ -250,7 +378,6 @@ public class ForumQuestionService {
         stats.setTotalByStatus(all.stream()
             .collect(Collectors.groupingBy(q -> q.getStatus().name(), TreeMap::new, Collectors.counting())));
 
-        // Média de tempo de resposta: considera só questões que têm pelo menos uma resposta
         List<Long> responseTimes = all.stream()
             .map(q -> {
                 List<ExpertAnswerResponseDTO> ea =
@@ -261,7 +388,7 @@ public class ForumQuestionService {
                         .map(CollaborativeAnswerResponseDTO::from).collect(Collectors.toList());
                 return computeResponseTime(q.getCreatedAt(), ea, ca);
             })
-            .filter(t -> t != null)
+            .filter(Objects::nonNull)
             .collect(Collectors.toList());
 
         stats.setAvgResponseTimeMinutes(responseTimes.isEmpty()
@@ -272,8 +399,7 @@ public class ForumQuestionService {
     }
 
     public ProfessorAssistanceStatsDTO getProfessorAssistanceStats(String professorUsername) {
-        List<codelab.api.smart.sae.forum.model.ExpertAnswerEntity> answers =
-            expertAnswerRepository.findByAnsweredBy(professorUsername);
+        List<ExpertAnswerEntity> answers = expertAnswerRepository.findByAnsweredBy(professorUsername);
 
         ProfessorAssistanceStatsDTO stats = new ProfessorAssistanceStatsDTO();
         stats.setUsername(professorUsername);
@@ -282,29 +408,27 @@ public class ForumQuestionService {
         stats.setTotalAccepted(accepted);
         stats.setAcceptanceRate(answers.isEmpty() ? 0.0 : (accepted * 100.0 / answers.size()));
 
-        // Disciplinas distintas onde o professor respondeu
         List<String> disciplinas = answers.stream()
             .map(ExpertAnswerEntity::getQuestionId)
             .distinct()
             .map(qid -> questionRepository.findById(qid).orElse(null))
-            .filter(q -> q != null)
+            .filter(Objects::nonNull)
+            .filter(q -> q.getDisciplina() != null)
             .map(q -> q.getDisciplina().name())
             .distinct()
             .sorted()
             .collect(Collectors.toList());
         stats.setDisciplinas(disciplinas);
 
-        // Percentagem de assistência: respostas dadas / total questões ESPECIALIZADO nas suas disciplinas
         List<DisciplinaEnum> disciplinaEnums = disciplinas.stream()
             .map(name -> { try { return DisciplinaEnum.valueOf(name); } catch (Exception e) { return null; } })
-            .filter(d -> d != null)
+            .filter(Objects::nonNull)
             .collect(Collectors.toList());
         long totalEspecializado = disciplinaEnums.isEmpty() ? 0L :
             questionRepository.findByQuestionTypeAndDisciplinaIn(QuestionType.ESPECIALIZADO, disciplinaEnums).size();
         stats.setAssistancePercentage(totalEspecializado == 0 ? 0.0
             : (answers.size() * 100.0 / totalEspecializado));
 
-        // Tempo médio de resposta desta prof em relação à criação das questões
         double avgTime = answers.stream()
             .mapToLong(a -> {
                 ForumQuestionEntity q = questionRepository.findById(a.getQuestionId()).orElse(null);
@@ -317,6 +441,50 @@ public class ForumQuestionService {
         stats.setAvgResponseTimeMinutes(answers.isEmpty() ? null : avgTime);
 
         return stats;
+    }
+
+    // ── Helpers privados ─────────────────────────────────────────────────────
+
+    /** Resolve subjectIds do professor via auth service + academic service */
+    private List<Long> resolveSubjectIds(String professorUsername) {
+        try {
+            Long userId = authServiceClient.getUserIdByUsername(professorUsername);
+            if (userId == null) return List.of();
+            return academicServiceClient.getSubjectIdsByProfessorId(userId);
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
+    /** Legado: resolve DisciplinaEnum via specialization text-matching */
+    private List<DisciplinaEnum> resolveDisciplinasLegacy(String professorUsername) {
+        return authServiceClient.getProfessorDisciplineNames(professorUsername)
+            .stream()
+            .map(name -> {
+                try { return DisciplinaEnum.valueOf(name); }
+                catch (IllegalArgumentException e) { return null; }
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+    }
+
+    private List<QuestionResponseDTO> buildPendingFromDisciplinas(List<DisciplinaEnum> disciplines, String professorUsername) {
+        List<ForumQuestionEntity> expert = questionRepository
+            .findByQuestionTypeAndDisciplinaInAndStatus(QuestionType.ESPECIALIZADO, disciplines, QuestionStatus.ABERTA)
+            .stream()
+            .filter(q -> !expertAnswerRepository.existsByQuestionIdAndAnsweredBy(q.getId(), professorUsername))
+            .collect(Collectors.toList());
+
+        List<ForumQuestionEntity> collab = questionRepository
+            .findByQuestionTypeAndDisciplinaIn(QuestionType.COLABORATIVO, disciplines)
+            .stream()
+            .filter(q -> !collaborativeAnswerRepository.existsByQuestionIdAndAnsweredBy(q.getId(), professorUsername))
+            .collect(Collectors.toList());
+
+        List<ForumQuestionEntity> combined = new ArrayList<>(expert);
+        combined.addAll(collab);
+        combined.sort(Comparator.comparing(ForumQuestionEntity::getCreatedAt).reversed());
+        return combined.stream().map(this::enrichWithAnswers).collect(Collectors.toList());
     }
 
     private QuestionResponseDTO enrichWithAnswers(ForumQuestionEntity q) {
@@ -345,30 +513,19 @@ public class ForumQuestionService {
         return firstAt != null ? Duration.between(questionCreatedAt, firstAt).toMinutes() : null;
     }
 
-    private List<DisciplinaEnum> resolveDisciplinas(String professorUsername) {
-        return authServiceClient.getProfessorDisciplineNames(professorUsername)
-            .stream()
-            .map(name -> {
-                try { return DisciplinaEnum.valueOf(name); }
-                catch (IllegalArgumentException e) { return null; }
-            })
-            .filter(java.util.Objects::nonNull)
-            .collect(Collectors.toList());
-    }
-
-    private String displayName(codelab.api.smart.sae.forum.enums.DisciplinaEnum d) {
+    private String displayName(DisciplinaEnum d) {
         return switch (d) {
             case MATEMATICA -> "Matemática";
-            case FISICA -> "Física";
-            case QUIMICA -> "Química";
-            case BIOLOGIA -> "Biologia";
-            case PORTUGUES -> "Português";
-            case HISTORIA -> "História";
-            case GEOGRAFIA -> "Geografia";
-            case INGLES -> "Inglês";
-            case FILOSOFIA -> "Filosofia";
+            case FISICA     -> "Física";
+            case QUIMICA    -> "Química";
+            case BIOLOGIA   -> "Biologia";
+            case PORTUGUES  -> "Português";
+            case HISTORIA   -> "História";
+            case GEOGRAFIA  -> "Geografia";
+            case INGLES     -> "Inglês";
+            case FILOSOFIA  -> "Filosofia";
             case INFORMATICA -> "Informática";
-            case GERAL -> "Geral";
+            case GERAL      -> "Geral";
         };
     }
 }

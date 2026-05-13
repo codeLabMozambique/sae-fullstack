@@ -6,48 +6,51 @@ spring:
     name: sae-api-gateway
   profiles:
     active: dev
-  codec:
-    max-in-memory-size: 60MB
+  http:
+    codecs:
+      max-in-memory-size: 60MB
   cloud:
     gateway:
-      globalcors:
-        add-to-simple-url-handler-mapping: true
-        cors-configurations:
-          '[/**]':
-            allowedOriginPatterns: "*"
-            allowedMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
-            allowedHeaders: "*"
-            allowCredentials: true
-            maxAge: 3600
-      routes:
-        # SERVIÇO DE AUTENTICAÇÃO E UTILIZADORES (8081)
-        - id: sae-auth-service
-          uri: http://localhost:8081
-          predicates:
-            - Path=/auth/**
-          filters:
-            - StripPrefix=1
-            
-        # SERVIÇO DE CONTEÚDOS (8082)
-        - id: sae-content-service
-          uri: http://localhost:8082
-          predicates:
-            - Path=/content/**
-          filters:
-            - StripPrefix=1
+      server:
+        webflux:
+          globalcors:
+            add-to-simple-url-handler-mapping: true
+            cors-configurations:
+              '[/**]':
+                allowedOriginPatterns: "*"
+                allowedMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+                allowedHeaders: "*"
+                allowCredentials: true
+                maxAge: 3600
+          routes:
+            # SERVIÇO DE AUTENTICAÇÃO E UTILIZADORES (8081)
+            - id: sae-auth-service
+              uri: http://localhost:8081
+              predicates:
+                - Path=/auth/**
+              filters:
+                - StripPrefix=1
 
-        # SERVIÇO DE FÓRUM (8083)
-        - id: sae-forum-service
-          uri: http://localhost:8083
-          predicates:
-            - Path=/forum/**
-          filters:
-            - StripPrefix=1
-            
-        # SERVIÇO DE QUIZZES E TESTES (8084)
-        - id: sae-quiz-service
-          uri: http://localhost:8084
-          predicates:
-            - Path=/quiz/**
-          filters:
-            - StripPrefix=1
+            # SERVIÇO DE CONTEÚDOS (8082)
+            - id: sae-content-service
+              uri: http://localhost:8082
+              predicates:
+                - Path=/content/**
+              filters:
+                - StripPrefix=1
+
+            # SERVIÇO DE FÓRUM (8083)
+            - id: sae-forum-service
+              uri: http://localhost:8083
+              predicates:
+                - Path=/forum/**
+              filters:
+                - StripPrefix=1
+
+            # SERVIÇO DE QUIZZES E TESTES (8084)
+            - id: sae-quiz-service
+              uri: http://localhost:8084
+              predicates:
+                - Path=/quiz/**
+              filters:
+                - StripPrefix=1

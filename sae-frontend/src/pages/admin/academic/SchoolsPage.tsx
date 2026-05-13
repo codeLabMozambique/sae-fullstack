@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+﻿import React, { useEffect, useState, useMemo } from 'react';
 import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, TablePagination, Chip, Button, IconButton, Dialog, DialogTitle,
@@ -116,7 +116,7 @@ const SchoolsPage: React.FC = () => {
       <Box sx={{ position: 'relative', zIndex: 1 }}>
 
         {/* ── Page header banner ── */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg,#0A1628 0%,#1565c0 100%)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, p: 2.5, mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg,#0A1628 0%,#00A651 100%)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, p: 2.5, mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box sx={{ p: 1.2, borderRadius: 2, background: 'rgba(0,166,81,0.15)', border: '1px solid rgba(0,166,81,0.25)', display: 'flex' }}>
               <SchoolIcon sx={{ color: '#4caf50', fontSize: 26 }} />
@@ -215,16 +215,16 @@ const SchoolsPage: React.FC = () => {
                     <TableRow key={row.id} sx={{ transition: 'background .15s', '&:hover': { background: 'rgba(0,166,81,0.035)' } }}>
                       <TableCell sx={{ py: 1.5 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                          <Avatar sx={{ width: 34, height: 34, bgcolor: 'rgba(21,101,192,0.1)', color: '#1565c0', fontSize: '0.72rem', fontWeight: 800 }}>
+                          <Avatar sx={{ width: 34, height: 34, bgcolor: 'rgba(21,101,192,0.1)', color: '#00A651', fontSize: '0.72rem', fontWeight: 800 }}>
                             {row.name.slice(0, 2).toUpperCase()}
                           </Avatar>
                           <Typography fontWeight={600} color={PRIMARY} variant="body2">{row.name}</Typography>
                         </Box>
                       </TableCell>
                       <TableCell>
-                        <Chip icon={<CityIcon sx={{ fontSize: '14px !important', color: '#1565c0 !important' }} />}
+                        <Chip icon={<CityIcon sx={{ fontSize: '14px !important', color: '#00A651 !important' }} />}
                           label={row.city} size="small"
-                          sx={{ bgcolor: 'rgba(21,101,192,0.08)', color: '#1565c0', border: '1px solid rgba(21,101,192,0.15)' }} />
+                          sx={{ bgcolor: 'rgba(21,101,192,0.08)', color: '#00A651', border: '1px solid rgba(21,101,192,0.15)' }} />
                       </TableCell>
                       <TableCell sx={{ color: '#475569', maxWidth: 200 }}>
                         <Typography variant="body2" noWrap title={row.address}>{row.address || '—'}</Typography>
@@ -273,7 +273,7 @@ const SchoolsPage: React.FC = () => {
           paper: { sx: { ...glass, background: 'rgba(255,255,255,0.97)', borderRadius: 4, boxShadow: '0 24px 64px rgba(0,0,0,0.18)', overflow: 'hidden' } },
         }}>
         <DialogTitle sx={{ p: 0 }}>
-          <Box sx={{ px: 3, py: 2.5, background: 'linear-gradient(135deg,#0A1628 0%,#1565c0 100%)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ px: 3, py: 2.5, background: 'linear-gradient(135deg,#0A1628 0%,#00A651 100%)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <SchoolIcon sx={{ color: '#4caf50' }} />
               <Typography variant="h6" color="white">{editing ? 'Editar Escola' : 'Nova Escola'}</Typography>
