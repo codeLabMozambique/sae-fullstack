@@ -10,6 +10,9 @@ public class QuestionResultDTO {
     private String correctOptionLetra;
     private String correctOptionTexto;
     private boolean correct;
+    private String explicacao;
+    private String mediaUrl;
+    private String mediaType;
 
     public Long getQuestionId() { return questionId; }
     public void setQuestionId(Long questionId) { this.questionId = questionId; }
@@ -29,4 +32,10 @@ public class QuestionResultDTO {
     public void setCorrectOptionTexto(String correctOptionTexto) { this.correctOptionTexto = correctOptionTexto; }
     public boolean isCorrect() { return correct; }
     public void setCorrect(boolean correct) { this.correct = correct; }
+    public String getExplicacao() { return explicacao; }
+    public void setExplicacao(String explicacao) { this.explicacao = explicacao; }
+    public String getMediaUrl() { return mediaUrl; }
+    public void setMediaUrl(String mediaUrl) { this.mediaUrl = mediaUrl; }
+    public String getMediaType() { return mediaType; }
+    public void setMediaType(String mediaType) { this.mediaType = mediaType; }
 }

@@ -8,6 +8,7 @@ public class GenerateFromContentDTO {
     private Integer numQuestions;
     private Integer tempoLimiteMinutos;
     private String sectionName;
+    private String sectionId;
 
     public String getContentId() { return contentId; }
     public void setContentId(String contentId) { this.contentId = contentId; }
@@ -23,4 +24,6 @@ public class GenerateFromContentDTO {
     public void setTempoLimiteMinutos(Integer tempoLimiteMinutos) { this.tempoLimiteMinutos = tempoLimiteMinutos; }
     public String getSectionName() { return sectionName; }
     public void setSectionName(String sectionName) { this.sectionName = sectionName; }
+    public String getSectionId() { return sectionId; }
+    public void setSectionId(String sectionId) { this.sectionId = sectionId; }
 }

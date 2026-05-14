@@ -15,6 +15,10 @@ export interface QuizSummary {
   startPage?: number;
   endPage?: number;
   aiGenerated?: boolean;
+  sectionId?: string;
+  quizType?: string;
+  thumbnailUrl?: string;
+  thumbnailType?: string;
 }
 
 export interface ContentSection {
@@ -35,6 +39,14 @@ export interface GenerateFromContentDTO {
   numQuestions?: number;
   tempoLimiteMinutos?: number;
   sectionName?: string;
+  sectionId?: string;
+}
+
+export interface StudyPrepRequestDTO {
+  disciplina?: string;
+  mode: 'TEST' | 'EXAM';
+  contentId?: string;
+  numQuestions?: number;
 }
 
 export interface QuizOption {
@@ -48,6 +60,9 @@ export interface QuizQuestion {
   enunciado: string;
   ordemNumero: number;
   options: QuizOption[];
+  mediaUrl?: string;
+  mediaType?: string;
+  explicacao?: string;
 }
 
 export interface Quiz {
@@ -69,6 +84,9 @@ export interface QuizQuestionAdmin {
   enunciado: string;
   ordemNumero: number;
   options: QuizOptionAdmin[];
+  mediaUrl?: string;
+  mediaType?: string;
+  explicacao?: string;
 }
 
 export interface QuizAdmin {
@@ -82,6 +100,8 @@ export interface QuizAdmin {
   createdBy: string;
   createdAt: string;
   questions: QuizQuestionAdmin[];
+  thumbnailUrl?: string;
+  thumbnailType?: string;
 }
 
 export interface StartAttemptResponse {
@@ -108,6 +128,9 @@ export interface QuestionResult {
   correctOptionLetra: string;
   correctOptionTexto: string;
   correct: boolean;
+  explicacao?: string;
+  mediaUrl?: string;
+  mediaType?: string;
 }
 
 export interface QuizResult {
@@ -119,6 +142,46 @@ export interface QuizResult {
   totalQuestions: number;
   timeSpentSeconds: number;
   questionResults: QuestionResult[];
+  teachingMode?: boolean;
+  suggestProfessor?: boolean;
+  attemptCount?: number;
+}
+
+// ── Oral Test ────────────────────────────────────────────────────
+export interface OralTestRequestDTO {
+  disciplina?: string;
+  numQuestions?: number;
+  contentId?: string;
+  level?: string;
+}
+
+export interface OralTestEvaluateDTO {
+  quizId: number;
+  responses: { questionId: number; transcription: string }[];
+}
+
+export interface OralDimensionResult {
+  name: string;
+  score: number;
+  feedback: string;
+  suggestions: string[];
+}
+
+export interface OralQuestionFeedback {
+  questionId: number;
+  topic: string;
+  transcription: string;
+  score: number;
+  feedback: string;
+  improvedVersion: string;
+}
+
+export interface OralTestResult {
+  overallScore: number;
+  level: string;
+  dimensions: OralDimensionResult[];
+  questionFeedback: OralQuestionFeedback[];
+  generalSuggestions: string;
 }
 
 export interface CreateQuizDTO {
@@ -126,6 +189,8 @@ export interface CreateQuizDTO {
   descricao: string;
   disciplina: string;
   tempoLimiteMinutos: number | null;
+  thumbnailUrl?: string;
+  thumbnailType?: string;
 }
 
 export interface CreateOptionDTO {
@@ -137,6 +202,8 @@ export interface CreateOptionDTO {
 export interface CreateQuestionDTO {
   enunciado: string;
   options: CreateOptionDTO[];
+  mediaUrl?: string;
+  mediaType?: string;
 }
 
 export const DISCIPLINAS = [

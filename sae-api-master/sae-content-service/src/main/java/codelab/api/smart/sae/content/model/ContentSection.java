@@ -23,6 +23,9 @@ public class ContentSection {
     private Integer endPage;
     private Integer position;
 
+    /** ID do quiz gerado por IA para esta secção (null se ainda não gerado) */
+    private Long quizId;
+
     private LocalDateTime createdAt = LocalDateTime.now();
 
     public String getId() { return id; }
@@ -39,6 +42,8 @@ public class ContentSection {
     public void setEndPage(Integer endPage) { this.endPage = endPage; }
     public Integer getPosition() { return position; }
     public void setPosition(Integer position) { this.position = position; }
+    public Long getQuizId() { return quizId; }
+    public void setQuizId(Long quizId) { this.quizId = quizId; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

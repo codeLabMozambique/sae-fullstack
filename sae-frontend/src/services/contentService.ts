@@ -391,6 +391,20 @@ export interface ContentSection {
   startPage: number;
   endPage: number;
   position?: number;
+  quizId?: number;
+}
+
+export interface SectionProgress {
+  id?: string;
+  userId?: string;
+  sectionId: string;
+  contentId?: string;
+  score: number;
+  totalQuestions: number;
+  correctAnswers: number;
+  completed: boolean;
+  quizAttemptId?: number;
+  completedAt?: string;
 }
 
 export async function listSections(contentId: string): Promise<ContentSection[]> {
@@ -410,4 +424,28 @@ export async function updateSection(contentId: string, sectionId: string, sectio
 
 export async function deleteSection(contentId: string, sectionId: string): Promise<void> {
   await api.delete(`/content/api/contents/${contentId}/sections/${sectionId}`);
+}
+
+export async function linkQuizToSection(contentId: string, sectionId: string, quizId: number): Promise<ContentSection> {
+  const { data } = await api.patch<ContentSection>(`/content/api/contents/${contentId}/sections/${sectionId}/quiz`, { quizId });
+  return data;
+}
+
+// Progresso por secção
+export async function listSectionProgress(contentId: string): Promise<SectionProgress[]> {
+  const { data } = await api.get<SectionProgress[]>('/content/api/user/section-progress', { params: { contentId } });
+  return data;
+}
+
+export async function getSectionProgress(sectionId: string): Promise<SectionProgress> {
+  const { data } = await api.get<SectionProgress>(`/content/api/user/section-progress/${sectionId}`);
+  return data;
+}
+
+export async function completeSectionProgress(
+  sectionId: string,
+  payload: { contentId: string; score: number; totalQuestions: number; correctAnswers: number; quizAttemptId?: number }
+): Promise<SectionProgress> {
+  const { data } = await api.post<SectionProgress>(`/content/api/user/section-progress/${sectionId}/complete`, payload);
+  return data;
 }

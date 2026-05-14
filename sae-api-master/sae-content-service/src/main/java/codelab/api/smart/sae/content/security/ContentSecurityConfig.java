@@ -59,6 +59,8 @@ public class ContentSecurityConfig {
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/api/professor/**")).hasAnyAuthority("PROFESSOR", "ADMIN")
                         // Student-only (PROFESSOR/ADMIN também podem para fins de gestão)
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/api/student/**")).hasAnyAuthority("STUDENT", "PROFESSOR", "ADMIN")
+                        // Attachments — GET is public (UUID-based IDs are non-guessable; upload/delete require auth)
+                        .requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/api/user/uploads/**")).permitAll()
                         // Submissões — download partilhado (estudante dono OU professor da tarefa)
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/api/assignments/**")).authenticated()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/api/user/**")).authenticated()

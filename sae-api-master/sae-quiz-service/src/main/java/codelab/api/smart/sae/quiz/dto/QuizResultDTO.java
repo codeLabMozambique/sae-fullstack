@@ -11,6 +11,9 @@ public class QuizResultDTO {
     private int totalQuestions;
     private long timeSpentSeconds;
     private List<QuestionResultDTO> questionResults;
+    private boolean teachingMode;
+    private boolean suggestProfessor;
+    private int attemptCount;
 
     public Long getAttemptId() { return attemptId; }
     public void setAttemptId(Long attemptId) { this.attemptId = attemptId; }
@@ -28,4 +31,10 @@ public class QuizResultDTO {
     public void setTimeSpentSeconds(long timeSpentSeconds) { this.timeSpentSeconds = timeSpentSeconds; }
     public List<QuestionResultDTO> getQuestionResults() { return questionResults; }
     public void setQuestionResults(List<QuestionResultDTO> questionResults) { this.questionResults = questionResults; }
+    public boolean isTeachingMode() { return teachingMode; }
+    public void setTeachingMode(boolean teachingMode) { this.teachingMode = teachingMode; }
+    public boolean isSuggestProfessor() { return suggestProfessor; }
+    public void setSuggestProfessor(boolean suggestProfessor) { this.suggestProfessor = suggestProfessor; }
+    public int getAttemptCount() { return attemptCount; }
+    public void setAttemptCount(int attemptCount) { this.attemptCount = attemptCount; }
 }

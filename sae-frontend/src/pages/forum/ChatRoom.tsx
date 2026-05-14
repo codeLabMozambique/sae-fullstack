@@ -16,6 +16,7 @@ import { forumService } from '../../services/forumService';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { useAuth } from '../../context/AuthContext';
 import ValidationBadge from '../../components/forum/ValidationBadge';
+import VoiceRecorderButton from '../../components/VoiceRecorderButton';
 import {
   DISCIPLINA_LABELS, DISCIPLINA_COLOR, DISCIPLINA_EMOJI,
   type ForumQuestion, type ExpertAnswer, type CollaborativeAnswer, type ProfessorInfo,
@@ -657,6 +658,13 @@ const ChatRoom: React.FC = () => {
             {initials(user?.username || '?')}
           </Avatar>
 
+          <VoiceRecorderButton
+            onTranscript={text => setAnswer(prev => prev ? prev + ' ' + text : text)}
+            language="pt-PT"
+            accentColor={accent}
+            buttonSize={36}
+            tooltip="Responder por voz"
+          />
           <TextField
             fullWidth
             multiline

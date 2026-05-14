@@ -74,6 +74,8 @@ public class QuizService {
         quiz.setDescricao(dto.getDescricao());
         quiz.setDisciplina(parseDisciplina(dto.getDisciplina()));
         quiz.setTempoLimiteMinutos(dto.getTempoLimiteMinutos());
+        quiz.setThumbnailUrl(dto.getThumbnailUrl());
+        quiz.setThumbnailType(dto.getThumbnailType());
         quiz.setCreatedBy(createdBy);
         return toAdminDTO(java.util.Objects.requireNonNull(quizRepository.save(quiz)));
     }
@@ -86,6 +88,8 @@ public class QuizService {
         quiz.setDescricao(dto.getDescricao());
         quiz.setDisciplina(parseDisciplina(dto.getDisciplina()));
         quiz.setTempoLimiteMinutos(dto.getTempoLimiteMinutos());
+        quiz.setThumbnailUrl(dto.getThumbnailUrl());
+        quiz.setThumbnailType(dto.getThumbnailType());
         return toAdminDTO(java.util.Objects.requireNonNull(quizRepository.save(quiz)));
     }
 
@@ -113,6 +117,8 @@ public class QuizService {
         q.setQuiz(quiz);
         q.setEnunciado(dto.getEnunciado());
         q.setOrdemNumero(quiz.getQuestions().size() + 1);
+        q.setMediaUrl(dto.getMediaUrl());
+        q.setMediaType(dto.getMediaType());
         q = java.util.Objects.requireNonNull(questionRepository.save(q));
 
         for (CreateOptionDTO optDto : dto.getOptions()) {
@@ -153,6 +159,10 @@ public class QuizService {
         dto.setStartPage(q.getStartPage());
         dto.setEndPage(q.getEndPage());
         dto.setAiGenerated(q.isAiGenerated());
+        dto.setSectionId(q.getSectionId());
+        dto.setQuizType(q.getQuizType());
+        dto.setThumbnailUrl(q.getThumbnailUrl());
+        dto.setThumbnailType(q.getThumbnailType());
         return dto;
     }
 
@@ -169,6 +179,9 @@ public class QuizService {
             qd.setId(question.getId());
             qd.setEnunciado(question.getEnunciado());
             qd.setOrdemNumero(question.getOrdemNumero() == null ? 0 : question.getOrdemNumero());
+            qd.setMediaUrl(question.getMediaUrl());
+            qd.setMediaType(question.getMediaType());
+            qd.setExplicacao(question.getExplicacao());
             qd.setOptions(question.getOptions().stream().map(opt -> {
                 QuizOptionDTO od = new QuizOptionDTO();
                 od.setId(opt.getId());
@@ -196,11 +209,18 @@ public class QuizService {
         dto.setStartPage(q.getStartPage());
         dto.setEndPage(q.getEndPage());
         dto.setAiGenerated(q.isAiGenerated());
+        dto.setSectionId(q.getSectionId());
+        dto.setQuizType(q.getQuizType());
+        dto.setThumbnailUrl(q.getThumbnailUrl());
+        dto.setThumbnailType(q.getThumbnailType());
         dto.setQuestions(q.getQuestions().stream().map(question -> {
             QuizQuestionAdminDTO qd = new QuizQuestionAdminDTO();
             qd.setId(question.getId());
             qd.setEnunciado(question.getEnunciado());
             qd.setOrdemNumero(question.getOrdemNumero() == null ? 0 : question.getOrdemNumero());
+            qd.setMediaUrl(question.getMediaUrl());
+            qd.setMediaType(question.getMediaType());
+            qd.setExplicacao(question.getExplicacao());
             qd.setOptions(question.getOptions().stream().map(opt -> {
                 QuizOptionAdminDTO od = new QuizOptionAdminDTO();
                 od.setId(opt.getId());
