@@ -69,13 +69,28 @@ export function assignmentFileUrl(assignmentId: number): string {
 // ────────────────────────────────────────────────────────────
 
 export async function createAssignment(payload: CreateAssignmentPayload): Promise<Assignment> {
-  const { data } = await api.post<Assignment>('/content/api/professor/assignments', {
+  const metadata = {
     classroomId: payload.classroomId,
     title: payload.title,
     description: payload.description ?? null,
     deadline: payload.deadline,
     maxScore: payload.maxScore,
-  });
+  };
+
+  // Se tem ficheiro, manda multipart. Senão, JSON puro.
+  if (payload.file) {
+    const fd = new FormData();
+    fd.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    fd.append('file', payload.file);
+    const { data } = await api.post<Assignment>(
+      '/content/api/professor/assignments',
+      fd,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+    return data;
+  }
+
+  const { data } = await api.post<Assignment>('/content/api/professor/assignments', metadata);
   return data;
 }
 

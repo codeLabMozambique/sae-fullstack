@@ -70,6 +70,40 @@ public class ContentResource {
         return serveFile(fileName, guessMediaType(fileName));
     }
 
+    /**
+     * Compatibilidade legada — devolve o thumbnail de um conteúdo.
+     * Resolve o `thumbnailUrl` guardado no Mongo para servir o ficheiro real.
+     * Formatos suportados:
+     *   • "/api/contents/files/{name}"       (novo)
+     *   • "/api/contents/{name}/read"        (antigo)
+     */
+    @GetMapping("/{id}/thumbnail")
+    public ResponseEntity<org.springframework.core.io.InputStreamResource> readThumbnail(@PathVariable String id) {
+        Content content;
+        try {
+            content = contentService.getById(id);
+        } catch (org.springframework.web.server.ResponseStatusException ex) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.NOT_FOUND, "Conteúdo não encontrado");
+        }
+        String thumbUrl = content.getThumbnailUrl();
+        if (thumbUrl == null || thumbUrl.isBlank()) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.NOT_FOUND, "Sem thumbnail");
+        }
+        // Extrai o nome do ficheiro do URL (suporta vários formatos)
+        String fileName = thumbUrl;
+        if (fileName.startsWith("/api/contents/files/")) {
+            fileName = fileName.substring("/api/contents/files/".length());
+        } else if (fileName.startsWith("/api/contents/") && fileName.endsWith("/read")) {
+            fileName = fileName.substring("/api/contents/".length(), fileName.length() - "/read".length());
+        } else if (fileName.startsWith("/api/contents/") && fileName.endsWith("/thumbnail")) {
+            // recursivo — evita loop: trata `id` como ficheiro
+            fileName = id;
+        }
+        return serveFile(fileName, guessMediaType(fileName.endsWith(".jpg") ? fileName : fileName + ".jpg"));
+    }
+
     private ResponseEntity<org.springframework.core.io.InputStreamResource> serveFile(
             String fileName, org.springframework.http.MediaType mediaType) {
         try {

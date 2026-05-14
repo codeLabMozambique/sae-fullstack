@@ -42,6 +42,12 @@ public class SecurityConfig {
                 .permitAll()
                 .requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/my-student-profile"))
                 .authenticated()
+                // Perfil próprio — qualquer utilizador autenticado
+                .requestMatchers(
+                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/me"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.PUT, "/users/me"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.PUT, "/users/me/password"))
+                .authenticated()
                 // Allow professors, students and school admins to read user lists
                 .requestMatchers(
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/all"),

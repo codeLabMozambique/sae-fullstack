@@ -18,11 +18,12 @@ import {
 import {
   ArrowBack as ArrowBackIcon,
   CloudUpload as UploadFileIcon,
-  CloudDownload as DownloadIcon,
+  Visibility as ViewIcon,
   Schedule as ScheduleIcon,
   CheckCircle as CheckCircleIcon,
   EmojiEvents as GradeIcon,
 } from '@mui/icons-material';
+import FileViewerDialog from '../../components/FileViewerDialog';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   type Assignment,
@@ -45,6 +46,9 @@ export default function StudentTaskDetailsPage() {
   const [comment, setComment] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Visualizador inline (anti-download)
+  const [viewer, setViewer] = useState<{ url: string; name: string; title: string } | null>(null);
 
   useEffect(() => {
     if (id && classrooms.length > 0) {
@@ -109,7 +113,7 @@ export default function StudentTaskDetailsPage() {
 
       <Grid container spacing={3}>
         {/* Lado Esquerdo: Instruções */}
-        <Grid item xs={12} lg={8}>
+        <Grid size={{ xs: 12, lg: 8 }}>
           <Paper sx={{ p: 4, borderRadius: 4, mb: 3, border: '1px solid #F3F4F6' }}>
             <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
               <Typography variant="h5" fontWeight={700} color="#111827">{assignment.title}</Typography>
@@ -135,13 +139,15 @@ export default function StudentTaskDetailsPage() {
                 <Button
                   variant="contained"
                   size="small"
-                  startIcon={<DownloadIcon />}
-                  href={assignmentFileUrl(assignment.id)}
-                  target="_blank"
-                  download
+                  startIcon={<ViewIcon />}
+                  onClick={() => setViewer({
+                    url: assignmentFileUrl(assignment.id),
+                    name: assignment.fileOriginalName || 'material.pdf',
+                    title: 'Material de apoio',
+                  })}
                   sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700, bgcolor: '#0A1628' }}
                 >
-                  Descarregar
+                  Ver material
                 </Button>
               </Box>
             )}
@@ -149,20 +155,20 @@ export default function StudentTaskDetailsPage() {
             <Divider sx={{ my: 3 }} />
 
             <Grid container spacing={3}>
-              <Grid item xs={6} md={3}>
+              <Grid size={{ xs: 6, md: 3 }}>
                 <Typography variant="caption" color="textSecondary" fontWeight={700} sx={{ textTransform: 'uppercase' }}>Professor</Typography>
                 <Box display="flex" alignItems="center" gap={1} mt={0.5}>
                   <Avatar sx={{ width: 24, height: 24, fontSize: '0.7rem', bgcolor: '#00A651' }}>{(assignment.createdByName || 'P').charAt(0)}</Avatar>
                   <Typography variant="body2" fontWeight={600}>{assignment.createdByName || assignment.createdBy}</Typography>
                 </Box>
               </Grid>
-              <Grid item xs={6} md={3}>
+              <Grid size={{ xs: 6, md: 3 }}>
                 <Typography variant="caption" color="textSecondary" fontWeight={700} sx={{ textTransform: 'uppercase' }}>Prazo</Typography>
                 <Typography variant="body2" fontWeight={600} color={isLate ? '#EF4444' : '#111827'} mt={0.5}>
                   {new Date(assignment.deadline).toLocaleDateString()}
                 </Typography>
               </Grid>
-              <Grid item xs={6} md={3}>
+              <Grid size={{ xs: 6, md: 3 }}>
                 <Typography variant="caption" color="textSecondary" fontWeight={700} sx={{ textTransform: 'uppercase' }}>Pontuação</Typography>
                 <Typography variant="body2" fontWeight={600} mt={0.5}>{assignment.maxScore} Pontos</Typography>
               </Grid>
@@ -182,7 +188,7 @@ export default function StudentTaskDetailsPage() {
               </Box>
 
               <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <Box sx={{ p: 2, bgcolor: '#fff', borderRadius: 3 }}>
                     <Typography variant="caption" color="textSecondary" fontWeight={700} sx={{ textTransform: 'uppercase' }}>O teu comentário</Typography>
                     <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
@@ -190,16 +196,19 @@ export default function StudentTaskDetailsPage() {
                     </Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   {assignment.mySubmission!.fileName && (
                     <Box sx={{ p: 2, bgcolor: '#fff', borderRadius: 3 }}>
                       <Typography variant="caption" color="textSecondary" fontWeight={700} sx={{ textTransform: 'uppercase' }}>Anexo enviado</Typography>
                       <Button
                         fullWidth
                         variant="outlined"
-                        startIcon={<DownloadIcon />}
-                        href={submissionFileUrl(assignment.mySubmission!.id)}
-                        target="_blank"
+                        startIcon={<ViewIcon />}
+                        onClick={() => setViewer({
+                          url: submissionFileUrl(assignment.mySubmission!.id),
+                          name: assignment.mySubmission!.fileOriginalName || 'anexo',
+                          title: 'O teu anexo',
+                        })}
                         sx={{ mt: 1, borderRadius: 2, textTransform: 'none', borderColor: '#BBF7D0', color: '#166534' }}
                       >
                         {assignment.mySubmission!.fileOriginalName}
@@ -213,7 +222,7 @@ export default function StudentTaskDetailsPage() {
         </Grid>
 
         {/* Lado Direito: Submissão ou Nota */}
-        <Grid item xs={12} lg={4}>
+        <Grid size={{ xs: 12, lg: 4 }}>
           {!hasSubmitted ? (
             <Card sx={{ borderRadius: 4, border: '1px solid #F3F4F6' }}>
               <CardContent sx={{ p: 3 }}>
@@ -308,6 +317,15 @@ export default function StudentTaskDetailsPage() {
           )}
         </Grid>
       </Grid>
+
+      {/* Visualizador inline — política da plataforma: sem download */}
+      <FileViewerDialog
+        open={!!viewer}
+        onClose={() => setViewer(null)}
+        url={viewer?.url || ''}
+        fileName={viewer?.name}
+        title={viewer?.title}
+      />
     </Box>
   );
 }

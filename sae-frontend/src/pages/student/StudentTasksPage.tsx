@@ -126,7 +126,7 @@ export default function StudentTasksPage() {
             const isLate = new Date() > new Date(a.deadline) && !hasSubmitted;
             
             return (
-              <Grid item xs={12} md={6} lg={4} key={a.id}>
+              <Grid size={{ xs: 12, md: 6, lg: 4 }} key={a.id}>
                 <Card
                   sx={{
                     height: '100%',

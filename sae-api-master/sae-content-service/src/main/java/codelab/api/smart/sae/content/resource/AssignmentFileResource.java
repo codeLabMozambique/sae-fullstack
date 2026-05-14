@@ -1,5 +1,6 @@
 package codelab.api.smart.sae.content.resource;
 
+import codelab.api.smart.sae.content.model.jpa.Assignment;
 import codelab.api.smart.sae.content.model.jpa.Submission;
 import codelab.api.smart.sae.content.service.AssignmentService;
 import codelab.api.smart.sae.content.service.FileStorageService;
@@ -37,7 +38,7 @@ public class AssignmentFileResource {
     @Autowired private FileStorageService fileStorageService;
 
     @GetMapping("/submissions/{submissionId}/file")
-    public ResponseEntity<InputStreamResource> downloadFile(
+    public ResponseEntity<InputStreamResource> downloadSubmissionFile(
             @PathVariable Long submissionId,
             Principal principal) {
         if (principal == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
@@ -51,6 +52,28 @@ public class AssignmentFileResource {
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"" + dispositionName + "\"")
+                .body(new InputStreamResource(is));
+    }
+
+    /**
+     * Descarrega o ficheiro de apoio da tarefa (livro/documento que o professor anexou).
+     * Acesso a qualquer utilizador autenticado — o filtro de segurança garante isso.
+     */
+    @GetMapping("/{assignmentId}/file")
+    public ResponseEntity<InputStreamResource> downloadAssignmentFile(
+            @PathVariable Long assignmentId,
+            Principal principal) {
+        if (principal == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        Assignment a = assignmentService.getAssignmentEntity(assignmentId);
+        if (a.getFileName() == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Tarefa sem ficheiro de apoio");
+        }
+        InputStream is = fileStorageService.getFile(a.getFileName());
+        String dispositionName = a.getFileOriginalName() != null ? a.getFileOriginalName() : a.getFileName();
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + dispositionName + "\"")
                 .body(new InputStreamResource(is));
     }
 

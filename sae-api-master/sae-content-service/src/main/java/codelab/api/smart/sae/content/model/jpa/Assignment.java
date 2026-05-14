@@ -38,6 +38,14 @@ public class Assignment {
     @Column(name = "created_by_name", length = 200)
     private String createdByName;
 
+    /** Nome do ficheiro de apoio no MinIO (chave). NULL se a tarefa não tem anexo. */
+    @Column(name = "file_name", length = 500)
+    private String fileName;
+
+    /** Nome original do ficheiro (para mostrar ao utilizador). */
+    @Column(name = "file_original_name", length = 500)
+    private String fileOriginalName;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -68,6 +76,12 @@ public class Assignment {
 
     public String getCreatedByName() { return createdByName; }
     public void setCreatedByName(String createdByName) { this.createdByName = createdByName; }
+
+    public String getFileName() { return fileName; }
+    public void setFileName(String fileName) { this.fileName = fileName; }
+
+    public String getFileOriginalName() { return fileOriginalName; }
+    public void setFileOriginalName(String fileOriginalName) { this.fileOriginalName = fileOriginalName; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
