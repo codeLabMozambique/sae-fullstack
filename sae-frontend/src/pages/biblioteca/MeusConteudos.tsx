@@ -58,14 +58,16 @@ const MeusConteudos: React.FC = () => {
             {loading ? 'A carregar…' : `${items.length} conteúdos`}
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => navigate(uploadPath)}
-          sx={{ bgcolor: '#0A1628', '&:hover': { bgcolor: '#00A651' }, borderRadius: 2.5, textTransform: 'none', fontWeight: 700 }}
-        >
-          Novo Conteúdo
-        </Button>
+        {isAdmin && (
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => navigate(uploadPath)}
+            sx={{ bgcolor: '#0A1628', '&:hover': { bgcolor: '#00A651' }, borderRadius: 2.5, textTransform: 'none', fontWeight: 700 }}
+          >
+            Novo Conteúdo
+          </Button>
+        )}
       </Box>
       <Box mb={3} />
 

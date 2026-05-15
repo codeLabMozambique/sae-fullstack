@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box, Typography, Button, Chip, Stack, IconButton, CircularProgress,
   Alert, Card, CardContent, Dialog, DialogContent, DialogActions,
@@ -29,7 +29,12 @@ const FREQ_OPTIONS = [
 const Leitor: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const offline = useOfflineContent();
+
+  /** Página explicitamente pedida via query string (?page=N). Tem prioridade sobre o progresso guardado. */
+  const requestedPage = Number(searchParams.get('page'));
+  const hasRequestedPage = !!requestedPage && requestedPage > 0;
 
   const [content, setContent] = useState<Content | null>(null);
   const [initialPage, setInitialPage] = useState(1);
@@ -62,11 +67,17 @@ const Leitor: React.FC = () => {
     ])
       .then(([c, prog]) => {
         setContent(c);
-        if (prog?.currentPage) setInitialPage(prog.currentPage);
+        // Prioridade: ?page=N na URL (sugestão do professor) > progresso guardado > 1
+        if (hasRequestedPage) {
+          setInitialPage(requestedPage);
+        } else if (prog?.currentPage) {
+          setInitialPage(prog.currentPage);
+        }
       })
       .catch(e => setError(e?.message || 'Conteúdo não encontrado'))
       .finally(() => setLoading(false));
-  }, [id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, hasRequestedPage, requestedPage]);
 
   const handleCreateGoal = async () => {
     if (!content || goalPages <= 0 || !goalDeadline) {

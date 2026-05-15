@@ -129,7 +129,7 @@ FROM (VALUES
     (1,'PRF-002-002', 'MENU_ITEM','Respondidas',           '/professor/forum/answered',             2,'PRF-002'),
     -- PROFESSOR Biblioteca
     (1,'PRF-LIB-001', 'MENU_ITEM','Pesquisar',             '/professor/library',                    1,'PRF-LIB'),
-    (1,'PRF-LIB-002', 'MENU_ITEM','Os Meus Conteúdos',    '/professor/library/my-content',         2,'PRF-LIB'),
+    (1,'PRF-LIB-002', 'MENU_ITEM','Sugerir Leitura',       '/professor/library/suggest',            2,'PRF-LIB'),
     (1,'PRF-LIB-003', 'MENU_ITEM','Categorias',            '/professor/library/categories',         3,'PRF-LIB'),
     (1,'PRF-LIB-004', 'MENU_ITEM','Favoritos',             '/professor/library/favorites',          4,'PRF-LIB'),
     (1,'PRF-LIB-005', 'MENU_ITEM','Continuar a Ler',       '/professor/library/progress',           5,'PRF-LIB'),
@@ -150,11 +150,12 @@ FROM (VALUES
     (1,'STD-002-002', 'MENU_ITEM','Nova Pergunta',         '/student/forum/new',                    2,'STD-002'),
     -- STUDENT Biblioteca
     (1,'STD-LIB-001', 'MENU_ITEM','Pesquisar',             '/student/library',                      1,'STD-LIB'),
-    (1,'STD-LIB-002', 'MENU_ITEM','Categorias',            '/student/library/categories',           2,'STD-LIB'),
-    (1,'STD-LIB-003', 'MENU_ITEM','Favoritos',             '/student/library/favorites',            3,'STD-LIB'),
-    (1,'STD-LIB-004', 'MENU_ITEM','Continuar a Ler',       '/student/library/progress',             4,'STD-LIB'),
-    (1,'STD-LIB-005', 'MENU_ITEM','Histórico',             '/student/library/history',              5,'STD-LIB'),
-    (1,'STD-LIB-006', 'MENU_ITEM','Leitura Offline',       '/student/library/offline',              6,'STD-LIB'),
+    (1,'STD-LIB-007', 'MENU_ITEM','Sugestões dos Profs',   '/student/library/suggestions',          2,'STD-LIB'),
+    (1,'STD-LIB-002', 'MENU_ITEM','Categorias',            '/student/library/categories',           3,'STD-LIB'),
+    (1,'STD-LIB-003', 'MENU_ITEM','Favoritos',             '/student/library/favorites',            4,'STD-LIB'),
+    (1,'STD-LIB-004', 'MENU_ITEM','Continuar a Ler',       '/student/library/progress',             5,'STD-LIB'),
+    (1,'STD-LIB-005', 'MENU_ITEM','Histórico',             '/student/library/history',              6,'STD-LIB'),
+    (1,'STD-LIB-006', 'MENU_ITEM','Leitura Offline',       '/student/library/offline',              7,'STD-LIB'),
     -- STUDENT Metas
     (1,'STD-GOALS-001','MENU_ITEM','Minhas Metas',         '/student/goals',                        1,'STD-GOALS'),
     (1,'STD-GOALS-002','MENU_ITEM','Nova Meta',            '/student/goals/new',                    2,'STD-GOALS'),
@@ -244,7 +245,7 @@ FROM (VALUES
     -- STUDENT — biblioteca + metas
     ('STUDENT','STD-LIB'),   ('STUDENT','STD-LIB-001'),('STUDENT','STD-LIB-002'),
     ('STUDENT','STD-LIB-003'),('STUDENT','STD-LIB-004'),('STUDENT','STD-LIB-005'),
-    ('STUDENT','STD-LIB-006'),
+    ('STUDENT','STD-LIB-006'),('STUDENT','STD-LIB-007'),
     ('STUDENT','STD-GOALS'), ('STUDENT','STD-GOALS-001'),('STUDENT','STD-GOALS-002'),
     -- STUDENT — quiz + tarefas
     ('STUDENT','STD-QUIZ'),  ('STUDENT','STD-QUIZ-001'),('STUDENT','STD-QUIZ-002'),
@@ -281,6 +282,17 @@ SELECT 'role_transaction', COUNT(*) FROM role_transaction;
 -- mas o ALTER TABLE garante compatibilidade em runs sem serviço activo.
 -- ============================================================
 ALTER TABLE IF EXISTS ac_classroom ADD COLUMN IF NOT EXISTS turma_group VARCHAR(10);
+
+-- Garantir que os níveis de ensino 11-15 (8ª–12ª) existem antes da FK das turmas
+INSERT INTO ac_class_level (id, status, created_by, created_date, last_modified_by, last_modified_date, name) VALUES
+(11, 1, 0, NOW(), 0, NOW(), '8ª Classe'),
+(12, 1, 0, NOW(), 0, NOW(), '9ª Classe'),
+(13, 1, 0, NOW(), 0, NOW(), '10ª Classe'),
+(14, 1, 0, NOW(), 0, NOW(), '11ª Classe'),
+(15, 1, 0, NOW(), 0, NOW(), '12ª Classe')
+ON CONFLICT (id) DO NOTHING;
+
+SELECT setval(pg_get_serial_sequence('ac_class_level', 'id'), GREATEST((SELECT MAX(id) FROM ac_class_level), 15));
 
 INSERT INTO ac_classroom (id, status, created_by, created_date, last_modified_by, last_modified_date, name, school_id, class_level_id, shift, turma_group) VALUES
 (21, 1, 0, NOW(), 0, NOW(), 'Turma A - 8ª Classe',                      4, 11, 'Manhã', NULL),
@@ -412,6 +424,32 @@ ON CONFLICT (id) DO UPDATE SET
 --   • Quizzes              → /professor/quiz/create
 --   • Conteúdos biblioteca → /admin/library/upload  ou  /professor/library
 -- =============================================================================
+
+-- =============================================================================
+-- DISCIPLINAS (SNE Moçambique) — povoam o dropdown da biblioteca/upload
+-- =============================================================================
+INSERT INTO disciplines (name, created_at) VALUES
+    ('Português',                       NOW()),
+    ('Matemática',                      NOW()),
+    ('Física',                          NOW()),
+    ('Química',                         NOW()),
+    ('Biologia',                        NOW()),
+    ('História',                        NOW()),
+    ('Geografia',                       NOW()),
+    ('Inglês',                          NOW()),
+    ('Francês',                         NOW()),
+    ('Filosofia',                       NOW()),
+    ('Educação Física',                 NOW()),
+    ('Educação Visual',                 NOW()),
+    ('Educação Musical',                NOW()),
+    ('Educação Moral e Cívica',         NOW()),
+    ('Tecnologias de Informação e Comunicação (TIC)', NOW()),
+    ('Empreendedorismo',                NOW()),
+    ('Agro-pecuária',                   NOW()),
+    ('Ofícios',                         NOW()),
+    ('Desenho',                         NOW()),
+    ('Línguas Moçambicanas',            NOW())
+ON CONFLICT (name) DO NOTHING;
 
 -- ============================================================
 -- FIM DO SEED PostgreSQL

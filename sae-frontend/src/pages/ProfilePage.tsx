@@ -18,6 +18,7 @@ import {
   type MyProfile,
 } from '../services/userService';
 import { useAuth } from '../context/AuthContext';
+import { validateEmail, validatePhone, carrierForPhone } from '../utils/validators';
 
 // ── Helpers ───────────────────────────────────────────────────
 
@@ -84,9 +85,18 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  // Validação reactiva
+  const emailCheck = validateEmail(email, { required: false });
+  const phoneOk = !!profile && validatePhone(profile.username, { required: true }).ok;
+  const carrier = profile ? carrierForPhone(profile.username) : null;
+
   const handleSaveProfile = async () => {
     if (!fullName.trim()) {
       setError('O nome é obrigatório');
+      return;
+    }
+    if (email.trim() && !emailCheck.ok) {
+      setError(emailCheck.message || 'Email inválido');
       return;
     }
     setSaving(true);
@@ -264,7 +274,8 @@ const ProfilePage: React.FC = () => {
                   </Button>
                   <Button
                     variant="contained" size="small" startIcon={<SaveIcon />}
-                    onClick={handleSaveProfile} disabled={saving}
+                    onClick={handleSaveProfile}
+                    disabled={saving || !fullName.trim() || (!!email.trim() && !emailCheck.ok)}
                     sx={{
                       textTransform: 'none', borderRadius: 2,
                       bgcolor: '#00A651', '&:hover': { bgcolor: '#008C44' },
@@ -296,11 +307,24 @@ const ProfilePage: React.FC = () => {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 disabled={!editing}
-                placeholder="opcional"
+                placeholder="nome@dominio.com"
+                error={editing && !!email.trim() && !emailCheck.ok}
+                helperText={
+                  editing
+                    ? (email.trim() && !emailCheck.ok
+                        ? emailCheck.message
+                        : 'Formato: nome@dominio.com (opcional)')
+                    : ' '
+                }
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start"><EmailIcon sx={{ color: '#9CA3AF' }} /></InputAdornment>
                   ),
+                  endAdornment: editing && email.trim() && emailCheck.ok ? (
+                    <InputAdornment position="end">
+                      <CheckIcon sx={{ color: '#00A651', fontSize: 18 }} />
+                    </InputAdornment>
+                  ) : undefined,
                 }}
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5 } }}
               />
@@ -309,11 +333,24 @@ const ProfilePage: React.FC = () => {
                 fullWidth
                 value={profile.username}
                 disabled
-                helperText="O telefone é o teu identificador único — não pode ser alterado."
+                helperText={
+                  phoneOk
+                    ? `Operadora detectada: ${carrier ?? '—'} · Identificador único, não editável.`
+                    : 'O telefone é o teu identificador único — não pode ser alterado.'
+                }
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start"><PhoneIcon sx={{ color: '#9CA3AF' }} /></InputAdornment>
                   ),
+                  endAdornment: phoneOk ? (
+                    <InputAdornment position="end">
+                      <Chip
+                        size="small"
+                        label={carrier ?? 'Moz'}
+                        sx={{ bgcolor: '#F0FDF4', color: '#00A651', fontWeight: 700, fontSize: '0.65rem' }}
+                      />
+                    </InputAdornment>
+                  ) : undefined,
                 }}
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2.5 } }}
               />

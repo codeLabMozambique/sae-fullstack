@@ -31,7 +31,11 @@ import {
   Schedule as ScheduleIcon,
   Grade as GradeIcon,
   Assignment as AssignmentIcon,
+  EditCalendar as EditCalendarIcon,
 } from '@mui/icons-material';
+import {
+  Dialog, DialogTitle, DialogContent, DialogActions,
+} from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   type Assignment,
@@ -39,6 +43,7 @@ import {
   getProfessorAssignment,
   listAssignmentSubmissions,
   gradeSubmission,
+  updateAssignment,
   submissionFileUrl,
   assignmentFileUrl,
 } from '../../services/assignmentService';
@@ -57,6 +62,37 @@ export default function ProfessorTaskDetailsPage() {
 
   // Visualizador inline (anti-download)
   const [viewer, setViewer] = useState<{ url: string; name: string; title: string } | null>(null);
+
+  // Editor de prazo (permite reabrir tarefa expirada)
+  const [editDeadlineOpen, setEditDeadlineOpen] = useState(false);
+  const [deadlineInput, setDeadlineInput] = useState<string>('');
+  const [savingDeadline, setSavingDeadline] = useState(false);
+
+  const openEditDeadline = () => {
+    if (!assignment) return;
+    // Converte ISO → input value "YYYY-MM-DDTHH:mm"
+    const d = new Date(assignment.deadline);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const local = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    setDeadlineInput(local);
+    setEditDeadlineOpen(true);
+  };
+
+  const saveDeadline = async () => {
+    if (!assignment || !deadlineInput) return;
+    try {
+      setSavingDeadline(true);
+      // datetime-local não traz segundos — appendamos ":00" para ficar ISO-like
+      const iso = deadlineInput.length === 16 ? `${deadlineInput}:00` : deadlineInput;
+      const updated = await updateAssignment(assignment.id, { deadline: iso });
+      setAssignment(prev => prev ? { ...prev, deadline: updated.deadline } : prev);
+      setEditDeadlineOpen(false);
+    } catch (e: any) {
+      alert(e.response?.data?.message || 'Falha ao actualizar prazo');
+    } finally {
+      setSavingDeadline(false);
+    }
+  };
 
   useEffect(() => {
     if (id) fetchData(Number(id));
@@ -134,10 +170,20 @@ export default function ProfessorTaskDetailsPage() {
               
               <Box display="flex" alignItems="center" gap={1.5} mb={2}>
                 <ScheduleIcon sx={{ color: '#6B7280' }} />
-                <Box>
+                <Box flex={1}>
                   <Typography variant="caption" display="block" color="textSecondary" fontWeight={700}>PRAZO FINAL</Typography>
-                  <Typography variant="body2" fontWeight={600}>{new Date(assignment.deadline).toLocaleString()}</Typography>
+                  <Typography variant="body2" fontWeight={600} color={new Date() > new Date(assignment.deadline) ? '#991B1B' : '#111827'}>
+                    {new Date(assignment.deadline).toLocaleString()}
+                    {new Date() > new Date(assignment.deadline) && (
+                      <Chip label="Expirado" size="small" sx={{ ml: 1, bgcolor: '#FEF2F2', color: '#991B1B', fontWeight: 700, fontSize: '0.65rem' }} />
+                    )}
+                  </Typography>
                 </Box>
+                <Tooltip title="Editar / reabrir prazo">
+                  <IconButton size="small" onClick={openEditDeadline} sx={{ color: '#1E40AF' }}>
+                    <EditCalendarIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               </Box>
 
               <Box display="flex" alignItems="center" gap={1.5} mb={3}>
@@ -287,6 +333,35 @@ export default function ProfessorTaskDetailsPage() {
           </Paper>
         </Grid>
       </Grid>
+
+      {/* Editar / estender prazo da tarefa */}
+      <Dialog open={editDeadlineOpen} onClose={() => setEditDeadlineOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Editar prazo da tarefa</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+            Define um novo prazo. Se o prazo já tinha expirado, a tarefa volta a aceitar entregas.
+          </Typography>
+          <TextField
+            type="datetime-local"
+            fullWidth
+            value={deadlineInput}
+            onChange={(e) => setDeadlineInput(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            label="Novo prazo"
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setEditDeadlineOpen(false)} sx={{ textTransform: 'none' }}>Cancelar</Button>
+          <Button
+            variant="contained"
+            onClick={saveDeadline}
+            disabled={savingDeadline || !deadlineInput}
+            sx={{ textTransform: 'none', fontWeight: 700, bgcolor: '#1E40AF' }}
+          >
+            {savingDeadline ? 'A guardar…' : 'Guardar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Visualizador inline — política da plataforma: sem download */}
       <FileViewerDialog
