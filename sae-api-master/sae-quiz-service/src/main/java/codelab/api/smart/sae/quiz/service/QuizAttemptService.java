@@ -90,7 +90,15 @@ public class QuizAttemptService {
         attempt.setScore(score);
         attemptRepository.save(java.util.Objects.requireNonNull(attempt));
 
-        return buildResult(attempt, quiz, savedAnswers);
+        QuizResultDTO result = buildResult(attempt, quiz, savedAnswers);
+
+        // Teaching mode: activate after 3+ failed attempts on same quiz
+        int attemptCount = attemptRepository
+                .findByQuizIdAndStudentUsernameAndCompleted(attempt.getQuizId(), username, true).size();
+        result.setAttemptCount(attemptCount);
+        if (score < 50 && attemptCount >= 3) result.setTeachingMode(true);
+        if (score < 50 && attemptCount >= 5) result.setSuggestProfessor(true);
+        return result;
     }
 
     // ── Get result ────────────────────────────────────────────────
@@ -136,6 +144,9 @@ public class QuizAttemptService {
             qr.setQuestionId(q.getId());
             qr.setEnunciado(q.getEnunciado());
             qr.setCorrect(ans != null && ans.isCorrect());
+            qr.setExplicacao(q.getExplicacao());
+            qr.setMediaUrl(q.getMediaUrl());
+            qr.setMediaType(q.getMediaType());
 
             if (ans != null && ans.getSelectedOptionId() != null) {
                 q.getOptions().stream().filter(o -> o.getId().equals(ans.getSelectedOptionId())).findFirst().ifPresent(sel -> {

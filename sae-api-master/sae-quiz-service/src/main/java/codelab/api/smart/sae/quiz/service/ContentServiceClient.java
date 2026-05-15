@@ -40,7 +40,7 @@ public class ContentServiceClient {
         try {
             String url = contentServiceUrl + "/api/contents/" + contentId;
             ResponseEntity<Map<String, Object>> resp = rest.exchange(
-                    url, org.springframework.http.HttpMethod.GET, null, 
+                    url, org.springframework.http.HttpMethod.GET, null,
                     new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
             Map<String, Object> body = resp.getBody();
             if (body != null) {
@@ -48,6 +48,8 @@ public class ContentServiceClient {
                 info.setTitle(String.valueOf(body.getOrDefault("title", "Livro")));
                 Object disc = body.get("discipline");
                 info.setDiscipline(disc != null ? String.valueOf(disc) : null);
+                Object pages = body.get("totalPages");
+                if (pages instanceof Number) info.setTotalPages(((Number) pages).intValue());
                 return info;
             }
         } catch (Exception e) {
@@ -59,10 +61,13 @@ public class ContentServiceClient {
     public static class ContentInfo {
         private String title = "Livro";
         private String discipline;
+        private Integer totalPages;
 
         public String getTitle() { return title; }
         public void setTitle(String title) { this.title = title; }
         public String getDiscipline() { return discipline; }
         public void setDiscipline(String discipline) { this.discipline = discipline; }
+        public Integer getTotalPages() { return totalPages; }
+        public void setTotalPages(Integer totalPages) { this.totalPages = totalPages; }
     }
 }

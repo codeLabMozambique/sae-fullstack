@@ -12,6 +12,8 @@ public class CreateQuizDTO {
     private String disciplina;
 
     private Integer tempoLimiteMinutos;
+    private String thumbnailUrl;
+    private String thumbnailType;
 
     public String getTitulo() { return titulo; }
     public void setTitulo(String titulo) { this.titulo = titulo; }
@@ -21,4 +23,8 @@ public class CreateQuizDTO {
     public void setDisciplina(String disciplina) { this.disciplina = disciplina; }
     public Integer getTempoLimiteMinutos() { return tempoLimiteMinutos; }
     public void setTempoLimiteMinutos(Integer t) { this.tempoLimiteMinutos = t; }
+    public String getThumbnailUrl() { return thumbnailUrl; }
+    public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
+    public String getThumbnailType() { return thumbnailType; }
+    public void setThumbnailType(String thumbnailType) { this.thumbnailType = thumbnailType; }
 }

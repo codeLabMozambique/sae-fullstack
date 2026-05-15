@@ -1,7 +1,7 @@
 package codelab.api.smart.sae.quiz.service;
 
-import codelab.api.smart.sae.quiz.dto.GenerateFromContentDTO;
 import codelab.api.smart.sae.quiz.dto.QuizAdminDTO;
+import codelab.api.smart.sae.quiz.dto.StudyPrepRequestDTO;
 import codelab.api.smart.sae.quiz.enums.DisciplinaEnum;
 import codelab.api.smart.sae.quiz.model.QuizEntity;
 import codelab.api.smart.sae.quiz.model.QuizOptionEntity;
@@ -20,16 +20,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
-public class QuizGenerationService {
+public class StudyPrepService {
 
-    private static final Logger log = LoggerFactory.getLogger(QuizGenerationService.class);
+    private static final Logger log = LoggerFactory.getLogger(StudyPrepService.class);
     private static final String ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-    private static final String MODEL = "claude-haiku-4-5-20251001";
+    private static final String MODEL = "claude-sonnet-4-6";
 
     @Value("${anthropic.api.key:}")
     private String apiKey;
@@ -44,43 +42,47 @@ public class QuizGenerationService {
     @Autowired private QuizService quizService;
 
     @Transactional
-    public QuizAdminDTO generateFromContent(GenerateFromContentDTO dto, String createdBy) {
-        int startPage = dto.getStartPage() != null ? dto.getStartPage() : 1;
-        int endPage   = dto.getEndPage()   != null ? dto.getEndPage()   : startPage + 20;
-        int numQ      = dto.getNumQuestions() != null ? dto.getNumQuestions() : 10;
+    public QuizAdminDTO generateStudyPrep(StudyPrepRequestDTO dto, String studentUsername) {
+        int numQ = dto.getNumQuestions() != null ? dto.getNumQuestions() : 10;
+        boolean isExam = "EXAM".equalsIgnoreCase(dto.getMode());
 
-        ContentServiceClient.ContentInfo info = contentClient.getContentInfo(dto.getContentId());
-        String text = contentClient.extractText(dto.getContentId(), startPage, endPage);
+        String contentText = "";
+        String contentTitle = dto.getDisciplina() != null ? dto.getDisciplina() : "Geral";
+        int totalPages = 0;
 
-        List<GeneratedQuestion> questions = generateQuestions(text, info.getTitle(),
-                dto.getDisciplina(), numQ);
+        if (dto.getContentId() != null) {
+            try {
+                ContentServiceClient.ContentInfo info = contentClient.getContentInfo(dto.getContentId());
+                contentTitle = info.getTitle();
+                totalPages = info.getTotalPages() != null ? info.getTotalPages() : 0;
+                int endPage = isExam ? totalPages : Math.min(totalPages, 60);
+                contentText = contentClient.extractText(dto.getContentId(), 1, Math.max(endPage, 1));
+            } catch (Exception e) {
+                log.warn("Não foi possível obter conteúdo: {}", e.getMessage());
+            }
+        }
+
+        List<GeneratedQuestion> questions = generateQuestions(
+                contentText, contentTitle, dto.getDisciplina(), numQ, isExam, totalPages);
 
         QuizEntity quiz = new QuizEntity();
-        String secLabel = dto.getSectionName() != null
-                ? " — " + dto.getSectionName()
-                : " (pág. " + startPage + "–" + endPage + ")";
-        quiz.setTitulo(info.getTitle() + secLabel);
-        quiz.setDescricao("Quiz gerado por IA • páginas " + startPage + "–" + endPage);
+        String modeLabel = isExam ? "Preparação para Exame" : "Preparação para Teste";
+        quiz.setTitulo(modeLabel + " — " + (dto.getDisciplina() != null ? dto.getDisciplina() : "Geral"));
+        quiz.setDescricao(isExam
+                ? "Quiz personalizado para preparação de exame gerado por IA com base no conteúdo da disciplina."
+                : "Quiz personalizado para preparação de teste gerado por IA com base no conteúdo recente da disciplina.");
 
-        String disc = dto.getDisciplina() != null ? dto.getDisciplina().toUpperCase()
-                : (info.getDiscipline() != null ? info.getDiscipline().toUpperCase() : "GERAL");
+        String disc = dto.getDisciplina() != null ? dto.getDisciplina().toUpperCase() : "GERAL";
         try { quiz.setDisciplina(DisciplinaEnum.valueOf(disc)); }
         catch (IllegalArgumentException e) { quiz.setDisciplina(DisciplinaEnum.GERAL); }
 
-        quiz.setTempoLimiteMinutos(dto.getTempoLimiteMinutos() != null ? dto.getTempoLimiteMinutos() : 15);
-        quiz.setCreatedBy(createdBy);
+        quiz.setTempoLimiteMinutos(isExam ? 45 : 20);
+        quiz.setCreatedBy(studentUsername);
         quiz.setContentId(dto.getContentId());
-        quiz.setStartPage(startPage);
-        quiz.setEndPage(endPage);
         quiz.setAiGenerated(true);
         quiz.setActive(true);
-
-        if (dto.getSectionId() != null) {
-            quiz.setSectionId(dto.getSectionId());
-            quiz.setQuizType("SECTION");
-        }
-
-        quiz = java.util.Objects.requireNonNull(quizRepository.save(quiz));
+        quiz.setQuizType("STUDY_PREP");
+        quiz = Objects.requireNonNull(quizRepository.save(quiz));
 
         int order = 1;
         for (GeneratedQuestion gq : questions) {
@@ -89,7 +91,7 @@ public class QuizGenerationService {
             q.setEnunciado(gq.enunciado);
             q.setOrdemNumero(order++);
             q.setExplicacao(gq.explicacao);
-            q = java.util.Objects.requireNonNull(questionRepository.save(q));
+            q = Objects.requireNonNull(questionRepository.save(q));
             for (GeneratedOption go : gq.options) {
                 QuizOptionEntity opt = new QuizOptionEntity();
                 opt.setQuestion(q);
@@ -103,28 +105,43 @@ public class QuizGenerationService {
         return quizService.toAdminDTO(quizRepository.findById(quiz.getId()).orElseThrow());
     }
 
-    private List<GeneratedQuestion> generateQuestions(String text, String title, String disc, int numQ) {
+    private List<GeneratedQuestion> generateQuestions(
+            String text, String title, String disc, int numQ, boolean isExam, int totalPages) {
         if (apiKey != null && !apiKey.isBlank()) {
-            try { return callClaude(text, title, disc, numQ); }
-            catch (Exception e) { log.error("Claude API error: {}", e.getMessage()); }
+            try { return callClaude(text, title, disc, numQ, isExam, totalPages); }
+            catch (Exception e) { log.error("Claude API error no StudyPrep: {}", e.getMessage()); }
         }
         return fallback(disc, numQ);
     }
 
-    private List<GeneratedQuestion> callClaude(String text, String title, String disc, int numQ) throws Exception {
-        String truncated = text.length() > 8000 ? text.substring(0, 8000) : text;
+    private List<GeneratedQuestion> callClaude(
+            String text, String title, String disc, int numQ, boolean isExam, int totalPages) throws Exception {
+
+        String truncated = text.length() > 10000 ? text.substring(0, 10000) : text;
+        String modeInstructions = isExam
+                ? "Cria questões abrangentes para um EXAME FINAL. Inclui questões de análise, síntese e aplicação de conceitos. Abrange todos os temas do conteúdo."
+                : "Cria questões para um TESTE NORMAL. Foca nos conceitos mais recentes e fundamentais do conteúdo.";
+
+        String pageRef = totalPages > 0
+                ? " Na explicação, indica a página do livro onde o estudante pode encontrar mais informação (ex: 'Ver página 23.')."
+                : "";
+
         String prompt = String.format(
-            "És um professor de %s em Moçambique. Com base no texto abaixo, gera exactamente %d questões " +
-            "de escolha múltipla (4 opções A/B/C/D, exactamente 1 correcta cada). " +
-            "Para cada questão inclui uma explicação breve (máximo 2 frases) de porquê a resposta é correcta.\n\n" +
-            "Texto do livro \"%s\":\n%s\n\n" +
-            "Responde APENAS com JSON válido no formato:\n" +
-            "{\"questions\":[{\"enunciado\":\"...\",\"explicacao\":\"Explicação da resposta correcta...\",\"options\":[" +
+            "És um professor experiente de %s em Moçambique a preparar os seus alunos para avaliações.\n\n" +
+            "%s\n\n" +
+            "Com base no conteúdo do livro \"%s\":\n%s\n\n" +
+            "Gera exactamente %d questões de escolha múltipla (4 opções A/B/C/D, 1 correcta).\n" +
+            "Para cada questão:\n" +
+            "- O enunciado deve ser claro e pedagogicamente correcto\n" +
+            "- A explicação deve justificar a resposta correcta em 1-2 frases%s\n" +
+            "- As opções erradas devem ser plausíveis (não obviamente erradas)\n\n" +
+            "Responde APENAS com JSON válido:\n" +
+            "{\"questions\":[{\"enunciado\":\"...\",\"explicacao\":\"...\",\"options\":[" +
             "{\"letra\":\"A\",\"texto\":\"...\",\"correta\":true}," +
             "{\"letra\":\"B\",\"texto\":\"...\",\"correta\":false}," +
             "{\"letra\":\"C\",\"texto\":\"...\",\"correta\":false}," +
             "{\"letra\":\"D\",\"texto\":\"...\",\"correta\":false}]}]}",
-            disc != null ? disc : "Geral", numQ, title, truncated);
+            disc != null ? disc : "Geral", modeInstructions, title, truncated, numQ, pageRef);
 
         HttpHeaders h = new HttpHeaders();
         h.setContentType(MediaType.APPLICATION_JSON);
@@ -132,15 +149,15 @@ public class QuizGenerationService {
         h.set("anthropic-version", "2023-06-01");
 
         Map<String, Object> body = Map.of(
-            "model", MODEL, "max_tokens", 4096,
+            "model", MODEL, "max_tokens", 6000,
             "messages", List.of(Map.of("role", "user", "content", prompt)));
 
         ResponseEntity<Map<String, Object>> resp = rest.exchange(
-            ANTHROPIC_URL, HttpMethod.POST, new HttpEntity<>(body, h), 
+            ANTHROPIC_URL, HttpMethod.POST, new HttpEntity<>(body, h),
             new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
 
         Map<String, Object> responseBody = resp.getBody();
-        if (responseBody == null) throw new RuntimeException("Empty response from Anthropic API");
+        if (responseBody == null) throw new RuntimeException("Resposta vazia da API Anthropic");
         List<?> content = (List<?>) responseBody.get("content");
         String json = (String) ((Map<?, ?>) content.get(0)).get("text");
         json = json.trim();
@@ -166,11 +183,12 @@ public class QuizGenerationService {
     }
 
     private List<GeneratedQuestion> fallback(String disc, int numQ) {
-        String[] topics = {"conceitos fundamentais", "aplicações práticas", "definições", "exemplos teóricos"};
         List<GeneratedQuestion> result = new ArrayList<>();
+        String[] topics = {"conceitos fundamentais", "aplicações práticas", "definições", "análise crítica"};
         for (int i = 0; i < numQ; i++) {
             GeneratedQuestion gq = new GeneratedQuestion();
-            gq.enunciado = "Questão " + (i + 1) + " sobre " + topics[i % 4] + " de " + disc + "?";
+            gq.enunciado  = "Questão de preparação " + (i + 1) + " sobre " + topics[i % 4] + " de " + disc + "?";
+            gq.explicacao = "Esta é a explicação da resposta correcta para a questão " + (i + 1) + ".";
             gq.options = new ArrayList<>();
             String[] lets = {"A", "B", "C", "D"};
             for (int j = 0; j < 4; j++) {

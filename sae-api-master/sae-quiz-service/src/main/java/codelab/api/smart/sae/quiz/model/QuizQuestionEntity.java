@@ -21,6 +21,18 @@ public class QuizQuestionEntity {
 
     private Integer ordemNumero = 0;
 
+    /** URL do ficheiro de media (imagem/vídeo) no MinIO, null se não houver */
+    @Column(columnDefinition = "TEXT")
+    private String mediaUrl;
+
+    /** Tipo de media: IMAGE, VIDEO ou null */
+    @Column(length = 10)
+    private String mediaType;
+
+    /** Explicação da resposta correta gerada por IA */
+    @Column(columnDefinition = "TEXT")
+    private String explicacao;
+
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("letra ASC")
     private List<QuizOptionEntity> options = new ArrayList<>();
@@ -33,6 +45,12 @@ public class QuizQuestionEntity {
     public void setEnunciado(String enunciado) { this.enunciado = enunciado; }
     public Integer getOrdemNumero() { return ordemNumero; }
     public void setOrdemNumero(Integer ordemNumero) { this.ordemNumero = ordemNumero; }
+    public String getMediaUrl() { return mediaUrl; }
+    public void setMediaUrl(String mediaUrl) { this.mediaUrl = mediaUrl; }
+    public String getMediaType() { return mediaType; }
+    public void setMediaType(String mediaType) { this.mediaType = mediaType; }
+    public String getExplicacao() { return explicacao; }
+    public void setExplicacao(String explicacao) { this.explicacao = explicacao; }
     public List<QuizOptionEntity> getOptions() { return options; }
     public void setOptions(List<QuizOptionEntity> options) { this.options = options; }
 }
