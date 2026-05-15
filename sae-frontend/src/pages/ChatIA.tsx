@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Box, TextField, IconButton, Typography, Paper, Avatar, List, ListItem, Chip } from '@mui/material';
 import { Send as SendIcon, SmartToy as BotIcon, Person as UserIcon } from '@mui/icons-material';
+import VoiceRecorderButton from '../components/VoiceRecorderButton';
 
 const ChatIA: React.FC = () => {
   const [messages, setMessages] = useState([
@@ -14,7 +15,6 @@ const ChatIA: React.FC = () => {
     if (!input.trim()) return;
     setMessages([...messages, { text: input, isBot: false }]);
     setInput('');
-    // Mock bot response
     setTimeout(() => {
       setMessages(prev => [...prev, { text: 'Estou processando sua solicitação... (Simulação de integração com sae-ai-service)', isBot: true }]);
     }, 1000);
@@ -25,13 +25,13 @@ const ChatIA: React.FC = () => {
       <Typography variant="h4" sx={{ mb: 2, fontWeight: 700, color: 'primary.main' }}>
         Chat com IA 🤖
       </Typography>
-      
+
       <Paper sx={{ flexGrow: 1, mb: 2, p: 2, display: 'flex', flexDirection: 'column', overflowY: 'auto', bgcolor: 'white' }}>
         <List>
           {messages.map((msg, index) => (
-            <ListItem 
-              key={index} 
-              sx={{ 
+            <ListItem
+              key={index}
+              sx={{
                 flexDirection: msg.isBot ? 'row' : 'row-reverse',
                 alignItems: 'flex-start',
                 gap: 2,
@@ -41,11 +41,11 @@ const ChatIA: React.FC = () => {
               <Avatar sx={{ bgcolor: msg.isBot ? 'primary.main' : 'secondary.main' }}>
                 {msg.isBot ? <BotIcon /> : <UserIcon />}
               </Avatar>
-              <Paper 
+              <Paper
                 elevation={0}
                 className="animate-fade-in"
-                sx={{ 
-                  p: 2.5, 
+                sx={{
+                  p: 2.5,
                   bgcolor: msg.isBot ? '#f4f6f8' : 'primary.main',
                   color: msg.isBot ? 'text.primary' : 'white',
                   borderRadius: msg.isBot ? '16px 16px 16px 4px' : '16px 16px 4px 16px',
@@ -60,13 +60,19 @@ const ChatIA: React.FC = () => {
         </List>
       </Paper>
 
-      <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-end', bgcolor: 'white', p: 1.5, borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end', bgcolor: 'white', p: 1.5, borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+        <VoiceRecorderButton
+          onTranscript={text => setInput(prev => prev ? prev + ' ' + text : text)}
+          language="pt-PT"
+          accentColor="#1976d2"
+          tooltip="Falar em vez de escrever"
+        />
         <TextField
           fullWidth
           multiline
           minRows={2}
           maxRows={6}
-          placeholder="Digite sua dúvida, insira fragmentos de código ou peça soluções detalhadas..."
+          placeholder="Digite sua dúvida ou clique no microfone para falar..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
@@ -75,28 +81,28 @@ const ChatIA: React.FC = () => {
               handleSend();
             }
           }}
-          sx={{ 
-            bgcolor: 'transparent', 
-            '& .MuiOutlinedInput-root': { 
+          sx={{
+            bgcolor: 'transparent',
+            '& .MuiOutlinedInput-root': {
               bgcolor: 'transparent',
               '& fieldset': { border: 'none' },
               p: 1
-            } 
+            }
           }}
         />
-        <IconButton 
-          color="primary" 
-          onClick={handleSend} 
-          sx={{ 
-            bgcolor: 'primary.main', 
-            color: 'white', 
+        <IconButton
+          color="primary"
+          onClick={handleSend}
+          sx={{
+            bgcolor: 'primary.main',
+            color: 'white',
             borderRadius: '12px',
             width: 48,
             height: 48,
             mb: 0.5,
             transition: 'all 0.2s',
             boxShadow: '0 4px 12px rgba(25, 118, 210, 0.4)',
-            '&:hover': { bgcolor: 'primary.dark', transform: 'translateY(-2px)' } 
+            '&:hover': { bgcolor: 'primary.dark', transform: 'translateY(-2px)' }
           }}
         >
           <SendIcon />

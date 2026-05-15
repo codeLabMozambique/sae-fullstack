@@ -2,7 +2,8 @@ import api from './api';
 import type {
   QuizSummary, Quiz, QuizAdmin,
   StartAttemptResponse, SubmitAttemptDTO, QuizResult,
-  CreateQuizDTO, CreateQuestionDTO, GenerateFromContentDTO,
+  CreateQuizDTO, CreateQuestionDTO, GenerateFromContentDTO, StudyPrepRequestDTO,
+  OralTestRequestDTO, OralTestEvaluateDTO, OralTestResult,
 } from '../types/quiz';
 
 const BASE = '/quiz';
@@ -50,6 +51,15 @@ export const quizService = {
   generateFromContent: (dto: GenerateFromContentDTO): Promise<QuizAdmin> =>
     api.post<QuizAdmin>(`${BASE}/quizzes/generate-from-content`, dto).then(r => r.data),
 
+  generateStudyPrep: (dto: StudyPrepRequestDTO): Promise<QuizAdmin> =>
+    api.post<QuizAdmin>(`${BASE}/quizzes/study-prep`, dto).then(r => r.data),
+
   getDisciplinesAll: (): Promise<string[]> =>
     api.get<string[]>('/quiz/disciplines/all').then(r => r.data),
+
+  generateOralTest: (dto: OralTestRequestDTO): Promise<QuizAdmin> =>
+    api.post<QuizAdmin>(`${BASE}/quizzes/oral-test/generate`, dto).then(r => r.data),
+
+  evaluateOralTest: (dto: OralTestEvaluateDTO): Promise<OralTestResult> =>
+    api.post<OralTestResult>(`${BASE}/quizzes/oral-test/evaluate`, dto).then(r => r.data),
 };

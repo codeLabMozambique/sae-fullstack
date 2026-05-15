@@ -19,6 +19,10 @@ public class QuizSummaryDTO {
     private Integer startPage;
     private Integer endPage;
     private boolean aiGenerated;
+    private String sectionId;
+    private String quizType;
+    private String thumbnailUrl;
+    private String thumbnailType;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -52,4 +56,12 @@ public class QuizSummaryDTO {
     public void setEndPage(Integer endPage) { this.endPage = endPage; }
     public boolean isAiGenerated() { return aiGenerated; }
     public void setAiGenerated(boolean aiGenerated) { this.aiGenerated = aiGenerated; }
+    public String getSectionId() { return sectionId; }
+    public void setSectionId(String sectionId) { this.sectionId = sectionId; }
+    public String getQuizType() { return quizType; }
+    public void setQuizType(String quizType) { this.quizType = quizType; }
+    public String getThumbnailUrl() { return thumbnailUrl; }
+    public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
+    public String getThumbnailType() { return thumbnailType; }
+    public void setThumbnailType(String thumbnailType) { this.thumbnailType = thumbnailType; }
 }

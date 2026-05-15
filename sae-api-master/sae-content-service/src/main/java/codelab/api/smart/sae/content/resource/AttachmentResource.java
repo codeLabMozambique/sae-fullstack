@@ -43,8 +43,7 @@ public class AttachmentResource {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<InputStreamResource> stream(@PathVariable String id, Principal principal) {
-        if (principal == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+    public ResponseEntity<InputStreamResource> stream(@PathVariable String id) {
         Attachment a = attachmentService.getById(id);
         InputStream is = attachmentService.stream(a);
 
@@ -64,8 +63,7 @@ public class AttachmentResource {
     }
 
     @GetMapping("/{id}/info")
-    public ResponseEntity<Attachment> info(@PathVariable String id, Principal principal) {
-        if (principal == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+    public ResponseEntity<Attachment> info(@PathVariable String id) {
         return ResponseEntity.ok(attachmentService.getById(id));
     }
 

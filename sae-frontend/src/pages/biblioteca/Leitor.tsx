@@ -1,21 +1,27 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box, Typography, Button, Chip, Stack, IconButton, CircularProgress,
   Alert, Card, CardContent, Dialog, DialogContent, DialogActions,
-  TextField, Divider, MenuItem, Snackbar,
+  TextField, Divider, MenuItem, Snackbar, LinearProgress, Radio,
+  RadioGroup, FormControlLabel, FormControl,
 } from '@mui/material';
 import {
   ArrowBack as BackIcon, CloudDone as OfflineIcon, Public as PublicIcon,
   MenuBook as PagesIcon, EmojiEvents as GoalIcon, Person as AuthorIcon,
   CalendarToday as CalendarIcon, School as SchoolIcon, Category as CatIcon,
   CloudDownload as SaveOfflineIcon, DeleteOutline as RemoveOfflineIcon,
+  CheckCircle as CheckIcon, Cancel as CancelIcon, AutoAwesome as AIIcon,
+  Quiz as QuizIcon, EmojiEvents as TrophyIcon,
 } from '@mui/icons-material';
 import PdfReader from '../../components/biblioteca/PdfReader';
 import {
   getContentById, getProgress, readUrl, createGoal, absoluteContentUrl,
-  type Content, type ReadingProgressView,
+  listSections, listSectionProgress, completeSectionProgress,
+  type Content, type ReadingProgressView, type ContentSection, type SectionProgress,
 } from '../../services/contentService';
+import { quizService } from '../../services/quizService';
+import type { Quiz, AttemptAnswer } from '../../types/quiz';
 import { useOfflineContent } from '../../hooks/useOfflineContent';
 import SpeechButton from '../../components/biblioteca/SpeechButton';
 
@@ -44,6 +50,24 @@ const Leitor: React.FC = () => {
   const [introOpen, setIntroOpen] = useState(true);
   const [goalStep, setGoalStep] = useState(false);
 
+  // Section tracking
+  const [sections, setSections] = useState<ContentSection[]>([]);
+  const [sectionProgressMap, setSectionProgressMap] = useState<Record<string, SectionProgress>>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const triggeredSections = useRef<Set<string>>(new Set());
+
+  // Section quiz modal
+  const [sectionQuizModal, setSectionQuizModal] = useState<{
+    section: ContentSection;
+    quiz: Quiz | null;
+    loading: boolean;
+  } | null>(null);
+  const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
+  const [quizAttemptId, setQuizAttemptId] = useState<number | null>(null);
+  const [quizResult, setQuizResult] = useState<{ score: number; correct: number; total: number; details: any[] } | null>(null);
+  const [quizSubmitting, setQuizSubmitting] = useState(false);
+  const [quizCurrentIdx, setQuizCurrentIdx] = useState(0);
+
   // goal form
   const [goalPages, setGoalPages] = useState<number>(0);
   const [goalDaily, setGoalDaily] = useState<number>(0);
@@ -70,14 +94,103 @@ const Leitor: React.FC = () => {
         // Prioridade: ?page=N na URL (sugestão do professor) > progresso guardado > 1
         if (hasRequestedPage) {
           setInitialPage(requestedPage);
+          setCurrentPage(requestedPage);
         } else if (prog?.currentPage) {
           setInitialPage(prog.currentPage);
+          setCurrentPage(prog.currentPage);
         }
       })
       .catch(e => setError(e?.message || 'Conteúdo não encontrado'))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, hasRequestedPage, requestedPage]);
+
+  // Load sections and progress when content is ready
+  useEffect(() => {
+    if (!id || !isAuthed) return;
+    listSections(id).then(setSections).catch(() => {});
+    listSectionProgress(id).then(list => {
+      const map: Record<string, SectionProgress> = {};
+      list.forEach(sp => { map[sp.sectionId] = sp; });
+      setSectionProgressMap(map);
+    }).catch(() => {});
+  }, [id, isAuthed]);
+
+  // Detect section completion when page changes
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+    if (!isAuthed || !id) return;
+    const completed = sections.find(
+      s => page >= s.endPage && !triggeredSections.current.has(s.id) && !sectionProgressMap[s.id]?.completed
+    );
+    if (completed) {
+      triggeredSections.current.add(completed.id);
+      // Load and show quiz for this section if it has one
+      if (completed.quizId) {
+        setSectionQuizModal({ section: completed, quiz: null, loading: true });
+        setQuizAnswers({});
+        setQuizResult(null);
+        setQuizCurrentIdx(0);
+        setQuizAttemptId(null);
+        quizService.getQuiz(completed.quizId)
+          .then(quiz => setSectionQuizModal(m => m ? { ...m, quiz, loading: false } : null))
+          .catch(() => setSectionQuizModal(m => m ? { ...m, loading: false } : null));
+      } else {
+        setSectionQuizModal({ section: completed, quiz: null, loading: false });
+        setQuizAnswers({});
+        setQuizResult(null);
+        setQuizCurrentIdx(0);
+        setQuizAttemptId(null);
+      }
+    }
+  }, [sections, sectionProgressMap, isAuthed, id]);
+
+  const handleSectionQuizSubmit = async () => {
+    if (!sectionQuizModal?.quiz || !id) return;
+    const quiz = sectionQuizModal.quiz;
+    setQuizSubmitting(true);
+    try {
+      let attemptId = quizAttemptId;
+      if (!attemptId) {
+        const started = await quizService.startAttempt(quiz.id);
+        attemptId = started.attemptId;
+        setQuizAttemptId(attemptId);
+      }
+      const answers: AttemptAnswer[] = quiz.questions.map(q => ({
+        questionId: q.id,
+        selectedOptionId: quizAnswers[q.id] ?? null,
+      }));
+      const result = await quizService.submitAttempt(attemptId, { answers });
+      const details = result.questionResults.map(qr => ({
+        ...qr,
+        explicacao: quiz.questions.find(q => q.id === qr.questionId)?.explicacao,
+      }));
+      setQuizResult({ score: result.score, correct: result.correctAnswers, total: result.totalQuestions, details });
+
+      await completeSectionProgress(sectionQuizModal.section.id, {
+        contentId: id,
+        score: result.score,
+        totalQuestions: result.totalQuestions,
+        correctAnswers: result.correctAnswers,
+        quizAttemptId: attemptId,
+      });
+      setSectionProgressMap(prev => ({
+        ...prev,
+        [sectionQuizModal.section.id]: {
+          sectionId: sectionQuizModal.section.id,
+          contentId: id,
+          score: result.score,
+          totalQuestions: result.totalQuestions,
+          correctAnswers: result.correctAnswers,
+          completed: true,
+        },
+      }));
+    } catch {
+      // silently fail
+    } finally {
+      setQuizSubmitting(false);
+    }
+  };
 
   const handleCreateGoal = async () => {
     if (!content || goalPages <= 0 || !goalDeadline) {
@@ -173,7 +286,41 @@ const Leitor: React.FC = () => {
         <SpeechButton text={`${content.title}. ${content.description ?? ''}`} size="medium" />
       </Stack>
 
-      <PdfReader url={readUrl(content.id)} contentId={content.id} initialPage={initialPage} />
+      {/* Section progress strip */}
+      {sections.length > 0 && (
+        <Box sx={{ mb: 1.5, display: 'flex', gap: 0.8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Typography variant="caption" fontWeight={700} color="#6B7280" sx={{ mr: 0.5 }}>
+            Secções:
+          </Typography>
+          {sections.map(s => {
+            const sp = sectionProgressMap[s.id];
+            const isActive = currentPage >= s.startPage && currentPage <= s.endPage;
+            const isDone = sp?.completed;
+            const score = sp?.score ?? 0;
+            const scoreColor = score >= 80 ? '#00A651' : score >= 50 ? '#d97706' : '#dc2626';
+            return (
+              <Box key={s.id} sx={{
+                display: 'flex', alignItems: 'center', gap: 0.5,
+                px: 1.2, py: 0.4, borderRadius: 2, fontSize: '0.72rem', fontWeight: 600,
+                border: `1.5px solid ${isActive ? '#00A651' : isDone ? scoreColor : '#E5E7EB'}`,
+                bgcolor: isActive ? '#E8F5E9' : isDone ? `${scoreColor}15` : '#F9FAFB',
+                color: isActive ? '#00A651' : isDone ? scoreColor : '#6B7280',
+                transition: 'all 0.15s',
+              }}>
+                {isDone
+                  ? <CheckIcon sx={{ fontSize: 12 }} />
+                  : isActive
+                    ? <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#00A651' }} />
+                    : <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#E5E7EB' }} />}
+                {s.sectionName}
+                {isDone && <Typography variant="inherit" sx={{ ml: 0.3 }}>({score}%)</Typography>}
+              </Box>
+            );
+          })}
+        </Box>
+      )}
+
+      <PdfReader url={readUrl(content.id)} contentId={content.id} initialPage={initialPage} onPageChange={handlePageChange} />
 
       <Card sx={{ mt: 2, borderRadius: 2, bgcolor: '#F8FAFC', border: '1px solid #E5E7EB' }}>
         <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
@@ -242,6 +389,212 @@ const Leitor: React.FC = () => {
         message={offlineSnack}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       />
+
+      {/* ─── Section Quiz Modal ───────────────────────────────── */}
+      <Dialog open={!!sectionQuizModal} maxWidth="md" fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}>
+        {sectionQuizModal && (
+          <>
+            {/* Header */}
+            <Box sx={{ bgcolor: '#0A1628', px: 3, py: 2 }}>
+              <Typography variant="subtitle1" fontWeight={700} color="#fff">
+                {quizResult ? '📊 Resultado da Secção' : '✅ Secção Concluída!'}
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.65)' }}>
+                {sectionQuizModal.section.sectionName}
+                {sectionQuizModal.section.trimester ? ` · ${sectionQuizModal.section.trimester}º Trimestre` : ''}
+              </Typography>
+            </Box>
+
+            <DialogContent sx={{ bgcolor: '#F8FAFC', pt: 2.5 }}>
+              {sectionQuizModal.loading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                  <CircularProgress sx={{ color: '#00A651' }} />
+                </Box>
+
+              ) : quizResult ? (
+                /* ── Result screen ── */
+                <Box>
+                  {/* Score ring */}
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 2 }}>
+                    {(() => {
+                      const s = quizResult.score;
+                      const c = s >= 80 ? '#00A651' : s >= 50 ? '#d97706' : '#dc2626';
+                      const bg = s >= 80 ? '#E8F5E9' : s >= 50 ? '#fef3c7' : '#fee2e2';
+                      return (
+                        <>
+                          <Box sx={{ width: 110, height: 110, borderRadius: '50%', bgcolor: bg,
+                            border: `6px solid ${c}`, display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', mb: 1.5 }}>
+                            <Typography sx={{ fontSize: '1.8rem', fontWeight: 900, color: c }}>
+                              {s}%
+                            </Typography>
+                          </Box>
+                          <Typography variant="h6" fontWeight={700} color={c}>
+                            {s >= 80 ? (s === 100 ? '🏆 Perfeito!' : '🌟 Superpreparado!') : s >= 50 ? '📈 A melhorar' : '📚 Nível Básico'}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, textAlign: 'center', maxWidth: 340 }}>
+                            {s >= 80
+                              ? 'Parabéns! Dominaste esta secção. Podes avançar com confiança.'
+                              : s >= 50
+                                ? 'Boa tentativa! Revê os pontos errados e tenta novamente.'
+                                : 'Precisas de pelo menos 80% para ser considerado preparado. Relê a secção e tenta de novo.'}
+                          </Typography>
+                          {s < 80 && (
+                            <Box sx={{ mt: 1.5, px: 2, py: 1, bgcolor: '#FFF8E1', borderRadius: 2,
+                              border: '1px solid #FFE082', maxWidth: 380, textAlign: 'center' }}>
+                              <Typography variant="caption" color="#b45309" fontWeight={600}>
+                                📖 Recomendação: relê as páginas {sectionQuizModal.section.startPage}–{sectionQuizModal.section.endPage} antes de repetir.
+                              </Typography>
+                            </Box>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </Box>
+
+                  <Divider sx={{ my: 2 }} />
+
+                  {/* Question review */}
+                  <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5 }}>Revisão das questões</Typography>
+                  {quizResult.details.map((qr: any, i: number) => (
+                    <Card key={qr.questionId} elevation={0}
+                      sx={{ border: `1px solid ${qr.correct ? '#C8E6C9' : '#FECACA'}`, borderRadius: 2, mb: 1.5 }}>
+                      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                        <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                          {qr.correct
+                            ? <CheckIcon sx={{ color: '#00A651', fontSize: 18, mt: 0.2, flexShrink: 0 }} />
+                            : <CancelIcon sx={{ color: '#dc2626', fontSize: 18, mt: 0.2, flexShrink: 0 }} />}
+                          <Typography variant="body2" fontWeight={600} color="#0A1628">{i + 1}. {qr.enunciado}</Typography>
+                        </Box>
+                        {!qr.correct && qr.selectedOptionLetra && (
+                          <Typography variant="caption" sx={{ ml: 3.5, display: 'block', color: '#dc2626', mb: 0.3 }}>
+                            ✗ {qr.selectedOptionLetra}) {qr.selectedOptionTexto}
+                          </Typography>
+                        )}
+                        <Typography variant="caption" sx={{ ml: 3.5, display: 'block', color: '#00A651' }}>
+                          ✓ {qr.correctOptionLetra}) {qr.correctOptionTexto}
+                        </Typography>
+                        {!qr.correct && qr.explicacao && (
+                          <Box sx={{ ml: 3.5, mt: 1, p: 1, bgcolor: '#FFF8E1', borderRadius: 1.5, border: '1px solid #FFE082' }}>
+                            <Typography variant="caption" color="#92400e">💡 {qr.explicacao}</Typography>
+                          </Box>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </Box>
+
+              ) : sectionQuizModal.quiz ? (
+                /* ── Quiz taking screen ── */
+                <Box>
+                  {(() => {
+                    const q = sectionQuizModal.quiz!.questions[quizCurrentIdx];
+                    const total = sectionQuizModal.quiz!.questions.length;
+                    return (
+                      <>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Questão {quizCurrentIdx + 1} de {total}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {Object.keys(quizAnswers).length} respondida{Object.keys(quizAnswers).length !== 1 ? 's' : ''}
+                          </Typography>
+                        </Box>
+                        <LinearProgress variant="determinate" value={(quizCurrentIdx + 1) / total * 100}
+                          sx={{ mb: 2, height: 5, borderRadius: 3,
+                            '& .MuiLinearProgress-bar': { bgcolor: '#00A651' } }} />
+
+                        {q.mediaUrl && (
+                          <Box sx={{ mb: 2, borderRadius: 2, overflow: 'hidden', border: '1px solid #E5E7EB' }}>
+                            {q.mediaType === 'VIDEO'
+                              ? <Box component="video" src={q.mediaUrl} controls sx={{ width: '100%', maxHeight: 220, display: 'block', bgcolor: '#000' }} />
+                              : <Box component="img" src={q.mediaUrl} alt="Evidência" sx={{ width: '100%', maxHeight: 220, objectFit: 'contain', display: 'block', bgcolor: '#f5f5f5' }} />
+                            }
+                          </Box>
+                        )}
+
+                        <Typography variant="subtitle1" fontWeight={700} color="#0A1628" sx={{ mb: 2, lineHeight: 1.5 }}>
+                          {q.enunciado}
+                        </Typography>
+                        <FormControl component="fieldset" fullWidth>
+                          <RadioGroup value={quizAnswers[q.id]?.toString() ?? ''}>
+                            {q.options.map(opt => (
+                              <Box key={opt.id} onClick={() => setQuizAnswers(p => ({ ...p, [q.id]: opt.id }))}
+                                sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5, mb: 1,
+                                  border: `2px solid ${quizAnswers[q.id] === opt.id ? '#00A651' : '#E5E7EB'}`,
+                                  borderRadius: 2, cursor: 'pointer',
+                                  bgcolor: quizAnswers[q.id] === opt.id ? '#F1F8E9' : '#fff',
+                                  '&:hover': { borderColor: '#4caf50', bgcolor: '#E8F5E9' } }}>
+                                <FormControlLabel value={opt.id.toString()}
+                                  control={<Radio sx={{ p: 0, color: '#9CA3AF', '&.Mui-checked': { color: '#00A651' } }} />}
+                                  label="" sx={{ m: 0 }} />
+                                <Box sx={{ minWidth: 26, height: 26, borderRadius: '50%', display: 'flex',
+                                  alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                                  bgcolor: quizAnswers[q.id] === opt.id ? '#00A651' : '#E5E7EB' }}>
+                                  <Typography variant="caption" fontWeight={700}
+                                    color={quizAnswers[q.id] === opt.id ? '#fff' : '#6B7280'}>{opt.letra}</Typography>
+                                </Box>
+                                <Typography variant="body2" color="#0A1628">{opt.texto}</Typography>
+                              </Box>
+                            ))}
+                          </RadioGroup>
+                        </FormControl>
+
+                        <Box sx={{ display: 'flex', gap: 1.5, mt: 2 }}>
+                          <Button variant="outlined" disabled={quizCurrentIdx === 0}
+                            onClick={() => setQuizCurrentIdx(i => i - 1)}
+                            sx={{ flex: 1, borderColor: '#00A651', color: '#00A651', textTransform: 'none' }}>
+                            ← Anterior
+                          </Button>
+                          {quizCurrentIdx < total - 1 ? (
+                            <Button variant="contained" onClick={() => setQuizCurrentIdx(i => i + 1)}
+                              sx={{ flex: 1, bgcolor: '#00A651', textTransform: 'none' }}>
+                              Próxima →
+                            </Button>
+                          ) : (
+                            <Button variant="contained" disabled={quizSubmitting}
+                              onClick={handleSectionQuizSubmit}
+                              startIcon={quizSubmitting ? <CircularProgress size={16} color="inherit" /> : undefined}
+                              sx={{ flex: 1, bgcolor: '#00A651', textTransform: 'none', fontWeight: 700 }}>
+                              {quizSubmitting ? 'A submeter...' : 'Terminar Quiz'}
+                            </Button>
+                          )}
+                        </Box>
+                      </>
+                    );
+                  })()}
+                </Box>
+
+              ) : (
+                /* ── No quiz, just section complete ── */
+                <Box sx={{ textAlign: 'center', py: 3 }}>
+                  <TrophyIcon sx={{ fontSize: 56, color: '#00A651', mb: 1.5 }} />
+                  <Typography variant="h6" fontWeight={700} color="#0A1628" sx={{ mb: 1 }}>
+                    Secção concluída!
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Terminaste de ler a secção <strong>{sectionQuizModal.section.sectionName}</strong>.
+                    Ainda não há quiz disponível para esta secção.
+                  </Typography>
+                </Box>
+              )}
+            </DialogContent>
+
+            <DialogActions sx={{ p: 2, bgcolor: '#F8FAFC', borderTop: '1px solid #E5E7EB' }}>
+              <Button onClick={() => setSectionQuizModal(null)}
+                sx={{ textTransform: 'none', color: '#6B7280' }}>
+                {quizResult ? 'Continuar a ler' : 'Ignorar por agora'}
+              </Button>
+              {!quizResult && sectionQuizModal.quiz && (
+                <Typography variant="caption" color="text.secondary" sx={{ flex: 1, textAlign: 'center' }}>
+                  Responde ao quiz para registar o teu progresso nesta secção
+                </Typography>
+              )}
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
 
       {/* ─── Popup introdução (estilo ficha de livro) ─────────── */}
       <Dialog

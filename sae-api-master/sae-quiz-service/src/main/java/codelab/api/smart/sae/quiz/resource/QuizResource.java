@@ -1,8 +1,10 @@
 package codelab.api.smart.sae.quiz.resource;
 
 import codelab.api.smart.sae.quiz.dto.*;
+import codelab.api.smart.sae.quiz.service.OralTestService;
 import codelab.api.smart.sae.quiz.service.QuizGenerationService;
 import codelab.api.smart.sae.quiz.service.QuizService;
+import codelab.api.smart.sae.quiz.service.StudyPrepService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,8 +22,9 @@ public class QuizResource {
     @Autowired
     private QuizService quizService;
 
-    @Autowired
-    private QuizGenerationService quizGenerationService;
+    @Autowired private QuizGenerationService quizGenerationService;
+    @Autowired private StudyPrepService studyPrepService;
+    @Autowired private OralTestService oralTestService;
 
     @GetMapping
     public ResponseEntity<List<QuizSummaryDTO>> list(
@@ -98,5 +101,30 @@ public class QuizResource {
             Authentication auth) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(quizGenerationService.generateFromContent(dto, auth.getName()));
+    }
+
+    /** Gera um quiz personalizado de preparação para teste ou exame */
+    @PostMapping("/study-prep")
+    public ResponseEntity<QuizAdminDTO> studyPrep(
+            @RequestBody StudyPrepRequestDTO dto,
+            Authentication auth) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(studyPrepService.generateStudyPrep(dto, auth.getName()));
+    }
+
+    /** Gera um teste oral de Inglês */
+    @PostMapping("/oral-test/generate")
+    public ResponseEntity<QuizAdminDTO> generateOralTest(
+            @RequestBody OralTestRequestDTO dto,
+            Authentication auth) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(oralTestService.generateOralTest(dto, auth.getName()));
+    }
+
+    /** Avalia as respostas orais em 5 dimensões */
+    @PostMapping("/oral-test/evaluate")
+    public ResponseEntity<OralTestResultDTO> evaluateOralTest(
+            @RequestBody OralTestEvaluateDTO dto) {
+        return ResponseEntity.ok(oralTestService.evaluateOralTest(dto));
     }
 }

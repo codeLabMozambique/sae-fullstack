@@ -47,6 +47,20 @@ public class QuizEntity {
     @Column
     private boolean aiGenerated = false;
 
+    /** ID da secção do livro a que este quiz pertence (null se não for quiz de secção) */
+    @Column
+    private String sectionId;
+
+    /** STANDARD | SECTION | STUDY_PREP */
+    @Column(length = 20)
+    private String quizType = "STANDARD";
+
+    @Column(columnDefinition = "TEXT")
+    private String thumbnailUrl;
+
+    @Column(length = 10)
+    private String thumbnailType;
+
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("ordemNumero ASC")
     private List<QuizQuestionEntity> questions = new ArrayList<>();
@@ -77,4 +91,12 @@ public class QuizEntity {
     public void setEndPage(Integer endPage) { this.endPage = endPage; }
     public boolean isAiGenerated() { return aiGenerated; }
     public void setAiGenerated(boolean aiGenerated) { this.aiGenerated = aiGenerated; }
+    public String getSectionId() { return sectionId; }
+    public void setSectionId(String sectionId) { this.sectionId = sectionId; }
+    public String getQuizType() { return quizType; }
+    public void setQuizType(String quizType) { this.quizType = quizType; }
+    public String getThumbnailUrl() { return thumbnailUrl; }
+    public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
+    public String getThumbnailType() { return thumbnailType; }
+    public void setThumbnailType(String thumbnailType) { this.thumbnailType = thumbnailType; }
 }
