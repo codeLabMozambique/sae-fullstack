@@ -15,6 +15,8 @@ import SubjectsPage from './pages/admin/academic/SubjectsPage';
 import SchoolsPage from './pages/admin/academic/SchoolsPage';
 import ClassLevelsPage from './pages/admin/academic/ClassLevelsPage';
 import ProfessorAssignmentsPage from './pages/admin/academic/ProfessorAssignmentsPage';
+import AcademicGroupsPage from './pages/admin/academic/AcademicGroupsPage';
+import CurriculoPage from './pages/admin/academic/CurriculoPage';
 import ProfessorClassesPage from './pages/professor/ProfessorClassesPage';
 import ProfessorGradesPage from './pages/professor/ProfessorGradesPage';
 import StudentForumPage from './pages/student/StudentForumPage';
@@ -228,6 +230,16 @@ function App() {
             <Route path="/admin/academic/professor-assignments" element={
               <ProtectedRoute>
                 <MainLayout><ProfessorAssignmentsPage /></MainLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/academic/academic-groups" element={
+              <ProtectedRoute>
+                <MainLayout><AcademicGroupsPage /></MainLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/academic/curriculum" element={
+              <ProtectedRoute>
+                <MainLayout><CurriculoPage /></MainLayout>
               </ProtectedRoute>
             } />
 

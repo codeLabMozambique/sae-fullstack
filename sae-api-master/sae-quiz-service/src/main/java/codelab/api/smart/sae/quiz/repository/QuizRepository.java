@@ -10,4 +10,6 @@ public interface QuizRepository extends JpaRepository<QuizEntity, Long> {
     List<QuizEntity> findByDisciplina(DisciplinaEnum disciplina);
     List<QuizEntity> findByDisciplinaAndActiveTrue(DisciplinaEnum disciplina);
     List<QuizEntity> findByCreatedBy(String createdBy);
+    List<QuizEntity> findBySubjectId(Long subjectId);
+    List<QuizEntity> findBySubjectIdAndActiveTrue(Long subjectId);
 }

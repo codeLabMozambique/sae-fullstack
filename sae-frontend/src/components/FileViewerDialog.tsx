@@ -55,7 +55,11 @@ const FileViewerDialog: React.FC<Props> = ({ open, onClose, url, fileName, title
         const resp = await fetch(url, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        if (!resp.ok) {
+          if (resp.status === 403) throw new Error('Não tens acesso a este ficheiro.');
+          if (resp.status === 404) throw new Error('Ficheiro não encontrado.');
+          throw new Error(`Erro ao carregar ficheiro (${resp.status})`);
+        }
         const blob = await resp.blob();
         blobUrl = URL.createObjectURL(blob);
         setAuthedUrl(blobUrl);

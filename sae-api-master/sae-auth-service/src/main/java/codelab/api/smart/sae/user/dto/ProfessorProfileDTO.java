@@ -13,6 +13,7 @@ public class ProfessorProfileDTO {
     private boolean online;
     private java.time.LocalDateTime lastSeen;
     private String professorCode;
+    private String teachingCycle;
 
     public ProfessorProfileDTO() {}
 
@@ -64,4 +65,7 @@ public class ProfessorProfileDTO {
 
     public String getProfessorCode() { return professorCode; }
     public void setProfessorCode(String professorCode) { this.professorCode = professorCode; }
+
+    public String getTeachingCycle() { return teachingCycle; }
+    public void setTeachingCycle(String teachingCycle) { this.teachingCycle = teachingCycle; }
 }

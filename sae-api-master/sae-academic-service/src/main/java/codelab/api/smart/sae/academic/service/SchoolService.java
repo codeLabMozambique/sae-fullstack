@@ -156,6 +156,7 @@ public class SchoolService {
         ClassLevelDTO dto = new ClassLevelDTO();
         dto.setId(entity.getId());
         dto.setName(entity.getName());
+        dto.setCycle(entity.getCycle());
         return dto;
     }
 
@@ -163,6 +164,7 @@ public class SchoolService {
         ClassLevelFullDTO dto = new ClassLevelFullDTO();
         dto.setId(entity.getId());
         dto.setName(entity.getName());
+        dto.setCycle(entity.getCycle());
         return dto;
     }
 

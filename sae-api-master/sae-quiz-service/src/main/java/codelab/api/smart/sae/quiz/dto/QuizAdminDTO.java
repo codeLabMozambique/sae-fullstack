@@ -9,6 +9,8 @@ public class QuizAdminDTO {
     private String descricao;
     private String disciplina;
     private String disciplinaLabel;
+    private Long subjectId;
+    private String subjectName;
     private Integer tempoLimiteMinutos;
     private boolean active;
     private String createdBy;
@@ -33,6 +35,10 @@ public class QuizAdminDTO {
     public void setDisciplina(String disciplina) { this.disciplina = disciplina; }
     public String getDisciplinaLabel() { return disciplinaLabel; }
     public void setDisciplinaLabel(String disciplinaLabel) { this.disciplinaLabel = disciplinaLabel; }
+    public Long getSubjectId() { return subjectId; }
+    public void setSubjectId(Long subjectId) { this.subjectId = subjectId; }
+    public String getSubjectName() { return subjectName; }
+    public void setSubjectName(String subjectName) { this.subjectName = subjectName; }
     public Integer getTempoLimiteMinutos() { return tempoLimiteMinutos; }
     public void setTempoLimiteMinutos(Integer t) { this.tempoLimiteMinutos = t; }
     public boolean isActive() { return active; }

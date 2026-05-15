@@ -38,8 +38,13 @@ public class ClassroomEntity extends UpdatableEntity {
     @Column(name = "ACADEMIC_YEAR")
     private String academicYear;
 
+    // mantido durante migração; usar academicGroup (FK) como fonte de verdade
     @Column(name = "TURMA_GROUP")
     private String turmaGroup;
+
+    @ManyToOne
+    @JoinColumn(name = "ACADEMIC_GROUP_ID")
+    private AcademicGroupEntity academicGroup;
 
     @Column(name = "DIRECTOR_ID")
     private Long directorId;
@@ -66,6 +71,9 @@ public class ClassroomEntity extends UpdatableEntity {
 
     public String getTurmaGroup() { return turmaGroup; }
     public void setTurmaGroup(String turmaGroup) { this.turmaGroup = turmaGroup; }
+
+    public AcademicGroupEntity getAcademicGroup() { return academicGroup; }
+    public void setAcademicGroup(AcademicGroupEntity academicGroup) { this.academicGroup = academicGroup; }
 
     public Long getDirectorId() { return directorId; }
     public void setDirectorId(Long directorId) { this.directorId = directorId; }

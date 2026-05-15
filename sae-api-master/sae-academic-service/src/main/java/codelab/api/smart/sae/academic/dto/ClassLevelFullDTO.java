@@ -8,6 +8,7 @@ public class ClassLevelFullDTO implements Serializable {
 
     private Long id;
     private String name;
+    private String cycle;
     private List<ClassroomFullDTO> classrooms;
 
     public ClassLevelFullDTO() {}
@@ -18,6 +19,9 @@ public class ClassLevelFullDTO implements Serializable {
     public String name() { return name; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
+    public String getCycle() { return cycle; }
+    public void setCycle(String cycle) { this.cycle = cycle; }
 
     public List<ClassroomFullDTO> getClassrooms() { return classrooms; }
     public void setClassrooms(List<ClassroomFullDTO> classrooms) { this.classrooms = classrooms; }

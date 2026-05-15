@@ -9,8 +9,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "ac_CLASS_LEVEL")
-public class ClassLevelEntity extends UpdatableEntity {
+@Table(name = "ac_ACADEMIC_GROUP")
+public class AcademicGroupEntity extends UpdatableEntity {
 
     private static final long serialVersionUID = 1L;
 
@@ -22,11 +22,16 @@ public class ClassLevelEntity extends UpdatableEntity {
     @Column(name = "NAME", nullable = false)
     private String name;
 
-    // "BASICO" (8ª-10ª) ou "MEDIO" (11ª-12ª)
-    @Column(name = "CYCLE")
-    private String cycle;
+    @Column(name = "CODE", length = 20)
+    private String code;
 
-    public ClassLevelEntity() {}
+    @Column(name = "DESCRIPTION", length = 500)
+    private String description;
+
+    @Column(name = "SCHOOL_ID", nullable = false)
+    private Long schoolId;
+
+    public AcademicGroupEntity() {}
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -34,6 +39,12 @@ public class ClassLevelEntity extends UpdatableEntity {
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
-    public String getCycle() { return cycle; }
-    public void setCycle(String cycle) { this.cycle = cycle; }
+    public String getCode() { return code; }
+    public void setCode(String code) { this.code = code; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public Long getSchoolId() { return schoolId; }
+    public void setSchoolId(Long schoolId) { this.schoolId = schoolId; }
 }

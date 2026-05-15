@@ -27,6 +27,16 @@ public class ClassroomResource {
         return ResponseEntity.ok(classroomService.findBySchool(schoolId));
     }
 
+    @GetMapping("/by-class-level/{classLevelId}")
+    public ResponseEntity<List<ClassroomDTO>> findByClassLevel(
+            @PathVariable Long classLevelId,
+            @RequestParam(required = false) Long schoolId) {
+        if (schoolId != null) {
+            return ResponseEntity.ok(classroomService.findBySchoolAndClassLevel(schoolId, classLevelId));
+        }
+        return ResponseEntity.ok(classroomService.findByClassLevel(classLevelId));
+    }
+
     @PostMapping("/details")
     public ResponseEntity<ClassroomDTO> findById(@RequestBody ClassroomDTO request) {
         ClassroomDTO dto = classroomService.findById(request.getId());

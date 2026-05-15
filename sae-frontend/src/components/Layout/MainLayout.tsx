@@ -99,6 +99,8 @@ function iconByRoute(route: string): React.ReactNode | null {
   if (/\/assignments/.test(route))         return <AssignmentIcon />;
   if (/\/submissions/.test(route))         return <AssignmentIcon />;
   // Admin
+  if (/\/curriculum/.test(route))          return <SubjectIcon />;
+  if (/\/academic-groups/.test(route))     return <CategoriesIcon />;
   if (/\/schools/.test(route))             return <SchoolIcon />;
   if (/\/classrooms/.test(route))          return <ClassroomIcon />;
   if (/\/subjects/.test(route))            return <MenuBookIcon />;

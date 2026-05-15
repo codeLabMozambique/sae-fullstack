@@ -343,6 +343,7 @@ public class UserService {
         if (dto.getDepartment() != null)           p.setDepartment(dto.getDepartment());
         if (dto.getSpecialization() != null)       p.setSpecialization(dto.getSpecialization());
         if (dto.getInstitutionalContact() != null) p.setInstitutionalContact(dto.getInstitutionalContact());
+        if (dto.getTeachingCycle() != null)        p.setTeachingCycle(dto.getTeachingCycle());
         if (schoolChanged || p.getProfessorCode() == null) {
             p.setProfessorCode(String.format("COD-%s-PROF-%05d",
                     getSchoolInitials(p.getSchoolId()), p.getId()));
@@ -437,6 +438,7 @@ public class UserService {
                 p.isOnline(),
                 p.getLastSeen());
         dto.setProfessorCode(p.getProfessorCode());
+        dto.setTeachingCycle(p.getTeachingCycle());
         return dto;
     }
 

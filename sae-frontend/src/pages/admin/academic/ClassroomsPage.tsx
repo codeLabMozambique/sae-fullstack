@@ -16,8 +16,9 @@ import {
 } from '@mui/icons-material';
 import {
   classroomService, schoolService, classLevelService, studentService,
-  professorService, professorAssignmentService,
+  professorService, professorAssignmentService, academicGroupService,
   type ClassroomDTO, type SchoolDTO, type ClassLevelDTO, type StudentProfileDTO, type ProfessorDTO,
+  type AcademicGroupDTO,
 } from '../../../services/academicService';
 import api from '../../../services/api';
 import { useAuth } from '../../../context/AuthContext';
@@ -93,6 +94,8 @@ const ClassroomsPage: React.FC = () => {
   const [enrollError, setEnrollError]           = useState<string | null>(null);
   const [enrollSaving, setEnrollSaving]         = useState(false);
 
+  const [academicGroups, setAcademicGroups] = useState<AcademicGroupDTO[]>([]);
+
   const [professors, setProfessors]                   = useState<ProfessorDTO[]>([]);
   const [directorOpen, setDirectorOpen]               = useState(false);
   const [directorClassroom, setDirectorClassroom]     = useState<ClassroomDTO | null>(null);
@@ -108,8 +111,8 @@ const ClassroomsPage: React.FC = () => {
       const cls = (isSchoolAdmin && schoolAdminSchoolId)
         ? await classroomService.findBySchool(schoolAdminSchoolId)
         : await classroomService.findAll();
-      const [sch, lvl, profs] = await Promise.all([schoolService.findAll(), classLevelService.findAll(), professorService.findAll()]);
-      setClassrooms(cls); setSchools(sch); setLevels(lvl); setProfessors(profs);
+      const [sch, lvl, profs, grps] = await Promise.all([schoolService.findAll(), classLevelService.findAll(), professorService.findAll(), academicGroupService.findAll()]);
+      setClassrooms(cls); setSchools(sch); setLevels(lvl); setProfessors(profs); setAcademicGroups(grps);
     } catch { setError('Erro ao carregar dados. Verifique a ligação ao servidor.'); }
     finally { setLoading(false); }
   };
@@ -118,8 +121,8 @@ const ClassroomsPage: React.FC = () => {
     const init = async () => {
       try {
         setLoading(true); setError(null);
-        const [sch, lvl, profs] = await Promise.all([schoolService.findAll(), classLevelService.findAll(), professorService.findAll()]);
-        setSchools(sch); setLevels(lvl); setProfessors(profs);
+        const [sch, lvl, profs, grps] = await Promise.all([schoolService.findAll(), classLevelService.findAll(), professorService.findAll(), academicGroupService.findAll()]);
+        setSchools(sch); setLevels(lvl); setProfessors(profs); setAcademicGroups(grps);
         if (isSchoolAdmin) {
           const profileRes = await api.get<{ schoolId: number }>('/auth/users/school-admin-profile');
           const sid = profileRes.data.schoolId;
@@ -159,9 +162,15 @@ const ClassroomsPage: React.FC = () => {
   const openEdit    = (r: ClassroomDTO) => { setEditing(r); setForm({ ...r }); setDialogOpen(true); };
   const closeDialog = () => { setDialogOpen(false); setEditing(null); setForm(emptyForm); };
 
+  const selectedLevel = levels.find(l => l.id === form.classLevelId);
+  const isMedio = selectedLevel?.cycle === 'MEDIO';
+
   const handleSubmit = async () => {
     if (!form.name.trim() || !form.schoolId || !form.classLevelId || !form.shift || !form.academicYear.trim()) {
       setError('Preencha todos os campos obrigatórios.'); return;
+    }
+    if (isMedio && !form.academicGroupId) {
+      setError('Turmas do ciclo médio (11ª/12ª) requerem um grupo académico.'); return;
     }
     try {
       setSubmitting(true); setError(null);
@@ -281,7 +290,7 @@ const ClassroomsPage: React.FC = () => {
   const levelName  = (id: number) => levels.find(l => l.id === id)?.name ?? '—';
 
   return (
-    <Box sx={{ minHeight: '100%', background: 'linear-gradient(160deg,#eef2ff 0%,#f8fafc 50%,#f0fdf4 100%)', p: 3, position: 'relative', overflow: 'hidden' }}>
+    <Box sx={{ minHeight: '100%', background: 'linear-gradient(160deg,#f0fdf4 0%,#f8fafc 50%,#f0fdf4 100%)', p: 3, position: 'relative', overflow: 'hidden' }}>
       <Box sx={{ position: 'absolute', top: -120, right: -80, width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle,rgba(0,166,81,.07) 0%,transparent 65%)', pointerEvents: 'none', zIndex: 0 }} />
       <Box sx={{ position: 'absolute', bottom: -80, left: -60, width: 380, height: 380, borderRadius: '50%', background: 'radial-gradient(circle,rgba(230,81,0,.05) 0%,transparent 65%)', pointerEvents: 'none', zIndex: 0 }} />
 
@@ -415,8 +424,14 @@ const ClassroomsPage: React.FC = () => {
                           <Typography variant="body2">{schoolName(row.schoolId)}</Typography>
                         </TableCell>
                         <TableCell>
-                          <Chip label={levelName(row.classLevelId)} size="small"
-                            sx={{ bgcolor: 'rgba(0,166,81,0.08)', color: ACCENT, border: '1px solid rgba(0,166,81,0.2)' }} />
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Chip label={levelName(row.classLevelId)} size="small"
+                              sx={{ bgcolor: 'rgba(0,166,81,0.08)', color: ACCENT, border: '1px solid rgba(0,166,81,0.2)' }} />
+                            {row.academicGroupName && (
+                              <Chip label={row.academicGroupName} size="small"
+                                sx={{ bgcolor: 'rgba(10,22,40,0.07)', color: PRIMARY, border: '1px solid rgba(10,22,40,0.15)', fontSize: '0.68rem' }} />
+                            )}
+                          </Box>
                         </TableCell>
                         <TableCell>
                           <Chip icon={s.icon as React.ReactElement} label={row.shift || '—'} size="small"
@@ -509,7 +524,7 @@ const ClassroomsPage: React.FC = () => {
             <FormControl fullWidth size="small" sx={inputSx}>
               <InputLabel>Nível *</InputLabel>
               <Select value={form.classLevelId || ''} label="Nível *"
-                onChange={e => setForm(p => ({ ...p, classLevelId: Number(e.target.value) }))}>
+                onChange={e => setForm(p => ({ ...p, classLevelId: Number(e.target.value), academicGroupId: null }))}>
                 {levels.map(l => <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>)}
               </Select>
             </FormControl>
@@ -522,6 +537,22 @@ const ClassroomsPage: React.FC = () => {
               </Select>
             </FormControl>
           </Box>
+
+          {isMedio && (
+            <FormControl fullWidth size="small" sx={inputSx}>
+              <InputLabel>Grupo Académico *</InputLabel>
+              <Select
+                value={form.academicGroupId || ''}
+                label="Grupo Académico *"
+                onChange={e => setForm(p => ({ ...p, academicGroupId: Number(e.target.value) || null }))}
+              >
+                {academicGroups
+                  .filter(g => g.schoolId === form.schoolId)
+                  .map(g => <MenuItem key={g.id} value={g.id}>{g.name}{g.code ? ` (${g.code})` : ''}</MenuItem>)
+                }
+              </Select>
+            </FormControl>
+          )}
 
           <TextField label="Ano Lectivo *" value={form.academicYear}
             onChange={e => setForm(p => ({ ...p, academicYear: e.target.value }))}

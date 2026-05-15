@@ -16,6 +16,15 @@ export interface ProfessorDTO {
 export interface ClassLevelDTO {
   id?: number;
   name: string;
+  cycle?: string; // "BASICO" | "MEDIO"
+}
+
+export interface AcademicGroupDTO {
+  id?: number;
+  name: string;
+  code?: string;
+  description?: string;
+  schoolId: number;
 }
 
 export interface SchoolDTO {
@@ -44,6 +53,8 @@ export interface ClassroomDTO {
   shift: string;
   academicYear: string;
   directorId?: number | null;
+  academicGroupId?: number | null;
+  academicGroupName?: string;
 }
 
 export interface ProfessorAssignmentDTO {
@@ -52,6 +63,14 @@ export interface ProfessorAssignmentDTO {
   classroomId: number;
   subjectId: number;
 }
+
+export const academicGroupService = {
+  findAll: () => api.get<AcademicGroupDTO[]>('/academic/academic-group/all').then(r => r.data),
+  findBySchool: (schoolId: number) => api.get<AcademicGroupDTO[]>(`/academic/academic-group/by-school/${schoolId}`).then(r => r.data),
+  save: (dto: AcademicGroupDTO) => api.post<AcademicGroupDTO>('/academic/academic-group/save', dto).then(r => r.data),
+  update: (dto: AcademicGroupDTO) => api.post<AcademicGroupDTO>('/academic/academic-group/update', dto).then(r => r.data),
+  deactivate: (id: number) => api.post('/academic/academic-group/deactivate', { id }),
+};
 
 export const classLevelService = {
   findAll: () => api.get<ClassLevelDTO[]>('/academic/class-level/all').then(r => r.data),
@@ -160,6 +179,30 @@ export interface GradeDTO {
   exameFinal?: number | null;
   media?: number | null;
 }
+
+export interface CurriculumEntryDTO {
+  id?: number;
+  schoolId?: number;
+  schoolName?: string;
+  classLevelId: number;
+  classLevelName?: string;
+  subjectId: number;
+  subjectName?: string;
+  subjectCode?: string;
+  academicGroupId?: number | null;
+  academicGroupName?: string | null;
+}
+
+export const curriculumService = {
+  findByLevelAndGroup: (schoolId: number, classLevelId: number, groupId?: number | null) =>
+    api.get<CurriculumEntryDTO[]>('/academic/curriculum', { params: { schoolId, classLevelId, groupId: groupId ?? undefined } }).then(r => r.data),
+  findByLevel: (schoolId: number, classLevelId: number) =>
+    api.get<CurriculumEntryDTO[]>(`/academic/curriculum/by-level/${classLevelId}`, { params: { schoolId } }).then(r => r.data),
+  addEntry: (schoolId: number, classLevelId: number, subjectId: number, groupId?: number | null) =>
+    api.post<CurriculumEntryDTO>('/academic/curriculum/add', { schoolId, classLevelId, subjectId, groupId: groupId ?? null }).then(r => r.data),
+  removeEntry: (entryId: number) =>
+    api.delete(`/academic/curriculum/${entryId}`),
+};
 
 export const gradeService = {
   findByClassroomAndSubject: (classroomId: number, subjectId: number, academicYear: string) =>

@@ -26,9 +26,18 @@ public class ClassLevelSubjectEntity {
     @JoinColumn(name = "subject_id", nullable = false)
     private SubjectEntity subject;
 
-    // null = todos os grupos; 'A', 'B', 'C' = grupo específico (11ª/12ª classe)
+    @ManyToOne
+    @JoinColumn(name = "SCHOOL_ID")
+    private SchoolEntity school;
+
+    // mantido durante migração; usar academicGroup (FK) como fonte de verdade
     @Column(name = "TURMA_GROUP")
     private String turmaGroup;
+
+    // null = comum a todos os grupos; non-null = específico do grupo (11ª/12ª)
+    @ManyToOne
+    @JoinColumn(name = "ACADEMIC_GROUP_ID")
+    private AcademicGroupEntity academicGroup;
 
     public ClassLevelSubjectEntity() {}
 
@@ -43,4 +52,10 @@ public class ClassLevelSubjectEntity {
 
     public String getTurmaGroup() { return turmaGroup; }
     public void setTurmaGroup(String turmaGroup) { this.turmaGroup = turmaGroup; }
+
+    public SchoolEntity getSchool() { return school; }
+    public void setSchool(SchoolEntity school) { this.school = school; }
+
+    public AcademicGroupEntity getAcademicGroup() { return academicGroup; }
+    public void setAcademicGroup(AcademicGroupEntity academicGroup) { this.academicGroup = academicGroup; }
 }

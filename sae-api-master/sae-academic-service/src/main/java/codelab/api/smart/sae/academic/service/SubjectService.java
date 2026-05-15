@@ -84,23 +84,37 @@ public class SubjectService {
         if (classroom == null) return List.of();
 
         Long classLevelId = classroom.getClassLevel().getId();
-        String group = classroom.getTurmaGroup();
+        Long groupId = classroom.getAcademicGroup() != null ? classroom.getAcademicGroup().getId() : null;
 
-        // Subjects comuns ao nível (group = null na junction table)
         Map<Long, SubjectDTO> result = new LinkedHashMap<>();
-        for (ClassLevelSubjectEntity cls : classLevelSubjectRepository.findByClassLevelIdAndTurmaGroupIsNull(classLevelId)) {
+        for (ClassLevelSubjectEntity cls : classLevelSubjectRepository.findByClassLevelIdAndAcademicGroupIsNull(classLevelId)) {
             SubjectEntity s = cls.getSubject();
             result.put(java.util.Objects.requireNonNull(s.getId()), convertToDTO(s));
         }
 
-        // Subjects específicos do grupo (A/B/C) para 11ª/12ª classe
-        if (group != null) {
-            for (ClassLevelSubjectEntity cls : classLevelSubjectRepository.findByClassLevelIdAndTurmaGroup(classLevelId, group)) {
+        // disciplinas específicas do grupo para ciclo médio (11ª/12ª)
+        if (groupId != null) {
+            for (ClassLevelSubjectEntity cls : classLevelSubjectRepository.findByClassLevelIdAndAcademicGroupId(classLevelId, groupId)) {
                 SubjectEntity s = cls.getSubject();
                 result.put(java.util.Objects.requireNonNull(s.getId()), convertToDTO(s));
             }
         }
 
+        return new ArrayList<>(result.values());
+    }
+
+    public List<SubjectDTO> findByClassLevelAndGroup(Long classLevelId, Long groupId) {
+        Map<Long, SubjectDTO> result = new LinkedHashMap<>();
+        for (ClassLevelSubjectEntity cls : classLevelSubjectRepository.findByClassLevelIdAndAcademicGroupIsNull(classLevelId)) {
+            SubjectEntity s = cls.getSubject();
+            result.put(java.util.Objects.requireNonNull(s.getId()), convertToDTO(s));
+        }
+        if (groupId != null) {
+            for (ClassLevelSubjectEntity cls : classLevelSubjectRepository.findByClassLevelIdAndAcademicGroupId(classLevelId, groupId)) {
+                SubjectEntity s = cls.getSubject();
+                result.put(java.util.Objects.requireNonNull(s.getId()), convertToDTO(s));
+            }
+        }
         return new ArrayList<>(result.values());
     }
 
