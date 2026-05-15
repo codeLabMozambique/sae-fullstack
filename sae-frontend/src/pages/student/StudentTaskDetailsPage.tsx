@@ -224,16 +224,23 @@ export default function StudentTaskDetailsPage() {
         {/* Lado Direito: Submissão ou Nota */}
         <Grid size={{ xs: 12, lg: 4 }}>
           {!hasSubmitted ? (
+            isLate ? (
+              <Card sx={{ borderRadius: 4, border: '1px solid #FECACA', bgcolor: '#FEF2F2' }}>
+                <CardContent sx={{ p: 3, textAlign: 'center' }}>
+                  <ScheduleIcon sx={{ fontSize: 40, color: '#991B1B', mb: 1 }} />
+                  <Typography variant="h6" fontWeight={700} color="#991B1B" gutterBottom>
+                    Prazo Expirado
+                  </Typography>
+                  <Typography variant="body2" color="#991B1B" sx={{ opacity: 0.85 }}>
+                    A entrega está fechada. Contacta o professor para reabrir ou estender o prazo.
+                  </Typography>
+                </CardContent>
+              </Card>
+            ) : (
             <Card sx={{ borderRadius: 4, border: '1px solid #F3F4F6' }}>
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="h6" fontWeight={700} gutterBottom>Entregar Trabalho</Typography>
                 <Typography variant="body2" color="textSecondary" mb={3}>Preenche os campos abaixo para submeter.</Typography>
-                
-                {isLate && (
-                  <Alert severity="warning" sx={{ mb: 3, borderRadius: 2, fontSize: '0.8rem' }}>
-                    O prazo expirou. A entrega será marcada como atrasada.
-                  </Alert>
-                )}
 
                 <form onSubmit={handleSubmit}>
                   <TextField
@@ -282,6 +289,7 @@ export default function StudentTaskDetailsPage() {
                 </form>
               </CardContent>
             </Card>
+            )
           ) : (
             <Card sx={{ borderRadius: 4, border: '1px solid #F3F4F6', bgcolor: '#0A1628', color: '#fff' }}>
               <CardContent sx={{ p: 4, textAlign: 'center' }}>

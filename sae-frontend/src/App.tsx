@@ -28,6 +28,8 @@ import StudentsEnrollmentPage from './pages/admin/users/StudentsEnrollmentPage';
 import ProfessorClassroomsPage from './pages/professor/ProfessorClassroomsPage';
 import DirectorClassroomPage from './pages/professor/DirectorClassroomPage';
 import ProfessorTasksPage from './pages/professor/ProfessorTasksPage';
+import ProfessorSugerirPage from './pages/professor/ProfessorSugerirPage';
+import StudentSugestoesPage from './pages/student/StudentSugestoesPage';
 import ProfessorTaskDetailsPage from './pages/professor/ProfessorTaskDetailsPage';
 import StudentTasksPage from './pages/student/StudentTasksPage';
 import StudentTaskDetailsPage from './pages/student/StudentTaskDetailsPage';
@@ -133,6 +135,11 @@ function App() {
 
             {/* ── STUDENT — Tarefas (Assignments) ───────────── */}
             <Route path="/student/assignments" element={<Layout><StudentTasksPage /></Layout>} />
+
+            {/* ── Sugestões de Leitura ─────────────────────── */}
+            <Route path="/student/library/suggestions" element={<Layout><StudentSugestoesPage /></Layout>} />
+            <Route path="/professor/library/suggest" element={<Layout><ProfessorSugerirPage /></Layout>} />
+            <Route path="/professor/library/suggestions" element={<Layout><ProfessorSugerirPage /></Layout>} />
             <Route path="/student/assignments/:id" element={<Layout><StudentTaskDetailsPage /></Layout>} />
             <Route path="/student/submissions" element={<Layout><StudentSubmissionsPage /></Layout>} />
 
@@ -173,7 +180,8 @@ function App() {
             {/* ── PROFESSOR — Biblioteca ─────────────────────── */}
             <Route path="/professor/library" element={<Layout><Biblioteca /></Layout>} />
             <Route path="/professor/library/my-content" element={<Layout><MeusConteudos /></Layout>} />
-            <Route path="/professor/library/upload" element={<Layout><UploadConteudo /></Layout>} />
+            {/* Professor: já não submete livros — sugere os existentes. Redirect legado para a nova feature. */}
+            <Route path="/professor/library/upload" element={<Navigate to="/professor/library/suggest" replace />} />
             <Route path="/professor/library/categories" element={<Layout><Categorias /></Layout>} />
             <Route path="/professor/library/favorites" element={<Layout><Favoritos /></Layout>} />
             <Route path="/professor/library/progress" element={<Layout><ContinuarLer /></Layout>} />

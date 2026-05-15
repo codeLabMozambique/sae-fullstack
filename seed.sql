@@ -264,7 +264,7 @@ FROM (VALUES
     -- STUDENT — biblioteca + metas
     ('STUDENT','STD-LIB'),   ('STUDENT','STD-LIB-001'),('STUDENT','STD-LIB-002'),
     ('STUDENT','STD-LIB-003'),('STUDENT','STD-LIB-004'),('STUDENT','STD-LIB-005'),
-    ('STUDENT','STD-LIB-006'),
+    ('STUDENT','STD-LIB-006'),('STUDENT','STD-LIB-007'),
     ('STUDENT','STD-GOALS'), ('STUDENT','STD-GOALS-001'),('STUDENT','STD-GOALS-002'),
     -- STUDENT — quiz + tarefas
     ('STUDENT','STD-QUIZ'),  ('STUDENT','STD-QUIZ-001'),('STUDENT','STD-QUIZ-002'),
@@ -299,6 +299,34 @@ INSERT INTO ac_class_level (id, status, created_by, created_date, last_modified_
 (13, 1, 0, NOW(), 0, NOW(), '10ª Classe', 'BASICO'),
 (14, 1, 0, NOW(), 0, NOW(), '11ª Classe', 'MEDIO'),
 (15, 1, 0, NOW(), 0, NOW(), '12ª Classe', 'MEDIO')
+-- ============================================================
+-- BLOCO 17 — ESG: Turmas com turma_group
+-- A coluna turma_group é adicionada pelo Hibernate (ddl-auto: update)
+-- mas o ALTER TABLE garante compatibilidade em runs sem serviço activo.
+-- ============================================================
+ALTER TABLE IF EXISTS ac_classroom ADD COLUMN IF NOT EXISTS turma_group VARCHAR(10);
+
+-- Garantir que os níveis de ensino 11-15 (8ª–12ª) existem antes da FK das turmas
+INSERT INTO ac_class_level (id, status, created_by, created_date, last_modified_by, last_modified_date, name) VALUES
+(11, 1, 0, NOW(), 0, NOW(), '8ª Classe'),
+(12, 1, 0, NOW(), 0, NOW(), '9ª Classe'),
+(13, 1, 0, NOW(), 0, NOW(), '10ª Classe'),
+(14, 1, 0, NOW(), 0, NOW(), '11ª Classe'),
+(15, 1, 0, NOW(), 0, NOW(), '12ª Classe')
+ON CONFLICT (id) DO NOTHING;
+
+SELECT setval(pg_get_serial_sequence('ac_class_level', 'id'), GREATEST((SELECT MAX(id) FROM ac_class_level), 15));
+
+INSERT INTO ac_classroom (id, status, created_by, created_date, last_modified_by, last_modified_date, name, school_id, class_level_id, shift, turma_group) VALUES
+(21, 1, 0, NOW(), 0, NOW(), 'Turma A - 8ª Classe',                      4, 11, 'Manhã', NULL),
+(22, 1, 0, NOW(), 0, NOW(), 'Turma A - 9ª Classe',                      4, 12, 'Manhã', NULL),
+(23, 1, 0, NOW(), 0, NOW(), 'Turma A - 10ª Classe',                     4, 13, 'Manhã', NULL),
+(24, 1, 0, NOW(), 0, NOW(), 'Turma A - 11ª Classe (Letras)',            4, 14, 'Manhã', 'A'),
+(25, 1, 0, NOW(), 0, NOW(), 'Turma B - 11ª Classe (Ciências Bio)',      4, 14, 'Manhã', 'B'),
+(26, 1, 0, NOW(), 0, NOW(), 'Turma C - 11ª Classe (Ciências Exactas)', 4, 14, 'Manhã', 'C'),
+(27, 1, 0, NOW(), 0, NOW(), 'Turma A - 12ª Classe (Letras)',            4, 15, 'Manhã', 'A'),
+(28, 1, 0, NOW(), 0, NOW(), 'Turma B - 12ª Classe (Ciências Bio)',      4, 15, 'Manhã', 'B'),
+(29, 1, 0, NOW(), 0, NOW(), 'Turma C - 12ª Classe (Ciências Exactas)', 4, 15, 'Manhã', 'C')
 ON CONFLICT (id) DO NOTHING;
 
 -- Garante que níveis já existentes ficam com o ciclo correcto
@@ -497,5 +525,3 @@ SELECT 'ac_classroom',       COUNT(*) FROM ac_classroom;
 --   • Quizzes              → /professor/quiz/create
 --   • Conteúdos biblioteca → /admin/library/upload
 -- =============================================================================
-
--- FIM DO SEED

@@ -9,6 +9,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { validateEmail, validatePhone, carrierForPhone } from '../../utils/validators';
 
 const SCHOOLS = [
   { id: 1, label: 'Universidade Eduardo Mondlane' },
@@ -40,11 +41,17 @@ const Register: React.FC = () => {
   const [department, setDepartment] = useState('');
   const [specialization, setSpecialization] = useState('');
 
+  const phoneCheck = validatePhone(nTelefone, { required: true });
+  const emailCheck = validateEmail(email, { required: true });
+  const carrier = carrierForPhone(nTelefone);
+
   const handleRegister = async () => {
     if (!fullname.trim() || !nTelefone.trim() || !email.trim() || !password.trim() || schoolId === '') {
       setError('Por favor, preencha todos os campos obrigatórios.');
       return;
     }
+    if (!phoneCheck.ok) { setError(phoneCheck.message || 'Telefone inválido'); return; }
+    if (!emailCheck.ok) { setError(emailCheck.message || 'Email inválido'); return; }
     setError('');
     setLoading(true);
     try {
@@ -201,19 +208,31 @@ const Register: React.FC = () => {
 
             <FieldLabel label="Número de Telefone">
               <TextField
-                fullWidth placeholder="+(258) 8X XXX XXXX"
+                fullWidth placeholder="+258 84 123 4567"
                 value={nTelefone} onChange={(e) => setNTelefone(e.target.value)}
                 disabled={loading}
+                error={!!nTelefone && !phoneCheck.ok}
+                helperText={
+                  !nTelefone
+                    ? 'Moçambique · prefixos 82–87'
+                    : phoneCheck.ok
+                      ? `Válido · ${carrier ?? 'Operadora desconhecida'}`
+                      : phoneCheck.message
+                }
                 sx={fieldStyle}
               />
             </FieldLabel>
 
             <FieldLabel label="Email">
               <TextField
-                fullWidth placeholder="exemplo@email.com"
+                fullWidth placeholder="nome@dominio.com"
                 type="email"
                 value={email} onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
+                error={!!email && !emailCheck.ok}
+                helperText={
+                  !email ? ' ' : (emailCheck.ok ? 'Email válido' : emailCheck.message)
+                }
                 sx={fieldStyle}
               />
             </FieldLabel>

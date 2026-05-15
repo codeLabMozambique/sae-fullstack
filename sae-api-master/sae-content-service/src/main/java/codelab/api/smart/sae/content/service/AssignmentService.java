@@ -9,6 +9,7 @@ import codelab.api.smart.sae.content.repository.jpa.AssignmentRepository;
 import codelab.api.smart.sae.content.repository.jpa.SubmissionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -27,8 +28,25 @@ public class AssignmentService {
     @Autowired private SubmissionRepository submissionRepository;
     @Autowired private FileStorageService fileStorageService;
     @Autowired private AuthServiceClient authServiceClient;
+    @Autowired private JdbcTemplate jdbcTemplate;
 
     private static final long MAX_FILE_SIZE = 25L * 1024 * 1024; // 25 MB
+
+    /**
+     * Verifica se o professor (username) está atribuído à turma (classroomId)
+     * via ac_professor_assignment ⇄ sae_user. Lança 403 se não estiver.
+     */
+    private void requireProfessorAssignedToClassroom(String professorUsername, Long classroomId) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM ac_professor_assignment pa " +
+                "JOIN sae_user u ON pa.professor_id = u.id " +
+                "WHERE u.username = ? AND pa.classroom_id = ? AND pa.status = 1",
+                Integer.class, professorUsername, classroomId);
+        if (count == null || count == 0) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Não tens autorização para lançar tarefas nesta turma (não te foi atribuída).");
+        }
+    }
 
     // ── Professor ──────────────────────────────────────────────
 
@@ -46,6 +64,9 @@ public class AssignmentService {
         if (title == null || title.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Título obrigatório");
         if (deadlineStr == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data limite obrigatória");
         if (maxScore == null || maxScore <= 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Pontuação máxima inválida");
+
+        // Garante que o professor está atribuído a esta turma
+        requireProfessorAssignedToClassroom(professorUsername, classroomId);
 
         Assignment a = new Assignment();
         a.setClassroomId(classroomId);
@@ -99,6 +120,35 @@ public class AssignmentService {
         d.submissionCount = subs.size();
         d.gradedCount = (int) subs.stream().filter(s -> Submission.STATE_GRADED.equals(s.getState())).count();
         return d;
+    }
+
+    /**
+     * Permite ao professor actualizar a deadline (reabrir/estender) e opcionalmente
+     * o título, descrição ou pontuação máxima. Aceita um payload parcial.
+     */
+    public AssignmentDTO updateAssignment(Long id, Map<String, Object> payload, String professorUsername) {
+        Assignment a = requireOwned(id, professorUsername);
+        if (payload == null) return AssignmentDTO.from(a);
+
+        if (payload.containsKey("deadline")) {
+            String s = asString(payload.get("deadline"));
+            if (s == null || s.isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Deadline não pode ser vazia");
+            }
+            a.setDeadline(parseDateTime(s));
+        }
+        if (payload.containsKey("title")) {
+            String t = asString(payload.get("title"));
+            if (t != null && !t.isBlank()) a.setTitle(t.trim());
+        }
+        if (payload.containsKey("description")) {
+            a.setDescription(asString(payload.get("description")));
+        }
+        if (payload.containsKey("maxScore")) {
+            Double ms = asDouble(payload.get("maxScore"));
+            if (ms != null && ms > 0) a.setMaxScore(ms);
+        }
+        return AssignmentDTO.from(assignmentRepository.save(a));
     }
 
     public void deleteAssignment(Long id, String professorUsername) {
@@ -173,6 +223,12 @@ public class AssignmentService {
         }
         if (submissionRepository.existsByAssignmentIdAndStudentUsername(assignmentId, studentUsername)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Já submeteste esta tarefa");
+        }
+        // Bloqueia entregas depois do prazo. O professor pode estender a deadline
+        // (PATCH /api/professor/assignments/{id}) para reabrir a tarefa.
+        if (a.getDeadline() != null && LocalDateTime.now().isAfter(a.getDeadline())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "O prazo desta tarefa expirou. Contacta o professor para reabrir.");
         }
 
         Submission s = new Submission();

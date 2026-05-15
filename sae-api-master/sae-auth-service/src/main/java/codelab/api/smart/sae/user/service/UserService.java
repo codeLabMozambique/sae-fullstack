@@ -46,6 +46,7 @@ import codelab.api.smart.sae.user.repository.SchoolAdminProfileRepository;
 import codelab.api.smart.sae.user.repository.StudentEnrollmentRepository;
 import codelab.api.smart.sae.user.repository.StudentProfileRepository;
 import codelab.api.smart.sae.user.repository.UserRepository;
+import codelab.api.smart.sae.user.validators.ContactValidator;
 
 /**
  * @author Shifu-Taishi Grand Master
@@ -145,11 +146,15 @@ public class UserService {
         if (request.getPassword().length() < 6) {
             throw new BusinessException("Password deve ter no mínimo 6 caracteres");
         }
-        if (userRepository.existsByUsername(request.getUsername())) {
+        String normPhone = ContactValidator.requireValidPhone(request.getUsername());
+        request.setUsername(normPhone);
+        String normEmail = ContactValidator.requireValidEmail(request.getEmail(), false);
+        if (normEmail != null) request.setEmail(normEmail);
+
+        if (userRepository.existsByUsername(normPhone)) {
             throw new BusinessException("Já existe uma conta com este número de telefone");
         }
-        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()
-                && userRepository.existsByEmail(request.getEmail())) {
+        if (normEmail != null && userRepository.existsByEmail(normEmail)) {
             throw new BusinessException("Já existe uma conta com este email");
         }
 
@@ -181,17 +186,22 @@ public class UserService {
 
     @Transactional
     public ProfessorProfileEntity createProfessor(ProfessorRegisterDTO request) {
-        if (userRepository.existsByUsername(request.getNTelefone())) {
+        String pPhone = ContactValidator.requireValidPhone(request.getNTelefone());
+        request.setNTelefone(pPhone);
+        String pEmail = ContactValidator.requireValidEmail(request.getEmail(), true);
+        request.setEmail(pEmail);
+
+        if (userRepository.existsByUsername(pPhone)) {
             throw new BusinessException("Já existe uma conta com este número de telefone");
         }
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmail(pEmail)) {
             throw new BusinessException("Já existe uma conta com este email");
         }
 
         UserEntity user = new UserEntity();
         user.setFullname(request.getFullname());
-        user.setUsername(request.getNTelefone());
-        user.setEmail(request.getEmail());
+        user.setUsername(pPhone);
+        user.setEmail(pEmail);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setEnabled(true);
         user.setCreatedDate(LocalDateTime.now());
@@ -225,17 +235,22 @@ public class UserService {
 
     @Transactional
     public StudentProfileEntity createStudent(StudentRegisterDTO request) {
-        if (userRepository.existsByUsername(request.getNTelefone())) {
+        String sPhone = ContactValidator.requireValidPhone(request.getNTelefone());
+        request.setNTelefone(sPhone);
+        String sEmail = ContactValidator.requireValidEmail(request.getEmail(), true);
+        request.setEmail(sEmail);
+
+        if (userRepository.existsByUsername(sPhone)) {
             throw new BusinessException("Já existe uma conta com este número de telefone");
         }
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmail(sEmail)) {
             throw new BusinessException("Já existe uma conta com este email");
         }
 
         UserEntity user = new UserEntity();
         user.setFullname(request.getFullname());
-        user.setUsername(request.getNTelefone());
-        user.setEmail(request.getEmail());
+        user.setUsername(sPhone);
+        user.setEmail(sEmail);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setEnabled(true);
         user.setCreatedDate(LocalDateTime.now());
@@ -526,13 +541,16 @@ public class UserService {
         }
         if (email != null) {
             String newEmail = email.trim();
-            if (!newEmail.isEmpty() && !newEmail.equalsIgnoreCase(u.getEmail())) {
-                if (userRepository.existsByEmail(newEmail)) {
-                    throw new BusinessException("Já existe uma conta com este email");
-                }
-                u.setEmail(newEmail);
-            } else if (newEmail.isEmpty()) {
+            if (newEmail.isEmpty()) {
                 u.setEmail(null);
+            } else {
+                String normalized = ContactValidator.requireValidEmail(newEmail, false);
+                if (normalized != null && !normalized.equalsIgnoreCase(u.getEmail())) {
+                    if (userRepository.existsByEmail(normalized)) {
+                        throw new BusinessException("Já existe uma conta com este email");
+                    }
+                    u.setEmail(normalized);
+                }
             }
         }
         userRepository.save(u);
@@ -601,15 +619,20 @@ public class UserService {
 
     @Transactional
     public SchoolAdminProfileEntity createSchoolAdmin(SchoolAdminRegisterDTO request) {
-        if (userRepository.existsByUsername(request.getNTelefone()))
+        String saPhone = ContactValidator.requireValidPhone(request.getNTelefone());
+        request.setNTelefone(saPhone);
+        String saEmail = ContactValidator.requireValidEmail(request.getEmail(), true);
+        request.setEmail(saEmail);
+
+        if (userRepository.existsByUsername(saPhone))
             throw new BusinessException("Já existe uma conta com este número de telefone");
-        if (userRepository.existsByEmail(request.getEmail()))
+        if (userRepository.existsByEmail(saEmail))
             throw new BusinessException("Já existe uma conta com este email");
 
         UserEntity user = new UserEntity();
         user.setFullname(request.getFullname());
-        user.setUsername(request.getNTelefone());
-        user.setEmail(request.getEmail());
+        user.setUsername(saPhone);
+        user.setEmail(saEmail);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setEnabled(true);
         user.setCreatedDate(LocalDateTime.now());
