@@ -252,21 +252,19 @@ FROM (VALUES
 
     -- GUEST — biblioteca pública
     ('GUEST','GST-001'),    ('GUEST','GST-LIB-001'),('GUEST','GST-LIB-002'),('GUEST','GST-LIB-003')
+ALTER TABLE ac_SUBJECT ADD COLUMN CLASS_LEVEL_ID BIGINT NULL;
+ALTER TABLE ac_SUBJECT ADD COLUMN SCHOOL_ID BIGINT NULL;
+
+-- BLOCO 15 — ESG: Escola Secundária
+-- ============================================================
+INSERT INTO ac_school (id, status, created_by, created_date, last_modified_by, last_modified_date, name, city) VALUES
+(4, 1, 0, NOW(), 0, NOW(), 'Escola Secundária SAE', 'Maputo')
+ON CONFLICT (id) DO NOTHING;
 
 ) AS v(role, tx_code)
 JOIN app_transaction a ON a.code = v.tx_code
 
 ON CONFLICT (role, app_transaction_id) DO NOTHING;
-
--- ============================================================
--- BLOCO 15 — ESG: Escola Secundária
--- ============================================================
-ALTER TABLE IF EXISTS ac_SUBJECT ADD COLUMN IF NOT EXISTS CLASS_LEVEL_ID BIGINT NULL;
-ALTER TABLE IF EXISTS ac_SUBJECT ADD COLUMN IF NOT EXISTS SCHOOL_ID BIGINT NULL;
-
-INSERT INTO ac_school (id, status, created_by, created_date, last_modified_by, last_modified_date, name, city) VALUES
-(4, 1, 0, NOW(), 0, NOW(), 'Escola Secundária SAE', 'Maputo')
-ON CONFLICT (id) DO NOTHING;
 
 -- =============================================================================
 -- VERIFICAÇÃO FINAL
@@ -275,6 +273,17 @@ SELECT 'app_transaction' AS tabela, COUNT(*) AS total FROM app_transaction
 UNION ALL
 SELECT 'role_transaction', COUNT(*) FROM role_transaction;
 
+-- =============================================================================
+-- NOTA: TODO o restante conteúdo é criado exclusivamente via frontend:
+--   • Utilizadores         → /admin/users  ou  /signup
+--   • Escolas              → /admin/academic/schools
+--   • Níveis de Ensino     → /admin/academic/class-levels
+--   • Turmas               → /admin/academic/classrooms
+--   • Disciplinas          → /admin/academic/subjects  ← sync em tempo real no fórum
+--   • Atribuições          → /admin/academic/professor-assignments
+--   • Quizzes              → /professor/quiz/create
+--   • Conteúdos biblioteca → /admin/library/upload  ou  /professor/library
+-- =============================================================================
 -- ============================================================
 -- BLOCO 17 — ESG: Turmas com turma_group
 -- A coluna turma_group é adicionada pelo Hibernate (ddl-auto: update)
@@ -401,18 +410,15 @@ ON CONFLICT (id) DO UPDATE SET
     role               = EXCLUDED.role,
     app_transaction_id = EXCLUDED.app_transaction_id;
 
--- =============================================================================
--- NOTA: TODO o restante conteúdo é criado exclusivamente via frontend:
---   • Utilizadores         → /admin/users  ou  /signup
---   • Escolas              → /admin/academic/schools
---   • Níveis de Ensino     → /admin/academic/class-levels
---   • Turmas               → /admin/academic/classrooms
---   • Disciplinas          → /admin/academic/subjects  ← sync em tempo real no fórum
---   • Atribuições          → /admin/academic/professor-assignments
---   • Quizzes              → /professor/quiz/create
---   • Conteúdos biblioteca → /admin/library/upload  ou  /professor/library
--- =============================================================================
-
 -- ============================================================
 -- FIM DO SEED PostgreSQL
+--
+-- ⚠️  MongoDB também precisa de seed (categorias da biblioteca).
+--    Ver ficheiro: mongo-seed.js
+--    Correr com:
+--      Get-Content "caminho\ficheiro.js" | docker exec -i sae-mongodb mongosh sae_content
+--
+-- ⚠️  CONTEÚDOS (PDFs) requerem ficheiros reais no MinIO. Não são
+--    seedados via SQL/JSON — fazer upload via:
+--      POST /api/professor/contents  ou  POST /api/admin/contents
 -- ============================================================
