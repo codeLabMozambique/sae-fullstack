@@ -19,9 +19,24 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import QuizIcon from '@mui/icons-material/Quiz';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import VideocamOutlinedIcon from '@mui/icons-material/VideocamOutlined';
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import BiotechIcon from '@mui/icons-material/Biotech';
+import ScienceIcon from '@mui/icons-material/Science';
+import FlashOnIcon from '@mui/icons-material/FlashOn';
+import FunctionsIcon from '@mui/icons-material/Functions';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import PublicIcon from '@mui/icons-material/Public';
+import TranslateIcon from '@mui/icons-material/Translate';
+import PsychologyIcon from '@mui/icons-material/Psychology';
+import ComputerIcon from '@mui/icons-material/Computer';
 import { useAuth } from '../../context/AuthContext';
 import { forumService } from '../../services/forumService';
 import api from '../../services/api';
+import { quizService } from '../../services/quizService';
+import type { QuizSummary } from '../../types/quiz';
 import type { ForumQuestion, DisciplinaEnum, ExpertAnswer, CollaborativeAnswer, ProfessorInfo, ForumMember, SubjectInfo } from '../../types/forum';
 import { DISCIPLINA_LABELS, DISCIPLINA_COLOR, DISCIPLINA_EMOJI } from '../../types/forum';
 
@@ -56,15 +71,60 @@ function hasUnread(q: ForumQuestion): boolean {
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1) return 'agora';
-  if (m < 60) return `${m}m`;
+  if (m < 1) return 'Agora mesmo';
+  if (m < 60) return `${m}m atrás`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  return `${Math.floor(h / 24)}d`;
+  if (h < 24) return `${h}h atrás`;
+  const d = Math.floor(h / 24);
+  if (d === 1) return 'Ontem';
+  return `${d} dias atrás`;
+}
+
+const AVATAR_PALETTE = [
+  { bg: '#DBEAFE', text: '#1D4ED8' },
+  { bg: '#FCE7F3', text: '#BE185D' },
+  { bg: '#D1FAE5', text: '#047857' },
+  { bg: '#FEF3C7', text: '#B45309' },
+  { bg: '#EDE9FE', text: '#7C3AED' },
+  { bg: '#FEE2E2', text: '#B91C1C' },
+  { bg: '#CFFAFE', text: '#0E7490' },
+];
+
+function avatarColor(seed: string) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = seed.charCodeAt(i) + ((h << 5) - h);
+  return AVATAR_PALETTE[Math.abs(h) % AVATAR_PALETTE.length];
+}
+
+function countUnread(q: ForumQuestion): number {
+  const allAnswers = [...(q.expertAnswers ?? []), ...(q.collaborativeAnswers ?? [])];
+  const lastSeen = getSeenMap()[q.id];
+  if (!lastSeen) return allAnswers.length;
+  return allAnswers.filter(a => new Date(a.createdAt) > new Date(lastSeen)).length;
+}
+
+function getDisciplinaIcon(disciplina: string) {
+  const props = { fontSize: 22 as const, color: 'white' as const };
+  switch (disciplina) {
+    case 'BIOLOGIA':    return <BiotechIcon sx={props} />;
+    case 'QUIMICA':     return <ScienceIcon sx={props} />;
+    case 'FISICA':      return <FlashOnIcon sx={props} />;
+    case 'MATEMATICA':  return <FunctionsIcon sx={props} />;
+    case 'PORTUGUES':   return <MenuBookIcon sx={props} />;
+    case 'GEOGRAFIA':   return <PublicIcon sx={props} />;
+    case 'INGLES':      return <TranslateIcon sx={props} />;
+    case 'FILOSOFIA':   return <PsychologyIcon sx={props} />;
+    case 'INFORMATICA': return <ComputerIcon sx={props} />;
+    default:            return <SchoolIcon sx={props} />;
+  }
 }
 
 function initials(name: string) {
   return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+}
+
+function firstNameOf(name: string): string {
+  return name?.split(' ')[0] ?? name;
 }
 
 interface AttachmentInfo { id: string; originalName: string; contentType: string; size: number }
@@ -119,92 +179,74 @@ function SidebarItem({ q, active, onClick, subjectsMap }: {
   const lastMsg = allAnswers.slice(-1)[0]?.conteudo ?? q.descricao;
   const preview = lastMsg === '_' ? 'A aguardar início...' : lastMsg;
   const unread = hasUnread(q);
+  const nUnread = countUnread(q);
   const subjectName = getSubjectLabel(q, subjectsMap);
+  const displayTitle = isExpert ? `Prof. ${subjectName}` : `Fórum · ${subjectName}`;
 
   return (
     <Box
       onClick={onClick}
       sx={{
-        px: 2, py: 1.4,
-        cursor: 'pointer', position: 'relative',
-        bgcolor: active ? 'rgba(0,166,81,0.07)' : 'transparent',
-        borderLeft: `3px solid ${active ? '#00A651' : 'transparent'}`,
+        p: 2,
+        cursor: 'pointer',
+        bgcolor: active ? 'rgba(0,109,51,0.05)' : 'transparent',
+        borderLeft: `4px solid ${active ? '#006d33' : 'transparent'}`,
         borderBottom: '1px solid rgba(0,0,0,0.05)',
         transition: 'background 0.15s',
-        '&:hover': { bgcolor: active ? 'rgba(0,166,81,0.09)' : 'rgba(0,166,81,0.04)' },
+        '&:hover': { bgcolor: active ? 'rgba(0,109,51,0.06)' : 'rgba(0,0,0,0.02)' },
       }}
     >
-
-      <Stack direction="row" spacing={1.5} alignItems="center">
-        <Box sx={{ position: 'relative', flexShrink: 0 }}>
-          <Avatar sx={{
-            width: 42, height: 42,
-            bgcolor: isExpert ? 'rgba(0,166,81,0.10)' : 'rgba(76,175,80,0.10)',
-            color: '#00A651',
-          }}>
-            {isExpert ? <SchoolIcon sx={{ fontSize: 22 }} /> : <GroupsIcon sx={{ fontSize: 22 }} />}
-          </Avatar>
-          {q.status === 'ABERTA' && (
-            <Box sx={{
-              position: 'absolute', bottom: 1, right: 1,
-              width: 11, height: 11, borderRadius: '50%',
-              bgcolor: '#00A651', border: '2px solid white',
-              boxShadow: '0 0 6px rgba(0,166,81,0.4)',
-            }} />
-          )}
-        </Box>
+      <Stack direction="row" spacing={1.5} alignItems="flex-start">
+        {/* Circular avatar */}
+        <Avatar sx={{
+          width: 48, height: 48, flexShrink: 0,
+          bgcolor: active ? '#0f253e' : '#E0E3E5',
+          mt: 0.2,
+        }}>
+          {isExpert
+            ? getDisciplinaIcon(q.disciplina ?? '')
+            : <GroupsIcon sx={{ fontSize: 22, color: active ? 'white' : '#44474D' }} />}
+        </Avatar>
 
         <Box flex={1} minWidth={0}>
+          {/* Row 1: Name + Subject label */}
           <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={0.3}>
-            <Typography variant="body2" fontWeight={700} noWrap
-              sx={{ color: active ? '#0d2318' : '#1E293B', fontSize: 13.5, flex: 1, mr: 1 }}>
-              {getQuestionTitle(q, subjectsMap)}
+            <Typography fontWeight={700} noWrap
+              sx={{ color: '#191C1E', fontSize: 14, flex: 1, mr: 1 }}>
+              {displayTitle}
             </Typography>
-            <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: 10.5, fontWeight: 500, flexShrink: 0 }}>
-              {timeAgo(q.createdAt)}
+            <Typography sx={{
+              color: active ? '#007236' : '#74777E',
+              fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
+              textTransform: 'uppercase', flexShrink: 0,
+            }}>
+              {subjectName}
             </Typography>
           </Stack>
 
-          <Typography variant="caption" sx={{
-            color: '#64748B', fontSize: 11.5,
-            display: '-webkit-box', WebkitLineClamp: 1,
-            WebkitBoxOrient: 'vertical', overflow: 'hidden',
-            fontWeight: active ? 600 : 400, mb: 0.5,
+          {/* Row 2: Preview */}
+          <Typography noWrap sx={{
+            color: '#44474D', fontSize: 13.5,
+            fontWeight: unread ? 600 : 400,
           }}>
             {preview}
           </Typography>
 
-          <Stack direction="row" spacing={0.5} alignItems="center">
-            <Chip
-              label={`${getSubjectEmoji(q)} ${subjectName}`}
-              size="small"
-              sx={{
-                height: 16, fontSize: 9.5,
-                bgcolor: active ? 'rgba(0,166,81,0.12)' : 'rgba(0,166,81,0.06)',
-                color: active ? '#005a2f' : '#00A651',
-                fontWeight: 700, borderRadius: 1, border: 'none',
-                '& .MuiChip-label': { px: 0.8 },
-              }}
-            />
-            <Box sx={{ flex: 1 }} />
-            {unread && (
+          {/* Row 3: Timestamp + unread badge */}
+          <Stack direction="row" justifyContent="space-between" alignItems="center" mt={0.5}>
+            <Typography sx={{ color: '#74777E', fontSize: 11, fontWeight: 600 }}>
+              {timeAgo(q.createdAt)}
+            </Typography>
+            {unread && nUnread > 0 && (
               <Box sx={{
-                width: 8, height: 8, borderRadius: '50%',
-                bgcolor: '#EF4444', border: '1.5px solid white', flexShrink: 0,
-              }} />
-            )}
-            {!unread && allAnswers.length > 0 && (
-              <Box sx={{
-                px: 0.7, py: 0.15, borderRadius: 10,
-                bgcolor: 'rgba(0,166,81,0.12)', color: '#008f44',
-                fontSize: 10, fontWeight: 900, minWidth: 16, textAlign: 'center',
+                minWidth: 18, height: 18, borderRadius: 9,
+                bgcolor: '#006d33', color: 'white',
+                fontSize: 11, fontWeight: 800,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                px: 0.5,
               }}>
-                {allAnswers.length}
+                {nUnread}
               </Box>
-            )}
-            {isExpert && (
-              <Chip label="Prof" size="small"
-                sx={{ height: 14, fontSize: 8.5, bgcolor: 'rgba(0,166,81,0.1)', color: '#008f44', fontWeight: 700, '& .MuiChip-label': { px: 0.6 } }} />
             )}
           </Stack>
         </Box>
@@ -216,16 +258,18 @@ function SidebarItem({ q, active, onClick, subjectsMap }: {
 // ─── Chat messages ─────────────────────────────────────────────────────────────
 
 function ChatMessages({
-  q, currentUser, isOwner, onAccept, accepting, onRefresh,
+  q, currentUser, isOwner, onAccept, accepting, onRefresh, membersMap,
 }: {
   q: ForumQuestion; currentUser: string; isOwner: boolean;
   onAccept: (id: number) => void; accepting: number | null;
   onRefresh?: () => void;
+  membersMap?: Map<string, string>;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
   const isExpert = q.questionType === 'ESPECIALIZADO';
   const ownBg = isExpert ? '#00A651' : '#00A651';
   const ownColor = 'white';
+  const resolveName = (username: string) => membersMap?.get(username) ?? username;
   const [allProfOffline, setAllProfOffline] = useState(false);
   const [requestingAI, setRequestingAI] = useState(false);
   const [aiError, setAiError] = useState('');
@@ -259,21 +303,24 @@ function ChatMessages({
   };
 
   return (
-    <Box sx={{ 
-      flex: 1, overflowY: 'auto', p: 3, 
-      display: 'flex', flexDirection: 'column', gap: 2, 
-      bgcolor: '#F1F5F9', // WhatsApp light mode bg
-      backgroundImage: 'radial-gradient(#CBD5E1 0.5px, transparent 0.5px)', // Subtle pattern
-      backgroundSize: '20px 20px'
+    <Box sx={{
+      flex: 1, overflowY: 'auto', p: 4,
+      display: 'flex', flexDirection: 'column', gap: 3,
+      bgcolor: '#F2F4F6',
     }}>
-      {/* Date Divider (Simplified for first message) */}
-      <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-        <Chip 
-          label={new Date(q.createdAt).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })} 
-          size="small" 
-          sx={{ bgcolor: 'rgba(255,255,255,0.8)', color: '#64748B', fontWeight: 700, fontSize: 11, backdropFilter: 'blur(4px)' }} 
-        />
-      </Box>
+      {/* Date Divider */}
+      <Stack direction="row" alignItems="center" spacing={2} sx={{ my: 0.5 }}>
+        <Box sx={{ flex: 1, height: '1px', bgcolor: 'rgba(0,0,0,0.1)' }} />
+        <Typography sx={{
+          color: '#74777E', fontSize: 10, fontWeight: 700,
+          textTransform: 'uppercase', letterSpacing: 1.5, whiteSpace: 'nowrap',
+        }}>
+          {new Date(q.createdAt).toDateString() === new Date().toDateString()
+            ? 'Hoje'
+            : new Date(q.createdAt).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long' })}
+        </Typography>
+        <Box sx={{ flex: 1, height: '1px', bgcolor: 'rgba(0,0,0,0.1)' }} />
+      </Stack>
 
       {/* Original question */}
       {q.descricao && q.descricao !== '_' && (
@@ -304,7 +351,7 @@ function ChatMessages({
             {!isOwn && (
               <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mb: 0.5, ml: 1 }}>
                 <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, fontSize: 11 }}>
-                  {a.aiGenerated ? '🤖 Assistente IA' : a.answeredBy}
+                  {a.aiGenerated ? '🤖 Assistente IA' : resolveName(a.answeredBy)}
                 </Typography>
                 {expertA && !a.aiGenerated && <Chip label="Professor" size="small" sx={{ height: 14, fontSize: 8, bgcolor: '#E8F5E9', color: '#00A651', fontWeight: 800 }} />}
                 {a.aiGenerated && <Chip label="IA" size="small" sx={{ height: 14, fontSize: 8, bgcolor: '#E0E7FF', color: '#00A651', fontWeight: 800 }} />}
@@ -602,14 +649,27 @@ function ChatInput({ questionId, questionType, onSent, prefillText, onPrefillCon
   );
 }
 
-// ─── Right panel — Professor question (Tanka style) ───────────────────────────
+// ─── Right panel — Professor question (expert) ────────────────────────────────
 
-function DetailPanelExpert({ q, onSuggestionClick, subjectsMap }: {
+function DetailPanelExpert({ q, onSuggestionClick, subjectsMap, roomProfessor }: {
   q: ForumQuestion; onSuggestionClick: (text: string) => void;
   subjectsMap: Map<number, SubjectInfo>;
+  roomProfessor: ProfessorInfo | null;
 }) {
   const discColor = DISCIPLINA_COLOR[q.disciplina] ?? '#00A651';
+  const [upcomingQuizzes, setUpcomingQuizzes] = useState<QuizSummary[]>([]);
 
+  useEffect(() => {
+    const disc = q.disciplina;
+    if (!disc || disc === 'GERAL') return;
+    quizService.listQuizzes(disc)
+      .then(all => setUpcomingQuizzes(all.filter(qz => qz.active).slice(0, 4)))
+      .catch(() => {});
+  }, [q.disciplina]);
+
+  const allAnswers = [...(q.expertAnswers ?? []), ...(q.collaborativeAnswers ?? [])];
+  const sharedFiles = allAnswers.filter(a => a.attachmentId);
+  const profFullName = roomProfessor?.fullname ?? 'Professor';
   const suggestions = [
     'Pode explicar com exemplos práticos?',
     'Como resolver isso passo a passo?',
@@ -617,177 +677,293 @@ function DetailPanelExpert({ q, onSuggestionClick, subjectsMap }: {
     'Não entendi a explicação, pode reformular?',
   ];
 
-  const formatResponseTime = (min: number) =>
-    min < 60 ? `${min} min` : `${Math.round(min / 60)}h ${min % 60 > 0 ? `${min % 60}min` : ''}`.trim();
-
   return (
     <Box sx={{
       width: DETAIL_W, flexShrink: 0, display: 'flex', flexDirection: 'column',
       borderLeft: '1px solid rgba(0,0,0,0.08)', bgcolor: 'white', overflow: 'hidden',
     }}>
-      <Box sx={{ p: 3, textAlign: 'center', borderBottom: '1px solid #F1F5F9' }}>
+      {/* Header */}
+      <Box sx={{ p: 3, textAlign: 'center', borderBottom: '1px solid #F1F5F9', bgcolor: '#F0FDF4' }}>
         <Avatar sx={{
-          width: 70, height: 70, bgcolor: '#E8F5E9', color: '#00A651', mx: 'auto', mb: 2,
-          boxShadow: '0 4px 12px rgba(0, 166, 81, 0.15)', border: '2px solid white'
+          width: 64, height: 64, bgcolor: '#0f253e', color: 'white',
+          mx: 'auto', mb: 1.5, fontSize: 22, fontWeight: 800,
+          boxShadow: '0 4px 14px rgba(0,0,0,0.18)', border: '3px solid white',
         }}>
-          <SchoolIcon sx={{ fontSize: 35 }} />
+          {roomProfessor ? initials(profFullName) : <SchoolIcon sx={{ fontSize: 30 }} />}
         </Avatar>
-        <Typography variant="subtitle1" fontWeight={800} sx={{ color: '#0F172A' }}>Sessão Especialista</Typography>
-        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>Chat Privado</Typography>
+        <Typography variant="subtitle1" fontWeight={800} sx={{ color: '#0F172A', mb: 0.2 }}>{profFullName}</Typography>
+        <Typography variant="caption" sx={{ color: '#00A651', fontWeight: 700 }}>
+          Professor · {getSubjectLabel(q, subjectsMap)}
+        </Typography>
+        {roomProfessor && (
+          <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="center" mt={0.8}>
+            <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: roomProfessor.online ? '#00A651' : '#94A3B8' }} />
+            <Typography variant="caption" sx={{ color: '#64748B', fontSize: 10.5, fontWeight: 600 }}>
+              {roomProfessor.online ? 'Disponível agora' : 'Offline'}
+            </Typography>
+          </Stack>
+        )}
       </Box>
 
-      <Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
-        <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, mb: 2, display: 'block' }}>
-          Informações da Questão
-        </Typography>
-
-        <Stack spacing={2.5}>
-          <Box>
-            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.5 }}>Disciplina</Typography>
-            <Chip
-              label={`${getSubjectEmoji(q)} ${getSubjectLabel(q, subjectsMap)}`}
-              size="small"
-              sx={{ bgcolor: discColor + '15', color: discColor, fontWeight: 800, borderRadius: 1 }}
-            />
-          </Box>
-
-          <Box>
-            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.5 }}>Criado por</Typography>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Avatar sx={{ width: 24, height: 24, fontSize: 10, bgcolor: '#1E293B' }}>{initials(q.createdBy)}</Avatar>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#1E293B' }}>{q.createdBy}</Typography>
-            </Stack>
-          </Box>
-
-          <Box>
-            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.5 }}>Estado</Typography>
-            <Chip
-              label={q.status === 'ABERTA' ? 'Em aberto' : 'Encerrada'}
-              size="small"
-              sx={{
-                bgcolor: q.status === 'ABERTA' ? '#DCFCE7' : '#F1F5F9',
-                color: q.status === 'ABERTA' ? '#15803D' : '#64748B',
-                fontWeight: 800
-              }}
-            />
-          </Box>
-
-          {q.responseTimeMinutes != null && (
-            <Box>
-              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.5 }}>Tempo de resposta</Typography>
-              <Chip
-                label={`⚡ ${formatResponseTime(q.responseTimeMinutes)}`}
-                size="small"
-                sx={{ bgcolor: '#FFF7ED', color: '#C2410C', fontWeight: 800, borderRadius: 1 }}
-              />
+      <Box sx={{ flex: 1, overflowY: 'auto' }}>
+        {/* Ficheiros Partilhados */}
+        <Box sx={{ px: 2.5, pt: 2.5 }}>
+          <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, mb: 1.2, display: 'block' }}>
+            Ficheiros Partilhados
+          </Typography>
+          {sharedFiles.length === 0 ? (
+            <Box sx={{ p: 1.5, bgcolor: '#F8FAFC', borderRadius: 2, mb: 0.5, textAlign: 'center' }}>
+              <Typography variant="caption" color="text.secondary" fontSize={11}>Nenhum ficheiro partilhado ainda</Typography>
             </Box>
+          ) : (
+            <Stack spacing={0.8}>
+              {sharedFiles.map((a, i) => (
+                <Box key={i} component="a"
+                  href={`/content/api/user/uploads/${a.attachmentId ?? ''}`} target="_blank"
+                  sx={{
+                    display: 'flex', alignItems: 'center', gap: 1,
+                    p: 1.2, borderRadius: 2, bgcolor: '#F8FAFC', border: '1px solid #E2E8F0',
+                    textDecoration: 'none', cursor: 'pointer',
+                    '&:hover': { bgcolor: '#E8F5E9', borderColor: '#00A651' }, transition: 'all 0.15s',
+                  }}>
+                  <InsertDriveFileIcon sx={{ fontSize: 18, color: '#00A651', flexShrink: 0 }} />
+                  <Box flex={1} minWidth={0}>
+                    <Typography variant="caption" fontWeight={700} color="#1E293B" display="block" noWrap fontSize={11}>Ficheiro</Typography>
+                    <Typography variant="caption" color="text.secondary" fontSize={10}>
+                      {timeAgo(a.createdAt)} · {firstNameOf(a.answeredBy)}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))}
+            </Stack>
           )}
-        </Stack>
+        </Box>
 
-        <Divider sx={{ my: 3 }} />
+        <Divider sx={{ mx: 2.5, my: 2 }} />
 
-        <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, mb: 2, display: 'block' }}>
-          Sugestões de Apoio
-        </Typography>
-        <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block', mb: 1.5 }}>
-          Clica para pré-preencher a mensagem
-        </Typography>
-        <Stack spacing={1}>
-          {suggestions.map(s => (
-            <Paper key={s} elevation={0} onClick={() => onSuggestionClick(s)} sx={{
-              p: 1.5, borderRadius: 2, bgcolor: '#F8FAFC', border: '1px solid #E2E8F0',
-              cursor: 'pointer', transition: 'all 0.2s',
-              '&:hover': { bgcolor: '#E8F5E9', borderColor: '#BFDBFE', transform: 'translateX(2px)' }
-            }}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#1E293B' }}>{s}</Typography>
-            </Paper>
-          ))}
-        </Stack>
+        {/* Próximas Avaliações */}
+        <Box sx={{ px: 2.5 }}>
+          <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, mb: 1.2, display: 'block' }}>
+            Próximas Avaliações
+          </Typography>
+          {upcomingQuizzes.length === 0 ? (
+            <Box sx={{ p: 1.5, bgcolor: '#F8FAFC', borderRadius: 2, mb: 0.5, textAlign: 'center' }}>
+              <Typography variant="caption" color="text.secondary" fontSize={11}>Sem avaliações próximas</Typography>
+            </Box>
+          ) : (
+            <Stack spacing={0.8}>
+              {upcomingQuizzes.map(qz => (
+                <Paper key={qz.id} elevation={0} sx={{ p: 1.5, borderRadius: 2, bgcolor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                  <Typography variant="caption" fontWeight={800} color="#1E293B" display="block" noWrap fontSize={11}>{qz.titulo}</Typography>
+                  <Stack direction="row" spacing={0.5} alignItems="center" mt={0.3}>
+                    <Chip label={qz.disciplinaLabel || getSubjectLabel(q, subjectsMap)} size="small"
+                      sx={{ height: 14, fontSize: 9, fontWeight: 800, bgcolor: discColor + '15', color: discColor }} />
+                    <Typography variant="caption" color="text.secondary" fontSize={10}>{qz.questionCount} perguntas</Typography>
+                  </Stack>
+                </Paper>
+              ))}
+            </Stack>
+          )}
+        </Box>
+
+        <Divider sx={{ mx: 2.5, my: 2 }} />
+
+        {/* Informações */}
+        <Box sx={{ px: 2.5 }}>
+          <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, mb: 1.5, display: 'block' }}>
+            Informações
+          </Typography>
+          <Stack spacing={1.5} sx={{ mb: 2 }}>
+            <Box>
+              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.4 }}>Disciplina</Typography>
+              <Chip label={`${getSubjectEmoji(q)} ${getSubjectLabel(q, subjectsMap)}`} size="small"
+                sx={{ bgcolor: discColor + '15', color: discColor, fontWeight: 800, borderRadius: 1 }} />
+            </Box>
+            <Box>
+              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.4 }}>Estado</Typography>
+              <Chip label={q.status === 'ABERTA' ? 'Em aberto' : 'Respondida'} size="small"
+                sx={{ bgcolor: q.status === 'ABERTA' ? '#DCFCE7' : '#F1F5F9', color: q.status === 'ABERTA' ? '#15803D' : '#64748B', fontWeight: 800 }} />
+            </Box>
+            {q.responseTimeMinutes != null && (
+              <Box>
+                <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.4 }}>Tempo de resposta</Typography>
+                <Chip label={`⚡ ${q.responseTimeMinutes < 60 ? `${q.responseTimeMinutes} min` : `${Math.round(q.responseTimeMinutes / 60)}h`}`}
+                  size="small" sx={{ bgcolor: '#FFF7ED', color: '#C2410C', fontWeight: 800, borderRadius: 1 }} />
+              </Box>
+            )}
+          </Stack>
+        </Box>
+
+        <Divider sx={{ mx: 2.5, my: 2 }} />
+
+        {/* Sugestões */}
+        <Box sx={{ px: 2.5, pb: 2.5 }}>
+          <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, mb: 1, display: 'block' }}>
+            Sugestões de Apoio
+          </Typography>
+          <Stack spacing={0.8}>
+            {suggestions.map(s => (
+              <Paper key={s} elevation={0} onClick={() => onSuggestionClick(s)} sx={{
+                p: 1.2, borderRadius: 2, bgcolor: '#F8FAFC', border: '1px solid #E2E8F0',
+                cursor: 'pointer', transition: 'all 0.2s',
+                '&:hover': { bgcolor: '#E8F5E9', borderColor: '#86EFAC' }
+              }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: '#1E293B', fontSize: 11 }}>{s}</Typography>
+              </Paper>
+            ))}
+          </Stack>
+        </Box>
       </Box>
     </Box>
   );
 }
 
-// ─── Right panel — Collaborative question (Crisp style) ───────────────────────
+// ─── Right panel — Collaborative question ─────────────────────────────────────
 
 function DetailPanelCollab({ q, subjectsMap }: { q: ForumQuestion; subjectsMap: Map<number, SubjectInfo> }) {
   const discColor = DISCIPLINA_COLOR[q.disciplina] ?? '#00A651';
-  const participants = [
-    q.createdBy,
-    ...(q.collaborativeAnswers ?? []).map(a => a.answeredBy),
-  ].filter((v, i, arr) => arr.indexOf(v) === i);
+  const [upcomingQuizzes, setUpcomingQuizzes] = useState<QuizSummary[]>([]);
+
+  useEffect(() => {
+    const disc = q.disciplina;
+    if (!disc || disc === 'GERAL') return;
+    quizService.listQuizzes(disc)
+      .then(all => setUpcomingQuizzes(all.filter(qz => qz.active).slice(0, 4)))
+      .catch(() => {});
+  }, [q.disciplina]);
+
+  const allAnswers = [...(q.expertAnswers ?? []), ...(q.collaborativeAnswers ?? [])];
+  const sharedFiles = allAnswers.filter(a => a.attachmentId);
+  const participants = [q.createdBy, ...allAnswers.map(a => a.answeredBy)]
+    .filter((v, i, arr) => arr.indexOf(v) === i);
 
   return (
     <Box sx={{
       width: DETAIL_W, flexShrink: 0, display: 'flex', flexDirection: 'column',
       borderLeft: '1px solid rgba(0,0,0,0.08)', bgcolor: 'white', overflow: 'hidden',
     }}>
-      <Box sx={{ p: 4, textAlign: 'center', borderBottom: '1px solid #F1F5F9', background: '#F0FDF4' }}>
-        <Avatar sx={{ 
-          width: 80, height: 80, bgcolor: 'white', color: '#00A651', mx: 'auto', mb: 2,
-          boxShadow: '0 8px 24px rgba(0, 166, 81, 0.12)', border: '3px solid white'
+      {/* Header */}
+      <Box sx={{ p: 3, textAlign: 'center', borderBottom: '1px solid #F1F5F9', bgcolor: '#F0FDF4' }}>
+        <Avatar sx={{
+          width: 64, height: 64, bgcolor: '#0f253e', color: 'white',
+          mx: 'auto', mb: 1.5, fontSize: 22, fontWeight: 800,
+          boxShadow: '0 4px 14px rgba(0,0,0,0.18)', border: '3px solid white',
         }}>
-          {initials(q.createdBy)}
+          <GroupsIcon sx={{ fontSize: 30 }} />
         </Avatar>
-        <Typography variant="subtitle1" fontWeight={800} sx={{ color: '#065F46' }}>{q.createdBy}</Typography>
-        <Typography variant="caption" sx={{ color: '#008f44', fontWeight: 700 }}>Autor da Questão</Typography>
+        <Typography variant="subtitle1" fontWeight={800} sx={{ color: '#0F172A', mb: 0.2 }}>
+          Fórum da Turma
+        </Typography>
+        <Typography variant="caption" sx={{ color: '#00A651', fontWeight: 700 }}>
+          {getSubjectLabel(q, subjectsMap)} · {participants.length} participantes
+        </Typography>
       </Box>
 
-      <Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
-        <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, mb: 2, display: 'block' }}>
-          Informações do Fórum
-        </Typography>
+      <Box sx={{ flex: 1, overflowY: 'auto' }}>
+        {/* Ficheiros Partilhados */}
+        <Box sx={{ px: 2.5, pt: 2.5 }}>
+          <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, mb: 1.2, display: 'block' }}>
+            Ficheiros Partilhados
+          </Typography>
+          {sharedFiles.length === 0 ? (
+            <Box sx={{ p: 1.5, bgcolor: '#F8FAFC', borderRadius: 2, textAlign: 'center' }}>
+              <Typography variant="caption" color="text.secondary" fontSize={11}>Nenhum ficheiro partilhado ainda</Typography>
+            </Box>
+          ) : (
+            <Stack spacing={0.8}>
+              {sharedFiles.map((a, i) => (
+                <Box key={i} component="a"
+                  href={`/content/api/user/uploads/${a.attachmentId ?? ''}`} target="_blank"
+                  sx={{
+                    display: 'flex', alignItems: 'center', gap: 1,
+                    p: 1.2, borderRadius: 2, bgcolor: '#F8FAFC', border: '1px solid #E2E8F0',
+                    textDecoration: 'none', cursor: 'pointer',
+                    '&:hover': { bgcolor: '#E8F5E9', borderColor: '#00A651' }, transition: 'all 0.15s',
+                  }}>
+                  <InsertDriveFileIcon sx={{ fontSize: 18, color: '#00A651', flexShrink: 0 }} />
+                  <Box flex={1} minWidth={0}>
+                    <Typography variant="caption" fontWeight={700} color="#1E293B" display="block" noWrap fontSize={11}>Ficheiro</Typography>
+                    <Typography variant="caption" color="text.secondary" fontSize={10}>
+                      {timeAgo(a.createdAt)} · {firstNameOf(a.answeredBy)}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))}
+            </Stack>
+          )}
+        </Box>
 
-        <Stack spacing={2.5}>
-          <Box>
-            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.5 }}>Disciplina</Typography>
-            <Chip
-              label={`${getSubjectEmoji(q)} ${getSubjectLabel(q, subjectsMap)}`}
-              size="small"
-              sx={{ bgcolor: discColor + '15', color: discColor, fontWeight: 800, borderRadius: 1 }}
-            />
-          </Box>
+        <Divider sx={{ mx: 2.5, my: 2 }} />
 
-          <Box>
-            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.5 }}>Participantes</Typography>
-            <Stack direction="row" spacing={-1} sx={{ mb: 1 }}>
-              {participants.slice(0, 5).map((p, i) => (
-                <Avatar key={p} sx={{ 
-                  width: 28, height: 28, fontSize: 10, bgcolor: i % 2 === 0 ? '#00A651' : '#4caf50',
-                  border: '2px solid white', boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                }}>
+        {/* Próximas Avaliações */}
+        <Box sx={{ px: 2.5 }}>
+          <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, mb: 1.2, display: 'block' }}>
+            Próximas Avaliações
+          </Typography>
+          {upcomingQuizzes.length === 0 ? (
+            <Box sx={{ p: 1.5, bgcolor: '#F8FAFC', borderRadius: 2, textAlign: 'center' }}>
+              <Typography variant="caption" color="text.secondary" fontSize={11}>Sem avaliações próximas</Typography>
+            </Box>
+          ) : (
+            <Stack spacing={0.8}>
+              {upcomingQuizzes.map(qz => (
+                <Paper key={qz.id} elevation={0} sx={{ p: 1.5, borderRadius: 2, bgcolor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                  <Typography variant="caption" fontWeight={800} color="#1E293B" display="block" noWrap fontSize={11}>{qz.titulo}</Typography>
+                  <Stack direction="row" spacing={0.5} alignItems="center" mt={0.3}>
+                    <Chip label={qz.disciplinaLabel || getSubjectLabel(q, subjectsMap)} size="small"
+                      sx={{ height: 14, fontSize: 9, fontWeight: 800, bgcolor: discColor + '15', color: discColor }} />
+                    <Typography variant="caption" color="text.secondary" fontSize={10}>{qz.questionCount} perguntas</Typography>
+                  </Stack>
+                </Paper>
+              ))}
+            </Stack>
+          )}
+        </Box>
+
+        <Divider sx={{ mx: 2.5, my: 2 }} />
+
+        {/* Informações + Participantes */}
+        <Box sx={{ px: 2.5, pb: 2.5 }}>
+          <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, mb: 1.5, display: 'block' }}>
+            Informações
+          </Typography>
+          <Stack spacing={1.5} sx={{ mb: 2 }}>
+            <Box>
+              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.4 }}>Disciplina</Typography>
+              <Chip label={`${getSubjectEmoji(q)} ${getSubjectLabel(q, subjectsMap)}`} size="small"
+                sx={{ bgcolor: discColor + '15', color: discColor, fontWeight: 800, borderRadius: 1 }} />
+            </Box>
+            <Box>
+              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.4 }}>Estado</Typography>
+              <Chip label={q.status === 'ABERTA' ? 'Ativo' : 'Encerrado'} size="small"
+                sx={{ bgcolor: q.status === 'ABERTA' ? '#DCFCE7' : '#F1F5F9', color: q.status === 'ABERTA' ? '#15803D' : '#64748B', fontWeight: 800 }} />
+            </Box>
+            <Box>
+              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.4 }}>Mensagens</Typography>
+              <Typography variant="body2" fontWeight={700} color="#1E293B" fontSize={13}>
+                {allAnswers.length} {allAnswers.length === 1 ? 'mensagem' : 'mensagens'}
+              </Typography>
+            </Box>
+          </Stack>
+
+          <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, mb: 1.2, display: 'block' }}>
+            Participantes ({participants.length})
+          </Typography>
+          <Stack spacing={1}>
+            {participants.map((p, i) => (
+              <Stack key={p} direction="row" spacing={1.2} alignItems="center">
+                <Avatar sx={{ width: 30, height: 30, fontSize: 11, fontWeight: 700, bgcolor: i === 0 ? '#0f253e' : '#E0E3E5', color: i === 0 ? 'white' : '#44474D' }}>
                   {initials(p)}
                 </Avatar>
-              ))}
-              {participants.length > 5 && (
-                <Avatar sx={{ width: 28, height: 28, fontSize: 10, bgcolor: '#94A3B8', border: '2px solid white' }}>
-                  +{participants.length - 5}
-                </Avatar>
-              )}
-            </Stack>
-            <Typography variant="caption" color="text.secondary">{participants.length} pessoas interagindo</Typography>
-          </Box>
-        </Stack>
-
-        <Divider sx={{ my: 4 }} />
-
-        <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, mb: 2, display: 'block' }}>
-          Lista de Participantes
-        </Typography>
-        <Stack spacing={1.5}>
-          {participants.map((p, i) => (
-            <Stack key={p} direction="row" spacing={1.5} alignItems="center">
-              <Avatar sx={{ width: 32, height: 32, fontSize: 11, bgcolor: i === 0 ? '#00A651' : '#F1F5F9', color: i === 0 ? 'white' : '#64748B' }}>
-                {initials(p)}
-              </Avatar>
-              <Box flex={1} minWidth={0}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#1E293B' }} noWrap>{p}</Typography>
-                {i === 0 && <Typography variant="caption" color="#00A651" fontWeight={700}>Autor</Typography>}
-              </Box>
-              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#00A651' }} />
-            </Stack>
-          ))}
-        </Stack>
+                <Box flex={1} minWidth={0}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#1E293B', fontSize: 12 }} noWrap>{p}</Typography>
+                  {i === 0 && <Typography variant="caption" sx={{ color: '#00A651', fontWeight: 700, fontSize: 10 }}>Autor</Typography>}
+                </Box>
+                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: '#00A651', flexShrink: 0 }} />
+              </Stack>
+            ))}
+          </Stack>
+        </Box>
       </Box>
     </Box>
   );
@@ -1059,6 +1235,7 @@ export default function StudentForumPage() {
   const [accepting, setAccepting] = useState<number | null>(null);
   const [prefillText, setPrefillText] = useState('');
   const [roomProfessor, setRoomProfessor] = useState<ProfessorInfo | null>(null);
+  const [infoOpen, setInfoOpen] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
   const [forumMembers, setForumMembers] = useState<ForumMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
@@ -1068,10 +1245,11 @@ export default function StudentForumPage() {
     forumService.getMyQuestions().then(setMyQuestions).finally(() => setLoadingMy(false));
   };
 
-  const loadForumMembers = () => {
-    if (!activeQ?.subjectId) return;
+  const loadForumMembers = (q?: ForumQuestion | null) => {
+    const target = q ?? activeQ;
+    if (!target?.subjectId) return;
     setLoadingMembers(true);
-    forumService.getForumMembers(activeQ.subjectId, activeQ.classroomId ?? undefined)
+    forumService.getForumMembers(target.subjectId, target.classroomId ?? undefined)
       .then(setForumMembers)
       .catch(() => {})
       .finally(() => setLoadingMembers(false));
@@ -1153,10 +1331,12 @@ export default function StudentForumPage() {
 
   const handleSelectQuestion = (q: ForumQuestion, fromTab?: string) => {
     setActiveQ(q);
+    setForumMembers([]);
+    loadForumMembers(q);
     setLoadingDetail(true);
     forumService.getQuestion(q.id).then(detail => {
       setActiveQ(detail);
-      // Mark as read and move to the appropriate tab
+      loadForumMembers(detail);
       if (fromTab === 'mine_answered') {
         markSeen(q.id);
         setSidebarTab(q.questionType === 'ESPECIALIZADO' ? 'mine_all' : 'forum');
@@ -1183,16 +1363,40 @@ export default function StudentForumPage() {
     });
   };
 
-  // Fetch professor info for expert rooms
-  useEffect(() => {
-    if (!activeQ || activeQ.questionType !== 'ESPECIALIZADO') {
-      setRoomProfessor(null);
-      return;
+  // Fetch professor info for expert rooms — prefer forum members (has fullname + online)
+  const refreshProfessor = (q: ForumQuestion) => {
+    if (q.questionType !== 'ESPECIALIZADO') { setRoomProfessor(null); return; }
+    if (q.subjectId) {
+      forumService.getForumMembers(q.subjectId, q.classroomId ?? undefined)
+        .then(members => {
+          const prof = members.find(m =>
+            m.role === 'PROFESSOR' ||
+            (q.mentionedProfessorUsername && m.username === q.mentionedProfessorUsername)
+          );
+          if (prof) {
+            setRoomProfessor({ username: prof.username, fullname: prof.fullname, online: prof.online, specialization: '' });
+          } else {
+            forumService.getProfessorsByDisciplina(q.disciplina)
+              .then(profs => setRoomProfessor(profs[0] ?? null))
+              .catch(() => setRoomProfessor(null));
+          }
+        })
+        .catch(() => {
+          forumService.getProfessorsByDisciplina(q.disciplina)
+            .then(profs => setRoomProfessor(profs[0] ?? null))
+            .catch(() => setRoomProfessor(null));
+        });
+    } else {
+      forumService.getProfessorsByDisciplina(q.disciplina)
+        .then(profs => setRoomProfessor(profs[0] ?? null))
+        .catch(() => setRoomProfessor(null));
     }
-    forumService.getProfessorsByDisciplina(activeQ.disciplina)
-      .then(profs => setRoomProfessor(profs[0] ?? null))
-      .catch(() => setRoomProfessor(null));
-  }, [activeQ?.id, activeQ?.disciplina]);
+  };
+
+  useEffect(() => {
+    if (!activeQ) { setRoomProfessor(null); return; }
+    refreshProfessor(activeQ);
+  }, [activeQ?.id, activeQ?.subjectId, activeQ?.disciplina]);
 
   // Poll for new messages every 5 s while a chat is open
   useEffect(() => {
@@ -1203,12 +1407,7 @@ export default function StudentForumPage() {
         setMyQuestions(prev => upsertQuestion(prev, detail));
         setGeneralQuestions(prev => upsertQuestion(prev, detail));
       }).catch(() => {});
-      // Refresh professor online status
-      if (activeQ.questionType === 'ESPECIALIZADO') {
-        forumService.getProfessorsByDisciplina(activeQ.disciplina)
-          .then(profs => setRoomProfessor(profs[0] ?? null))
-          .catch(() => {});
-      }
+      if (activeQ.questionType === 'ESPECIALIZADO') refreshProfessor(activeQ);
     }, 5000);
     return () => clearInterval(id);
   }, [activeQ?.id]);
@@ -1220,6 +1419,7 @@ export default function StudentForumPage() {
   };
 
   const isOwner = activeQ?.createdBy === user?.username;
+  const membersMap = new Map(forumMembers.map(m => [m.username, m.fullname]));
 
   const getFilteredList = () => {
     let list: ForumQuestion[] = [];
@@ -1250,81 +1450,101 @@ export default function StudentForumPage() {
   const countForum = generalQuestions.filter(q => q.questionType === 'COLABORATIVO').length;
 
   return (
-    <Box sx={{
-      display: 'flex', height: '100%', overflow: 'hidden', position: 'relative',
-      background: 'linear-gradient(135deg, rgba(232,245,233,0.35) 0%, rgba(255,255,255,0.85) 50%, rgba(241,248,233,0.25) 100%)',
-    }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', bgcolor: '#F7F9FB' }}>
+
+      {/* ── TOP APP BAR ─────────────────────────────────────────────────────── */}
+      <Box sx={{
+        height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        px: 3, bgcolor: 'white', borderBottom: '1px solid rgba(0,0,0,0.08)',
+        flexShrink: 0, zIndex: 30,
+      }}>
+        {/* Search */}
+        <Box sx={{ width: 280 }}>
+          <TextField
+            size="small" fullWidth placeholder="Buscar conversas..."
+            value={search} onChange={e => setSearch(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ fontSize: 18, color: '#94A3B8' }} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                bgcolor: '#F2F4F6', borderRadius: 6, color: '#1E293B',
+                '& fieldset': { border: 'none' },
+                '& input': { py: 1, fontSize: 13.5, '&::placeholder': { color: '#94A3B8', opacity: 1 } },
+              },
+            }}
+          />
+        </Box>
+
+        {/* Actions */}
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          {!isProfessor && (
+            <Button
+              variant="contained"
+              startIcon={<AddCircleIcon sx={{ fontSize: 18 }} />}
+              onClick={() => setNewOpen(true)}
+              sx={{
+                bgcolor: '#006d33', color: 'white', borderRadius: 6,
+                textTransform: 'none', fontWeight: 700, fontSize: 13.5,
+                px: 2.5, py: 1, boxShadow: '0 4px 12px rgba(0,109,51,0.3)',
+                '&:hover': { bgcolor: '#008f44' },
+              }}
+            >
+              Nova Pergunta
+            </Button>
+          )}
+          <IconButton sx={{ color: '#64748B', position: 'relative' }}>
+            <NotificationsNoneIcon />
+            <Box sx={{
+              position: 'absolute', top: 8, right: 8,
+              width: 8, height: 8, borderRadius: '50%',
+              bgcolor: '#00A651', border: '2px solid white',
+            }} />
+          </IconButton>
+          <IconButton sx={{ color: '#64748B' }}>
+            <HelpOutlineIcon />
+          </IconButton>
+          <Divider orientation="vertical" flexItem sx={{ height: 32, mx: 0.5 }} />
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Avatar sx={{ width: 36, height: 36, bgcolor: '#1E293B', fontSize: 13, fontWeight: 700 }}>
+              {user?.username ? initials(user.fullname ?? user.username) : 'U'}
+            </Avatar>
+            <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
+              <Typography sx={{ fontWeight: 700, fontSize: 14, color: '#0F172A', lineHeight: 1.2 }}>
+                {user?.fullName ?? user?.username}
+              </Typography>
+              <Typography sx={{ fontSize: 10, color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                {isProfessor ? 'Professor' : 'Estudante'}
+              </Typography>
+            </Box>
+          </Stack>
+        </Stack>
+      </Box>
+
+      {/* ── CONTENT ROW ─────────────────────────────────────────────────────── */}
+      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
       {/* ── SIDEBAR ─────────────────────────────────────────────────────────── */}
       <Box sx={{
         width: isMobile ? '100%' : SIDEBAR_W,
         display: isMobile && activeQ ? 'none' : 'flex',
         flexDirection: 'column',
-        background: 'rgba(255,255,255,0.88)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderRight: '1px solid rgba(0,166,81,0.08)',
-        boxShadow: '4px 0 32px rgba(0,0,0,0.04)',
+        bgcolor: 'white',
+        borderRight: '1px solid rgba(0,0,0,0.08)',
         zIndex: 20, flexShrink: 0,
       }}>
-        {/* Dark gradient header */}
-        <Box sx={{
-          px: 3, pt: 2.5, pb: 2.5,
-          background: 'linear-gradient(135deg, #0d2318 0%, #1a4028 60%, #0d2318 100%)',
-          borderBottom: '1px solid rgba(0,166,81,0.18)',
-        }}>
-          <Stack spacing={2}>
-            <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="space-between">
-              <Stack direction="row" spacing={1.5} alignItems="center">
-                <QuizIcon sx={{ color: '#4caf50', fontSize: 22 }} />
-                <Box>
-                  <Typography fontWeight={800} color="white" variant="subtitle1"
-                    sx={{ lineHeight: 1.1, fontSize: 15, letterSpacing: 0.3 }}>
-                    PORTAL DE SUPORTE
-                  </Typography>
-                  <Typography variant="caption"
-                    sx={{ color: 'rgba(255,255,255,0.5)', fontWeight: 600, letterSpacing: 0.4 }}>
-                    {isProfessor ? 'Vista do Professor' : 'As minhas conversas'}
-                  </Typography>
-                </Box>
-              </Stack>
-
-              {!isProfessor && (
-                <Tooltip title="Nova Pergunta">
-                  <IconButton onClick={() => setNewOpen(true)} sx={{
-                    bgcolor: '#00A651', color: 'white',
-                    '&:hover': { bgcolor: '#4caf50', transform: 'scale(1.06)' },
-                    width: 34, height: 34, borderRadius: 2,
-                    boxShadow: '0 4px 14px rgba(0,166,81,0.35)',
-                    transition: 'all 0.2s',
-                  }}>
-                    <AddCircleIcon sx={{ fontSize: 20 }} />
-                  </IconButton>
-                </Tooltip>
-              )}
-            </Stack>
-
-            <TextField
-              size="small" fullWidth placeholder="Pesquisar..."
-              value={search} onChange={e => setSearch(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ color: 'rgba(255,255,255,0.35)', fontSize: 18 }} />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: 'rgba(255,255,255,0.07)', borderRadius: 2.5, color: 'white',
-                  '& fieldset': { border: '1px solid rgba(255,255,255,0.1)' },
-                  '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.22)' },
-                  '&.Mui-focused fieldset': { borderColor: '#4caf50', borderWidth: 1.5 },
-                  '& input': { py: 1, fontSize: 13, color: 'white', '&::placeholder': { color: 'rgba(255,255,255,0.35)', opacity: 1 } },
-                },
-              }}
-            />
-          </Stack>
+        {/* Simple sidebar header */}
+        <Box sx={{ px: 3, py: 2.5, borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
+          <Typography variant="h6" fontWeight={700} sx={{ color: '#0F172A', mb: 0.3, fontSize: 20 }}>
+            Conversas
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#64748B', fontSize: 13 }}>
+            Dúvidas académicas recentes
+          </Typography>
         </Box>
 
         {/* Tab filters — underline style */}
@@ -1403,82 +1623,64 @@ export default function StudentForumPage() {
         }}>
           {/* Chat header */}
           <Box sx={{
-            px: { xs: 2, md: 3 }, py: 1.8, borderBottom: '1px solid rgba(0,0,0,0.07)',
-            bgcolor: 'white',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
-            zIndex: 10
+            height: 64, px: { xs: 2, md: 3 },
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            bgcolor: 'white', borderBottom: '1px solid rgba(0,0,0,0.08)',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.03)', zIndex: 10, flexShrink: 0,
           }}>
-            <Stack direction="row" spacing={2} alignItems="center">
+            <Stack direction="row" spacing={1.5} alignItems="center">
               {isMobile && (
                 <IconButton onClick={() => setActiveQ(null)} sx={{ color: '#64748B', ml: -1 }}>
                   <ArrowBackIcon />
                 </IconButton>
               )}
-              <Avatar sx={{
-                width: { xs: 36, md: 44 }, height: { xs: 36, md: 44 }, flexShrink: 0,
-                bgcolor: activeQ.questionType === 'ESPECIALIZADO' ? '#E8F5E9' : '#C8E6C9',
-                color: activeQ.questionType === 'ESPECIALIZADO' ? '#00A651' : '#00A651',
-                border: '1px solid rgba(0,0,0,0.05)'
-              }}>
-                {activeQ.questionType === 'ESPECIALIZADO' ? <SchoolIcon /> : <GroupsIcon />}
+              <Avatar sx={{ width: 42, height: 42, flexShrink: 0, bgcolor: '#0f253e' }}>
+                {getDisciplinaIcon(activeQ.disciplina ?? '')}
               </Avatar>
-              <Box flex={1} minWidth={0}>
-                <Typography variant="subtitle1" fontWeight={800} noWrap sx={{ color: '#0F172A', lineHeight: 1.2, fontSize: { xs: 14, md: 16 } }}>
+              <Box>
+                <Typography fontWeight={700} sx={{ color: '#191C1E', fontSize: { xs: 14, md: 15 }, lineHeight: 1.3 }}>
                   {activeQ.questionType === 'ESPECIALIZADO' && roomProfessor
                     ? roomProfessor.fullname
                     : getQuestionTitle(activeQ, subjectsMap)}
                 </Typography>
-                <Stack direction="row" spacing={1} alignItems="center" mt={0.5}>
-                  {activeQ.questionType === 'ESPECIALIZADO' && roomProfessor ? (
-                    <>
-                      <Box sx={{
-                        width: 8, height: 8, borderRadius: '50%',
-                        bgcolor: roomProfessor.online ? '#00A651' : '#94A3B8'
-                      }} />
-                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, fontSize: { xs: 10, md: 12 } }}>
-                        {roomProfessor.online ? 'Online' : 'Offline'}
-                      </Typography>
-                      <Divider orientation="vertical" flexItem sx={{ height: 12, my: 'auto', mx: 0.5 }} />
-                      <Typography variant="caption" sx={{ color: '#00A651', fontWeight: 700, fontSize: { xs: 10, md: 12 } }}>
-                        {getSubjectEmoji(activeQ)} {getSubjectLabel(activeQ, subjectsMap)}
-                      </Typography>
-                    </>
-                  ) : (
-                    <>
-                      <Box sx={{
-                        width: 8, height: 8, borderRadius: '50%',
-                        bgcolor: activeQ.status === 'ABERTA' ? '#00A651' : '#94A3B8'
-                      }} />
-                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, fontSize: { xs: 10, md: 12 } }}>
-                        {activeQ.status === 'ABERTA' ? 'Ativo' : 'Encerrado'}
-                      </Typography>
-                      <Divider orientation="vertical" flexItem sx={{ height: 12, my: 'auto', mx: 0.5 }} />
-                      <Typography variant="caption" sx={{ color: '#00A651', fontWeight: 700, fontSize: { xs: 10, md: 12 } }}>
-                        {getSubjectEmoji(activeQ)} {getSubjectLabel(activeQ, subjectsMap)}
-                      </Typography>
-                    </>
-                  )}
+                <Stack direction="row" spacing={0.8} alignItems="center">
+                  <Box sx={{
+                    width: 8, height: 8, borderRadius: '50%',
+                    bgcolor: activeQ.status === 'ABERTA' && (activeQ.questionType !== 'ESPECIALIZADO' || roomProfessor?.online)
+                      ? '#006d33' : '#94A3B8',
+                  }} />
+                  <Typography variant="caption" sx={{ color: '#007236', fontWeight: 600, fontSize: 12 }}>
+                    {activeQ.questionType === 'ESPECIALIZADO' && roomProfessor
+                      ? `${roomProfessor.online ? 'Disponível agora' : 'Offline'} • ${getSubjectLabel(activeQ, subjectsMap)}`
+                      : `${activeQ.status === 'ABERTA' ? 'Ativo' : 'Encerrado'} • ${getSubjectLabel(activeQ, subjectsMap)}`}
+                  </Typography>
                 </Stack>
               </Box>
-              
-              <Stack direction="row" spacing={1}>
-                {activeQ.questionType === 'COLABORATIVO' && (
-                  <Tooltip title="Membros do grupo">
-                    <IconButton size="small"
-                      onClick={() => { setMembersOpen(true); loadForumMembers(); }}
-                      sx={{ color: '#00A651' }}>
-                      <GroupsIcon sx={{ fontSize: 20 }} />
-                    </IconButton>
-                  </Tooltip>
-                )}
-                {activeQ.status === 'ABERTA' && (
-                  <Chip 
-                    label="Aberta" 
-                    size="small" 
-                    sx={{ bgcolor: '#DCFCE7', color: '#15803D', fontWeight: 800, fontSize: 10 }} 
-                  />
-                )}
-              </Stack>
+            </Stack>
+
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              {activeQ.questionType === 'COLABORATIVO' && (
+                <Tooltip title="Membros do grupo">
+                  <IconButton size="small"
+                    onClick={() => { setMembersOpen(true); loadForumMembers(); }}
+                    sx={{ color: '#64748B', '&:hover': { color: '#0F172A' } }}>
+                    <GroupsIcon sx={{ fontSize: 22 }} />
+                  </IconButton>
+                </Tooltip>
+              )}
+              <IconButton size="small" sx={{ color: '#64748B', '&:hover': { color: '#0F172A' } }}>
+                <VideocamOutlinedIcon sx={{ fontSize: 22 }} />
+              </IconButton>
+              <Tooltip title={infoOpen ? 'Fechar informações' : 'Ver informações'}>
+                <IconButton size="small"
+                  onClick={() => setInfoOpen(o => !o)}
+                  sx={{
+                    color: infoOpen ? '#006d33' : '#64748B',
+                    '&:hover': { color: '#0F172A' },
+                  }}>
+                  <InfoOutlinedIcon sx={{ fontSize: 22 }} />
+                </IconButton>
+              </Tooltip>
             </Stack>
           </Box>
 
@@ -1494,10 +1696,11 @@ export default function StudentForumPage() {
               onAccept={handleAccept}
               accepting={accepting}
               onRefresh={reloadActiveQ}
+              membersMap={membersMap}
             />
           )}
 
-          {!loadingDetail && activeQ.status === 'ABERTA' && (
+          {!loadingDetail && (
             <ChatInput
               questionId={activeQ.id}
               questionType={activeQ.questionType}
@@ -1549,10 +1752,10 @@ export default function StudentForumPage() {
         </Box>
       )}
 
-      {/* ── DETAIL PANEL — hidden on mobile and tablet ───────────────────────── */}
-      {!isMobile && !isTablet && activeQ && (
+      {/* ── DETAIL PANEL — abre ao clicar no ícone ⓘ ───────────────────────── */}
+      {!isMobile && !isTablet && activeQ && infoOpen && (
         activeQ.questionType === 'ESPECIALIZADO'
-          ? <DetailPanelExpert q={activeQ} onSuggestionClick={setPrefillText} subjectsMap={subjectsMap} />
+          ? <DetailPanelExpert q={activeQ} onSuggestionClick={setPrefillText} subjectsMap={subjectsMap} roomProfessor={roomProfessor} />
           : <DetailPanelCollab q={activeQ} subjectsMap={subjectsMap} />
       )}
 
@@ -1642,6 +1845,7 @@ export default function StudentForumPage() {
           })()}
         </Box>
       </Drawer>
+      </Box> {/* closes CONTENT ROW */}
     </Box>
   );
 }

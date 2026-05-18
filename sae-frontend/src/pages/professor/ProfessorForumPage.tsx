@@ -18,9 +18,24 @@ import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import ForumIcon from '@mui/icons-material/Forum';
 import QuizIcon from '@mui/icons-material/Quiz';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import VideocamOutlinedIcon from '@mui/icons-material/VideocamOutlined';
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import BiotechIcon from '@mui/icons-material/Biotech';
+import ScienceIcon from '@mui/icons-material/Science';
+import FlashOnIcon from '@mui/icons-material/FlashOn';
+import FunctionsIcon from '@mui/icons-material/Functions';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import PublicIcon from '@mui/icons-material/Public';
+import TranslateIcon from '@mui/icons-material/Translate';
+import PsychologyIcon from '@mui/icons-material/Psychology';
+import ComputerIcon from '@mui/icons-material/Computer';
 import { useAuth } from '../../context/AuthContext';
 import { forumService } from '../../services/forumService';
 import api from '../../services/api';
+import { quizService } from '../../services/quizService';
+import type { QuizSummary } from '../../types/quiz';
 import type { ForumQuestion, ExpertAnswer, CollaborativeAnswer, SubjectInfo } from '../../types/forum';
 import { DISCIPLINA_LABELS, DISCIPLINA_COLOR, DISCIPLINA_EMOJI } from '../../types/forum';
 
@@ -29,15 +44,53 @@ import { DISCIPLINA_LABELS, DISCIPLINA_COLOR, DISCIPLINA_EMOJI } from '../../typ
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1) return 'agora';
-  if (m < 60) return `${m}m`;
+  if (m < 1) return 'Agora mesmo';
+  if (m < 60) return `${m}m atrás`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  return `${Math.floor(h / 24)}d`;
+  if (h < 24) return `${h}h atrás`;
+  const d = Math.floor(h / 24);
+  if (d === 1) return 'Ontem';
+  return `${d} dias atrás`;
+}
+
+const AVATAR_PALETTE = [
+  { bg: '#DBEAFE', text: '#1D4ED8' },
+  { bg: '#FCE7F3', text: '#BE185D' },
+  { bg: '#D1FAE5', text: '#047857' },
+  { bg: '#FEF3C7', text: '#B45309' },
+  { bg: '#EDE9FE', text: '#7C3AED' },
+  { bg: '#FEE2E2', text: '#B91C1C' },
+  { bg: '#CFFAFE', text: '#0E7490' },
+];
+
+function avatarColor(seed: string) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = seed.charCodeAt(i) + ((h << 5) - h);
+  return AVATAR_PALETTE[Math.abs(h) % AVATAR_PALETTE.length];
+}
+
+function getDisciplinaIcon(disciplina: string) {
+  const props = { fontSize: 22 as const, color: 'white' as const };
+  switch (disciplina) {
+    case 'BIOLOGIA':    return <BiotechIcon sx={props} />;
+    case 'QUIMICA':     return <ScienceIcon sx={props} />;
+    case 'FISICA':      return <FlashOnIcon sx={props} />;
+    case 'MATEMATICA':  return <FunctionsIcon sx={props} />;
+    case 'PORTUGUES':   return <MenuBookIcon sx={props} />;
+    case 'GEOGRAFIA':   return <PublicIcon sx={props} />;
+    case 'INGLES':      return <TranslateIcon sx={props} />;
+    case 'FILOSOFIA':   return <PsychologyIcon sx={props} />;
+    case 'INFORMATICA': return <ComputerIcon sx={props} />;
+    default:            return <SchoolIcon sx={props} />;
+  }
 }
 
 function initials(name: string) {
   return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+}
+
+function firstNameOf(name: string): string {
+  return name?.split(' ')[0] ?? name;
 }
 
 function formatBytes(b: number) {
@@ -88,74 +141,73 @@ const DETAIL_W = 300;
 // ─── Sidebar item ──────────────────────────────────────────────────────────────
 
 function SidebarItem({
-  q, active, onClick, isPending,
+  q, active, onClick, isPending, subjectsMap,
 }: {
   q: ForumQuestion; active: boolean; onClick: () => void; isPending: boolean;
+  subjectsMap: Map<number, SubjectInfo>;
 }) {
-  const isExpert = q.questionType === 'ESPECIALIZADO';
-  const accent = isPending ? '#00A651' : '#4caf50';
   const allAnswers = [...(q.expertAnswers ?? []), ...(q.collaborativeAnswers ?? [])];
   const lastMsg = allAnswers.slice(-1)[0]?.conteudo ?? q.descricao;
   const preview = lastMsg === '_' ? 'A aguardar primeira mensagem...' : lastMsg;
+  const subjectName = getSubjectLabel(q, subjectsMap);
 
   return (
     <Box
       onClick={onClick}
       sx={{
-        px: 2, py: 1.8, cursor: 'pointer',
-        bgcolor: active ? 'rgba(0,0,0,0.04)' : 'transparent',
-        position: 'relative', transition: 'all .2s ease',
-        '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' },
-        '&::before': active ? {
-          content: '""', position: 'absolute', left: 0, top: 0, bottom: 0,
-          width: 4, bgcolor: accent, borderRadius: '0 4px 4px 0',
-        } : {}
+        px: 2, py: 1.4,
+        cursor: 'pointer',
+        bgcolor: active ? 'rgba(0,109,51,0.05)' : 'transparent',
+        borderLeft: `4px solid ${active ? '#006d33' : 'transparent'}`,
+        borderBottom: '1px solid rgba(0,0,0,0.05)',
+        transition: 'background 0.15s',
+        '&:hover': { bgcolor: active ? 'rgba(0,109,51,0.06)' : 'rgba(0,0,0,0.02)' },
       }}
     >
-      <Stack direction="row" spacing={2} alignItems="center">
-        <Box sx={{ position: 'relative' }}>
-          <Avatar sx={{
-            width: 50, height: 50,
-            bgcolor: isExpert ? '#E8F5E9' : '#C8E6C9',
-            color: isExpert ? '#008f44' : '#00A651',
-            border: `1.5px solid ${active ? accent : 'transparent'}`,
-            transition: 'border 0.3s',
-          }}>
-            {isExpert ? <SchoolIcon /> : <GroupsIcon />}
-          </Avatar>
-          {isPending && (
-            <Box sx={{
-              position: 'absolute', bottom: 2, right: 2,
-              width: 12, height: 12, borderRadius: '50%',
-              bgcolor: '#00A651', border: '2px solid white',
-            }} />
-          )}
-        </Box>
+      <Stack direction="row" spacing={1.5} alignItems="center">
+        {/* Circular avatar with subject icon */}
+        <Avatar sx={{
+          width: 48, height: 48, flexShrink: 0, mt: 0.2,
+          bgcolor: active ? '#0f253e' : '#E0E3E5',
+          fontWeight: 800, fontSize: 16,
+        }}>
+          {q.questionType === 'ESPECIALIZADO'
+            ? getDisciplinaIcon(q.disciplina ?? '')
+            : <GroupsIcon sx={{ fontSize: 22, color: 'white' }} />}
+        </Avatar>
 
         <Box flex={1} minWidth={0}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.4}>
-            <Typography variant="body2" fontWeight={700} noWrap sx={{ color: '#1E293B', fontSize: 14 }}>
-              {q.titulo}
+          {/* Row 1: Student name + Subject label */}
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={0.3}>
+            <Typography fontWeight={700} noWrap
+              sx={{ color: '#191C1E', fontSize: 14, flex: 1, mr: 1 }}>
+              {q.createdBy}
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11, fontWeight: 500 }}>
-              {timeAgo(q.createdAt)}
+            <Typography sx={{
+              color: active ? '#007236' : '#74777E',
+              fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
+              textTransform: 'uppercase', flexShrink: 0,
+            }}>
+              {subjectName}
             </Typography>
           </Stack>
 
-          <Stack direction="row" spacing={0.5} alignItems="center">
-            <Typography variant="caption" sx={{
-              color: '#64748B', fontSize: 12,
-              display: '-webkit-box', WebkitLineClamp: 1,
-              WebkitBoxOrient: 'vertical', overflow: 'hidden',
-              flex: 1, fontWeight: active ? 600 : 400,
-            }}>
-              {preview}
+          {/* Row 2: Preview */}
+          <Typography noWrap sx={{ color: '#44474D', fontSize: 13.5, fontWeight: 400 }}>
+            {preview}
+          </Typography>
+
+          {/* Row 3: Timestamp + pending indicator */}
+          <Stack direction="row" justifyContent="space-between" alignItems="center" mt={0.5}>
+            <Typography sx={{ color: '#74777E', fontSize: 11, fontWeight: 600 }}>
+              {timeAgo(q.createdAt)}
             </Typography>
-            <Chip
-              label={q.createdBy}
-              size="small"
-              sx={{ height: 16, fontSize: 9, bgcolor: '#F1F5F9', color: '#475569', fontWeight: 700 }}
-            />
+            {isPending && (
+              <Box sx={{
+                width: 8, height: 8, borderRadius: '50%',
+                bgcolor: '#4ade80', flexShrink: 0,
+              }} />
+            )}
           </Stack>
         </Box>
       </Stack>
@@ -416,10 +468,19 @@ function DetailPanel({ q, subjectsMap }: { q: ForumQuestion; subjectsMap: Map<nu
   const discColor = getSubjectColor(q);
   const isExpert = q.questionType === 'ESPECIALIZADO';
   const allAnswers = [...(q.expertAnswers ?? []), ...(q.collaborativeAnswers ?? [])];
+  const sharedFiles = allAnswers.filter(a => a.attachmentId);
   const participants = [q.createdBy, ...allAnswers.map(a => a.answeredBy)]
     .filter((v, i, arr) => arr.indexOf(v) === i);
-
   const waitMinutes = q.responseTimeMinutes;
+  const [upcomingQuizzes, setUpcomingQuizzes] = useState<QuizSummary[]>([]);
+
+  useEffect(() => {
+    const disc = q.disciplina;
+    if (!disc || disc === 'GERAL') return;
+    quizService.listQuizzes(disc)
+      .then(all => setUpcomingQuizzes(all.filter(qz => qz.active).slice(0, 3)))
+      .catch(() => {});
+  }, [q.disciplina]);
 
   return (
     <Box sx={{
@@ -427,114 +488,139 @@ function DetailPanel({ q, subjectsMap }: { q: ForumQuestion; subjectsMap: Map<nu
       borderLeft: '1px solid rgba(0,0,0,0.08)', bgcolor: 'white', overflow: 'hidden',
     }}>
       {/* Header */}
-      <Box sx={{ p: 3, textAlign: 'center', borderBottom: '1px solid #F1F5F9', background: '#F0FDF4' }}>
+      <Box sx={{ p: 3, textAlign: 'center', borderBottom: '1px solid #F1F5F9', bgcolor: '#F0FDF4' }}>
         <Avatar sx={{
-          width: 70, height: 70, mx: 'auto', mb: 2,
-          bgcolor: 'white', color: '#00A651',
-          boxShadow: '0 4px 12px rgba(0, 166, 81, 0.15)',
-          border: '2px solid white',
-          fontSize: 28, fontWeight: 800,
+          width: 64, height: 64, bgcolor: '#0f253e', color: 'white',
+          mx: 'auto', mb: 1.5, fontSize: 22, fontWeight: 800,
+          boxShadow: '0 4px 14px rgba(0,0,0,0.18)', border: '3px solid white',
         }}>
           {initials(q.createdBy)}
         </Avatar>
-        <Typography variant="subtitle1" fontWeight={800} sx={{ color: '#0F172A' }}>{q.createdBy}</Typography>
+        <Typography variant="subtitle1" fontWeight={800} sx={{ color: '#0F172A', mb: 0.2 }}>
+          {q.createdBy}
+        </Typography>
         <Typography variant="caption" sx={{ color: '#00A651', fontWeight: 700 }}>
           {isExpert ? 'Sessão Privada' : 'Fórum da Turma'}
         </Typography>
       </Box>
 
-      <Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
-        <Typography variant="caption" sx={{
-          color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase',
-          letterSpacing: 1, mb: 2, display: 'block',
-        }}>
-          Informações da Questão
-        </Typography>
-
-        <Stack spacing={2.5}>
-          <Box>
-            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.5 }}>
-              Disciplina
-            </Typography>
-            <Chip
-              label={`${getSubjectEmoji(q)} ${getSubjectLabel(q, subjectsMap)}`}
-              size="small"
-              sx={{ bgcolor: discColor + '15', color: discColor, fontWeight: 800, borderRadius: 1 }}
-            />
-          </Box>
-
-          <Box>
-            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.5 }}>
-              Estado
-            </Typography>
-            <Chip
-              label={q.status === 'ABERTA' ? 'Em aberto' : 'Encerrada'}
-              size="small"
-              sx={{
-                bgcolor: q.status === 'ABERTA' ? '#DCFCE7' : '#F1F5F9',
-                color: q.status === 'ABERTA' ? '#15803D' : '#64748B',
-                fontWeight: 800,
-              }}
-            />
-          </Box>
-
-          <Box>
-            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.5 }}>
-              Aguardou resposta
-            </Typography>
-            <Chip
-              label={waitMinutes != null ? `⏱ ${formatWait(waitMinutes)}` : '⏳ Sem resposta ainda'}
-              size="small"
-              sx={{
-                bgcolor: waitMinutes != null ? '#FFF7ED' : '#F8FAFC',
-                color: waitMinutes != null ? '#C2410C' : '#94A3B8',
-                fontWeight: 800, borderRadius: 1,
-              }}
-            />
-          </Box>
-
-          <Box>
-            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.5 }}>
-              Mensagens
-            </Typography>
-            <Typography variant="body2" fontWeight={700} color="#1E293B">
-              {allAnswers.length} {allAnswers.length === 1 ? 'resposta' : 'respostas'}
-            </Typography>
-          </Box>
-        </Stack>
-
-        <Divider sx={{ my: 3 }} />
-
-        <Typography variant="caption" sx={{
-          color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase',
-          letterSpacing: 1, mb: 2, display: 'block',
-        }}>
-          Participantes
-        </Typography>
-
-        <Stack spacing={1.5}>
-          {participants.map((p, i) => (
-            <Stack key={p} direction="row" spacing={1.5} alignItems="center">
-              <Avatar sx={{
-                width: 32, height: 32, fontSize: 11,
-                bgcolor: i === 0 ? '#E8F5E9' : '#C8E6C9',
-                color: i === 0 ? '#008f44' : '#00A651',
-              }}>
-                {initials(p)}
-              </Avatar>
-              <Box flex={1} minWidth={0}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#1E293B' }} noWrap>{p}</Typography>
-                <Typography variant="caption" sx={{
-                  color: i === 0 ? '#008f44' : '#00A651',
-                  fontWeight: 700,
-                }}>
-                  {i === 0 ? 'Aluno' : 'Professor'}
-                </Typography>
-              </Box>
-              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#00A651' }} />
+      <Box sx={{ flex: 1, overflowY: 'auto' }}>
+        {/* Ficheiros Partilhados */}
+        <Box sx={{ px: 2.5, pt: 2.5 }}>
+          <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, mb: 1.2, display: 'block' }}>
+            Ficheiros Partilhados
+          </Typography>
+          {sharedFiles.length === 0 ? (
+            <Box sx={{ p: 1.5, bgcolor: '#F8FAFC', borderRadius: 2, textAlign: 'center' }}>
+              <Typography variant="caption" color="text.secondary" fontSize={11}>Nenhum ficheiro partilhado ainda</Typography>
+            </Box>
+          ) : (
+            <Stack spacing={0.8}>
+              {sharedFiles.map((a, i) => (
+                <Box key={i} component="a"
+                  href={`/content/api/user/uploads/${a.attachmentId ?? ''}`} target="_blank"
+                  sx={{
+                    display: 'flex', alignItems: 'center', gap: 1,
+                    p: 1.2, borderRadius: 2, bgcolor: '#F8FAFC', border: '1px solid #E2E8F0',
+                    textDecoration: 'none', cursor: 'pointer',
+                    '&:hover': { bgcolor: '#E8F5E9', borderColor: '#00A651' }, transition: 'all 0.15s',
+                  }}>
+                  <InsertDriveFileIcon sx={{ fontSize: 18, color: '#00A651', flexShrink: 0 }} />
+                  <Box flex={1} minWidth={0}>
+                    <Typography variant="caption" fontWeight={700} color="#1E293B" display="block" noWrap fontSize={11}>Ficheiro</Typography>
+                    <Typography variant="caption" color="text.secondary" fontSize={10}>
+                      {timeAgo(a.createdAt)} · {firstNameOf(a.answeredBy)}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))}
             </Stack>
-          ))}
-        </Stack>
+          )}
+        </Box>
+
+        <Divider sx={{ mx: 2.5, my: 2 }} />
+
+        {/* Próximas Avaliações */}
+        <Box sx={{ px: 2.5 }}>
+          <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, mb: 1.2, display: 'block' }}>
+            Próximas Avaliações
+          </Typography>
+          {upcomingQuizzes.length === 0 ? (
+            <Box sx={{ p: 1.5, bgcolor: '#F8FAFC', borderRadius: 2, textAlign: 'center' }}>
+              <Typography variant="caption" color="text.secondary" fontSize={11}>Sem avaliações próximas</Typography>
+            </Box>
+          ) : (
+            <Stack spacing={0.8}>
+              {upcomingQuizzes.map(qz => (
+                <Paper key={qz.id} elevation={0} sx={{ p: 1.5, borderRadius: 2, bgcolor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                  <Typography variant="caption" fontWeight={800} color="#1E293B" display="block" noWrap fontSize={11}>{qz.titulo}</Typography>
+                  <Stack direction="row" spacing={0.5} alignItems="center" mt={0.3}>
+                    <Chip label={qz.disciplinaLabel || getSubjectLabel(q, subjectsMap)} size="small"
+                      sx={{ height: 14, fontSize: 9, fontWeight: 800, bgcolor: discColor + '15', color: discColor }} />
+                    <Typography variant="caption" color="text.secondary" fontSize={10}>{qz.questionCount} perguntas</Typography>
+                  </Stack>
+                </Paper>
+              ))}
+            </Stack>
+          )}
+        </Box>
+
+        <Divider sx={{ mx: 2.5, my: 2 }} />
+
+        {/* Informações */}
+        <Box sx={{ px: 2.5 }}>
+          <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, mb: 1.5, display: 'block' }}>
+            Informações
+          </Typography>
+          <Stack spacing={1.5} sx={{ mb: 2 }}>
+            <Box>
+              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.4 }}>Disciplina</Typography>
+              <Chip label={`${getSubjectEmoji(q)} ${getSubjectLabel(q, subjectsMap)}`} size="small"
+                sx={{ bgcolor: discColor + '15', color: discColor, fontWeight: 800, borderRadius: 1 }} />
+            </Box>
+            <Box>
+              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.4 }}>Estado</Typography>
+              <Chip label={q.status === 'ABERTA' ? 'Em aberto' : 'Encerrada'} size="small"
+                sx={{ bgcolor: q.status === 'ABERTA' ? '#DCFCE7' : '#F1F5F9', color: q.status === 'ABERTA' ? '#15803D' : '#64748B', fontWeight: 800 }} />
+            </Box>
+            <Box>
+              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.4 }}>Aguardou resposta</Typography>
+              <Chip label={waitMinutes != null ? `⏱ ${formatWait(waitMinutes)}` : '⏳ Sem resposta ainda'} size="small"
+                sx={{ bgcolor: waitMinutes != null ? '#FFF7ED' : '#F8FAFC', color: waitMinutes != null ? '#C2410C' : '#94A3B8', fontWeight: 800, borderRadius: 1 }} />
+            </Box>
+            <Box>
+              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.4 }}>Mensagens</Typography>
+              <Typography variant="body2" fontWeight={700} color="#1E293B" fontSize={13}>
+                {allAnswers.length} {allAnswers.length === 1 ? 'resposta' : 'respostas'}
+              </Typography>
+            </Box>
+          </Stack>
+        </Box>
+
+        <Divider sx={{ mx: 2.5, my: 1 }} />
+
+        {/* Participantes */}
+        <Box sx={{ px: 2.5, pb: 2.5 }}>
+          <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1, mb: 1.2, display: 'block', pt: 1 }}>
+            Participantes
+          </Typography>
+          <Stack spacing={1.2}>
+            {participants.map((p, i) => (
+              <Stack key={p} direction="row" spacing={1.2} alignItems="center">
+                <Avatar sx={{ width: 30, height: 30, fontSize: 11, fontWeight: 700, bgcolor: i === 0 ? '#E8F5E9' : '#C8E6C9', color: i === 0 ? '#008f44' : '#00A651' }}>
+                  {initials(p)}
+                </Avatar>
+                <Box flex={1} minWidth={0}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#1E293B', fontSize: 12 }} noWrap>{p}</Typography>
+                  <Typography variant="caption" sx={{ color: i === 0 ? '#008f44' : '#00A651', fontWeight: 700, fontSize: 10 }}>
+                    {i === 0 ? 'Aluno' : 'Professor'}
+                  </Typography>
+                </Box>
+                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: '#00A651', flexShrink: 0 }} />
+              </Stack>
+            ))}
+          </Stack>
+        </Box>
       </Box>
     </Box>
   );
@@ -558,6 +644,7 @@ export default function ProfessorForumPage() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [search, setSearch] = useState('');
   const [subjectsMap, setSubjectsMap] = useState<Map<number, SubjectInfo>>(new Map());
+  const [infoOpen, setInfoOpen] = useState(false);
 
   const loadPending = () => {
     setLoadingPending(true);
@@ -610,7 +697,61 @@ export default function ProfessorForumPage() {
   const isLoading = sidebarTab === 'pending' ? loadingPending : loadingAnswered;
 
   return (
-    <Box sx={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', bgcolor: '#F7F9FB' }}>
+
+      {/* ── TOP APP BAR ─────────────────────────────────────────────────────── */}
+      <Box sx={{
+        height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        px: 3, bgcolor: 'white', borderBottom: '1px solid rgba(0,0,0,0.08)',
+        flexShrink: 0, zIndex: 30,
+      }}>
+        <Box sx={{ width: 280 }}>
+          <TextField
+            size="small" fullWidth placeholder="Buscar conversas..."
+            value={search} onChange={e => setSearch(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ fontSize: 18, color: '#94A3B8' }} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                bgcolor: '#F2F4F6', borderRadius: 6, color: '#1E293B',
+                '& fieldset': { border: 'none' },
+                '& input': { py: 1, fontSize: 13.5, '&::placeholder': { color: '#94A3B8', opacity: 1 } },
+              },
+            }}
+          />
+        </Box>
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <IconButton sx={{ color: '#64748B', position: 'relative' }}>
+            <NotificationsNoneIcon />
+            <Box sx={{ position: 'absolute', top: 8, right: 8, width: 8, height: 8, borderRadius: '50%', bgcolor: '#00A651', border: '2px solid white' }} />
+          </IconButton>
+          <IconButton sx={{ color: '#64748B' }}>
+            <HelpOutlineIcon />
+          </IconButton>
+          <Divider orientation="vertical" flexItem sx={{ height: 32, mx: 0.5 }} />
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Avatar sx={{ width: 36, height: 36, bgcolor: '#1E293B', fontSize: 13, fontWeight: 700 }}>
+              {user?.username ? initials(user.fullName ?? user.username) : 'P'}
+            </Avatar>
+            <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
+              <Typography sx={{ fontWeight: 700, fontSize: 14, color: '#0F172A', lineHeight: 1.2 }}>
+                {user?.fullName ?? user?.username}
+              </Typography>
+              <Typography sx={{ fontSize: 10, color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                Professor
+              </Typography>
+            </Box>
+          </Stack>
+        </Stack>
+      </Box>
+
+      {/* ── CONTENT ROW ─────────────────────────────────────────────────────── */}
+      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
       {/* ── SIDEBAR ─────────────────────────────────────────────────────────── */}
       <Box sx={{
@@ -620,46 +761,14 @@ export default function ProfessorForumPage() {
         bgcolor: 'white', borderRight: '1px solid rgba(0,0,0,0.08)',
         zIndex: 20, flexShrink: 0,
       }}>
-        {/* Header */}
-        <Box sx={{
-          px: 3, pt: 2.5, pb: 2,
-          bgcolor: 'white',
-          borderBottom: '1px solid rgba(0,0,0,0.06)',
-        }}>
-          <Stack spacing={2}>
-            <Stack direction="row" spacing={1.5} alignItems="center">
-              <QuizIcon sx={{ color: '#00A651', fontSize: 22 }} />
-              <Box>
-                <Typography fontWeight={800} color="#0F172A" variant="subtitle1" sx={{ lineHeight: 1.1, fontSize: 15 }}>
-                  PORTAL DE SUPORTE
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 600, letterSpacing: 0.4 }}>
-                  Caixa de entrada
-                </Typography>
-              </Box>
-            </Stack>
-
-            <TextField
-              size="small" fullWidth placeholder="Pesquisar aluno ou disciplina..."
-              value={search} onChange={e => setSearch(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ color: '#94A3B8', fontSize: 18 }} />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: '#F8FAFC', borderRadius: 2, color: '#0F172A',
-                  '& fieldset': { border: '1px solid rgba(0,0,0,0.08)' },
-                  '&:hover fieldset': { borderColor: 'rgba(0,0,0,0.15)' },
-                  '&.Mui-focused fieldset': { borderColor: '#00A651', borderWidth: 1.5 },
-                  '& input': { py: 1, fontSize: 13, color: '#0F172A', '&::placeholder': { color: '#94A3B8', opacity: 1 } },
-                },
-              }}
-            />
-          </Stack>
+        {/* Simple sidebar header */}
+        <Box sx={{ px: 3, py: 2.5, borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
+          <Typography variant="h6" fontWeight={700} sx={{ color: '#0F172A', mb: 0.3, fontSize: 20 }}>
+            Conversas
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#64748B', fontSize: 13 }}>
+            Caixa de entrada
+          </Typography>
         </Box>
 
         {/* Tab filters */}
@@ -718,6 +827,7 @@ export default function ProfessorForumPage() {
               active={activeQ?.id === q.id}
               onClick={() => handleSelectQuestion(q)}
               isPending={sidebarTab === 'pending'}
+              subjectsMap={subjectsMap}
             />
           ))}
         </Box>
@@ -732,59 +842,44 @@ export default function ProfessorForumPage() {
         }}>
           {/* Chat header */}
           <Box sx={{
-            px: { xs: 2, md: 3 }, py: 1.8,
-            borderBottom: '1px solid rgba(0,0,0,0.07)',
-            bgcolor: 'white', boxShadow: '0 1px 2px rgba(0,0,0,0.03)', zIndex: 10,
+            height: 64, px: { xs: 2, md: 3 },
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            bgcolor: 'white', borderBottom: '1px solid rgba(0,0,0,0.08)',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.03)', zIndex: 10, flexShrink: 0,
           }}>
-            <Stack direction="row" spacing={2} alignItems="center">
+            <Stack direction="row" spacing={1.5} alignItems="center">
               {isMobile && (
                 <IconButton onClick={() => setActiveQ(null)} sx={{ color: '#64748B', ml: -1 }}>
                   <ArrowBackIcon />
                 </IconButton>
               )}
-              <Avatar sx={{
-                width: { xs: 36, md: 44 }, height: { xs: 36, md: 44 }, flexShrink: 0,
-                bgcolor: '#1E293B', color: 'white',
-                border: '1px solid rgba(0,0,0,0.05)',
-                fontSize: { xs: 13, md: 16 }, fontWeight: 800,
-              }}>
-                {initials(activeQ.createdBy)}
+              <Avatar sx={{ width: 42, height: 42, flexShrink: 0, bgcolor: '#0f253e' }}>
+                {getDisciplinaIcon(activeQ.disciplina ?? '')}
               </Avatar>
-              <Box flex={1} minWidth={0}>
-                <Typography variant="subtitle1" fontWeight={800} noWrap sx={{ color: '#0F172A', lineHeight: 1.2, fontSize: { xs: 14, md: 16 } }}>
-                  {activeQ.titulo}
+              <Box>
+                <Typography fontWeight={700} sx={{ color: '#191C1E', fontSize: { xs: 14, md: 15 }, lineHeight: 1.3 }}>
+                  {activeQ.createdBy}
                 </Typography>
-                <Stack direction="row" spacing={1} alignItems="center" mt={0.5}>
-                  <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, fontSize: { xs: 10, md: 12 } }}>
-                    {activeQ.createdBy}
-                  </Typography>
-                  <Divider orientation="vertical" flexItem sx={{ height: 12, my: 'auto', mx: 0.5 }} />
-                  <Chip
-                    label={`${getSubjectEmoji(activeQ)} ${getSubjectLabel(activeQ, subjectsMap)}`}
-                    size="small"
-                    sx={{
-                      height: 18, fontSize: 10, fontWeight: 700,
-                      bgcolor: getSubjectColor(activeQ) + '15',
-                      color: getSubjectColor(activeQ),
-                    }}
-                  />
-                  <Divider orientation="vertical" flexItem sx={{ height: 12, my: 'auto', mx: 0.5 }} />
-                  <Typography variant="caption" sx={{
-                    color: activeQ.questionType === 'ESPECIALIZADO' ? '#00A651' : '#4caf50',
-                    fontWeight: 700, fontSize: { xs: 10, md: 12 },
-                  }}>
-                    {activeQ.questionType === 'ESPECIALIZADO' ? 'Sessão Privada' : 'Fórum da Turma'}
+                <Stack direction="row" spacing={0.8} alignItems="center">
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#006d33' }} />
+                  <Typography variant="caption" sx={{ color: '#007236', fontWeight: 600, fontSize: 12 }}>
+                    {`${activeQ.questionType === 'ESPECIALIZADO' ? 'Sessão Privada' : 'Fórum'} • ${getSubjectLabel(activeQ, subjectsMap)}`}
                   </Typography>
                 </Stack>
               </Box>
+            </Stack>
 
-              {activeQ.status === 'ABERTA' && (
-                <Chip
-                  label="Aguardando"
-                  size="small"
-                  sx={{ bgcolor: '#E8F5E9', color: '#00A651', fontWeight: 800, fontSize: 10 }}
-                />
-              )}
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <IconButton size="small" sx={{ color: '#64748B', '&:hover': { color: '#0F172A' } }}>
+                <VideocamOutlinedIcon sx={{ fontSize: 22 }} />
+              </IconButton>
+              <Tooltip title={infoOpen ? 'Fechar informações' : 'Ver informações'}>
+                <IconButton size="small"
+                  onClick={() => setInfoOpen(o => !o)}
+                  sx={{ color: infoOpen ? '#006d33' : '#64748B', '&:hover': { color: '#0F172A' } }}>
+                  <InfoOutlinedIcon sx={{ fontSize: 22 }} />
+                </IconButton>
+              </Tooltip>
             </Stack>
           </Box>
 
@@ -796,20 +891,12 @@ export default function ProfessorForumPage() {
             <ProfessorChatMessages q={activeQ} currentUser={user?.username ?? ''} />
           )}
 
-          {!loadingDetail && activeQ.status === 'ABERTA' && (
+          {!loadingDetail && (
             <ChatInput
               questionId={activeQ.id}
               questionType={activeQ.questionType}
               onSent={reloadActiveQ}
             />
-          )}
-
-          {!loadingDetail && activeQ.status === 'FECHADA' && (
-            <Box sx={{ px: 3, py: 2, borderTop: '1px solid rgba(0,0,0,0.07)', bgcolor: '#F8FAFC', textAlign: 'center' }}>
-              <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                Esta conversa está encerrada.
-              </Typography>
-            </Box>
           )}
         </Box>
       ) : (
@@ -844,8 +931,9 @@ export default function ProfessorForumPage() {
         </Box>
       )}
 
-      {/* ── DETAIL PANEL — hidden on mobile and tablet ───────────────────────── */}
-      {!isMobile && !isTablet && activeQ && <DetailPanel q={activeQ} subjectsMap={subjectsMap} />}
+      {/* ── DETAIL PANEL — abre ao clicar no ícone ⓘ ───────────────────────── */}
+      {!isMobile && !isTablet && activeQ && infoOpen && <DetailPanel q={activeQ} subjectsMap={subjectsMap} />}
+      </Box> {/* closes CONTENT ROW */}
     </Box>
   );
 }

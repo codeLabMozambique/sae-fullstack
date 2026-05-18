@@ -25,6 +25,7 @@ import {
   InsertDriveFile as DocIcon,
 } from '@mui/icons-material';
 import { quizService } from '../../services/quizService';
+import { forumService } from '../../services/forumService';
 import { listProgress, listSections } from '../../services/contentService';
 import type { ReadingProgressView, ContentSection } from '../../services/contentService';
 import { DISCIPLINAS } from '../../types/quiz';
@@ -71,7 +72,9 @@ function ScoreBadge({ score }: { score: number }) {
 
 export default function StudentQuizPage() {
   const [view, setView] = useState<View>('browse');
+  const [browseTab, setBrowseTab] = useState<'quizzes' | 'exam-prep'>('quizzes');
   const [disciplina, setDisciplina] = useState('');
+  const [enrolledDisciplines, setEnrolledDisciplines] = useState<string[]>([]);
   const [quizzes, setQuizzes] = useState<QuizSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -118,6 +121,12 @@ export default function StudentQuizPage() {
   const [oralResult, setOralResult] = useState<OralTestResult | null>(null);
   const [oralSubmitting, setOralSubmitting] = useState(false);
   const [oralNumQ, setOralNumQ] = useState(5);
+
+  useEffect(() => {
+    forumService.getDisciplinesForMe()
+      .then(disc => setEnrolledDisciplines(disc.filter(d => d !== 'GERAL')))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     loadQuizzes();
@@ -205,9 +214,9 @@ export default function StudentQuizPage() {
 
   // Load reading progress when either dialog opens
   useEffect(() => {
-    if (!genDialog && !prepDialog) return;
+    if (!genDialog && browseTab !== 'exam-prep') return;
     listProgress().then(setMyProgress).catch(() => {});
-  }, [genDialog, prepDialog]);
+  }, [genDialog, browseTab]);
 
   // Load sections when a book is selected
   useEffect(() => {
@@ -271,7 +280,6 @@ export default function StudentQuizPage() {
       const dto: StudyPrepRequestDTO = {
         disciplina: prepDisciplina || undefined,
         mode: prepMode,
-        contentId: prepSelectedProgress?.contentId || undefined,
         numQuestions: prepNumQ,
       };
       const quiz = await quizService.generateStudyPrep(dto);
@@ -369,7 +377,8 @@ export default function StudentQuizPage() {
   // ── Browse View ──────────────────────────────────────────────
   if (view === 'browse') return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3, flexWrap: 'wrap' }}>
+      {/* Page header */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
         <Box sx={{ p: 1.2, bgcolor: '#E8F5E9', borderRadius: 2 }}>
           <QuizIcon sx={{ color: '#00A651', fontSize: 28 }} />
         </Box>
@@ -377,28 +386,193 @@ export default function StudentQuizPage() {
           <Typography variant="h5" fontWeight={800} color="#0A1628">Quizzes</Typography>
           <Typography variant="body2" color="text.secondary">Pratica, prepara-te e avalia o teu nível</Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          {(disciplina === 'INGLES' || disciplina === '') && (
-            <Button variant="outlined" startIcon={<OralIcon />} onClick={() => setOralDialog(true)}
-              sx={{ borderColor: '#0284c7', color: '#0284c7', '&:hover': { bgcolor: '#F0F9FF' }, borderRadius: 2,
-                textTransform: 'none', fontWeight: 700, whiteSpace: 'nowrap' }}>
-              Teste Oral — Inglês
-            </Button>
-          )}
-          <Button variant="outlined" startIcon={<SchoolIcon />} onClick={openPrepDialog}
-            sx={{ borderColor: '#7C3AED', color: '#7C3AED', '&:hover': { bgcolor: '#F5F3FF' }, borderRadius: 2,
-              textTransform: 'none', fontWeight: 700, whiteSpace: 'nowrap' }}>
-            Preparar para Teste/Exame
-          </Button>
-          <Button variant="contained" startIcon={<AIIcon />} onClick={openGenDialog}
-            sx={{ bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' }, borderRadius: 2,
-              textTransform: 'none', fontWeight: 700, whiteSpace: 'nowrap' }}>
-            Gerar Quiz com IA
-          </Button>
-        </Box>
+      </Box>
+
+      {/* Tab switcher */}
+      <Box sx={{ display: 'flex', mb: 3, p: 0.5, bgcolor: '#F3F4F6', borderRadius: 2.5, width: 'fit-content' }}>
+        {([
+          { key: 'quizzes' as const, label: 'Quizzes', icon: <QuizIcon sx={{ fontSize: 16 }} />, color: '#00A651' },
+          { key: 'exam-prep' as const, label: 'Preparar Exame', icon: <SchoolIcon sx={{ fontSize: 16 }} />, color: '#7C3AED' },
+        ]).map(tab => (
+          <Box key={tab.key} onClick={() => setBrowseTab(tab.key)}
+            sx={{
+              display: 'flex', alignItems: 'center', gap: 0.8,
+              px: 2.5, py: 1, borderRadius: 2, cursor: 'pointer', transition: 'all 0.2s',
+              fontWeight: 700, fontSize: '0.875rem',
+              bgcolor: browseTab === tab.key ? '#fff' : 'transparent',
+              color: browseTab === tab.key ? tab.color : '#6B7280',
+              boxShadow: browseTab === tab.key ? '0 1px 6px rgba(0,0,0,0.10)' : 'none',
+            }}>
+            {tab.icon}
+            {tab.label}
+          </Box>
+        ))}
       </Box>
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
+
+      {/* ── TAB: Quizzes ── */}
+      {browseTab === 'quizzes' && (
+        <Box>
+          {/* Discipline filter — only enrolled disciplines */}
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
+            <Chip label="Todas" onClick={() => setDisciplina('')}
+              variant={disciplina === '' ? 'filled' : 'outlined'}
+              sx={{ fontWeight: disciplina === '' ? 700 : 400,
+                bgcolor: disciplina === '' ? '#00A651' : 'transparent',
+                color: disciplina === '' ? '#fff' : '#00A651', borderColor: '#00A651' }} />
+            {DISCIPLINAS
+              .filter(d => enrolledDisciplines.length === 0 || enrolledDisciplines.includes(d.value))
+              .map(d => (
+              <Chip key={d.value} label={d.label} onClick={() => setDisciplina(d.value)}
+                variant={disciplina === d.value ? 'filled' : 'outlined'}
+                sx={{ fontWeight: disciplina === d.value ? 700 : 400,
+                  bgcolor: disciplina === d.value ? '#00A651' : 'transparent',
+                  color: disciplina === d.value ? '#fff' : '#00A651', borderColor: '#00A651' }} />
+            ))}
+          </Box>
+
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+              <CircularProgress sx={{ color: '#00A651' }} />
+            </Box>
+          ) : quizzes.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <QuizIcon sx={{ fontSize: 64, color: '#A5D6A7', mb: 2 }} />
+              <Typography color="text.secondary">Nenhum quiz disponível para esta disciplina.</Typography>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: '1fr 1fr 1fr' }, gap: 2 }}>
+              {quizzes.map(q => (
+                <Card key={q.id} elevation={0} sx={{ border: '1px solid #E5E7EB', borderRadius: 3,
+                  transition: 'box-shadow 0.2s', '&:hover': { boxShadow: '0 4px 20px rgba(124,58,237,0.12)' } }}>
+                  <CardContent sx={{ p: 2.5 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                      <Chip label={q.disciplinaLabel} size="small"
+                        sx={{ bgcolor: '#E8F5E9', color: '#00A651', fontWeight: 600, fontSize: '0.7rem' }} />
+                      {q.bestScore !== null && q.bestScore !== undefined && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <TrophyIcon sx={{ fontSize: 14, color: q.bestScore >= 70 ? '#00A651' : '#d97706' }} />
+                          <Typography variant="caption" fontWeight={700}
+                            color={q.bestScore >= 70 ? '#00A651' : '#d97706'}>{q.bestScore}%</Typography>
+                        </Box>
+                      )}
+                    </Box>
+                    <Typography variant="subtitle1" fontWeight={700} color="#0A1628" sx={{ mb: 0.5 }}>
+                      {q.titulo}
+                    </Typography>
+                    {q.descricao && (
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5,
+                        overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                        {q.descricao}
+                      </Typography>
+                    )}
+                    <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                      <Typography variant="caption" color="text.secondary">📝 {q.questionCount} questões</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {q.tempoLimiteMinutos ? `⏱ ${q.tempoLimiteMinutos} min` : '⏱ Sem limite'}
+                      </Typography>
+                      {q.myAttempts > 0 && (
+                        <Typography variant="caption" color="text.secondary">
+                          🔄 {q.myAttempts} tentativa{q.myAttempts > 1 ? 's' : ''}
+                        </Typography>
+                      )}
+                    </Box>
+                    <Button fullWidth variant="contained" disabled={loading || q.questionCount === 0}
+                      onClick={() => handleStart(q)}
+                      startIcon={q.myAttempts > 0 ? <ReplayIcon /> : <QuizIcon />}
+                      sx={{ bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' }, borderRadius: 2,
+                        textTransform: 'none', fontWeight: 700 }}>
+                      {q.myAttempts > 0 ? 'Repetir Quiz' : 'Iniciar Quiz'}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
+          )}
+        </Box>
+      )}
+
+      {/* ── TAB: Preparar Exame ── */}
+      {browseTab === 'exam-prep' && (
+        <Box sx={{ maxWidth: 640 }}>
+          {/* Hero */}
+          <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3,
+            background: 'linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)',
+            border: '1px solid #DDD6FE' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+              <Box sx={{ p: 1, bgcolor: '#7C3AED', borderRadius: 1.5 }}>
+                <SchoolIcon sx={{ color: '#fff', fontSize: 20 }} />
+              </Box>
+              <Typography variant="h6" fontWeight={800} color="#4C1D95">Preparação para Avaliação</Typography>
+            </Box>
+            <Typography variant="body2" color="#6D28D9">
+              A IA gera questões personalizadas com base no teu percurso de estudo.
+              Após o quiz, receberás explicações para cada resposta errada.
+            </Typography>
+          </Paper>
+
+          {/* Mode */}
+          <Typography variant="subtitle2" fontWeight={700} color="#374151" sx={{ mb: 1.5 }}>Tipo de avaliação</Typography>
+          <Box sx={{ display: 'flex', gap: 1.5, mb: 3 }}>
+            {([
+              { mode: 'TEST' as const, label: '📝 Teste Normal', sub: 'Conteúdo recente, foco nos temas do professor', color: '#00A651', bg: '#E8F5E9' },
+              { mode: 'EXAM' as const, label: '🎓 Exame Final', sub: 'Toda a matéria, questões abrangentes e de análise', color: '#7C3AED', bg: '#F5F3FF' },
+            ] as const).map(opt => (
+              <Box key={opt.mode} onClick={() => setPrepMode(opt.mode)}
+                sx={{ flex: 1, p: 2, borderRadius: 2.5, cursor: 'pointer',
+                  border: `2px solid ${prepMode === opt.mode ? opt.color : '#E5E7EB'}`,
+                  bgcolor: prepMode === opt.mode ? opt.bg : '#fff',
+                  transition: 'all 0.15s', '&:hover': { borderColor: opt.color, bgcolor: opt.bg } }}>
+                <Typography fontWeight={700} color={prepMode === opt.mode ? opt.color : '#0A1628'} sx={{ mb: 0.5 }}>
+                  {opt.label}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">{opt.sub}</Typography>
+              </Box>
+            ))}
+          </Box>
+
+          {/* Discipline + num questions */}
+          <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+            <TextField select label="Disciplina" size="small" fullWidth
+              value={prepDisciplina} onChange={e => setPrepDisciplina(e.target.value)}>
+              <MenuItem value="">Automática</MenuItem>
+              {DISCIPLINAS
+                .filter(d => enrolledDisciplines.length === 0 || enrolledDisciplines.includes(d.value))
+                .map(d => <MenuItem key={d.value} value={d.value}>{d.label}</MenuItem>)}
+            </TextField>
+            <TextField label="Nº questões" type="number" size="small" sx={{ width: 130 }}
+              value={prepNumQ} onChange={e => setPrepNumQ(Math.max(5, Math.min(20, Number(e.target.value))))}
+              inputProps={{ min: 5, max: 20 }} />
+          </Box>
+
+          {/* Info box */}
+          <Box sx={{ p: 2, mb: 3, bgcolor: prepMode === 'EXAM' ? '#F5F3FF' : '#E8F5E9', borderRadius: 2,
+            border: `1px solid ${prepMode === 'EXAM' ? '#DDD6FE' : '#A5D6A7'}` }}>
+            <Typography variant="caption" fontWeight={700} color={prepMode === 'EXAM' ? '#7C3AED' : '#00A651'}>
+              {prepMode === 'EXAM' ? '🎓 Modo Exame' : '📝 Modo Teste'}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.3 }}>
+              {prepMode === 'EXAM'
+                ? 'A IA analisará todo o conteúdo disponível, incluindo páginas ainda não lidas, para te preparar para o exame final.'
+                : 'A IA focará nos conteúdos mais recentes e nos temas abordados pelo professor para o próximo teste.'}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+              💡 Após o quiz, receberás explicações para cada resposta errada.
+            </Typography>
+          </Box>
+
+          <Button fullWidth variant="contained" disabled={preparingQuiz} onClick={handleStudyPrep}
+            startIcon={preparingQuiz ? <CircularProgress size={18} color="inherit" /> : <SchoolIcon />}
+            sx={{
+              py: 1.5, borderRadius: 2.5, textTransform: 'none', fontWeight: 800, fontSize: '1rem',
+              bgcolor: prepMode === 'EXAM' ? '#7C3AED' : '#00A651',
+              '&:hover': { bgcolor: prepMode === 'EXAM' ? '#6D28D9' : '#008f44' },
+            }}>
+            {preparingQuiz ? 'A preparar quiz...' : `Gerar Quiz de ${prepMode === 'EXAM' ? 'Exame' : 'Teste'}`}
+          </Button>
+        </Box>
+      )}
 
       {/* AI Quiz Generation Dialog */}
       <Dialog open={genDialog} onClose={() => setGenDialog(false)} maxWidth="sm" fullWidth
@@ -527,223 +701,6 @@ export default function StudentQuizPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ── Study Prep Dialog ─────────────────────────────── */}
-      <Dialog open={prepDialog} onClose={() => setPrepDialog(false)} maxWidth="sm" fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}>
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1 }}>
-          <Box sx={{ p: 0.8, bgcolor: '#F5F3FF', borderRadius: 1.5 }}>
-            <SchoolIcon sx={{ color: '#7C3AED', fontSize: 22 }} />
-          </Box>
-          <Box sx={{ flex: 1 }}>
-            <Typography fontWeight={800} color="#0A1628">Preparação para Avaliação</Typography>
-            <Typography variant="caption" color="text.secondary">
-              A IA gera questões personalizadas com base no teu percurso de estudo
-            </Typography>
-          </Box>
-          <IconButton size="small" onClick={() => setPrepDialog(false)}><CloseIcon fontSize="small" /></IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ pt: 1 }}>
-          {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
-
-          {/* Mode selection */}
-          <Typography variant="subtitle2" fontWeight={700} color="#374151" sx={{ mb: 1 }}>
-            Tipo de avaliação
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1.5, mb: 2.5 }}>
-            {([
-              { mode: 'TEST' as const, label: '📝 Teste Normal', sub: 'Com base no conteúdo mais recente do professor e debates do fórum', color: '#00A651', bg: '#E8F5E9' },
-              { mode: 'EXAM' as const, label: '🎓 Exame Final', sub: 'Abrange toda a matéria, com questões mais abrangentes e de análise', color: '#7C3AED', bg: '#F5F3FF' },
-            ] as const).map(opt => (
-              <Box key={opt.mode} onClick={() => setPrepMode(opt.mode)}
-                sx={{ flex: 1, p: 2, borderRadius: 2, cursor: 'pointer',
-                  border: `2px solid ${prepMode === opt.mode ? opt.color : '#E5E7EB'}`,
-                  bgcolor: prepMode === opt.mode ? opt.bg : '#fff',
-                  transition: 'all 0.15s', '&:hover': { borderColor: opt.color } }}>
-                <Typography fontWeight={700} color={prepMode === opt.mode ? opt.color : '#0A1628'} sx={{ mb: 0.5 }}>
-                  {opt.label}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">{opt.sub}</Typography>
-              </Box>
-            ))}
-          </Box>
-
-          {/* Book selection */}
-          <Typography variant="subtitle2" fontWeight={700} color="#374151" sx={{ mb: 1 }}>
-            <BookIcon sx={{ fontSize: 16, mr: 0.5, verticalAlign: 'middle', color: '#00A651' }} />
-            Livro / conteúdo (opcional)
-          </Typography>
-          {myProgress.length === 0 ? (
-            <Alert severity="info" sx={{ mb: 2 }}>
-              Lê algum livro na biblioteca para obter questões mais específicas.
-            </Alert>
-          ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, mb: 2 }}>
-              <Box onClick={() => setPrepSelectedProgress(null)}
-                sx={{ p: 1.2, border: `2px solid ${!prepSelectedProgress ? '#00A651' : '#E5E7EB'}`,
-                  borderRadius: 2, cursor: 'pointer',
-                  bgcolor: !prepSelectedProgress ? '#E8F5E9' : '#fff', transition: 'all 0.15s' }}>
-                <Typography variant="body2" fontWeight={600} color={!prepSelectedProgress ? '#00A651' : '#6B7280'}>
-                  Toda a disciplina (sem livro específico)
-                </Typography>
-              </Box>
-              {myProgress.slice(0, 5).map(p => (
-                <Box key={p.contentId} onClick={() => setPrepSelectedProgress(p)}
-                  sx={{ p: 1.2, border: `2px solid ${prepSelectedProgress?.contentId === p.contentId ? '#00A651' : '#E5E7EB'}`,
-                    borderRadius: 2, cursor: 'pointer',
-                    bgcolor: prepSelectedProgress?.contentId === p.contentId ? '#E8F5E9' : '#fff',
-                    transition: 'all 0.15s', '&:hover': { borderColor: '#4caf50' } }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {p.thumbnailUrl ? (
-                      <Box component="img" src={p.thumbnailUrl} alt={p.contentTitle}
-                        sx={{ width: 30, height: 42, objectFit: 'cover', borderRadius: 0.5, flexShrink: 0 }} />
-                    ) : (
-                      <Box sx={{ width: 30, height: 42, bgcolor: '#E8F5E9', borderRadius: 0.5,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <BookIcon sx={{ color: '#00A651', fontSize: 14 }} />
-                      </Box>
-                    )}
-                    <Box>
-                      <Typography variant="body2" fontWeight={700} noWrap color="#0A1628">{p.contentTitle}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {p.percentageComplete ?? 0}% lido · pág. {p.currentPage ?? 0}/{p.totalPages ?? '?'}
-                      </Typography>
-                    </Box>
-                    {prepSelectedProgress?.contentId === p.contentId && (
-                      <CheckIcon sx={{ color: '#00A651', ml: 'auto', flexShrink: 0 }} />
-                    )}
-                  </Box>
-                </Box>
-              ))}
-            </Box>
-          )}
-
-          {/* Discipline + num questions */}
-          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-            <TextField select label="Disciplina" size="small" fullWidth
-              value={prepDisciplina} onChange={e => setPrepDisciplina(e.target.value)}>
-              <MenuItem value="">Automática</MenuItem>
-              {DISCIPLINAS.map(d => <MenuItem key={d.value} value={d.value}>{d.label}</MenuItem>)}
-            </TextField>
-            <TextField label="Nº questões" type="number" size="small" sx={{ width: 120 }}
-              value={prepNumQ} onChange={e => setPrepNumQ(Math.max(5, Math.min(20, Number(e.target.value))))}
-              inputProps={{ min: 5, max: 20 }} />
-          </Box>
-
-          {/* Info box about what the AI will use */}
-          <Box sx={{ p: 1.5, bgcolor: prepMode === 'EXAM' ? '#F5F3FF' : '#E8F5E9', borderRadius: 2,
-            border: `1px solid ${prepMode === 'EXAM' ? '#DDD6FE' : '#A5D6A7'}` }}>
-            <Typography variant="caption" fontWeight={600} color={prepMode === 'EXAM' ? '#7C3AED' : '#00A651'}>
-              {prepMode === 'EXAM' ? '🎓 Modo Exame' : '📝 Modo Teste'}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.3 }}>
-              {prepMode === 'EXAM'
-                ? 'A IA analisará todo o conteúdo disponível da disciplina, incluindo páginas que ainda não leste, para te preparar para o exame final.'
-                : 'A IA focará nos conteúdos mais recentes e nos temas abordados pelo professor para te preparar para o próximo teste.'}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-              💡 Após o quiz, receberás explicações para cada resposta errada e recomendações de páginas a reler.
-            </Typography>
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ p: 2, pt: 1 }}>
-          <Button onClick={() => setPrepDialog(false)} sx={{ textTransform: 'none', color: '#6B7280' }}>Cancelar</Button>
-          <Button variant="contained" disabled={preparingQuiz} onClick={handleStudyPrep}
-            startIcon={preparingQuiz ? <CircularProgress size={16} color="inherit" /> : <SchoolIcon />}
-            sx={{ bgcolor: prepMode === 'EXAM' ? '#7C3AED' : '#00A651',
-              '&:hover': { bgcolor: prepMode === 'EXAM' ? '#6D28D9' : '#008f44' },
-              borderRadius: 2, textTransform: 'none', fontWeight: 700, minWidth: 160 }}>
-            {preparingQuiz ? 'A preparar quiz...' : `Gerar Quiz de ${prepMode === 'EXAM' ? 'Exame' : 'Teste'}`}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Discipline filter */}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
-        <Chip
-          label="Todas"
-          onClick={() => setDisciplina('')}
-          variant={disciplina === '' ? 'filled' : 'outlined'}
-          sx={{ fontWeight: disciplina === '' ? 700 : 400,
-            bgcolor: disciplina === '' ? '#00A651' : 'transparent',
-            color: disciplina === '' ? '#fff' : '#00A651',
-            borderColor: '#00A651' }}
-        />
-        {DISCIPLINAS.map(d => (
-          <Chip key={d.value} label={d.label}
-            onClick={() => setDisciplina(d.value)}
-            variant={disciplina === d.value ? 'filled' : 'outlined'}
-            sx={{ fontWeight: disciplina === d.value ? 700 : 400,
-              bgcolor: disciplina === d.value ? '#00A651' : 'transparent',
-              color: disciplina === d.value ? '#fff' : '#00A651',
-              borderColor: '#00A651' }}
-          />
-        ))}
-      </Box>
-
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-          <CircularProgress sx={{ color: '#00A651' }} />
-        </Box>
-      ) : quizzes.length === 0 ? (
-        <Box sx={{ textAlign: 'center', py: 8 }}>
-          <QuizIcon sx={{ fontSize: 64, color: '#A5D6A7', mb: 2 }} />
-          <Typography color="text.secondary">Nenhum quiz disponível para esta disciplina.</Typography>
-        </Box>
-      ) : (
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: '1fr 1fr 1fr' }, gap: 2 }}>
-          {quizzes.map(q => (
-            <Card key={q.id} elevation={0} sx={{ border: '1px solid #E5E7EB', borderRadius: 3,
-              transition: 'box-shadow 0.2s', '&:hover': { boxShadow: '0 4px 20px rgba(124,58,237,0.12)' } }}>
-              <CardContent sx={{ p: 2.5 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                  <Chip label={q.disciplinaLabel} size="small"
-                    sx={{ bgcolor: '#E8F5E9', color: '#00A651', fontWeight: 600, fontSize: '0.7rem' }} />
-                  {q.bestScore !== null && q.bestScore !== undefined && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <TrophyIcon sx={{ fontSize: 14, color: q.bestScore >= 70 ? '#00A651' : '#d97706' }} />
-                      <Typography variant="caption" fontWeight={700}
-                        color={q.bestScore >= 70 ? '#00A651' : '#d97706'}>{q.bestScore}%</Typography>
-                    </Box>
-                  )}
-                </Box>
-
-                <Typography variant="subtitle1" fontWeight={700} color="#0A1628" sx={{ mb: 0.5 }}>
-                  {q.titulo}
-                </Typography>
-                {q.descricao && (
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5,
-                    overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                    {q.descricao}
-                  </Typography>
-                )}
-
-                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    📝 {q.questionCount} questões
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {q.tempoLimiteMinutos ? `⏱ ${q.tempoLimiteMinutos} min` : '⏱ Sem limite'}
-                  </Typography>
-                  {q.myAttempts > 0 && (
-                    <Typography variant="caption" color="text.secondary">
-                      🔄 {q.myAttempts} tentativa{q.myAttempts > 1 ? 's' : ''}
-                    </Typography>
-                  )}
-                </Box>
-
-                <Button fullWidth variant="contained"
-                  disabled={loading || q.questionCount === 0}
-                  onClick={() => handleStart(q)}
-                  startIcon={q.myAttempts > 0 ? <ReplayIcon /> : <QuizIcon />}
-                  sx={{ bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' }, borderRadius: 2,
-                    textTransform: 'none', fontWeight: 700 }}>
-                  {q.myAttempts > 0 ? 'Repetir Quiz' : 'Iniciar Quiz'}
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </Box>
-      )}
       {oralSetupDialog}
     </Box>
   );
