@@ -14,6 +14,7 @@ public class QuizResultDTO {
     private boolean teachingMode;
     private boolean suggestProfessor;
     private int attemptCount;
+    private Long certificateId;
 
     public Long getAttemptId() { return attemptId; }
     public void setAttemptId(Long attemptId) { this.attemptId = attemptId; }
@@ -37,4 +38,6 @@ public class QuizResultDTO {
     public void setSuggestProfessor(boolean suggestProfessor) { this.suggestProfessor = suggestProfessor; }
     public int getAttemptCount() { return attemptCount; }
     public void setAttemptCount(int attemptCount) { this.attemptCount = attemptCount; }
+    public Long getCertificateId() { return certificateId; }
+    public void setCertificateId(Long certificateId) { this.certificateId = certificateId; }
 }

@@ -449,3 +449,23 @@ export async function completeSectionProgress(
   const { data } = await api.post<SectionProgress>(`/content/api/user/section-progress/${sectionId}/complete`, payload);
   return data;
 }
+
+// ────────────────────────────────────────────────────────────
+// Analytics — conteúdo mais acedido (ADMIN / PROFESSOR)
+// ────────────────────────────────────────────────────────────
+
+export interface ContentStats {
+  contentId: string;
+  contentTitle: string;
+  discipline: string | null;
+  accessCount: number;
+  uniqueUsers: number;
+  totalReadingTimeSeconds: number;
+}
+
+export async function getMostAccessed(period = 'month', limit = 10): Promise<ContentStats[]> {
+  const { data } = await api.get<ContentStats[]>('/content/api/analytics/most-accessed', {
+    params: { period, limit },
+  });
+  return data;
+}

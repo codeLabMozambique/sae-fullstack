@@ -9,6 +9,7 @@ import LockIcon from '@mui/icons-material/Lock';
 import StarIcon from '@mui/icons-material/Star';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
 import { useParams, useNavigate } from 'react-router-dom';
 import { forumService } from '../../services/forumService';
 import { useWebSocket } from '../../hooks/useWebSocket';
@@ -425,8 +426,8 @@ const QuestionDetail: React.FC = () => {
               {/* Avatar */}
               <Avatar
                 sx={{
-                  bgcolor: mine ? accentLight : '#F3F4F6',
-                  color: mine ? accent : '#6B7280',
+                  bgcolor: msg.data.aiGenerated ? '#EDE9FE' : mine ? accentLight : '#F3F4F6',
+                  color: msg.data.aiGenerated ? '#7C3AED' : mine ? accent : '#6B7280',
                   fontWeight: 700,
                   width: 34,
                   height: 34,
@@ -435,7 +436,9 @@ const QuestionDetail: React.FC = () => {
                   mt: 0.25,
                 }}
               >
-                {initials(msg.data.answeredBy)}
+                {msg.data.aiGenerated
+                  ? <SmartToyIcon sx={{ fontSize: '1.1rem' }} />
+                  : initials(msg.data.answeredBy)}
               </Avatar>
 
               <Box
@@ -468,6 +471,22 @@ const QuestionDetail: React.FC = () => {
                         bgcolor: '#1D4ED8',
                         color: '#fff',
                         fontWeight: 600,
+                        fontSize: '0.58rem',
+                        height: 16,
+                        '& .MuiChip-label': { px: 0.5 },
+                        '& .MuiChip-icon': { ml: 0.5 },
+                      }}
+                    />
+                  )}
+                  {msg.data.aiGenerated && (
+                    <Chip
+                      icon={<SmartToyIcon sx={{ fontSize: '10px !important', color: '#fff !important' }} />}
+                      label="IA"
+                      size="small"
+                      sx={{
+                        bgcolor: '#7C3AED',
+                        color: '#fff',
+                        fontWeight: 700,
                         fontSize: '0.58rem',
                         height: 16,
                         '& .MuiChip-label': { px: 0.5 },
