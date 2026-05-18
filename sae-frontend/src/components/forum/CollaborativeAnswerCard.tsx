@@ -1,5 +1,6 @@
 import React from 'react';
-import { Card, CardContent, Box, Typography } from '@mui/material';
+import { Card, CardContent, Box, Typography, Chip } from '@mui/material';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
 import ValidationBadge from './ValidationBadge';
 import type { CollaborativeAnswer } from '../../types/forum';
 
@@ -12,6 +13,14 @@ const CollaborativeAnswerCard: React.FC<Props> = ({ answer }) => (
     <CardContent sx={{ p: 2.5 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
         <ValidationBadge status={answer.validationStatus} rejectedBy={answer.rejectedBy} />
+        {answer.aiGenerated && (
+          <Chip
+            icon={<SmartToyIcon sx={{ fontSize: '13px !important', color: '#fff !important' }} />}
+            label="Assistente IA"
+            size="small"
+            sx={{ bgcolor: '#7C3AED', color: '#fff', fontWeight: 700, fontSize: '0.72rem' }}
+          />
+        )}
       </Box>
 
       <Typography variant="body2" color="#1F2937" sx={{ whiteSpace: 'pre-wrap', mb: 2 }}>

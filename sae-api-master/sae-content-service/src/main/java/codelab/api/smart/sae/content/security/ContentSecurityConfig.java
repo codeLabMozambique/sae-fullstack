@@ -55,6 +55,8 @@ public class ContentSecurityConfig {
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/api/categories/admin/**")).hasAuthority("ADMIN")
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/api/disciplines/admin/**")).hasAuthority("ADMIN")
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/api/admin/**")).hasAuthority("ADMIN")
+                        // Analytics — ADMIN e PROFESSOR
+                        .requestMatchers(AntPathRequestMatcher.antMatcher("/api/analytics/**")).hasAnyAuthority("ADMIN", "PROFESSOR")
                         // Professor-only (ADMIN também pode)
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/api/professor/**")).hasAnyAuthority("PROFESSOR", "ADMIN")
                         // Student-only (PROFESSOR/ADMIN também podem para fins de gestão)

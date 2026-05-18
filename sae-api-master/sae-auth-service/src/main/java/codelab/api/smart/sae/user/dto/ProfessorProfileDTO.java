@@ -14,6 +14,9 @@ public class ProfessorProfileDTO {
     private java.time.LocalDateTime lastSeen;
     private String professorCode;
     private String teachingCycle;
+    private String approvalStatus;
+    private String rejectionReason;
+    private String idDocumentNumber;
 
     public ProfessorProfileDTO() {}
 
@@ -68,4 +71,13 @@ public class ProfessorProfileDTO {
 
     public String getTeachingCycle() { return teachingCycle; }
     public void setTeachingCycle(String teachingCycle) { this.teachingCycle = teachingCycle; }
+
+    public String getApprovalStatus() { return approvalStatus; }
+    public void setApprovalStatus(String approvalStatus) { this.approvalStatus = approvalStatus; }
+
+    public String getRejectionReason() { return rejectionReason; }
+    public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
+
+    public String getIdDocumentNumber() { return idDocumentNumber; }
+    public void setIdDocumentNumber(String idDocumentNumber) { this.idDocumentNumber = idDocumentNumber; }
 }

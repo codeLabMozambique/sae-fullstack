@@ -38,6 +38,16 @@ public class ProfessorProfileEntity extends UpdatableEntity {
     @Column(name = "TEACHING_CYCLE", length = 10)
     private String teachingCycle;
 
+    // "PENDING", "APPROVED", "REJECTED"
+    @Column(name = "APPROVAL_STATUS", length = 20)
+    private String approvalStatus = "PENDING";
+
+    @Column(name = "REJECTION_REASON", length = 500)
+    private String rejectionReason;
+
+    @Column(name = "ID_DOCUMENT_NUMBER", length = 50)
+    private String idDocumentNumber;
+
     @Column(name = "IS_ONLINE")
     private boolean online;
 
@@ -97,6 +107,15 @@ public class ProfessorProfileEntity extends UpdatableEntity {
 
     public String getTeachingCycle() { return teachingCycle; }
     public void setTeachingCycle(String teachingCycle) { this.teachingCycle = teachingCycle; }
+
+    public String getApprovalStatus() { return approvalStatus; }
+    public void setApprovalStatus(String approvalStatus) { this.approvalStatus = approvalStatus; }
+
+    public String getRejectionReason() { return rejectionReason; }
+    public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
+
+    public String getIdDocumentNumber() { return idDocumentNumber; }
+    public void setIdDocumentNumber(String idDocumentNumber) { this.idDocumentNumber = idDocumentNumber; }
 
     public boolean isOnline() {
         return online;

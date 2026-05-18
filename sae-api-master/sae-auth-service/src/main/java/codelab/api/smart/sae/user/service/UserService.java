@@ -440,6 +440,37 @@ public class UserService {
         return findAllProfessors();
     }
 
+    public List<ProfessorProfileDTO> findPendingProfessors(org.springframework.security.core.Authentication auth) {
+        boolean isSchoolAdmin = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals(UserRoles.SCHOOL_ADMIN.name()));
+        if (isSchoolAdmin) {
+            SchoolAdminProfileEntity admin = schoolAdminProfileRepository.findByUserUsername(auth.getName())
+                    .orElseThrow(() -> new BusinessException("Perfil de administrador de escola não encontrado"));
+            return professorProfileRepository.findBySchoolIdAndApprovalStatus(admin.getSchoolId(), "PENDING").stream()
+                    .map(this::toProfessorDTO).collect(Collectors.toList());
+        }
+        return professorProfileRepository.findByApprovalStatus("PENDING").stream()
+                .map(this::toProfessorDTO).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public ProfessorProfileDTO approveProfessor(Long profileId) {
+        ProfessorProfileEntity p = professorProfileRepository.findById(profileId)
+                .orElseThrow(() -> new BusinessException("Perfil de professor não encontrado"));
+        p.setApprovalStatus("APPROVED");
+        p.setRejectionReason(null);
+        return toProfessorDTO(professorProfileRepository.save(p));
+    }
+
+    @Transactional
+    public ProfessorProfileDTO rejectProfessor(Long profileId, String reason) {
+        ProfessorProfileEntity p = professorProfileRepository.findById(profileId)
+                .orElseThrow(() -> new BusinessException("Perfil de professor não encontrado"));
+        p.setApprovalStatus("REJECTED");
+        p.setRejectionReason(reason);
+        return toProfessorDTO(professorProfileRepository.save(p));
+    }
+
     private ProfessorProfileDTO toProfessorDTO(ProfessorProfileEntity p) {
         ProfessorProfileDTO dto = new ProfessorProfileDTO(
                 p.getUser().getId(),
@@ -454,6 +485,9 @@ public class UserService {
                 p.getLastSeen());
         dto.setProfessorCode(p.getProfessorCode());
         dto.setTeachingCycle(p.getTeachingCycle());
+        dto.setApprovalStatus(p.getApprovalStatus());
+        dto.setRejectionReason(p.getRejectionReason());
+        dto.setIdDocumentNumber(p.getIdDocumentNumber());
         return dto;
     }
 

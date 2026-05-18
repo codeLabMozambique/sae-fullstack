@@ -185,6 +185,7 @@ FROM (VALUES
     -- STUDENT — Quiz
     (1,'STD-QUIZ-001','MENU_ITEM','Escolher Quiz',          '/student/quiz',                         1,'STD-QUIZ'),
     (1,'STD-QUIZ-002','MENU_ITEM','Os Meus Resultados',     '/student/quiz/results',                 2,'STD-QUIZ'),
+    (1,'STD-QUIZ-003','MENU_ITEM','Os Meus Certificados',   '/student/certificates',                 3,'STD-QUIZ'),
     -- STUDENT — Tarefas
     (1,'STD-ASG-001','MENU_ITEM','Minhas Tarefas',          '/student/assignments',                  1,'STD-ASG'),
     (1,'STD-ASG-002','MENU_ITEM','Histórico Entregas',      '/student/submissions',                  2,'STD-ASG'),
@@ -267,7 +268,7 @@ FROM (VALUES
     ('STUDENT','STD-LIB-006'),('STUDENT','STD-LIB-007'),
     ('STUDENT','STD-GOALS'), ('STUDENT','STD-GOALS-001'),('STUDENT','STD-GOALS-002'),
     -- STUDENT — quiz + tarefas
-    ('STUDENT','STD-QUIZ'),  ('STUDENT','STD-QUIZ-001'),('STUDENT','STD-QUIZ-002'),
+    ('STUDENT','STD-QUIZ'),  ('STUDENT','STD-QUIZ-001'),('STUDENT','STD-QUIZ-002'),('STUDENT','STD-QUIZ-003'),
     ('STUDENT','STD-ASG'),   ('STUDENT','STD-ASG-001'), ('STUDENT','STD-ASG-002'),
 
     -- GUEST — biblioteca pública
@@ -299,20 +300,6 @@ INSERT INTO ac_class_level (id, status, created_by, created_date, last_modified_
 (13, 1, 0, NOW(), 0, NOW(), '10ª Classe', 'BASICO'),
 (14, 1, 0, NOW(), 0, NOW(), '11ª Classe', 'MEDIO'),
 (15, 1, 0, NOW(), 0, NOW(), '12ª Classe', 'MEDIO')
--- ============================================================
--- BLOCO 17 — ESG: Turmas com turma_group
--- A coluna turma_group é adicionada pelo Hibernate (ddl-auto: update)
--- mas o ALTER TABLE garante compatibilidade em runs sem serviço activo.
--- ============================================================
-ALTER TABLE IF EXISTS ac_classroom ADD COLUMN IF NOT EXISTS turma_group VARCHAR(10);
-
--- Garantir que os níveis de ensino 11-15 (8ª–12ª) existem antes da FK das turmas
-INSERT INTO ac_class_level (id, status, created_by, created_date, last_modified_by, last_modified_date, name) VALUES
-(11, 1, 0, NOW(), 0, NOW(), '8ª Classe'),
-(12, 1, 0, NOW(), 0, NOW(), '9ª Classe'),
-(13, 1, 0, NOW(), 0, NOW(), '10ª Classe'),
-(14, 1, 0, NOW(), 0, NOW(), '11ª Classe'),
-(15, 1, 0, NOW(), 0, NOW(), '12ª Classe')
 ON CONFLICT (id) DO NOTHING;
 
 SELECT setval(pg_get_serial_sequence('ac_class_level', 'id'), GREATEST((SELECT MAX(id) FROM ac_class_level), 15));
@@ -498,6 +485,19 @@ ALTER TABLE IF EXISTS quiz
     ADD COLUMN IF NOT EXISTS subject_id BIGINT;
 ALTER TABLE IF EXISTS quiz
     ADD COLUMN IF NOT EXISTS subject_name VARCHAR(200);
+
+-- =============================================================================
+-- BLOCO 25 — Professor: fluxo de aprovação
+-- =============================================================================
+ALTER TABLE professor_profile
+    ADD COLUMN IF NOT EXISTS approval_status   VARCHAR(20)  NOT NULL DEFAULT 'APPROVED';
+ALTER TABLE professor_profile
+    ADD COLUMN IF NOT EXISTS rejection_reason  VARCHAR(500);
+ALTER TABLE professor_profile
+    ADD COLUMN IF NOT EXISTS id_document_number VARCHAR(50);
+
+-- Professores existentes ficam APPROVED (já foram validados manualmente)
+UPDATE professor_profile SET approval_status = 'APPROVED' WHERE approval_status IS NULL OR approval_status = '';
 
 -- =============================================================================
 -- VERIFICAÇÃO FINAL

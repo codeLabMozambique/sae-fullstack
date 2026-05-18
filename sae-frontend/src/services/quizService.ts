@@ -3,7 +3,7 @@ import type {
   QuizSummary, Quiz, QuizAdmin,
   StartAttemptResponse, SubmitAttemptDTO, QuizResult,
   CreateQuizDTO, CreateQuestionDTO, GenerateFromContentDTO, StudyPrepRequestDTO,
-  OralTestRequestDTO, OralTestEvaluateDTO, OralTestResult,
+  OralTestRequestDTO, OralTestEvaluateDTO, OralTestResult, Certificate,
 } from '../types/quiz';
 
 const BASE = '/quiz';
@@ -62,4 +62,10 @@ export const quizService = {
 
   evaluateOralTest: (dto: OralTestEvaluateDTO): Promise<OralTestResult> =>
     api.post<OralTestResult>(`${BASE}/quizzes/oral-test/evaluate`, dto).then(r => r.data),
+
+  getMyCertificates: (): Promise<Certificate[]> =>
+    api.get<Certificate[]>(`${BASE}/certificates/my`).then(r => r.data),
+
+  getCertificate: (id: number): Promise<Certificate> =>
+    api.get<Certificate>(`${BASE}/certificates/${id}`).then(r => r.data),
 };

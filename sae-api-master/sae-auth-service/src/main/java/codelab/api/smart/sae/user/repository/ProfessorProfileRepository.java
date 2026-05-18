@@ -11,4 +11,6 @@ public interface ProfessorProfileRepository extends JpaRepository<ProfessorProfi
     Optional<ProfessorProfileEntity> findByUser_Id(Long userId);
     java.util.Optional<ProfessorProfileEntity> findByUserUsername(String username);
     java.util.List<ProfessorProfileEntity> findBySchoolId(Long schoolId);
+    java.util.List<ProfessorProfileEntity> findByApprovalStatus(String approvalStatus);
+    java.util.List<ProfessorProfileEntity> findBySchoolIdAndApprovalStatus(Long schoolId, String approvalStatus);
 }

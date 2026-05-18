@@ -24,6 +24,7 @@ public class QuizAttemptService {
     @Autowired private QuizAttemptRepository attemptRepository;
     @Autowired private QuizAttemptAnswerRepository answerRepository;
     @Autowired private QuizService quizService;
+    @Autowired private CertificateService certificateService;
 
     // ── Start attempt ─────────────────────────────────────────────
     public StartAttemptResponseDTO startAttempt(Long quizId, String username) {
@@ -98,6 +99,9 @@ public class QuizAttemptService {
         result.setAttemptCount(attemptCount);
         if (score < 50 && attemptCount >= 3) result.setTeachingMode(true);
         if (score < 50 && attemptCount >= 5) result.setSuggestProfessor(true);
+        if (score >= 80) {
+            certificateService.issue(attempt, quiz).ifPresent(result::setCertificateId);
+        }
         return result;
     }
 

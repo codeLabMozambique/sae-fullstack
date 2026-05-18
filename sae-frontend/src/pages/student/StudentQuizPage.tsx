@@ -23,14 +23,17 @@ import {
   Download as DownloadIcon,
   VolumeUp as AudioIcon,
   InsertDriveFile as DocIcon,
+  Verified as CertIcon,
+  Print as PrintIcon,
 } from '@mui/icons-material';
 import { quizService } from '../../services/quizService';
 import { listProgress, listSections } from '../../services/contentService';
 import type { ReadingProgressView, ContentSection } from '../../services/contentService';
+import { useAuth } from '../../context/AuthContext';
 import { DISCIPLINAS } from '../../types/quiz';
 import type {
   QuizSummary, Quiz, QuizResult, AttemptAnswer, GenerateFromContentDTO,
-  StudyPrepRequestDTO, OralTestRequestDTO, OralTestEvaluateDTO, OralTestResult,
+  StudyPrepRequestDTO, OralTestRequestDTO, OralTestEvaluateDTO, OralTestResult, Certificate,
 } from '../../types/quiz';
 import VoiceRecorderButton from '../../components/VoiceRecorderButton';
 
@@ -70,6 +73,7 @@ function ScoreBadge({ score }: { score: number }) {
 }
 
 export default function StudentQuizPage() {
+  const { user } = useAuth();
   const [view, setView] = useState<View>('browse');
   const [disciplina, setDisciplina] = useState('');
   const [quizzes, setQuizzes] = useState<QuizSummary[]>([]);
@@ -108,6 +112,10 @@ export default function StudentQuizPage() {
   const [prepDisciplina, setPrepDisciplina] = useState('');
   const [prepNumQ, setPrepNumQ] = useState(10);
   const [preparingQuiz, setPreparingQuiz] = useState(false);
+
+  // Certificate state
+  const [certOpen, setCertOpen] = useState(false);
+  const [certData, setCertData] = useState<Certificate | null>(null);
 
   // Oral test state
   const [oralDialog, setOralDialog] = useState(false);
@@ -340,6 +348,98 @@ export default function StudentQuizPage() {
   const currentQuestion = activeQuiz?.questions[currentIdx];
   const answeredCount = activeQuiz ? Object.keys(answers).length : 0;
   const totalQ = activeQuiz?.questions.length ?? 0;
+
+  const openCertificate = async (certId: number) => {
+    try {
+      const cert = await quizService.getCertificate(certId);
+      setCertData(cert);
+      setCertOpen(true);
+    } catch {
+      // silently ignore
+    }
+  };
+
+  const handlePrintCertificate = () => {
+    window.print();
+  };
+
+  // ── Certificate Dialog ────────────────────────────────────────
+  const certificateDialog = certData && (
+    <Dialog open={certOpen} onClose={() => setCertOpen(false)} maxWidth="sm" fullWidth
+      PaperProps={{ sx: { borderRadius: 3 } }}>
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 0 }}>
+        <Typography fontWeight={800} color="#0A1628">Certificado de Desempenho</Typography>
+        <IconButton size="small" onClick={() => setCertOpen(false)}><CloseIcon fontSize="small" /></IconButton>
+      </DialogTitle>
+      <DialogContent sx={{ pt: 2 }}>
+        {/* Certificate card — printable */}
+        <Box className="certificate-print" sx={{
+          border: '4px solid #00A651', borderRadius: 3, p: 4, textAlign: 'center',
+          background: 'linear-gradient(135deg, #f0fdf4 0%, #fff 60%, #f0f9ff 100%)',
+          position: 'relative', overflow: 'hidden',
+        }}>
+          {/* Decorative corner */}
+          <Box sx={{ position: 'absolute', top: 0, right: 0, width: 80, height: 80,
+            background: 'linear-gradient(135deg, transparent 50%, rgba(0,166,81,0.12) 50%)' }} />
+          <Box sx={{ position: 'absolute', bottom: 0, left: 0, width: 80, height: 80,
+            background: 'linear-gradient(315deg, transparent 50%, rgba(0,166,81,0.12) 50%)' }} />
+
+          <CertIcon sx={{ fontSize: 56, color: '#00A651', mb: 1 }} />
+          <Typography variant="caption" sx={{ display: 'block', letterSpacing: 3,
+            color: '#6B7280', fontWeight: 600, textTransform: 'uppercase', mb: 1 }}>
+            Sistema de Apoio ao Estudo — SAE
+          </Typography>
+          <Typography variant="h5" fontWeight={900} color="#0A1628" sx={{ mb: 0.5 }}>
+            Certificado de Desempenho
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
+            Este certificado atesta que
+          </Typography>
+          <Typography variant="h6" fontWeight={800} color="#00A651"
+            sx={{ mb: 2.5, fontSize: '1.4rem', fontStyle: 'italic' }}>
+            {user?.fullName || 'Estudante'}
+          </Typography>
+          <Typography variant="body1" color="#374151" sx={{ mb: 0.5 }}>
+            concluiu com êxito o quiz
+          </Typography>
+          <Typography variant="h6" fontWeight={700} color="#0A1628" sx={{ mb: 0.5 }}>
+            {certData.quizTitulo}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
+            {certData.disciplinaLabel}
+          </Typography>
+
+          {/* Score badge */}
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1,
+            px: 3, py: 1, bgcolor: '#00A651', borderRadius: 4, mb: 2.5 }}>
+            <TrophyIcon sx={{ color: '#fff', fontSize: 20 }} />
+            <Typography fontWeight={800} color="#fff" fontSize="1.1rem">
+              {certData.score}% de acerto
+            </Typography>
+          </Box>
+
+          <Typography variant="caption" sx={{ display: 'block', color: '#9CA3AF' }}>
+            Emitido em {new Date(certData.issuedAt).toLocaleDateString('pt-PT', {
+              day: '2-digit', month: 'long', year: 'numeric'
+            })}
+          </Typography>
+          <Typography variant="caption" sx={{ display: 'block', color: '#D1D5DB', mt: 0.5 }}>
+            Certificado #{certData.id}
+          </Typography>
+        </Box>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button onClick={() => setCertOpen(false)} sx={{ textTransform: 'none', color: '#6B7280' }}>
+          Fechar
+        </Button>
+        <Button variant="contained" startIcon={<PrintIcon />} onClick={handlePrintCertificate}
+          sx={{ bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' },
+            textTransform: 'none', fontWeight: 700, borderRadius: 2 }}>
+          Imprimir / Guardar PDF
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
 
   // ── Oral Test Setup Dialog ────────────────────────────────────
   const oralSetupDialog = (
@@ -745,6 +845,7 @@ export default function StudentQuizPage() {
         </Box>
       )}
       {oralSetupDialog}
+      {certificateDialog}
     </Box>
   );
 
@@ -983,6 +1084,27 @@ export default function StudentQuizPage() {
               </Box>
             </Box>
           )}
+          {/* Certificate banner — shown when score >= 80 */}
+          {result.certificateId && (
+            <Box sx={{ mt: 2, p: 2, bgcolor: '#F0FDF4', border: '2px solid #86EFAC',
+              borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <CertIcon sx={{ color: '#00A651', fontSize: 28, flexShrink: 0 }} />
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="subtitle2" fontWeight={700} color="#15803d">
+                  Certificado desbloqueado!
+                </Typography>
+                <Typography variant="caption" color="#16a34a">
+                  Obtiveste {result.score}% — podes descarregar o teu certificado de desempenho.
+                </Typography>
+              </Box>
+              <Button variant="contained" size="small" startIcon={<CertIcon />}
+                onClick={() => openCertificate(result.certificateId!)}
+                sx={{ bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' },
+                  textTransform: 'none', fontWeight: 700, borderRadius: 2, whiteSpace: 'nowrap' }}>
+                Ver Certificado
+              </Button>
+            </Box>
+          )}
           <Stack direction="row" spacing={1.5} justifyContent="center" sx={{ mt: 1 }}>
             <Button variant="outlined" onClick={() => setShowReview(!showReview)}
               sx={{ borderColor: '#00A651', color: '#00A651', textTransform: 'none', fontWeight: 600 }}>
@@ -996,6 +1118,8 @@ export default function StudentQuizPage() {
           </Stack>
         </CardContent>
       </Card>
+
+      {certificateDialog}
 
       {/* Question review */}
       {showReview && (

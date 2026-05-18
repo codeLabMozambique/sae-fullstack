@@ -27,3 +27,14 @@ body {
 .animate-fade-in {
   animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+@media print {
+  body > * { display: none !important; }
+  .MuiDialog-root { display: block !important; position: static !important; }
+  .MuiDialog-container { display: block !important; }
+  .MuiDialog-paper { box-shadow: none !important; margin: 0 !important; max-width: 100% !important; }
+  .MuiDialogTitle-root,
+  .MuiDialogActions-root { display: none !important; }
+  .MuiDialogContent-root { padding: 0 !important; }
+  .certificate-print { border-radius: 0 !important; page-break-inside: avoid; }
+}
