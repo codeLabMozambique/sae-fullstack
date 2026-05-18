@@ -106,6 +106,17 @@ export async function getProfessorAssignment(id: number): Promise<Assignment> {
   return data;
 }
 
+export async function updateAssignment(
+  id: number,
+  payload: Partial<{ deadline: string; title: string; description: string; maxScore: number }>
+): Promise<Assignment> {
+  const { data } = await api.patch<Assignment>(
+    `/content/api/professor/assignments/${id}`,
+    payload
+  );
+  return data;
+}
+
 export async function deleteAssignment(id: number): Promise<void> {
   await api.delete(`/content/api/professor/assignments/${id}`);
 }

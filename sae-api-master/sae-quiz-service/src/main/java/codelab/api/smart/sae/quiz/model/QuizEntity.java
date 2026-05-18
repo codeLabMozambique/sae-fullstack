@@ -21,8 +21,14 @@ public class QuizEntity {
     private String descricao;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column
     private DisciplinaEnum disciplina;
+
+    @Column(name = "subject_id")
+    private Long subjectId;
+
+    @Column(name = "subject_name", length = 200)
+    private String subjectName;
 
     private Integer tempoLimiteMinutos;
 
@@ -73,6 +79,10 @@ public class QuizEntity {
     public void setDescricao(String descricao) { this.descricao = descricao; }
     public DisciplinaEnum getDisciplina() { return disciplina; }
     public void setDisciplina(DisciplinaEnum disciplina) { this.disciplina = disciplina; }
+    public Long getSubjectId() { return subjectId; }
+    public void setSubjectId(Long subjectId) { this.subjectId = subjectId; }
+    public String getSubjectName() { return subjectName; }
+    public void setSubjectName(String subjectName) { this.subjectName = subjectName; }
     public Integer getTempoLimiteMinutos() { return tempoLimiteMinutos; }
     public void setTempoLimiteMinutos(Integer t) { this.tempoLimiteMinutos = t; }
     public String getCreatedBy() { return createdBy; }

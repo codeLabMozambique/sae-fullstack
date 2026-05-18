@@ -11,6 +11,7 @@ public class ClassroomFullDTO implements Serializable {
     private ClassLevelDTO classLevel;
     private String shift;
     private String academicYear;
+    private AcademicGroupDTO academicGroup;
     private List<ProfessorAssignmentFullDTO> assignments;
 
     public ClassroomFullDTO() {}
@@ -29,6 +30,9 @@ public class ClassroomFullDTO implements Serializable {
 
     public String getAcademicYear() { return academicYear; }
     public void setAcademicYear(String academicYear) { this.academicYear = academicYear; }
+
+    public AcademicGroupDTO getAcademicGroup() { return academicGroup; }
+    public void setAcademicGroup(AcademicGroupDTO academicGroup) { this.academicGroup = academicGroup; }
 
     public List<ProfessorAssignmentFullDTO> getAssignments() { return assignments; }
     public void setAssignments(List<ProfessorAssignmentFullDTO> assignments) { this.assignments = assignments; }

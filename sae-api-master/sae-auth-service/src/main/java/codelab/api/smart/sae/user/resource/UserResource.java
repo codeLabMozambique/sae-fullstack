@@ -111,6 +111,11 @@ public class UserResource {
         return ResponseEntity.ok(userService.findProfessors(auth));
     }
 
+    @GetMapping("/students")
+    public ResponseEntity<List<StudentProfileDTO>> getStudents(Authentication auth) {
+        return ResponseEntity.ok(userService.findStudents(auth));
+    }
+
     @PutMapping("/update")
     public ResponseEntity<?> updateUser(@RequestBody UserUpdateDTO dto) {
         return ResponseEntity.ok(userService.updateUser(dto));

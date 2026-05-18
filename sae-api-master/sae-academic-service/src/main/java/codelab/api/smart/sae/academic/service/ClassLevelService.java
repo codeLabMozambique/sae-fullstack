@@ -33,6 +33,7 @@ public class ClassLevelService {
     public ClassLevelDTO save(ClassLevelDTO dto) {
         ClassLevelEntity entity = new ClassLevelEntity();
         entity.setName(dto.getName());
+        entity.setCycle(dto.getCycle());
         entity.setStatus(EntityState.ACTIVE);
         return convertToDTO(classLevelRepository.save(entity));
     }
@@ -42,6 +43,7 @@ public class ClassLevelService {
         return classLevelRepository.findById(dto.getId())
                 .map(entity -> {
                     entity.setName(dto.getName());
+                    entity.setCycle(dto.getCycle());
                     return convertToDTO(classLevelRepository.save(entity));
                 }).orElse(null);
     }
@@ -58,6 +60,7 @@ public class ClassLevelService {
         ClassLevelDTO dto = new ClassLevelDTO();
         dto.setId(entity.getId());
         dto.setName(entity.getName());
+        dto.setCycle(entity.getCycle());
         return dto;
     }
 }

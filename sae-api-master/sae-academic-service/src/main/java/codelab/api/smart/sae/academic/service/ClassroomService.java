@@ -1,9 +1,11 @@
 package codelab.api.smart.sae.academic.service;
 
 import codelab.api.smart.sae.academic.dto.ClassroomDTO;
+import codelab.api.smart.sae.academic.model.AcademicGroupEntity;
 import codelab.api.smart.sae.academic.model.ClassLevelEntity;
 import codelab.api.smart.sae.academic.model.ClassroomEntity;
 import codelab.api.smart.sae.academic.model.SchoolEntity;
+import codelab.api.smart.sae.academic.repository.AcademicGroupRepository;
 import codelab.api.smart.sae.academic.repository.ClassLevelRepository;
 import codelab.api.smart.sae.academic.repository.ClassroomRepository;
 import codelab.api.smart.sae.academic.repository.SchoolRepository;
@@ -27,6 +29,9 @@ public class ClassroomService {
     @Autowired
     private ClassLevelRepository classLevelRepository;
 
+    @Autowired
+    private AcademicGroupRepository academicGroupRepository;
+
     public List<ClassroomDTO> findAllActive() {
         return classroomRepository.findByStatus(EntityState.ACTIVE).stream()
                 .map(this::convertToDTO)
@@ -35,6 +40,18 @@ public class ClassroomService {
 
     public List<ClassroomDTO> findBySchool(Long schoolId) {
         return classroomRepository.findBySchoolIdAndStatus(schoolId, EntityState.ACTIVE).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<ClassroomDTO> findBySchoolAndClassLevel(Long schoolId, Long classLevelId) {
+        return classroomRepository.findBySchoolIdAndClassLevelIdAndStatus(schoolId, classLevelId, EntityState.ACTIVE).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<ClassroomDTO> findByClassLevel(Long classLevelId) {
+        return classroomRepository.findByClassLevelIdAndStatus(classLevelId, EntityState.ACTIVE).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -50,6 +67,7 @@ public class ClassroomService {
     public ClassroomDTO save(ClassroomDTO dto) {
         ClassroomEntity entity = new ClassroomEntity();
         updateEntityFromDTO(entity, dto);
+        validateCycleGroupConsistency(entity);
         entity.setStatus(EntityState.ACTIVE);
         return convertToDTO(classroomRepository.save(entity));
     }
@@ -59,6 +77,7 @@ public class ClassroomService {
         return classroomRepository.findById(java.util.Objects.requireNonNull(dto.getId()))
                 .map(entity -> {
                     updateEntityFromDTO(entity, dto);
+                    validateCycleGroupConsistency(entity);
                     return convertToDTO(java.util.Objects.requireNonNull(classroomRepository.save(entity)));
                 }).orElse(null);
     }
@@ -85,6 +104,17 @@ public class ClassroomService {
         return found.isEmpty() ? null : convertToDTO(found.get(0));
     }
 
+    private void validateCycleGroupConsistency(ClassroomEntity entity) {
+        if (entity.getClassLevel() == null) return;
+        String cycle = entity.getClassLevel().getCycle();
+        if ("MEDIO".equals(cycle) && entity.getAcademicGroup() == null) {
+            throw new RuntimeException("Turmas do ciclo médio (11ª/12ª) requerem um grupo académico");
+        }
+        if ("BASICO".equals(cycle)) {
+            entity.setAcademicGroup(null);
+        }
+    }
+
     private ClassroomDTO convertToDTO(ClassroomEntity entity) {
         ClassroomDTO dto = new ClassroomDTO();
         dto.setId(entity.getId());
@@ -94,6 +124,10 @@ public class ClassroomService {
         dto.setShift(entity.getShift());
         dto.setAcademicYear(entity.getAcademicYear());
         dto.setDirectorId(entity.getDirectorId());
+        if (entity.getAcademicGroup() != null) {
+            dto.setAcademicGroupId(entity.getAcademicGroup().getId());
+            dto.setAcademicGroupName(entity.getAcademicGroup().getName());
+        }
         return dto;
     }
 
@@ -112,6 +146,14 @@ public class ClassroomService {
             ClassLevelEntity classLevel = classLevelRepository.findById(java.util.Objects.requireNonNull(dto.getClassLevelId()))
                     .orElseThrow(() -> new RuntimeException("Class Level not found"));
             entity.setClassLevel(classLevel);
+        }
+
+        if (dto.getAcademicGroupId() != null) {
+            AcademicGroupEntity group = academicGroupRepository.findById(dto.getAcademicGroupId())
+                    .orElseThrow(() -> new RuntimeException("Academic Group not found"));
+            entity.setAcademicGroup(group);
+        } else {
+            entity.setAcademicGroup(null);
         }
     }
 }

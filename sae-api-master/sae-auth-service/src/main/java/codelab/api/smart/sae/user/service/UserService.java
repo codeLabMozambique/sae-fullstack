@@ -10,6 +10,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -37,10 +39,14 @@ import codelab.api.smart.sae.user.model.StudentProfileEntity;
 import codelab.api.smart.sae.user.model.UserEntity;
 import codelab.api.smart.sae.user.dto.SchoolAdminRegisterDTO;
 import codelab.api.smart.sae.user.model.SchoolAdminProfileEntity;
+import codelab.api.smart.sae.framework.jpa.EntityState;
+import codelab.api.smart.sae.user.model.StudentEnrollmentEntity;
 import codelab.api.smart.sae.user.repository.ProfessorProfileRepository;
 import codelab.api.smart.sae.user.repository.SchoolAdminProfileRepository;
+import codelab.api.smart.sae.user.repository.StudentEnrollmentRepository;
 import codelab.api.smart.sae.user.repository.StudentProfileRepository;
 import codelab.api.smart.sae.user.repository.UserRepository;
+import codelab.api.smart.sae.user.validators.ContactValidator;
 
 /**
  * @author Shifu-Taishi Grand Master
@@ -69,6 +75,12 @@ public class UserService {
 
     @Autowired
     private SchoolAdminProfileRepository schoolAdminProfileRepository;
+
+    @Autowired
+    private StudentEnrollmentRepository studentEnrollmentRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     // @Autowired
     // private OTPManager otpManager;
@@ -134,11 +146,15 @@ public class UserService {
         if (request.getPassword().length() < 6) {
             throw new BusinessException("Password deve ter no mínimo 6 caracteres");
         }
-        if (userRepository.existsByUsername(request.getUsername())) {
+        String normPhone = ContactValidator.requireValidPhone(request.getUsername());
+        request.setUsername(normPhone);
+        String normEmail = ContactValidator.requireValidEmail(request.getEmail(), false);
+        if (normEmail != null) request.setEmail(normEmail);
+
+        if (userRepository.existsByUsername(normPhone)) {
             throw new BusinessException("Já existe uma conta com este número de telefone");
         }
-        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()
-                && userRepository.existsByEmail(request.getEmail())) {
+        if (normEmail != null && userRepository.existsByEmail(normEmail)) {
             throw new BusinessException("Já existe uma conta com este email");
         }
 
@@ -170,17 +186,22 @@ public class UserService {
 
     @Transactional
     public ProfessorProfileEntity createProfessor(ProfessorRegisterDTO request) {
-        if (userRepository.existsByUsername(request.getNTelefone())) {
+        String pPhone = ContactValidator.requireValidPhone(request.getNTelefone());
+        request.setNTelefone(pPhone);
+        String pEmail = ContactValidator.requireValidEmail(request.getEmail(), true);
+        request.setEmail(pEmail);
+
+        if (userRepository.existsByUsername(pPhone)) {
             throw new BusinessException("Já existe uma conta com este número de telefone");
         }
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmail(pEmail)) {
             throw new BusinessException("Já existe uma conta com este email");
         }
 
         UserEntity user = new UserEntity();
         user.setFullname(request.getFullname());
-        user.setUsername(request.getNTelefone());
-        user.setEmail(request.getEmail());
+        user.setUsername(pPhone);
+        user.setEmail(pEmail);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setEnabled(true);
         user.setCreatedDate(LocalDateTime.now());
@@ -206,22 +227,30 @@ public class UserService {
         profile.setOnline(false);
         System.out.println(profile.getUser());
 
+        profile = professorProfileRepository.save(profile);
+        profile.setProfessorCode(String.format("COD-%s-PROF-%05d",
+                getSchoolInitials(request.getSchoolId()), profile.getId()));
         return professorProfileRepository.save(profile);
     }
 
     @Transactional
     public StudentProfileEntity createStudent(StudentRegisterDTO request) {
-        if (userRepository.existsByUsername(request.getNTelefone())) {
+        String sPhone = ContactValidator.requireValidPhone(request.getNTelefone());
+        request.setNTelefone(sPhone);
+        String sEmail = ContactValidator.requireValidEmail(request.getEmail(), true);
+        request.setEmail(sEmail);
+
+        if (userRepository.existsByUsername(sPhone)) {
             throw new BusinessException("Já existe uma conta com este número de telefone");
         }
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmail(sEmail)) {
             throw new BusinessException("Já existe uma conta com este email");
         }
 
         UserEntity user = new UserEntity();
         user.setFullname(request.getFullname());
-        user.setUsername(request.getNTelefone());
-        user.setEmail(request.getEmail());
+        user.setUsername(sPhone);
+        user.setEmail(sEmail);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setEnabled(true);
         user.setCreatedDate(LocalDateTime.now());
@@ -324,32 +353,29 @@ public class UserService {
     public ProfessorProfileDTO updateProfessorProfile(ProfessorProfileUpdateDTO dto) {
         ProfessorProfileEntity p = professorProfileRepository.findByUser_Id(dto.getUserId())
                 .orElseThrow(() -> new BusinessException("Perfil de professor não encontrado"));
+        boolean schoolChanged = dto.getSchoolId() != null && !dto.getSchoolId().equals(p.getSchoolId());
         if (dto.getSchoolId() != null)             p.setSchoolId(dto.getSchoolId());
         if (dto.getDepartment() != null)           p.setDepartment(dto.getDepartment());
         if (dto.getSpecialization() != null)       p.setSpecialization(dto.getSpecialization());
         if (dto.getInstitutionalContact() != null) p.setInstitutionalContact(dto.getInstitutionalContact());
+        if (dto.getTeachingCycle() != null)        p.setTeachingCycle(dto.getTeachingCycle());
+        if (schoolChanged || p.getProfessorCode() == null) {
+            p.setProfessorCode(String.format("COD-%s-PROF-%05d",
+                    getSchoolInitials(p.getSchoolId()), p.getId()));
+        }
         professorProfileRepository.save(java.util.Objects.requireNonNull(p));
-        return new ProfessorProfileDTO(
-                p.getUser().getId(), p.getUser().getFullname(), p.getUser().getUsername(),
-                p.getUser().getEmail(), p.getSchoolId(), p.getDepartment(),
-                p.getSpecialization(), p.getInstitutionalContact(), p.isOnline(), p.getLastSeen());
+        return toProfessorDTO(p);
     }
 
     public StudentProfileDTO getStudentProfile(Long userId) {
         StudentProfileEntity s = studentProfileRepository.findByUser_Id(userId)
                 .orElseThrow(() -> new BusinessException("Perfil de estudante não encontrado"));
-        return new StudentProfileDTO(
-                s.getUser().getId(), s.getUser().getFullname(), s.getUser().getUsername(),
-                s.getUser().getEmail(), s.getSchoolId(), s.getClassroomId(),
-                s.getGrade(), s.getAge());
+        return toStudentDTO(s);
     }
 
     public StudentProfileDTO getStudentProfileByUsername(String username) {
         return studentProfileRepository.findByUsername(username)
-                .map(s -> new StudentProfileDTO(
-                        s.getUser().getId(), s.getUser().getFullname(), s.getUser().getUsername(),
-                        s.getUser().getEmail(), s.getSchoolId(), s.getClassroomId(),
-                        s.getGrade(), s.getAge()))
+                .map(this::toStudentDTO)
                 .orElse(null);
     }
 
@@ -357,15 +383,42 @@ public class UserService {
     public StudentProfileDTO updateStudentProfile(StudentProfileUpdateDTO dto) {
         StudentProfileEntity s = studentProfileRepository.findByUser_Id(dto.getUserId())
                 .orElseThrow(() -> new BusinessException("Perfil de estudante não encontrado"));
-        if (dto.getSchoolId() != null)    s.setSchoolId(dto.getSchoolId());
-        s.setClassroomId(dto.getClassroomId()); // null = remove from classroom
-        if (dto.getGrade() != null)       s.setGrade(dto.getGrade());
-        if (dto.getAge() != null)         s.setAge(dto.getAge());
+
+        Long prevClassroomId = s.getClassroomId();
+        boolean enrolling = dto.getClassroomId() != null && !dto.getClassroomId().equals(prevClassroomId);
+        boolean removing  = dto.getClassroomId() == null && prevClassroomId != null;
+
+        if (dto.getSchoolId() != null) s.setSchoolId(dto.getSchoolId());
+        s.setClassroomId(dto.getClassroomId());
+        if (dto.getGrade() != null) s.setGrade(dto.getGrade());
+        if (dto.getAge()   != null) s.setAge(dto.getAge());
         studentProfileRepository.save(java.util.Objects.requireNonNull(s));
-        return new StudentProfileDTO(
-                s.getUser().getId(), s.getUser().getFullname(), s.getUser().getUsername(),
-                s.getUser().getEmail(), s.getSchoolId(), s.getClassroomId(),
-                s.getGrade(), s.getAge());
+
+        int year = LocalDateTime.now().getYear();
+
+        if (enrolling) {
+            // cancel any existing active enrollment for this year
+            studentEnrollmentRepository
+                .findTopByStudentIdAndYearAndStatus(dto.getUserId(), year, EntityState.ACTIVE)
+                .ifPresent(e -> { e.setStatus(EntityState.INACTIVE); studentEnrollmentRepository.save(e); });
+
+            // create new enrollment record
+            StudentEnrollmentEntity enrollment = new StudentEnrollmentEntity();
+            enrollment.setStudentId(dto.getUserId());
+            enrollment.setSchoolId(s.getSchoolId());
+            enrollment.setClassroomId(dto.getClassroomId());
+            enrollment.setYear(year);
+            enrollment.setEnrolledAt(LocalDateTime.now());
+            enrollment = studentEnrollmentRepository.save(enrollment);
+            enrollment.setEnrollmentCode(String.format("MAT-%d-%05d", year, enrollment.getId()));
+            studentEnrollmentRepository.save(enrollment);
+        } else if (removing) {
+            studentEnrollmentRepository
+                .findTopByStudentIdAndYearAndStatus(dto.getUserId(), year, EntityState.ACTIVE)
+                .ifPresent(e -> { e.setStatus(EntityState.INACTIVE); studentEnrollmentRepository.save(e); });
+        }
+
+        return toStudentDTO(s);
     }
 
     public List<ProfessorProfileDTO> findAllProfessors() {
@@ -388,7 +441,7 @@ public class UserService {
     }
 
     private ProfessorProfileDTO toProfessorDTO(ProfessorProfileEntity p) {
-        return new ProfessorProfileDTO(
+        ProfessorProfileDTO dto = new ProfessorProfileDTO(
                 p.getUser().getId(),
                 p.getUser().getFullname(),
                 p.getUser().getUsername(),
@@ -399,6 +452,36 @@ public class UserService {
                 p.getInstitutionalContact(),
                 p.isOnline(),
                 p.getLastSeen());
+        dto.setProfessorCode(p.getProfessorCode());
+        dto.setTeachingCycle(p.getTeachingCycle());
+        return dto;
+    }
+
+    public List<StudentProfileDTO> findStudents(org.springframework.security.core.Authentication auth) {
+        boolean isSchoolAdmin = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals(UserRoles.SCHOOL_ADMIN.name()));
+        if (isSchoolAdmin) {
+            SchoolAdminProfileEntity admin = schoolAdminProfileRepository.findByUserUsername(auth.getName())
+                    .orElseThrow(() -> new BusinessException("Perfil de administrador de escola não encontrado"));
+            return studentProfileRepository.findBySchoolId(admin.getSchoolId()).stream()
+                    .map(this::toStudentDTO).collect(Collectors.toList());
+        }
+        return studentProfileRepository.findAll().stream()
+                .map(this::toStudentDTO).collect(Collectors.toList());
+    }
+
+    private StudentProfileDTO toStudentDTO(StudentProfileEntity s) {
+        int year = LocalDateTime.now().getYear();
+        String code = studentEnrollmentRepository
+            .findTopByStudentIdAndYearAndStatus(s.getUser().getId(), year, EntityState.ACTIVE)
+            .map(StudentEnrollmentEntity::getEnrollmentCode)
+            .orElse(null);
+        StudentProfileDTO dto = new StudentProfileDTO(
+                s.getUser().getId(), s.getUser().getFullname(), s.getUser().getUsername(),
+                s.getUser().getEmail(), s.getSchoolId(), s.getClassroomId(),
+                s.getGrade(), s.getAge());
+        dto.setEnrollmentCode(code);
+        return dto;
     }
 
     public UserEntity getLoggedUser() {
@@ -415,29 +498,20 @@ public class UserService {
 
     public List<StudentProfileDTO> findStudentsByClassroom(Long classroomId) {
         return studentProfileRepository.findByClassroomId(classroomId).stream()
-                .map(s -> new StudentProfileDTO(
-                        s.getUser().getId(), s.getUser().getFullname(), s.getUser().getUsername(),
-                        s.getUser().getEmail(), s.getSchoolId(), s.getClassroomId(),
-                        s.getGrade(), s.getAge()))
+                .map(this::toStudentDTO)
                 .collect(Collectors.toList());
     }
 
     public List<StudentProfileDTO> findStudentsBySchool(Long schoolId) {
         return studentProfileRepository.findBySchoolId(schoolId).stream()
-                .map(s -> new StudentProfileDTO(
-                        s.getUser().getId(), s.getUser().getFullname(), s.getUser().getUsername(),
-                        s.getUser().getEmail(), s.getSchoolId(), s.getClassroomId(),
-                        s.getGrade(), s.getAge()))
+                .map(this::toStudentDTO)
                 .collect(Collectors.toList());
     }
 
     public StudentProfileDTO findStudentProfileByUsername(String username) {
         StudentProfileEntity s = studentProfileRepository.findByUsername(username)
                 .orElseThrow(() -> new BusinessException("Perfil de estudante não encontrado para: " + username));
-        return new StudentProfileDTO(
-                s.getUser().getId(), s.getUser().getFullname(), s.getUser().getUsername(),
-                s.getUser().getEmail(), s.getSchoolId(), s.getClassroomId(),
-                s.getGrade(), s.getAge());
+        return toStudentDTO(s);
     }
 
     public java.util.Optional<java.util.Map<String, Object>> findBasicByUsername(String username) {
@@ -467,13 +541,16 @@ public class UserService {
         }
         if (email != null) {
             String newEmail = email.trim();
-            if (!newEmail.isEmpty() && !newEmail.equalsIgnoreCase(u.getEmail())) {
-                if (userRepository.existsByEmail(newEmail)) {
-                    throw new BusinessException("Já existe uma conta com este email");
-                }
-                u.setEmail(newEmail);
-            } else if (newEmail.isEmpty()) {
+            if (newEmail.isEmpty()) {
                 u.setEmail(null);
+            } else {
+                String normalized = ContactValidator.requireValidEmail(newEmail, false);
+                if (normalized != null && !normalized.equalsIgnoreCase(u.getEmail())) {
+                    if (userRepository.existsByEmail(normalized)) {
+                        throw new BusinessException("Já existe uma conta com este email");
+                    }
+                    u.setEmail(normalized);
+                }
             }
         }
         userRepository.save(u);
@@ -542,15 +619,20 @@ public class UserService {
 
     @Transactional
     public SchoolAdminProfileEntity createSchoolAdmin(SchoolAdminRegisterDTO request) {
-        if (userRepository.existsByUsername(request.getNTelefone()))
+        String saPhone = ContactValidator.requireValidPhone(request.getNTelefone());
+        request.setNTelefone(saPhone);
+        String saEmail = ContactValidator.requireValidEmail(request.getEmail(), true);
+        request.setEmail(saEmail);
+
+        if (userRepository.existsByUsername(saPhone))
             throw new BusinessException("Já existe uma conta com este número de telefone");
-        if (userRepository.existsByEmail(request.getEmail()))
+        if (userRepository.existsByEmail(saEmail))
             throw new BusinessException("Já existe uma conta com este email");
 
         UserEntity user = new UserEntity();
         user.setFullname(request.getFullname());
-        user.setUsername(request.getNTelefone());
-        user.setEmail(request.getEmail());
+        user.setUsername(saPhone);
+        user.setEmail(saEmail);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setEnabled(true);
         user.setCreatedDate(LocalDateTime.now());
@@ -603,6 +685,29 @@ public class UserService {
                 UserRoles.STUDENT.name(), s.getUser().isEnabled() ? 1 : 0)));
 
         return result;
+    }
+
+    private String getSchoolInitials(Long schoolId) {
+        if (schoolId == null) return "GEN";
+        try {
+            Object name = entityManager
+                    .createNativeQuery("SELECT name FROM ac_SCHOOL WHERE id = :id")
+                    .setParameter("id", schoolId)
+                    .getSingleResult();
+            return extractInitials(String.valueOf(name));
+        } catch (Exception e) {
+            return "GEN";
+        }
+    }
+
+    private String extractInitials(String schoolName) {
+        if (schoolName == null || schoolName.isBlank()) return "GEN";
+        StringBuilder sb = new StringBuilder();
+        for (String word : schoolName.trim().split("\\s+")) {
+            if (!word.isBlank() && Character.isLetter(word.charAt(0)))
+                sb.append(Character.toUpperCase(word.charAt(0)));
+        }
+        return sb.length() > 0 ? sb.toString() : "GEN";
     }
 
     private String normalize(String input) {

@@ -29,11 +29,12 @@ public class QuizResource {
     @GetMapping
     public ResponseEntity<List<QuizSummaryDTO>> list(
             @RequestParam(required = false) String disciplina,
+            @RequestParam(required = false) Long subjectId,
             Authentication auth) {
         boolean isAdmin = auth != null && auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ADMIN") || a.getAuthority().equals("PROFESSOR"));
         String username = auth != null ? auth.getName() : null;
-        return ResponseEntity.ok(quizService.listQuizzes(disciplina, isAdmin, username));
+        return ResponseEntity.ok(quizService.listQuizzes(disciplina, subjectId, isAdmin, username));
     }
 
     @GetMapping("/{id}")

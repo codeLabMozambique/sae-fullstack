@@ -15,15 +15,21 @@ import SubjectsPage from './pages/admin/academic/SubjectsPage';
 import SchoolsPage from './pages/admin/academic/SchoolsPage';
 import ClassLevelsPage from './pages/admin/academic/ClassLevelsPage';
 import ProfessorAssignmentsPage from './pages/admin/academic/ProfessorAssignmentsPage';
+import AcademicGroupsPage from './pages/admin/academic/AcademicGroupsPage';
+import CurriculoPage from './pages/admin/academic/CurriculoPage';
 import ProfessorClassesPage from './pages/professor/ProfessorClassesPage';
 import ProfessorGradesPage from './pages/professor/ProfessorGradesPage';
 import StudentForumPage from './pages/student/StudentForumPage';
 import StudentQuizPage from './pages/student/StudentQuizPage';
 import ProfessorQuizPage from './pages/professor/ProfessorQuizPage';
 import UsersListPage from './pages/admin/users/UsersListPage';
+import ProfessorsPage from './pages/admin/users/ProfessorsPage';
+import StudentsEnrollmentPage from './pages/admin/users/StudentsEnrollmentPage';
 import ProfessorClassroomsPage from './pages/professor/ProfessorClassroomsPage';
 import DirectorClassroomPage from './pages/professor/DirectorClassroomPage';
 import ProfessorTasksPage from './pages/professor/ProfessorTasksPage';
+import ProfessorSugerirPage from './pages/professor/ProfessorSugerirPage';
+import StudentSugestoesPage from './pages/student/StudentSugestoesPage';
 import ProfessorTaskDetailsPage from './pages/professor/ProfessorTaskDetailsPage';
 import StudentTasksPage from './pages/student/StudentTasksPage';
 import StudentTaskDetailsPage from './pages/student/StudentTaskDetailsPage';
@@ -129,6 +135,11 @@ function App() {
 
             {/* ── STUDENT — Tarefas (Assignments) ───────────── */}
             <Route path="/student/assignments" element={<Layout><StudentTasksPage /></Layout>} />
+
+            {/* ── Sugestões de Leitura ─────────────────────── */}
+            <Route path="/student/library/suggestions" element={<Layout><StudentSugestoesPage /></Layout>} />
+            <Route path="/professor/library/suggest" element={<Layout><ProfessorSugerirPage /></Layout>} />
+            <Route path="/professor/library/suggestions" element={<Layout><ProfessorSugerirPage /></Layout>} />
             <Route path="/student/assignments/:id" element={<Layout><StudentTaskDetailsPage /></Layout>} />
             <Route path="/student/submissions" element={<Layout><StudentSubmissionsPage /></Layout>} />
 
@@ -169,7 +180,8 @@ function App() {
             {/* ── PROFESSOR — Biblioteca ─────────────────────── */}
             <Route path="/professor/library" element={<Layout><Biblioteca /></Layout>} />
             <Route path="/professor/library/my-content" element={<Layout><MeusConteudos /></Layout>} />
-            <Route path="/professor/library/upload" element={<Layout><UploadConteudo /></Layout>} />
+            {/* Professor: já não submete livros — sugere os existentes. Redirect legado para a nova feature. */}
+            <Route path="/professor/library/upload" element={<Navigate to="/professor/library/suggest" replace />} />
             <Route path="/professor/library/categories" element={<Layout><Categorias /></Layout>} />
             <Route path="/professor/library/favorites" element={<Layout><Favoritos /></Layout>} />
             <Route path="/professor/library/progress" element={<Layout><ContinuarLer /></Layout>} />
@@ -191,6 +203,8 @@ function App() {
             <Route path="/admin/classrooms" element={<Layout><ClassroomsPage /></Layout>} />
             <Route path="/admin/subjects" element={<Layout><SubjectsPage /></Layout>} />
             <Route path="/admin/users" element={<Layout><UsersListPage /></Layout>} />
+            <Route path="/admin/students" element={<Layout><StudentsEnrollmentPage /></Layout>} />
+            <Route path="/admin/professors" element={<Layout><ProfessorsPage /></Layout>} />
             <Route path="/admin/library/contents" element={<Layout><MeusConteudos /></Layout>} />
             <Route path="/admin/library/upload" element={<Layout><UploadConteudo /></Layout>} />
             <Route path="/admin/library/batch" element={<Layout><AdminBatchUpload /></Layout>} />
@@ -226,10 +240,22 @@ function App() {
                 <MainLayout><ProfessorAssignmentsPage /></MainLayout>
               </ProtectedRoute>
             } />
+            <Route path="/admin/academic/academic-groups" element={
+              <ProtectedRoute>
+                <MainLayout><AcademicGroupsPage /></MainLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/academic/curriculum" element={
+              <ProtectedRoute>
+                <MainLayout><CurriculoPage /></MainLayout>
+              </ProtectedRoute>
+            } />
 
             {/* ── SCHOOL_ADMIN — Dashboard ───────────────────── */}
             <Route path="/school-admin/dashboard" element={<Layout><SchoolAdminDashboardPage /></Layout>} />
             <Route path="/school-admin/dashboard/stats" element={<Layout><SchoolAdminDashboardPage /></Layout>} />
+            <Route path="/school-admin/students" element={<Layout><StudentsEnrollmentPage /></Layout>} />
+            <Route path="/school-admin/professors" element={<Layout><ProfessorsPage /></Layout>} />
 
             {/* Admin — Users */}
             <Route path="/admin/users/list" element={

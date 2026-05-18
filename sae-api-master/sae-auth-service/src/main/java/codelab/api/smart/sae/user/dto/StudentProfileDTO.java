@@ -10,6 +10,7 @@ public class StudentProfileDTO {
     private Long    classroomId;
     private String  grade;
     private Integer age;
+    private String  enrollmentCode;
 
     public StudentProfileDTO() {}
 
@@ -33,6 +34,7 @@ public class StudentProfileDTO {
     public Long    getClassroomId(){ return classroomId; }
     public String  getGrade()      { return grade; }
     public Integer getAge()        { return age; }
+    public String  getEnrollmentCode() { return enrollmentCode; }
 
     public void setUserId(Long userId)          { this.userId      = userId; }
     public void setFullName(String fullName)    { this.fullName    = fullName; }
@@ -42,4 +44,5 @@ public class StudentProfileDTO {
     public void setClassroomId(Long classroomId){ this.classroomId = classroomId; }
     public void setGrade(String grade)          { this.grade       = grade; }
     public void setAge(Integer age)             { this.age         = age; }
+    public void setEnrollmentCode(String enrollmentCode) { this.enrollmentCode = enrollmentCode; }
 }

@@ -49,9 +49,9 @@ public class AssignmentFileResource {
         InputStream is = fileStorageService.getFile(s.getFileName());
         String dispositionName = s.getFileOriginalName() != null ? s.getFileOriginalName() : s.getFileName();
         return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentType(guessMediaType(dispositionName))
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + dispositionName + "\"")
+                        "inline; filename=\"" + dispositionName + "\"")
                 .body(new InputStreamResource(is));
     }
 
@@ -71,10 +71,24 @@ public class AssignmentFileResource {
         InputStream is = fileStorageService.getFile(a.getFileName());
         String dispositionName = a.getFileOriginalName() != null ? a.getFileOriginalName() : a.getFileName();
         return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentType(guessMediaType(dispositionName))
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "inline; filename=\"" + dispositionName + "\"")
                 .body(new InputStreamResource(is));
+    }
+
+    /** Devolve o MIME type a partir da extensão do ficheiro — crítico para inline preview. */
+    private MediaType guessMediaType(String name) {
+        String n = name == null ? "" : name.toLowerCase();
+        if (n.endsWith(".pdf"))                       return MediaType.APPLICATION_PDF;
+        if (n.endsWith(".jpg") || n.endsWith(".jpeg")) return MediaType.IMAGE_JPEG;
+        if (n.endsWith(".png"))                       return MediaType.IMAGE_PNG;
+        if (n.endsWith(".webp"))                      return MediaType.parseMediaType("image/webp");
+        if (n.endsWith(".gif"))                       return MediaType.IMAGE_GIF;
+        if (n.endsWith(".svg"))                       return MediaType.parseMediaType("image/svg+xml");
+        if (n.endsWith(".txt"))                       return MediaType.TEXT_PLAIN;
+        if (n.endsWith(".html") || n.endsWith(".htm")) return MediaType.TEXT_HTML;
+        return MediaType.APPLICATION_OCTET_STREAM;
     }
 
     private boolean hasAuthority(String name) {

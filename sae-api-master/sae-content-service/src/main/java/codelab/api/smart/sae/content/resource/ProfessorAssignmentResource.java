@@ -78,6 +78,16 @@ public class ProfessorAssignmentResource {
         return ResponseEntity.ok(assignmentService.getAssignmentForProfessor(id, principal.getName()));
     }
 
+    /** Edita campos da tarefa — usado sobretudo para estender/reabrir o prazo. */
+    @PatchMapping("/{id}")
+    public ResponseEntity<AssignmentDTO> update(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> payload,
+            Principal principal) {
+        if (principal == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        return ResponseEntity.ok(assignmentService.updateAssignment(id, payload, principal.getName()));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id, Principal principal) {
         if (principal == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);

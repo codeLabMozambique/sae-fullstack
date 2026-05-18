@@ -24,9 +24,11 @@ public class QuizService {
 
     // ── List ─────────────────────────────────────────────────────
     @Transactional(readOnly = true)
-    public List<QuizSummaryDTO> listQuizzes(String disciplinaStr, boolean adminView, String username) {
+    public List<QuizSummaryDTO> listQuizzes(String disciplinaStr, Long subjectId, boolean adminView, String username) {
         List<QuizEntity> quizzes;
-        if (disciplinaStr != null && !disciplinaStr.isBlank()) {
+        if (subjectId != null) {
+            quizzes = adminView ? quizRepository.findBySubjectId(subjectId) : quizRepository.findBySubjectIdAndActiveTrue(subjectId);
+        } else if (disciplinaStr != null && !disciplinaStr.isBlank()) {
             try {
                 DisciplinaEnum d = DisciplinaEnum.valueOf(disciplinaStr.toUpperCase());
                 quizzes = adminView ? quizRepository.findByDisciplina(d) : quizRepository.findByDisciplinaAndActiveTrue(d);
@@ -72,6 +74,8 @@ public class QuizService {
         QuizEntity quiz = new QuizEntity();
         quiz.setTitulo(dto.getTitulo());
         quiz.setDescricao(dto.getDescricao());
+        quiz.setSubjectId(dto.getSubjectId());
+        quiz.setSubjectName(dto.getSubjectName());
         quiz.setDisciplina(parseDisciplina(dto.getDisciplina()));
         quiz.setTempoLimiteMinutos(dto.getTempoLimiteMinutos());
         quiz.setThumbnailUrl(dto.getThumbnailUrl());
@@ -86,6 +90,8 @@ public class QuizService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Quiz não encontrado"));
         quiz.setTitulo(dto.getTitulo());
         quiz.setDescricao(dto.getDescricao());
+        quiz.setSubjectId(dto.getSubjectId());
+        quiz.setSubjectName(dto.getSubjectName());
         quiz.setDisciplina(parseDisciplina(dto.getDisciplina()));
         quiz.setTempoLimiteMinutos(dto.getTempoLimiteMinutos());
         quiz.setThumbnailUrl(dto.getThumbnailUrl());
@@ -148,8 +154,15 @@ public class QuizService {
         dto.setId(q.getId());
         dto.setTitulo(q.getTitulo());
         dto.setDescricao(q.getDescricao());
-        dto.setDisciplina(q.getDisciplina().name());
-        dto.setDisciplinaLabel(q.getDisciplina().getDisplayName());
+        dto.setSubjectId(q.getSubjectId());
+        dto.setSubjectName(q.getSubjectName());
+        if (q.getDisciplina() != null) {
+            dto.setDisciplina(q.getDisciplina().name());
+            dto.setDisciplinaLabel(q.getDisciplina().getDisplayName());
+        } else if (q.getSubjectName() != null) {
+            dto.setDisciplina(q.getSubjectName());
+            dto.setDisciplinaLabel(q.getSubjectName());
+        }
         dto.setQuestionCount(q.getQuestions().size());
         dto.setTempoLimiteMinutos(q.getTempoLimiteMinutos());
         dto.setActive(q.isActive());
@@ -171,8 +184,15 @@ public class QuizService {
         dto.setId(q.getId());
         dto.setTitulo(q.getTitulo());
         dto.setDescricao(q.getDescricao());
-        dto.setDisciplina(q.getDisciplina().name());
-        dto.setDisciplinaLabel(q.getDisciplina().getDisplayName());
+        dto.setSubjectId(q.getSubjectId());
+        dto.setSubjectName(q.getSubjectName());
+        if (q.getDisciplina() != null) {
+            dto.setDisciplina(q.getDisciplina().name());
+            dto.setDisciplinaLabel(q.getDisciplina().getDisplayName());
+        } else if (q.getSubjectName() != null) {
+            dto.setDisciplina(q.getSubjectName());
+            dto.setDisciplinaLabel(q.getSubjectName());
+        }
         dto.setTempoLimiteMinutos(q.getTempoLimiteMinutos());
         dto.setQuestions(q.getQuestions().stream().map(question -> {
             QuizQuestionDTO qd = new QuizQuestionDTO();
@@ -199,8 +219,15 @@ public class QuizService {
         dto.setId(q.getId());
         dto.setTitulo(q.getTitulo());
         dto.setDescricao(q.getDescricao());
-        dto.setDisciplina(q.getDisciplina().name());
-        dto.setDisciplinaLabel(q.getDisciplina().getDisplayName());
+        dto.setSubjectId(q.getSubjectId());
+        dto.setSubjectName(q.getSubjectName());
+        if (q.getDisciplina() != null) {
+            dto.setDisciplina(q.getDisciplina().name());
+            dto.setDisciplinaLabel(q.getDisciplina().getDisplayName());
+        } else if (q.getSubjectName() != null) {
+            dto.setDisciplina(q.getSubjectName());
+            dto.setDisciplinaLabel(q.getSubjectName());
+        }
         dto.setTempoLimiteMinutos(q.getTempoLimiteMinutos());
         dto.setActive(q.isActive());
         dto.setCreatedBy(q.getCreatedBy());
@@ -235,10 +262,11 @@ public class QuizService {
     }
 
     private DisciplinaEnum parseDisciplina(String s) {
+        if (s == null || s.isBlank()) return null;
         try {
             return DisciplinaEnum.valueOf(s.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Disciplina inválida: " + s);
+            return DisciplinaEnum.GERAL;
         }
     }
 }

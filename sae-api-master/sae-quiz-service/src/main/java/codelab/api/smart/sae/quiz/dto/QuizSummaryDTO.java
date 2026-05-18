@@ -8,6 +8,8 @@ public class QuizSummaryDTO {
     private String descricao;
     private String disciplina;
     private String disciplinaLabel;
+    private Long subjectId;
+    private String subjectName;
     private int questionCount;
     private Integer tempoLimiteMinutos;
     private boolean active;
@@ -34,6 +36,10 @@ public class QuizSummaryDTO {
     public void setDisciplina(String disciplina) { this.disciplina = disciplina; }
     public String getDisciplinaLabel() { return disciplinaLabel; }
     public void setDisciplinaLabel(String disciplinaLabel) { this.disciplinaLabel = disciplinaLabel; }
+    public Long getSubjectId() { return subjectId; }
+    public void setSubjectId(Long subjectId) { this.subjectId = subjectId; }
+    public String getSubjectName() { return subjectName; }
+    public void setSubjectName(String subjectName) { this.subjectName = subjectName; }
     public int getQuestionCount() { return questionCount; }
     public void setQuestionCount(int questionCount) { this.questionCount = questionCount; }
     public Integer getTempoLimiteMinutos() { return tempoLimiteMinutos; }

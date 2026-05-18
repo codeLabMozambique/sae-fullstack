@@ -1,6 +1,7 @@
 package codelab.api.smart.sae.content.resource;
 
 import codelab.api.smart.sae.content.model.StudyGoal;
+import codelab.api.smart.sae.content.service.ReminderSchedulerService;
 import codelab.api.smart.sae.content.service.StudyGoalService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,20 @@ public class StudyGoalResource {
 
     @Autowired
     private StudyGoalService studyGoalService;
+
+    @Autowired
+    private ReminderSchedulerService reminderSchedulerService;
+
+    /**
+     * Dispara manualmente o sweep de lembretes — útil para testar sem esperar pelas 8h.
+     * Devolve o número de emails enviados.
+     */
+    @PostMapping("/reminders/run-now")
+    public ResponseEntity<Map<String, Object>> runRemindersNow(Principal principal) {
+        if (principal == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        int sent = reminderSchedulerService.runReminderSweep();
+        return ResponseEntity.ok(Map.of("sent", sent));
+    }
 
     @PostMapping
     public ResponseEntity<StudyGoal> create(@RequestBody StudyGoal goal, Principal principal) {

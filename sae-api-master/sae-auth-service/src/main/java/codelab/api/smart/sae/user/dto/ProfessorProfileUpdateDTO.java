@@ -7,6 +7,7 @@ public class ProfessorProfileUpdateDTO {
     private String department;
     private String specialization;
     private String institutionalContact;
+    private String teachingCycle;
 
     public ProfessorProfileUpdateDTO() {}
 
@@ -21,4 +22,7 @@ public class ProfessorProfileUpdateDTO {
     public void setDepartment(String department)                 { this.department           = department; }
     public void setSpecialization(String specialization)         { this.specialization       = specialization; }
     public void setInstitutionalContact(String institutionalContact) { this.institutionalContact = institutionalContact; }
+
+    public String getTeachingCycle() { return teachingCycle; }
+    public void setTeachingCycle(String teachingCycle) { this.teachingCycle = teachingCycle; }
 }
