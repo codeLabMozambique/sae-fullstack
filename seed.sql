@@ -1,18 +1,17 @@
 -- =============================================================================
--- SAE — SEED DE ROTAS DO SISTEMA
+-- SAE — SEED COMPLETO DO SISTEMA
 -- Base de Dados: sae_db (PostgreSQL)
 -- Executar com: psql -U postgres -d sae_db -f seed.sql
--- Seguro para re-execução: ON CONFLICT (code) DO UPDATE — nunca duplica rotas
--- =============================================================================
--- ESTRATÉGIA:
---   • Sem IDs hardcoded — a sequência gere os IDs automaticamente
---   • parent_id resolvido por subquery de code (não por número fixo)
---   • role_transaction usa constraint única em (role, app_transaction_id)
---   • Pode ser executado várias vezes em qualquer estado da BD
+--
+-- SEGURO PARA RE-EXECUÇÃO:
+--   • app_transaction  → ON CONFLICT (code)                    DO UPDATE
+--   • role_transaction → ON CONFLICT (role, app_transaction_id) DO NOTHING
+--   • Dados académicos → ON CONFLICT (id)                      DO NOTHING
+--   • ALTER TABLE      → ADD COLUMN IF NOT EXISTS
 -- =============================================================================
 
 -- =============================================================================
--- TABELAS (criadas pelo Hibernate; definidas aqui para execução autónoma)
+-- SECÇÃO 1 — ESTRUTURA DAS TABELAS DE MENU
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS app_transaction (
@@ -33,24 +32,21 @@ CREATE TABLE IF NOT EXISTS role_transaction (
     app_transaction_id BIGINT      REFERENCES app_transaction(id)
 );
 
--- Sincroniza as sequências com o MAX(id) actual (evita conflito de PK em re-execuções)
+-- Sincroniza sequências com o MAX(id) actual (evita conflito de PK em re-execuções)
 SELECT setval('app_transaction_id_seq',
     GREATEST(COALESCE((SELECT MAX(id) FROM app_transaction), 1), 1), true);
 SELECT setval('role_transaction_id_seq',
     GREATEST(COALESCE((SELECT MAX(id) FROM role_transaction), 1), 1), true);
 
--- Constraint de roles
+-- Constraint de roles válidos
 ALTER TABLE role_transaction DROP CONSTRAINT IF EXISTS role_transaction_role_check;
 ALTER TABLE role_transaction ADD CONSTRAINT role_transaction_role_check
     CHECK (role IN ('ROOT', 'ADMIN', 'SCHOOL_ADMIN', 'PROFESSOR', 'STUDENT', 'GUEST'));
 
--- Constraint única para idempotência do mapeamento role → menu
 -- Remove duplicados antes de criar o índice único (seguro em re-execuções)
 DELETE FROM role_transaction
 WHERE id NOT IN (
-    SELECT MIN(id)
-    FROM role_transaction
-    GROUP BY role, app_transaction_id
+    SELECT MIN(id) FROM role_transaction GROUP BY role, app_transaction_id
 );
 
 ALTER TABLE role_transaction DROP CONSTRAINT IF EXISTS uq_role_transaction_role_menu;
@@ -58,37 +54,39 @@ ALTER TABLE role_transaction ADD CONSTRAINT uq_role_transaction_role_menu
     UNIQUE (role, app_transaction_id);
 
 -- =============================================================================
--- PASSO 1 — HEADERS (sem parent_id)
--- Inseridos primeiro para que os MENU_ITEMs os possam referenciar
+-- PASSO 1 — HEADERS (entradas de topo, sem parent_id)
+-- Inseridos primeiro para que os MENU_ITEMs os possam referenciar por code.
 -- =============================================================================
 
 INSERT INTO app_transaction (status, code, type, label, router_link, position, parent_id) VALUES
 -- ROOT
-(1, 'ROOT-000',   'HEADER', 'Sistema',           NULL,                     1, NULL),
+(1, 'ROOT-000',    'HEADER', 'Sistema',               NULL,                             1, NULL),
 -- ADMIN
-(1, 'ADM-001',    'HEADER', 'Utilizadores',       '/admin/users',           1, NULL),
-(1, 'ADM-002',    'HEADER', 'Académico',           '/admin/academic',        2, NULL),
+(1, 'ADM-001',     'HEADER', 'Utilizadores',           '/admin/users',                   1, NULL),
+(1, 'ADM-002',     'HEADER', 'Académico',               '/admin/academic',                2, NULL),
+(1, 'ADM-LIB',    'HEADER', 'Biblioteca',              '/admin/library',                 3, NULL),
+(1, 'ADM-QUIZ',   'HEADER', 'Quizzes',                 '/admin/quiz',                    4, NULL),
 -- SCHOOL_ADMIN
-(1, 'SADM-000',   'HEADER', 'Dashboard',          '/school-admin/dashboard',1, NULL),
+(1, 'SADM-000',   'HEADER', 'Dashboard',               '/school-admin/dashboard',        1, NULL),
+(1, 'SADM-STD',   'HEADER', 'Estudantes',              '/school-admin/students',         2, NULL),
+(1, 'SADM-PRF',   'HEADER', 'Professores',             '/school-admin/professors',       3, NULL),
 -- PROFESSOR
-(1, 'PRF-001',    'HEADER', 'Dashboard',          '/professor/dashboard',   1, NULL),
-(1, 'PRF-002',    'HEADER', 'Fórum',              '/professor/forum',       2, NULL),
-(1, 'PRF-LIB',   'HEADER', 'Biblioteca',         '/professor/library',     3, NULL),
-(1, 'PRF-GOALS', 'HEADER', 'Metas de Estudo',    '/professor/goals',       4, NULL),
-(1, 'PRF-QUIZ',  'HEADER', 'Quizzes',            '/professor/quiz',        5, NULL),
-(1, 'PRF-ASG',   'HEADER', 'Tarefas',            '/professor/assignments', 6, NULL),
+(1, 'PRF-001',    'HEADER', 'Dashboard',               '/professor/dashboard',           1, NULL),
+(1, 'PRF-002',    'HEADER', 'Fórum',                   '/professor/forum',               2, NULL),
+(1, 'PRF-LIB',   'HEADER', 'Biblioteca',              '/professor/library',             3, NULL),
+(1, 'PRF-GOALS', 'HEADER', 'Metas de Estudo',         '/professor/goals',               4, NULL),
+(1, 'PRF-QUIZ',  'HEADER', 'Quizzes',                 '/professor/quiz',                5, NULL),
+(1, 'PRF-ASG',   'HEADER', 'Tarefas',                 '/professor/assignments',         6, NULL),
+(1, 'PRF-DIR',   'HEADER', 'Director de Turma',        '/professor/director-classroom',  7, NULL),
 -- STUDENT
-(1, 'STD-001',   'HEADER', 'Dashboard',          '/student/dashboard',     1, NULL),
-(1, 'STD-002',   'HEADER', 'Fórum',              '/student/forum',         2, NULL),
-(1, 'STD-LIB',   'HEADER', 'Biblioteca',         '/student/library',       3, NULL),
-(1, 'STD-GOALS', 'HEADER', 'Metas de Estudo',    '/student/goals',         4, NULL),
-(1, 'STD-QUIZ',  'HEADER', 'Preparação Exame',   '/student/quiz',          5, NULL),
-(1, 'STD-ASG',   'HEADER', 'Tarefas',            '/student/assignments',   6, NULL),
--- ADMIN — Biblioteca + Quiz
-(1, 'ADM-LIB',   'HEADER', 'Biblioteca',         '/admin/library',         3, NULL),
-(1, 'ADM-QUIZ',  'HEADER', 'Quizzes',            '/admin/quiz',            4, NULL),
+(1, 'STD-001',   'HEADER', 'Dashboard',               '/student/dashboard',             1, NULL),
+(1, 'STD-002',   'HEADER', 'Fórum',                   '/student/forum',                 2, NULL),
+(1, 'STD-LIB',   'HEADER', 'Biblioteca',              '/student/library',               3, NULL),
+(1, 'STD-GOALS', 'HEADER', 'Metas de Estudo',         '/student/goals',                 4, NULL),
+(1, 'STD-QUIZ',  'HEADER', 'Preparação Exame',        '/student/quiz',                  5, NULL),
+(1, 'STD-ASG',   'HEADER', 'Tarefas',                 '/student/assignments',           6, NULL),
 -- GUEST
-(1, 'GST-001',   'HEADER', 'Biblioteca',         '/biblioteca',            1, NULL)
+(1, 'GST-001',   'HEADER', 'Biblioteca',              '/biblioteca',                    1, NULL)
 
 ON CONFLICT (code) DO UPDATE SET
     status      = EXCLUDED.status,
@@ -99,87 +97,103 @@ ON CONFLICT (code) DO UPDATE SET
     parent_id   = EXCLUDED.parent_id;
 
 -- =============================================================================
--- PASSO 2 — MENU_ITEMs com parent_id resolvido por subquery de code
+-- PASSO 2 — MENU_ITEMs (parent_id resolvido por code, sem IDs hardcoded)
 -- =============================================================================
 
 INSERT INTO app_transaction (status, code, type, label, router_link, position, parent_id)
 SELECT v.status, v.code, v.type, v.label, v.router_link, v.position,
        (SELECT id FROM app_transaction WHERE code = v.parent_code)
 FROM (VALUES
+
     -- ROOT
-    (1,'ROOT-000-001','MENU_ITEM','Configurações de Rede', '/root/settings',                        1,'ROOT-000'),
-    (1,'ROOT-000-002','MENU_ITEM','Gestão de Admins',      '/root/admins',                          2,'ROOT-000'),
-    -- ADMIN Utilizadores
-    (1,'ADM-001-001', 'MENU_ITEM','Listar Utilizadores',   '/admin/users/list',                     1,'ADM-001'),
-    (1,'ADM-001-002', 'MENU_ITEM','Gerir Roles',           '/admin/users/roles',                    2,'ADM-001'),
-    -- ADMIN Académico
-    (1,'ADM-002-001', 'MENU_ITEM','Turmas',                '/admin/academic/classrooms',            1,'ADM-002'),
-    (1,'ADM-002-002', 'MENU_ITEM','Disciplinas',           '/admin/academic/subjects',              2,'ADM-002'),
-    (1,'ADM-002-003', 'MENU_ITEM','Escolas',               '/admin/academic/schools',               3,'ADM-002'),
-    (1,'ADM-002-004', 'MENU_ITEM','Níveis de Ensino',      '/admin/academic/class-levels',          4,'ADM-002'),
-    (1,'ADM-002-005', 'MENU_ITEM','Atribuições Professores','/admin/academic/professor-assignments',5,'ADM-002'),
-    -- SCHOOL_ADMIN
-    (1,'SADM-000-001','MENU_ITEM','Visão Geral',           '/school-admin/dashboard',               1,'SADM-000'),
-    (1,'SADM-000-002','MENU_ITEM','Estatísticas',          '/school-admin/dashboard/stats',         2,'SADM-000'),
-    -- PROFESSOR Dashboard
-    (1,'PRF-001-001', 'MENU_ITEM','Minhas Turmas',         '/professor/classes',                    1,'PRF-001'),
-    (1,'PRF-001-002', 'MENU_ITEM','Gestão de Notas',       '/professor/grades',                     2,'PRF-001'),
-    -- PROFESSOR Fórum
-    (1,'PRF-002-001', 'MENU_ITEM','Perguntas Pendentes',   '/professor/forum/pending',              1,'PRF-002'),
-    (1,'PRF-002-002', 'MENU_ITEM','Respondidas',           '/professor/forum/answered',             2,'PRF-002'),
-    -- PROFESSOR Biblioteca
-    (1,'PRF-LIB-001', 'MENU_ITEM','Pesquisar',             '/professor/library',                    1,'PRF-LIB'),
-    (1,'PRF-LIB-002', 'MENU_ITEM','Sugerir Leitura',       '/professor/library/suggest',            2,'PRF-LIB'),
-    (1,'PRF-LIB-003', 'MENU_ITEM','Categorias',            '/professor/library/categories',         3,'PRF-LIB'),
-    (1,'PRF-LIB-004', 'MENU_ITEM','Favoritos',             '/professor/library/favorites',          4,'PRF-LIB'),
-    (1,'PRF-LIB-005', 'MENU_ITEM','Continuar a Ler',       '/professor/library/progress',           5,'PRF-LIB'),
-    (1,'PRF-LIB-006', 'MENU_ITEM','Histórico',             '/professor/library/history',            6,'PRF-LIB'),
-    (1,'PRF-LIB-007', 'MENU_ITEM','Leitura Offline',       '/professor/library/offline',            7,'PRF-LIB'),
-    -- PROFESSOR Metas
-    (1,'PRF-GOALS-001','MENU_ITEM','Minhas Metas',         '/professor/goals',                      1,'PRF-GOALS'),
-    -- PROFESSOR Quiz
-    (1,'PRF-QUIZ-001','MENU_ITEM','Gerir Quizzes',         '/professor/quiz/manage',                1,'PRF-QUIZ'),
-    (1,'PRF-QUIZ-002','MENU_ITEM','Criar Quiz',            '/professor/quiz/create',                2,'PRF-QUIZ'),
-    -- PROFESSOR Tarefas
-    (1,'PRF-ASG-001', 'MENU_ITEM','Gerir Tarefas',         '/professor/assignments',                1,'PRF-ASG'),
-    -- STUDENT Dashboard
-    (1,'STD-001-001', 'MENU_ITEM','Minhas Aulas',          '/student/classes',                      1,'STD-001'),
-    (1,'STD-001-002', 'MENU_ITEM','Notas',                 '/student/grades',                       2,'STD-001'),
-    -- STUDENT Fórum
-    (1,'STD-002-001', 'MENU_ITEM','Minhas Perguntas',      '/student/forum/questions',              1,'STD-002'),
-    (1,'STD-002-002', 'MENU_ITEM','Nova Pergunta',         '/student/forum/new',                    2,'STD-002'),
-    -- STUDENT Biblioteca
-    (1,'STD-LIB-001', 'MENU_ITEM','Pesquisar',             '/student/library',                      1,'STD-LIB'),
-    (1,'STD-LIB-007', 'MENU_ITEM','Sugestões dos Profs',   '/student/library/suggestions',          2,'STD-LIB'),
-    (1,'STD-LIB-002', 'MENU_ITEM','Categorias',            '/student/library/categories',           3,'STD-LIB'),
-    (1,'STD-LIB-003', 'MENU_ITEM','Favoritos',             '/student/library/favorites',            4,'STD-LIB'),
-    (1,'STD-LIB-004', 'MENU_ITEM','Continuar a Ler',       '/student/library/progress',             5,'STD-LIB'),
-    (1,'STD-LIB-005', 'MENU_ITEM','Histórico',             '/student/library/history',              6,'STD-LIB'),
-    (1,'STD-LIB-006', 'MENU_ITEM','Leitura Offline',       '/student/library/offline',              7,'STD-LIB'),
-    -- STUDENT Metas
-    (1,'STD-GOALS-001','MENU_ITEM','Minhas Metas',         '/student/goals',                        1,'STD-GOALS'),
-    (1,'STD-GOALS-002','MENU_ITEM','Nova Meta',            '/student/goals/new',                    2,'STD-GOALS'),
-    -- STUDENT Quiz
-    (1,'STD-QUIZ-001','MENU_ITEM','Escolher Quiz',         '/student/quiz',                         1,'STD-QUIZ'),
-    (1,'STD-QUIZ-002','MENU_ITEM','Os Meus Resultados',    '/student/quiz/results',                 2,'STD-QUIZ'),
-    -- STUDENT Tarefas
-    (1,'STD-ASG-001', 'MENU_ITEM','Minhas Tarefas',        '/student/assignments',                  1,'STD-ASG'),
-    (1,'STD-ASG-002', 'MENU_ITEM','Histórico Entregas',    '/student/submissions',                  2,'STD-ASG'),
-    -- ADMIN Biblioteca
-    (1,'ADM-LIB-001', 'MENU_ITEM','Conteúdos',             '/admin/library/contents',               1,'ADM-LIB'),
-    (1,'ADM-LIB-002', 'MENU_ITEM','Carregar Novo',         '/admin/library/upload',                 2,'ADM-LIB'),
-    (1,'ADM-LIB-003', 'MENU_ITEM','Carregar em Lote',      '/admin/library/batch',                  3,'ADM-LIB'),
-    (1,'ADM-LIB-004', 'MENU_ITEM','Categorias',            '/admin/library/categories',             4,'ADM-LIB'),
-    (1,'ADM-LIB-005', 'MENU_ITEM','Disciplinas',           '/admin/library/disciplines',            5,'ADM-LIB'),
-    (1,'ADM-LIB-006', 'MENU_ITEM','Logs de Auditoria',     '/admin/library/logs',                   6,'ADM-LIB'),
-    (1,'ADM-LIB-007', 'MENU_ITEM','Leitura Offline',       '/admin/library/offline',                7,'ADM-LIB'),
-    -- ADMIN Quiz
-    (1,'ADM-QUIZ-001','MENU_ITEM','Gerir Quizzes',         '/admin/quiz/manage',                    1,'ADM-QUIZ'),
-    (1,'ADM-QUIZ-002','MENU_ITEM','Criar Quiz',            '/admin/quiz/create',                    2,'ADM-QUIZ'),
-    -- GUEST Biblioteca pública
-    (1,'GST-LIB-001', 'MENU_ITEM','Pesquisar',             '/biblioteca',                           1,'GST-001'),
-    (1,'GST-LIB-002', 'MENU_ITEM','Categorias',            '/biblioteca/categorias',                2,'GST-001'),
-    (1,'GST-LIB-003', 'MENU_ITEM','Chat IA',               '/biblioteca/chat',                      3,'GST-001')
+    (1,'ROOT-000-001','MENU_ITEM','Configurações de Rede',   '/root/settings',                        1,'ROOT-000'),
+    (1,'ROOT-000-002','MENU_ITEM','Gestão de Admins',        '/root/admins',                          2,'ROOT-000'),
+
+    -- ADMIN — Utilizadores
+    (1,'ADM-001-001','MENU_ITEM','Listar Utilizadores',      '/admin/users/list',                     1,'ADM-001'),
+    (1,'ADM-001-002','MENU_ITEM','Gerir Roles',              '/admin/users/roles',                    2,'ADM-001'),
+    (1,'ADM-STD',    'MENU_ITEM','Estudantes',               '/admin/students',                       3,'ADM-001'),
+    (1,'ADM-PRF-LST','MENU_ITEM','Professores',              '/admin/professors',                     4,'ADM-001'),
+
+    -- ADMIN — Académico
+    (1,'ADM-002-001','MENU_ITEM','Turmas',                   '/admin/academic/classrooms',            1,'ADM-002'),
+    (1,'ADM-002-002','MENU_ITEM','Disciplinas',              '/admin/academic/subjects',              2,'ADM-002'),
+    (1,'ADM-002-003','MENU_ITEM','Escolas',                  '/admin/academic/schools',               3,'ADM-002'),
+    (1,'ADM-002-004','MENU_ITEM','Níveis de Ensino',         '/admin/academic/class-levels',          4,'ADM-002'),
+    (1,'ADM-002-005','MENU_ITEM','Atribuições Professores',  '/admin/academic/professor-assignments', 5,'ADM-002'),
+    (1,'ADM-002-006','MENU_ITEM','Grupos Académicos',        '/admin/academic/academic-groups',       6,'ADM-002'),
+    (1,'ADM-002-007','MENU_ITEM','Currículo',                '/admin/academic/curriculum',            7,'ADM-002'),
+
+    -- ADMIN — Biblioteca
+    (1,'ADM-LIB-001','MENU_ITEM','Conteúdos',               '/admin/library/contents',               1,'ADM-LIB'),
+    (1,'ADM-LIB-002','MENU_ITEM','Carregar Novo',           '/admin/library/upload',                 2,'ADM-LIB'),
+    (1,'ADM-LIB-003','MENU_ITEM','Carregar em Lote',        '/admin/library/batch',                  3,'ADM-LIB'),
+    (1,'ADM-LIB-004','MENU_ITEM','Categorias',              '/admin/library/categories',             4,'ADM-LIB'),
+    (1,'ADM-LIB-005','MENU_ITEM','Disciplinas',             '/admin/library/disciplines',            5,'ADM-LIB'),
+    (1,'ADM-LIB-006','MENU_ITEM','Logs de Auditoria',       '/admin/library/logs',                   6,'ADM-LIB'),
+    (1,'ADM-LIB-007','MENU_ITEM','Leitura Offline',         '/admin/library/offline',                7,'ADM-LIB'),
+
+    -- ADMIN — Quiz
+    (1,'ADM-QUIZ-001','MENU_ITEM','Gerir Quizzes',          '/admin/quiz/manage',                    1,'ADM-QUIZ'),
+    (1,'ADM-QUIZ-002','MENU_ITEM','Criar Quiz',             '/admin/quiz/create',                    2,'ADM-QUIZ'),
+
+    -- SCHOOL_ADMIN — Dashboard
+    (1,'SADM-000-001','MENU_ITEM','Visão Geral',            '/school-admin/dashboard',               1,'SADM-000'),
+    (1,'SADM-000-002','MENU_ITEM','Estatísticas',           '/school-admin/dashboard/stats',         2,'SADM-000'),
+    -- SCHOOL_ADMIN — Estudantes e Professores
+    (1,'SADM-STD-001','MENU_ITEM','Matrícula',              '/school-admin/students',                1,'SADM-STD'),
+    (1,'SADM-PRF-001','MENU_ITEM','Ver Perfis',             '/school-admin/professors',              1,'SADM-PRF'),
+
+    -- PROFESSOR — Dashboard
+    (1,'PRF-001-001','MENU_ITEM','Minhas Turmas',           '/professor/classes',                    1,'PRF-001'),
+    (1,'PRF-001-002','MENU_ITEM','Gestão de Notas',         '/professor/grades',                     2,'PRF-001'),
+    -- PROFESSOR — Fórum
+    (1,'PRF-002-001','MENU_ITEM','Perguntas Pendentes',     '/professor/forum/pending',              1,'PRF-002'),
+    (1,'PRF-002-002','MENU_ITEM','Respondidas',             '/professor/forum/answered',             2,'PRF-002'),
+    -- PROFESSOR — Biblioteca
+    (1,'PRF-LIB-001','MENU_ITEM','Pesquisar',               '/professor/library',                    1,'PRF-LIB'),
+    (1,'PRF-LIB-002','MENU_ITEM','Os Meus Conteúdos',      '/professor/library/my-content',         2,'PRF-LIB'),
+    (1,'PRF-LIB-003','MENU_ITEM','Categorias',              '/professor/library/categories',         3,'PRF-LIB'),
+    (1,'PRF-LIB-004','MENU_ITEM','Favoritos',               '/professor/library/favorites',          4,'PRF-LIB'),
+    (1,'PRF-LIB-005','MENU_ITEM','Continuar a Ler',         '/professor/library/progress',           5,'PRF-LIB'),
+    (1,'PRF-LIB-006','MENU_ITEM','Histórico',               '/professor/library/history',            6,'PRF-LIB'),
+    (1,'PRF-LIB-007','MENU_ITEM','Leitura Offline',         '/professor/library/offline',            7,'PRF-LIB'),
+    -- PROFESSOR — Metas
+    (1,'PRF-GOALS-001','MENU_ITEM','Minhas Metas',          '/professor/goals',                      1,'PRF-GOALS'),
+    -- PROFESSOR — Quiz
+    (1,'PRF-QUIZ-001','MENU_ITEM','Gerir Quizzes',          '/professor/quiz/manage',                1,'PRF-QUIZ'),
+    (1,'PRF-QUIZ-002','MENU_ITEM','Criar Quiz',             '/professor/quiz/create',                2,'PRF-QUIZ'),
+    -- PROFESSOR — Tarefas
+    (1,'PRF-ASG-001','MENU_ITEM','Gerir Tarefas',           '/professor/assignments',                1,'PRF-ASG'),
+
+    -- STUDENT — Dashboard
+    (1,'STD-001-001','MENU_ITEM','Minhas Aulas',            '/student/classes',                      1,'STD-001'),
+    (1,'STD-001-002','MENU_ITEM','Notas',                   '/student/grades',                       2,'STD-001'),
+    -- STUDENT — Fórum
+    (1,'STD-002-001','MENU_ITEM','Minhas Perguntas',        '/student/forum/questions',              1,'STD-002'),
+    (1,'STD-002-002','MENU_ITEM','Nova Pergunta',           '/student/forum/new',                    2,'STD-002'),
+    -- STUDENT — Biblioteca
+    (1,'STD-LIB-001','MENU_ITEM','Pesquisar',               '/student/library',                      1,'STD-LIB'),
+    (1,'STD-LIB-002','MENU_ITEM','Categorias',              '/student/library/categories',           2,'STD-LIB'),
+    (1,'STD-LIB-003','MENU_ITEM','Favoritos',               '/student/library/favorites',            3,'STD-LIB'),
+    (1,'STD-LIB-004','MENU_ITEM','Continuar a Ler',         '/student/library/progress',             4,'STD-LIB'),
+    (1,'STD-LIB-005','MENU_ITEM','Histórico',               '/student/library/history',              5,'STD-LIB'),
+    (1,'STD-LIB-006','MENU_ITEM','Leitura Offline',         '/student/library/offline',              6,'STD-LIB'),
+    -- STUDENT — Metas
+    (1,'STD-GOALS-001','MENU_ITEM','Minhas Metas',          '/student/goals',                        1,'STD-GOALS'),
+    (1,'STD-GOALS-002','MENU_ITEM','Nova Meta',             '/student/goals/new',                    2,'STD-GOALS'),
+    -- STUDENT — Quiz
+    (1,'STD-QUIZ-001','MENU_ITEM','Escolher Quiz',          '/student/quiz',                         1,'STD-QUIZ'),
+    (1,'STD-QUIZ-002','MENU_ITEM','Os Meus Resultados',     '/student/quiz/results',                 2,'STD-QUIZ'),
+    (1,'STD-QUIZ-003','MENU_ITEM','Os Meus Certificados',   '/student/certificates',                 3,'STD-QUIZ'),
+    -- STUDENT — Tarefas
+    (1,'STD-ASG-001','MENU_ITEM','Minhas Tarefas',          '/student/assignments',                  1,'STD-ASG'),
+    (1,'STD-ASG-002','MENU_ITEM','Histórico Entregas',      '/student/submissions',                  2,'STD-ASG'),
+
+    -- GUEST — Biblioteca pública
+    (1,'GST-LIB-001','MENU_ITEM','Pesquisar',               '/biblioteca',                           1,'GST-001'),
+    (1,'GST-LIB-002','MENU_ITEM','Categorias',              '/biblioteca/categorias',                2,'GST-001'),
+    (1,'GST-LIB-003','MENU_ITEM','Chat IA',                 '/biblioteca/chat',                      3,'GST-001')
 
 ) AS v(status, code, type, label, router_link, position, parent_code)
 
@@ -193,38 +207,43 @@ ON CONFLICT (code) DO UPDATE SET
 
 -- =============================================================================
 -- PASSO 3 — ROLE_TRANSACTION
--- Resolução por code; ON CONFLICT (role, app_transaction_id) DO NOTHING
+-- Resolução por code; sem IDs hardcoded; duplicados ignorados silenciosamente.
 -- =============================================================================
 
 INSERT INTO role_transaction (status, role, app_transaction_id)
 SELECT 1, v.role, a.id
 FROM (VALUES
+
     -- ROOT
-    ('ROOT','ROOT-000'),
-    ('ROOT','ROOT-000-001'),
-    ('ROOT','ROOT-000-002'),
+    ('ROOT','ROOT-000'), ('ROOT','ROOT-000-001'), ('ROOT','ROOT-000-002'),
 
-    -- ADMIN — gestão
-    ('ADMIN','ADM-001'),    ('ADMIN','ADM-001-001'), ('ADMIN','ADM-001-002'),
-    ('ADMIN','ADM-002'),    ('ADMIN','ADM-002-001'), ('ADMIN','ADM-002-002'),
-    ('ADMIN','ADM-002-003'),('ADMIN','ADM-002-004'), ('ADMIN','ADM-002-005'),
+    -- ADMIN — utilizadores (inclui Estudantes e Professores)
+    ('ADMIN','ADM-001'),     ('ADMIN','ADM-001-001'), ('ADMIN','ADM-001-002'),
+    ('ADMIN','ADM-STD'),     ('ADMIN','ADM-PRF-LST'),
+    -- ADMIN — académico (todos os itens, incluindo Grupos e Currículo)
+    ('ADMIN','ADM-002'),     ('ADMIN','ADM-002-001'), ('ADMIN','ADM-002-002'),
+    ('ADMIN','ADM-002-003'), ('ADMIN','ADM-002-004'), ('ADMIN','ADM-002-005'),
+    ('ADMIN','ADM-002-006'), ('ADMIN','ADM-002-007'),
     -- ADMIN — biblioteca
-    ('ADMIN','ADM-LIB'),    ('ADMIN','ADM-LIB-001'), ('ADMIN','ADM-LIB-002'),
-    ('ADMIN','ADM-LIB-003'),('ADMIN','ADM-LIB-004'), ('ADMIN','ADM-LIB-005'),
-    ('ADMIN','ADM-LIB-006'),('ADMIN','ADM-LIB-007'),
+    ('ADMIN','ADM-LIB'),     ('ADMIN','ADM-LIB-001'), ('ADMIN','ADM-LIB-002'),
+    ('ADMIN','ADM-LIB-003'), ('ADMIN','ADM-LIB-004'), ('ADMIN','ADM-LIB-005'),
+    ('ADMIN','ADM-LIB-006'), ('ADMIN','ADM-LIB-007'),
     -- ADMIN — quiz
-    ('ADMIN','ADM-QUIZ'),   ('ADMIN','ADM-QUIZ-001'),('ADMIN','ADM-QUIZ-002'),
+    ('ADMIN','ADM-QUIZ'),    ('ADMIN','ADM-QUIZ-001'),('ADMIN','ADM-QUIZ-002'),
 
-    -- SCHOOL_ADMIN — dashboard próprio
+    -- SCHOOL_ADMIN — dashboard próprio + estudantes + professores
     ('SCHOOL_ADMIN','SADM-000'),    ('SCHOOL_ADMIN','SADM-000-001'),('SCHOOL_ADMIN','SADM-000-002'),
-    -- SCHOOL_ADMIN — gestão partilhada (sem Escolas e Níveis)
-    ('SCHOOL_ADMIN','ADM-001'),     ('SCHOOL_ADMIN','ADM-001-001'), ('SCHOOL_ADMIN','ADM-001-002'),
-    ('SCHOOL_ADMIN','ADM-002'),     ('SCHOOL_ADMIN','ADM-002-001'), ('SCHOOL_ADMIN','ADM-002-002'),
-    ('SCHOOL_ADMIN','ADM-002-005'),
+    ('SCHOOL_ADMIN','SADM-STD'),    ('SCHOOL_ADMIN','SADM-STD-001'),
+    ('SCHOOL_ADMIN','SADM-PRF'),    ('SCHOOL_ADMIN','SADM-PRF-001'),
+    -- SCHOOL_ADMIN — gestão académica partilhada (sem Escolas nem Níveis de Ensino)
+    ('SCHOOL_ADMIN','ADM-001'),     ('SCHOOL_ADMIN','ADM-001-001'),('SCHOOL_ADMIN','ADM-001-002'),
+    ('SCHOOL_ADMIN','ADM-STD'),     ('SCHOOL_ADMIN','ADM-PRF-LST'),
+    ('SCHOOL_ADMIN','ADM-002'),     ('SCHOOL_ADMIN','ADM-002-001'),('SCHOOL_ADMIN','ADM-002-002'),
+    ('SCHOOL_ADMIN','ADM-002-005'), ('SCHOOL_ADMIN','ADM-002-006'),('SCHOOL_ADMIN','ADM-002-007'),
     -- SCHOOL_ADMIN — biblioteca + quiz
     ('SCHOOL_ADMIN','ADM-LIB'),     ('SCHOOL_ADMIN','ADM-LIB-001'),('SCHOOL_ADMIN','ADM-LIB-002'),
-    ('SCHOOL_ADMIN','ADM-LIB-003'),('SCHOOL_ADMIN','ADM-LIB-004'),('SCHOOL_ADMIN','ADM-LIB-005'),
-    ('SCHOOL_ADMIN','ADM-LIB-006'),('SCHOOL_ADMIN','ADM-LIB-007'),
+    ('SCHOOL_ADMIN','ADM-LIB-003'), ('SCHOOL_ADMIN','ADM-LIB-004'),('SCHOOL_ADMIN','ADM-LIB-005'),
+    ('SCHOOL_ADMIN','ADM-LIB-006'), ('SCHOOL_ADMIN','ADM-LIB-007'),
     ('SCHOOL_ADMIN','ADM-QUIZ'),    ('SCHOOL_ADMIN','ADM-QUIZ-001'),('SCHOOL_ADMIN','ADM-QUIZ-002'),
 
     -- PROFESSOR — dashboard + fórum
@@ -235,9 +254,10 @@ FROM (VALUES
     ('PROFESSOR','PRF-LIB-003'),('PROFESSOR','PRF-LIB-004'),('PROFESSOR','PRF-LIB-005'),
     ('PROFESSOR','PRF-LIB-006'),('PROFESSOR','PRF-LIB-007'),
     ('PROFESSOR','PRF-GOALS'), ('PROFESSOR','PRF-GOALS-001'),
-    -- PROFESSOR — quiz + tarefas
+    -- PROFESSOR — quiz + tarefas + director de turma
     ('PROFESSOR','PRF-QUIZ'),  ('PROFESSOR','PRF-QUIZ-001'),('PROFESSOR','PRF-QUIZ-002'),
     ('PROFESSOR','PRF-ASG'),   ('PROFESSOR','PRF-ASG-001'),
+    ('PROFESSOR','PRF-DIR'),
 
     -- STUDENT — dashboard + fórum
     ('STUDENT','STD-001'),    ('STUDENT','STD-001-001'),('STUDENT','STD-001-002'),
@@ -248,48 +268,38 @@ FROM (VALUES
     ('STUDENT','STD-LIB-006'),('STUDENT','STD-LIB-007'),
     ('STUDENT','STD-GOALS'), ('STUDENT','STD-GOALS-001'),('STUDENT','STD-GOALS-002'),
     -- STUDENT — quiz + tarefas
-    ('STUDENT','STD-QUIZ'),  ('STUDENT','STD-QUIZ-001'),('STUDENT','STD-QUIZ-002'),
+    ('STUDENT','STD-QUIZ'),  ('STUDENT','STD-QUIZ-001'),('STUDENT','STD-QUIZ-002'),('STUDENT','STD-QUIZ-003'),
     ('STUDENT','STD-ASG'),   ('STUDENT','STD-ASG-001'), ('STUDENT','STD-ASG-002'),
 
     -- GUEST — biblioteca pública
-    ('GUEST','GST-001'),    ('GUEST','GST-LIB-001'),('GUEST','GST-LIB-002'),('GUEST','GST-LIB-003')
+    ('GUEST','GST-001'), ('GUEST','GST-LIB-001'),('GUEST','GST-LIB-002'),('GUEST','GST-LIB-003')
 
 ) AS v(role, tx_code)
 JOIN app_transaction a ON a.code = v.tx_code
 
 ON CONFLICT (role, app_transaction_id) DO NOTHING;
 
--- ============================================================
--- BLOCO 15 — ESG: Escola Secundária
--- ============================================================
-ALTER TABLE IF EXISTS ac_SUBJECT ADD COLUMN IF NOT EXISTS CLASS_LEVEL_ID BIGINT NULL;
-ALTER TABLE IF EXISTS ac_SUBJECT ADD COLUMN IF NOT EXISTS SCHOOL_ID BIGINT NULL;
+-- =============================================================================
+-- BLOCO 15 — Escola de teste (ESG)
+-- =============================================================================
+ALTER TABLE IF EXISTS ac_subject ADD COLUMN IF NOT EXISTS class_level_id BIGINT NULL;
+ALTER TABLE IF EXISTS ac_subject ADD COLUMN IF NOT EXISTS school_id       BIGINT NULL;
 
-INSERT INTO ac_school (id, status, created_by, created_date, last_modified_by, last_modified_date, name, city) VALUES
-(4, 1, 0, NOW(), 0, NOW(), 'Escola Secundária SAE', 'Maputo')
+INSERT INTO ac_school (id, status, created_by, created_date, last_modified_by, last_modified_date, name, city)
+VALUES (4, 1, 0, NOW(), 0, NOW(), 'Escola Secundária SAE', 'Maputo')
 ON CONFLICT (id) DO NOTHING;
 
 -- =============================================================================
--- VERIFICAÇÃO FINAL
+-- BLOCO 16 — Níveis de Ensino ESG (8ª–12ª Classe) com campo de ciclo
 -- =============================================================================
-SELECT 'app_transaction' AS tabela, COUNT(*) AS total FROM app_transaction
-UNION ALL
-SELECT 'role_transaction', COUNT(*) FROM role_transaction;
+ALTER TABLE IF EXISTS ac_class_level ADD COLUMN IF NOT EXISTS cycle VARCHAR(10);
 
--- ============================================================
--- BLOCO 17 — ESG: Turmas com turma_group
--- A coluna turma_group é adicionada pelo Hibernate (ddl-auto: update)
--- mas o ALTER TABLE garante compatibilidade em runs sem serviço activo.
--- ============================================================
-ALTER TABLE IF EXISTS ac_classroom ADD COLUMN IF NOT EXISTS turma_group VARCHAR(10);
-
--- Garantir que os níveis de ensino 11-15 (8ª–12ª) existem antes da FK das turmas
-INSERT INTO ac_class_level (id, status, created_by, created_date, last_modified_by, last_modified_date, name) VALUES
-(11, 1, 0, NOW(), 0, NOW(), '8ª Classe'),
-(12, 1, 0, NOW(), 0, NOW(), '9ª Classe'),
-(13, 1, 0, NOW(), 0, NOW(), '10ª Classe'),
-(14, 1, 0, NOW(), 0, NOW(), '11ª Classe'),
-(15, 1, 0, NOW(), 0, NOW(), '12ª Classe')
+INSERT INTO ac_class_level (id, status, created_by, created_date, last_modified_by, last_modified_date, name, cycle) VALUES
+(11, 1, 0, NOW(), 0, NOW(), '8ª Classe',  'BASICO'),
+(12, 1, 0, NOW(), 0, NOW(), '9ª Classe',  'BASICO'),
+(13, 1, 0, NOW(), 0, NOW(), '10ª Classe', 'BASICO'),
+(14, 1, 0, NOW(), 0, NOW(), '11ª Classe', 'MEDIO'),
+(15, 1, 0, NOW(), 0, NOW(), '12ª Classe', 'MEDIO')
 ON CONFLICT (id) DO NOTHING;
 
 SELECT setval(pg_get_serial_sequence('ac_class_level', 'id'), GREATEST((SELECT MAX(id) FROM ac_class_level), 15));
@@ -306,13 +316,67 @@ INSERT INTO ac_classroom (id, status, created_by, created_date, last_modified_by
 (29, 1, 0, NOW(), 0, NOW(), 'Turma C - 12ª Classe (Ciências Exactas)', 4, 15, 'Manhã', 'C')
 ON CONFLICT (id) DO NOTHING;
 
+-- Garante que níveis já existentes ficam com o ciclo correcto
+UPDATE ac_class_level SET cycle = 'BASICO' WHERE id IN (11, 12, 13) AND (cycle IS NULL OR cycle = '');
+UPDATE ac_class_level SET cycle = 'MEDIO'  WHERE id IN (14, 15)     AND (cycle IS NULL OR cycle = '');
+
+SELECT setval(pg_get_serial_sequence('ac_class_level', 'id'), 20);
+
+-- =============================================================================
+-- BLOCO 17 — Grupos Académicos (aplicam-se às turmas do ciclo médio)
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS ac_academic_group (
+    id                 BIGSERIAL    PRIMARY KEY,
+    status             SMALLINT     NOT NULL DEFAULT 1,
+    created_by         BIGINT,
+    created_date       TIMESTAMP,
+    last_modified_by   BIGINT,
+    last_modified_date TIMESTAMP,
+    name               VARCHAR(256) NOT NULL,
+    code               VARCHAR(20),
+    description        VARCHAR(500),
+    school_id          BIGINT       REFERENCES ac_school(id)
+);
+
+INSERT INTO ac_academic_group (id, status, created_by, created_date, last_modified_by, last_modified_date, name, code, school_id) VALUES
+(1, 1, 0, NOW(), 0, NOW(), 'Grupo A — Letras com Matemática',  'A', 4),
+(2, 1, 0, NOW(), 0, NOW(), 'Grupo B — Ciências com Biologia',  'B', 4),
+(3, 1, 0, NOW(), 0, NOW(), 'Grupo C — Ciências Exactas',        'C', 4)
+ON CONFLICT (id) DO NOTHING;
+
+SELECT setval(pg_get_serial_sequence('ac_academic_group', 'id'), 10);
+
+-- =============================================================================
+-- BLOCO 18 — Turmas ESG com grupo académico e director de turma
+-- =============================================================================
+ALTER TABLE IF EXISTS ac_classroom ADD COLUMN IF NOT EXISTS turma_group       VARCHAR(10);
+ALTER TABLE IF EXISTS ac_classroom ADD COLUMN IF NOT EXISTS academic_group_id BIGINT REFERENCES ac_academic_group(id);
+ALTER TABLE IF EXISTS ac_classroom ADD COLUMN IF NOT EXISTS director_id       BIGINT NULL;
+ALTER TABLE IF EXISTS ac_classroom ADD COLUMN IF NOT EXISTS academic_year     VARCHAR(20);
+
+INSERT INTO ac_classroom (id, status, created_by, created_date, last_modified_by, last_modified_date,
+                          name, school_id, class_level_id, shift, academic_year, turma_group, academic_group_id) VALUES
+(21, 1, 0, NOW(), 0, NOW(), 'Turma A - 8ª Classe',                      4, 11, 'Manhã', '2025', NULL, NULL),
+(22, 1, 0, NOW(), 0, NOW(), 'Turma A - 9ª Classe',                      4, 12, 'Manhã', '2025', NULL, NULL),
+(23, 1, 0, NOW(), 0, NOW(), 'Turma A - 10ª Classe',                     4, 13, 'Manhã', '2025', NULL, NULL),
+(24, 1, 0, NOW(), 0, NOW(), 'Turma A - 11ª Classe (Letras)',            4, 14, 'Manhã', '2025', 'A',  1),
+(25, 1, 0, NOW(), 0, NOW(), 'Turma B - 11ª Classe (Ciências Bio)',      4, 14, 'Manhã', '2025', 'B',  2),
+(26, 1, 0, NOW(), 0, NOW(), 'Turma C - 11ª Classe (Ciências Exactas)', 4, 14, 'Manhã', '2025', 'C',  3),
+(27, 1, 0, NOW(), 0, NOW(), 'Turma A - 12ª Classe (Letras)',            4, 15, 'Manhã', '2025', 'A',  1),
+(28, 1, 0, NOW(), 0, NOW(), 'Turma B - 12ª Classe (Ciências Bio)',      4, 15, 'Manhã', '2025', 'B',  2),
+(29, 1, 0, NOW(), 0, NOW(), 'Turma C - 12ª Classe (Ciências Exactas)', 4, 15, 'Manhã', '2025', 'C',  3)
+ON CONFLICT (id) DO NOTHING;
+
+-- Migra turmas já existentes que ainda não têm academic_group_id preenchido
+UPDATE ac_classroom
+SET academic_group_id = CASE turma_group WHEN 'A' THEN 1 WHEN 'B' THEN 2 WHEN 'C' THEN 3 END
+WHERE turma_group IS NOT NULL AND academic_group_id IS NULL;
+
 SELECT setval(pg_get_serial_sequence('ac_classroom', 'id'), 30);
 
--- ============================================================
--- BLOCO 18 — Actualizar codes dos subjects existentes
--- A coluna code é adicionada pelo Hibernate; o ALTER TABLE garante
--- que este bloco pode ser executado standalone.
--- ============================================================
+-- =============================================================================
+-- BLOCO 19 — Codes das disciplinas existentes
+-- =============================================================================
 ALTER TABLE IF EXISTS ac_subject ADD COLUMN IF NOT EXISTS code        VARCHAR(20);
 ALTER TABLE IF EXISTS ac_subject ADD COLUMN IF NOT EXISTS description VARCHAR(1000);
 
@@ -327,9 +391,9 @@ UPDATE ac_subject SET code = 'INFORMATICA' WHERE id = 8  AND (code IS NULL OR co
 UPDATE ac_subject SET code = 'PROGRAMACAO' WHERE id = 9  AND (code IS NULL OR code = '');
 UPDATE ac_subject SET code = 'ECONOMIA'    WHERE id = 10 AND (code IS NULL OR code = '');
 
--- ============================================================
--- BLOCO 19 — Subjects em falta para o currículo ESG
--- ============================================================
+-- =============================================================================
+-- BLOCO 20 — Disciplinas em falta para o currículo ESG
+-- =============================================================================
 INSERT INTO ac_subject (id, status, created_by, created_date, last_modified_by, last_modified_date, name, code) VALUES
 (11, 1, 0, NOW(), 0, NOW(), 'Geografia', 'GEOGRAFIA'),
 (12, 1, 0, NOW(), 0, NOW(), 'Filosofia', 'FILOSOFIA')
@@ -337,120 +401,127 @@ ON CONFLICT (id) DO NOTHING;
 
 SELECT setval(pg_get_serial_sequence('ac_subject', 'id'), 20);
 
--- ============================================================
--- BLOCO 20 — Currículo ESG: ac_class_level_subject
+-- =============================================================================
+-- BLOCO 21 — Currículo ESG: ac_class_level_subject
 -- ⚠️  Esta tabela é criada pelo Hibernate (sae-academic-service).
---    Iniciar o serviço pelo menos uma vez antes de correr este bloco.
+--     Iniciar o serviço pelo menos uma vez antes de correr este bloco.
 --
--- Subject IDs: 1=Mat, 2=Port, 3=Fís, 4=Quím, 5=Hist, 6=Bio,
---              7=Ingl, 8=Inf, 9=Prog, 10=Econ, 11=Geo, 12=Filos
--- ============================================================
-INSERT INTO ac_class_level_subject (id, class_level_id, subject_id, turma_group) VALUES
--- 8ª Classe (comum a todos)
-(1,  11, 1, NULL), (2,  11, 2, NULL), (3,  11, 7, NULL),
-(4,  11, 5, NULL), (5,  11, 11, NULL), (6,  11, 6, NULL),
--- 9ª Classe (comum a todos)
-(7,  12, 1, NULL), (8,  12, 2, NULL), (9,  12, 7, NULL),
-(10, 12, 5, NULL), (11, 12, 11, NULL), (12, 12, 6, NULL),
--- 10ª Classe (comum + Física, Química, Informática)
-(13, 13, 1, NULL), (14, 13, 2, NULL), (15, 13, 7, NULL),
-(16, 13, 5, NULL), (17, 13, 11, NULL), (18, 13, 6, NULL),
-(19, 13, 3, NULL), (20, 13, 4, NULL), (21, 13, 8, NULL),
+-- IDs das disciplinas:
+--   1=Mat  2=Port  3=Fís  4=Quím  5=Hist  6=Bio
+--   7=Ingl 8=Inf   9=Prog 10=Econ 11=Geo  12=Filos
+-- =============================================================================
+ALTER TABLE IF EXISTS ac_class_level_subject
+    ADD COLUMN IF NOT EXISTS school_id         BIGINT REFERENCES ac_school(id);
+ALTER TABLE IF EXISTS ac_class_level_subject
+    ADD COLUMN IF NOT EXISTS turma_group       VARCHAR(10);
+ALTER TABLE IF EXISTS ac_class_level_subject
+    ADD COLUMN IF NOT EXISTS academic_group_id BIGINT REFERENCES ac_academic_group(id);
+
+-- school_id=4 = Escola Secundária SAE (ESG)
+INSERT INTO ac_class_level_subject (id, school_id, class_level_id, subject_id, turma_group, academic_group_id) VALUES
+-- 8ª Classe — comum a todos (sem grupo)
+( 1, 4, 11,  1, NULL, NULL), ( 2, 4, 11,  2, NULL, NULL), ( 3, 4, 11,  7, NULL, NULL),
+( 4, 4, 11,  5, NULL, NULL), ( 5, 4, 11, 11, NULL, NULL), ( 6, 4, 11,  6, NULL, NULL),
+-- 9ª Classe — comum a todos
+( 7, 4, 12,  1, NULL, NULL), ( 8, 4, 12,  2, NULL, NULL), ( 9, 4, 12,  7, NULL, NULL),
+(10, 4, 12,  5, NULL, NULL), (11, 4, 12, 11, NULL, NULL), (12, 4, 12,  6, NULL, NULL),
+-- 10ª Classe — comum + Física, Química, Informática
+(13, 4, 13,  1, NULL, NULL), (14, 4, 13,  2, NULL, NULL), (15, 4, 13,  7, NULL, NULL),
+(16, 4, 13,  5, NULL, NULL), (17, 4, 13, 11, NULL, NULL), (18, 4, 13,  6, NULL, NULL),
+(19, 4, 13,  3, NULL, NULL), (20, 4, 13,  4, NULL, NULL), (21, 4, 13,  8, NULL, NULL),
 -- 11ª Grupo A — Letras: Port, Mat, Ingl, Filos, Hist
-(22, 14, 2, 'A'), (23, 14, 1, 'A'), (24, 14, 7, 'A'), (25, 14, 12, 'A'), (26, 14, 5, 'A'),
+(22, 4, 14,  2, 'A', 1), (23, 4, 14,  1, 'A', 1), (24, 4, 14,  7, 'A', 1),
+(25, 4, 14, 12, 'A', 1), (26, 4, 14,  5, 'A', 1),
 -- 11ª Grupo B — Ciências Bio: Port, Mat, Ingl, Filos, Fís, Quím, Bio
-(27, 14, 2, 'B'), (28, 14, 1, 'B'), (29, 14, 7, 'B'), (30, 14, 12, 'B'),
-(31, 14, 3, 'B'), (32, 14, 4, 'B'), (33, 14, 6, 'B'),
+(27, 4, 14,  2, 'B', 2), (28, 4, 14,  1, 'B', 2), (29, 4, 14,  7, 'B', 2),
+(30, 4, 14, 12, 'B', 2), (31, 4, 14,  3, 'B', 2), (32, 4, 14,  4, 'B', 2), (33, 4, 14,  6, 'B', 2),
 -- 11ª Grupo C — Ciências Exactas: Port, Mat, Ingl, Filos, Fís, Quím
-(34, 14, 2, 'C'), (35, 14, 1, 'C'), (36, 14, 7, 'C'), (37, 14, 12, 'C'),
-(38, 14, 3, 'C'), (39, 14, 4, 'C'),
+(34, 4, 14,  2, 'C', 3), (35, 4, 14,  1, 'C', 3), (36, 4, 14,  7, 'C', 3),
+(37, 4, 14, 12, 'C', 3), (38, 4, 14,  3, 'C', 3), (39, 4, 14,  4, 'C', 3),
 -- 12ª Grupo A — Letras
-(40, 15, 2, 'A'), (41, 15, 1, 'A'), (42, 15, 7, 'A'), (43, 15, 12, 'A'), (44, 15, 5, 'A'),
+(40, 4, 15,  2, 'A', 1), (41, 4, 15,  1, 'A', 1), (42, 4, 15,  7, 'A', 1),
+(43, 4, 15, 12, 'A', 1), (44, 4, 15,  5, 'A', 1),
 -- 12ª Grupo B — Ciências Bio
-(45, 15, 2, 'B'), (46, 15, 1, 'B'), (47, 15, 7, 'B'), (48, 15, 12, 'B'),
-(49, 15, 3, 'B'), (50, 15, 4, 'B'), (51, 15, 6, 'B'),
+(45, 4, 15,  2, 'B', 2), (46, 4, 15,  1, 'B', 2), (47, 4, 15,  7, 'B', 2),
+(48, 4, 15, 12, 'B', 2), (49, 4, 15,  3, 'B', 2), (50, 4, 15,  4, 'B', 2), (51, 4, 15,  6, 'B', 2),
 -- 12ª Grupo C — Ciências Exactas
-(52, 15, 2, 'C'), (53, 15, 1, 'C'), (54, 15, 7, 'C'), (55, 15, 12, 'C'),
-(56, 15, 3, 'C'), (57, 15, 4, 'C')
+(52, 4, 15,  2, 'C', 3), (53, 4, 15,  1, 'C', 3), (54, 4, 15,  7, 'C', 3),
+(55, 4, 15, 12, 'C', 3), (56, 4, 15,  3, 'C', 3), (57, 4, 15,  4, 'C', 3)
 ON CONFLICT (id) DO NOTHING;
+
+-- Migra linhas já existentes sem school_id ou academic_group_id
+UPDATE ac_class_level_subject
+SET school_id = 4
+WHERE school_id IS NULL;
+
+UPDATE ac_class_level_subject
+SET academic_group_id = CASE turma_group WHEN 'A' THEN 1 WHEN 'B' THEN 2 WHEN 'C' THEN 3 END
+WHERE turma_group IS NOT NULL
+  AND class_level_id IN (14, 15)
+  AND academic_group_id IS NULL;
 
 SELECT setval(pg_get_serial_sequence('ac_class_level_subject', 'id'), 100);
 
--- ============================================================
--- BLOCO 21 — Actualizar student de teste para a 10ª Classe
--- Login: +258841111101
--- ============================================================
-UPDATE student_profile
-SET classroom_id = 23,
-    school_id    = 4,
-    grade        = '10ª Classe'
-WHERE user_id = (SELECT id FROM sae_user WHERE username = '+258841111101');
-
--- ============================================================
--- BLOCO 22 — Director de Turma: coluna + menu do professor
--- ============================================================
-
--- Coluna director_id na tabela de turmas (Hibernate cria via ddl-auto;
--- este ALTER garante compatibilidade em runs sem serviço activo).
-ALTER TABLE IF EXISTS ac_classroom ADD COLUMN IF NOT EXISTS director_id BIGINT NULL;
-
--- Menu item "Director de Turma" para o role PROFESSOR
-INSERT INTO app_transaction (id, status, code, type, label, router_link, position, parent_id) VALUES
-(230, 1, 'PRF-DIR', 'HEADER', 'Director de Turma', '/professor/director-classroom', 7, NULL)
-ON CONFLICT (id) DO UPDATE SET
-    status      = EXCLUDED.status,
-    code        = EXCLUDED.code,
-    type        = EXCLUDED.type,
-    label       = EXCLUDED.label,
-    router_link = EXCLUDED.router_link,
-    position    = EXCLUDED.position,
-    parent_id   = EXCLUDED.parent_id;
-
-INSERT INTO role_transaction (id, status, role, app_transaction_id) VALUES
-(230, 1, 'PROFESSOR', 230)
-ON CONFLICT (id) DO UPDATE SET
-    status             = EXCLUDED.status,
-    role               = EXCLUDED.role,
-    app_transaction_id = EXCLUDED.app_transaction_id;
+-- =============================================================================
+-- BLOCO 22 — Perfil do professor: ciclo de ensino
+-- =============================================================================
+ALTER TABLE IF EXISTS professor_profile
+    ADD COLUMN IF NOT EXISTS teaching_cycle VARCHAR(10);
 
 -- =============================================================================
--- NOTA: TODO o restante conteúdo é criado exclusivamente via frontend:
+-- BLOCO 23 — Actualizar estudante de teste para a 10ª Classe
+-- Login: +258841111101
+-- =============================================================================
+UPDATE student_profile
+SET classroom_id = 23, school_id = 4, grade = '10ª Classe'
+WHERE user_id = (SELECT id FROM sae_user WHERE username = '+258841111101');
+
+-- =============================================================================
+-- BLOCO 24 — Quiz: migração de disciplina (enum) → subject_id (FK académico)
+-- =============================================================================
+ALTER TABLE IF EXISTS quiz
+    ALTER COLUMN disciplina DROP NOT NULL;
+ALTER TABLE IF EXISTS quiz
+    ADD COLUMN IF NOT EXISTS subject_id BIGINT;
+ALTER TABLE IF EXISTS quiz
+    ADD COLUMN IF NOT EXISTS subject_name VARCHAR(200);
+
+-- =============================================================================
+-- BLOCO 25 — Professor: fluxo de aprovação
+-- =============================================================================
+ALTER TABLE professor_profile
+    ADD COLUMN IF NOT EXISTS approval_status   VARCHAR(20)  NOT NULL DEFAULT 'APPROVED';
+ALTER TABLE professor_profile
+    ADD COLUMN IF NOT EXISTS rejection_reason  VARCHAR(500);
+ALTER TABLE professor_profile
+    ADD COLUMN IF NOT EXISTS id_document_number VARCHAR(50);
+
+-- Professores existentes ficam APPROVED (já foram validados manualmente)
+UPDATE professor_profile SET approval_status = 'APPROVED' WHERE approval_status IS NULL OR approval_status = '';
+
+-- =============================================================================
+-- VERIFICAÇÃO FINAL
+-- =============================================================================
+SELECT 'app_transaction' AS tabela, COUNT(*) AS total FROM app_transaction
+UNION ALL
+SELECT 'role_transaction', COUNT(*) FROM role_transaction
+UNION ALL
+SELECT 'ac_academic_group',  COUNT(*) FROM ac_academic_group
+UNION ALL
+SELECT 'ac_class_level',     COUNT(*) FROM ac_class_level
+UNION ALL
+SELECT 'ac_classroom',       COUNT(*) FROM ac_classroom;
+
+-- =============================================================================
+-- NOTA: Todo o restante conteúdo é criado exclusivamente via frontend:
 --   • Utilizadores         → /admin/users  ou  /signup
 --   • Escolas              → /admin/academic/schools
 --   • Níveis de Ensino     → /admin/academic/class-levels
 --   • Turmas               → /admin/academic/classrooms
---   • Disciplinas          → /admin/academic/subjects  ← sync em tempo real no fórum
+--   • Disciplinas          → /admin/academic/subjects
+--   • Grupos Académicos    → /admin/academic/academic-groups
+--   • Currículo            → /admin/academic/curriculum
 --   • Atribuições          → /admin/academic/professor-assignments
 --   • Quizzes              → /professor/quiz/create
---   • Conteúdos biblioteca → /admin/library/upload  ou  /professor/library
+--   • Conteúdos biblioteca → /admin/library/upload
 -- =============================================================================
-
--- =============================================================================
--- DISCIPLINAS (SNE Moçambique) — povoam o dropdown da biblioteca/upload
--- =============================================================================
-INSERT INTO disciplines (name, created_at) VALUES
-    ('Português',                       NOW()),
-    ('Matemática',                      NOW()),
-    ('Física',                          NOW()),
-    ('Química',                         NOW()),
-    ('Biologia',                        NOW()),
-    ('História',                        NOW()),
-    ('Geografia',                       NOW()),
-    ('Inglês',                          NOW()),
-    ('Francês',                         NOW()),
-    ('Filosofia',                       NOW()),
-    ('Educação Física',                 NOW()),
-    ('Educação Visual',                 NOW()),
-    ('Educação Musical',                NOW()),
-    ('Educação Moral e Cívica',         NOW()),
-    ('Tecnologias de Informação e Comunicação (TIC)', NOW()),
-    ('Empreendedorismo',                NOW()),
-    ('Agro-pecuária',                   NOW()),
-    ('Ofícios',                         NOW()),
-    ('Desenho',                         NOW()),
-    ('Línguas Moçambicanas',            NOW())
-ON CONFLICT (name) DO NOTHING;
-
--- ============================================================
--- FIM DO SEED PostgreSQL
--- ============================================================

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -15,15 +15,15 @@ import {
   IconButton,
   Tooltip,
   Alert,
-  Avatar,
 } from '@mui/material';
 import {
-  CloudDownload as DownloadIcon,
+  Visibility as ViewIcon,
   Assignment as AssignmentIcon,
   History as HistoryIcon,
   EmojiEvents as GradeIcon,
   Schedule as ScheduleIcon,
 } from '@mui/icons-material';
+import FileViewerDialog from '../../components/FileViewerDialog';
 import { useNavigate } from 'react-router-dom';
 import {
   type Submission,
@@ -36,6 +36,7 @@ export default function StudentSubmissionsPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewer, setViewer] = useState<{ url: string; name: string } | null>(null);
 
   useEffect(() => {
     fetchSubmissions();
@@ -129,15 +130,13 @@ export default function StudentSubmissionsPage() {
                     </TableCell>
                     <TableCell>
                       {sub.fileOriginalName ? (
-                        <Tooltip title={sub.fileOriginalName}>
-                          <IconButton 
-                            size="small" 
+                        <Tooltip title={`Ver: ${sub.fileOriginalName}`}>
+                          <IconButton
+                            size="small"
                             sx={{ color: '#00A651', bgcolor: 'rgba(0,166,81,0.05)' }}
-                            href={submissionFileUrl(sub.id)}
-                            target="_blank"
-                            download
+                            onClick={() => setViewer({ url: submissionFileUrl(sub.id), name: sub.fileOriginalName! })}
                           >
-                            <DownloadIcon fontSize="small" />
+                            <ViewIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
                       ) : (
@@ -178,6 +177,14 @@ export default function StudentSubmissionsPage() {
           </TableContainer>
         )}
       </Paper>
+
+      <FileViewerDialog
+        open={!!viewer}
+        onClose={() => setViewer(null)}
+        url={viewer?.url || ''}
+        fileName={viewer?.name}
+        title="O teu anexo"
+      />
     </Box>
   );
 }

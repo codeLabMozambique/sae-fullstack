@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, Box, Typography, Chip, Button } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
 import type { ExpertAnswer } from '../../types/forum';
 
 interface Props {
@@ -25,6 +26,14 @@ const ExpertAnswerCard: React.FC<Props> = ({ answer, isQuestionOwner, questionCl
           size="small"
           sx={{ bgcolor: '#1D4ED8', color: '#fff', fontWeight: 700, fontSize: '0.72rem' }}
         />
+        {answer.aiGenerated && (
+          <Chip
+            icon={<SmartToyIcon sx={{ fontSize: '13px !important', color: '#fff !important' }} />}
+            label="Assistente IA"
+            size="small"
+            sx={{ bgcolor: '#7C3AED', color: '#fff', fontWeight: 700, fontSize: '0.72rem' }}
+          />
+        )}
         {answer.accepted && (
           <Chip
             icon={<CheckCircleOutlineIcon sx={{ fontSize: '14px !important' }} />}

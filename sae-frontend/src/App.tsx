@@ -15,12 +15,16 @@ import SubjectsPage from './pages/admin/academic/SubjectsPage';
 import SchoolsPage from './pages/admin/academic/SchoolsPage';
 import ClassLevelsPage from './pages/admin/academic/ClassLevelsPage';
 import ProfessorAssignmentsPage from './pages/admin/academic/ProfessorAssignmentsPage';
+import AcademicGroupsPage from './pages/admin/academic/AcademicGroupsPage';
+import CurriculoPage from './pages/admin/academic/CurriculoPage';
 import ProfessorClassesPage from './pages/professor/ProfessorClassesPage';
 import ProfessorGradesPage from './pages/professor/ProfessorGradesPage';
 import StudentForumPage from './pages/student/StudentForumPage';
 import StudentQuizPage from './pages/student/StudentQuizPage';
 import ProfessorQuizPage from './pages/professor/ProfessorQuizPage';
 import UsersListPage from './pages/admin/users/UsersListPage';
+import ProfessorsPage from './pages/admin/users/ProfessorsPage';
+import StudentsEnrollmentPage from './pages/admin/users/StudentsEnrollmentPage';
 import ProfessorClassroomsPage from './pages/professor/ProfessorClassroomsPage';
 import DirectorClassroomPage from './pages/professor/DirectorClassroomPage';
 import ProfessorTasksPage from './pages/professor/ProfessorTasksPage';
@@ -30,6 +34,7 @@ import ProfessorTaskDetailsPage from './pages/professor/ProfessorTaskDetailsPage
 import StudentTasksPage from './pages/student/StudentTasksPage';
 import StudentTaskDetailsPage from './pages/student/StudentTaskDetailsPage';
 import StudentSubmissionsPage from './pages/student/StudentSubmissionsPage';
+import StudentCertificatesPage from './pages/student/StudentCertificatesPage';
 
 // Biblioteca / Content-service pages
 import ForumList from './pages/forum/ForumList';
@@ -51,6 +56,7 @@ import Leitor from './pages/biblioteca/Leitor';
 import Dashboard from './pages/Dashboard';
 import ChatIA from './pages/ChatIA';
 import SchoolAdminDashboardPage from './pages/school-admin/SchoolAdminDashboardPage';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import ProfilePage from './pages/ProfilePage';
 
 import { testBackendConnection } from './services/api';
@@ -66,7 +72,7 @@ function RootRedirect() {
   // Autenticado: encaminha para o dashboard apropriado
   const role = user?.role || '';
   if (role === 'Administrador de Escola' || role === 'SCHOOL_ADMIN') return <Navigate to="/school-admin/dashboard" replace />;
-  if (role.includes('ADMIN') || role.includes('Administrador')) return <Navigate to="/admin/library" replace />;
+  if (role.includes('ADMIN') || role.includes('Administrador')) return <Navigate to="/admin/dashboard" replace />;
   if (role.includes('PROFESSOR') || role.includes('Professor')) return <Navigate to="/professor/dashboard" replace />;
   return <Navigate to="/student/dashboard" replace />;
 }
@@ -139,9 +145,10 @@ function App() {
             <Route path="/student/assignments/:id" element={<Layout><StudentTaskDetailsPage /></Layout>} />
             <Route path="/student/submissions" element={<Layout><StudentSubmissionsPage /></Layout>} />
 
-            {/* ── STUDENT — Quizzes ─────────────────────────── */}
+            {/* ── STUDENT — Quizzes & Certificados ─────────── */}
             <Route path="/student/quiz" element={<Layout><StudentQuizPage /></Layout>} />
             <Route path="/student/quiz/results" element={<Layout><StudentQuizPage /></Layout>} />
+            <Route path="/student/certificates" element={<Layout><StudentCertificatesPage /></Layout>} />
 
             {/* ── STUDENT — Biblioteca ───────────────────────── */}
             <Route path="/student/library" element={<Layout><Biblioteca /></Layout>} />
@@ -185,6 +192,9 @@ function App() {
             <Route path="/professor/library/offline" element={<Layout><Offline /></Layout>} />
             <Route path="/professor/goals" element={<Layout><Metas /></Layout>} />
 
+            {/* ── ADMIN — Dashboard de monitorização ─────────── */}
+            <Route path="/admin/dashboard" element={<Layout><AdminDashboardPage /></Layout>} />
+
             {/* ── ADMIN — Biblioteca ─────────────────────────── */}
             <Route path="/admin/library" element={<Layout><Biblioteca /></Layout>} />
             <Route path="/admin/forum" element={<Layout><ForumList /></Layout>} />
@@ -199,6 +209,8 @@ function App() {
             <Route path="/admin/classrooms" element={<Layout><ClassroomsPage /></Layout>} />
             <Route path="/admin/subjects" element={<Layout><SubjectsPage /></Layout>} />
             <Route path="/admin/users" element={<Layout><UsersListPage /></Layout>} />
+            <Route path="/admin/students" element={<Layout><StudentsEnrollmentPage /></Layout>} />
+            <Route path="/admin/professors" element={<Layout><ProfessorsPage /></Layout>} />
             <Route path="/admin/library/contents" element={<Layout><MeusConteudos /></Layout>} />
             <Route path="/admin/library/upload" element={<Layout><UploadConteudo /></Layout>} />
             <Route path="/admin/library/batch" element={<Layout><AdminBatchUpload /></Layout>} />
@@ -234,10 +246,22 @@ function App() {
                 <MainLayout><ProfessorAssignmentsPage /></MainLayout>
               </ProtectedRoute>
             } />
+            <Route path="/admin/academic/academic-groups" element={
+              <ProtectedRoute>
+                <MainLayout><AcademicGroupsPage /></MainLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/academic/curriculum" element={
+              <ProtectedRoute>
+                <MainLayout><CurriculoPage /></MainLayout>
+              </ProtectedRoute>
+            } />
 
             {/* ── SCHOOL_ADMIN — Dashboard ───────────────────── */}
             <Route path="/school-admin/dashboard" element={<Layout><SchoolAdminDashboardPage /></Layout>} />
             <Route path="/school-admin/dashboard/stats" element={<Layout><SchoolAdminDashboardPage /></Layout>} />
+            <Route path="/school-admin/students" element={<Layout><StudentsEnrollmentPage /></Layout>} />
+            <Route path="/school-admin/professors" element={<Layout><ProfessorsPage /></Layout>} />
 
             {/* Admin — Users */}
             <Route path="/admin/users/list" element={

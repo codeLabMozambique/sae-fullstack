@@ -22,6 +22,10 @@ public class ClassLevelEntity extends UpdatableEntity {
     @Column(name = "NAME", nullable = false)
     private String name;
 
+    // "BASICO" (8ª-10ª) ou "MEDIO" (11ª-12ª)
+    @Column(name = "CYCLE")
+    private String cycle;
+
     public ClassLevelEntity() {}
 
     public Long getId() { return id; }
@@ -29,4 +33,7 @@ public class ClassLevelEntity extends UpdatableEntity {
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
+    public String getCycle() { return cycle; }
+    public void setCycle(String cycle) { this.cycle = cycle; }
 }

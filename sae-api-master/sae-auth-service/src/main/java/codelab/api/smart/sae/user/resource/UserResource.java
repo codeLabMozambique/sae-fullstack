@@ -6,8 +6,11 @@ package codelab.api.smart.sae.user.resource;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,7 +19,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import codelab.api.smart.sae.framework.security.SecurityService;
 import codelab.api.smart.sae.otp.OTPManager;
@@ -37,6 +42,8 @@ import codelab.api.smart.sae.user.model.ProfessorProfileEntity;
 import codelab.api.smart.sae.user.model.SchoolAdminProfileEntity;
 import codelab.api.smart.sae.user.model.StudentProfileEntity;
 import codelab.api.smart.sae.user.model.UserEntity;
+import codelab.api.smart.sae.user.dto.BulkImportResultDTO;
+import codelab.api.smart.sae.user.service.ProfessorImportService;
 import codelab.api.smart.sae.user.service.UserService;
 import codelab.api.smart.sae.user.validators.UserRoleValidator;
 
@@ -51,6 +58,8 @@ public class UserResource {
     private UserService userService;
     @Autowired
     private SecurityService securityService;
+    @Autowired
+    private ProfessorImportService professorImportService;
 
     @Autowired
     private OTPManager otpManager;
@@ -109,6 +118,11 @@ public class UserResource {
     @GetMapping("/professors")
     public ResponseEntity<List<ProfessorProfileDTO>> getProfessors(Authentication auth) {
         return ResponseEntity.ok(userService.findProfessors(auth));
+    }
+
+    @GetMapping("/students")
+    public ResponseEntity<List<StudentProfileDTO>> getStudents(Authentication auth) {
+        return ResponseEntity.ok(userService.findStudents(auth));
     }
 
     @PutMapping("/update")
@@ -272,6 +286,57 @@ public class UserResource {
         if (auth == null) return ResponseEntity.status(401).build();
         userService.setProfessorOnline(auth.getName(), false);
         return ResponseEntity.noContent().build();
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // APROVAÇÃO DE PROFESSORES
+    // ════════════════════════════════════════════════════════════
+
+    @GetMapping("/professors/pending")
+    @PreAuthorize("hasAnyAuthority('ADMIN','SCHOOL_ADMIN')")
+    public ResponseEntity<java.util.List<ProfessorProfileDTO>> getPendingProfessors(Authentication auth) {
+        return ResponseEntity.ok(userService.findPendingProfessors(auth));
+    }
+
+    @PutMapping("/professors/{id}/approve")
+    @PreAuthorize("hasAnyAuthority('ADMIN','SCHOOL_ADMIN')")
+    public ResponseEntity<ProfessorProfileDTO> approveProfessor(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.approveProfessor(id));
+    }
+
+    @PutMapping("/professors/{id}/reject")
+    @PreAuthorize("hasAnyAuthority('ADMIN','SCHOOL_ADMIN')")
+    public ResponseEntity<ProfessorProfileDTO> rejectProfessor(
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, String> body) {
+        String reason = body != null ? body.get("reason") : null;
+        return ResponseEntity.ok(userService.rejectProfessor(id, reason));
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // IMPORT EM MASSA DE PROFESSORES
+    // ════════════════════════════════════════════════════════════
+
+    @PostMapping(value = "/professors/bulk-import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyAuthority('ADMIN','SCHOOL_ADMIN')")
+    public ResponseEntity<BulkImportResultDTO> bulkImportProfessors(
+            @RequestPart("file") MultipartFile file,
+            Authentication auth) throws java.io.IOException {
+        BulkImportResultDTO result = professorImportService.importFromFile(file, auth);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/professors/import-template")
+    @PreAuthorize("hasAnyAuthority('ADMIN','SCHOOL_ADMIN')")
+    public ResponseEntity<byte[]> downloadImportTemplate() {
+        String csv = "nTelefone;email;nomeCompleto;departamento;especializacao;contactoInstitucional;idEscola\n"
+                   + "841234567;professor@escola.mz;Ana Silva;Matemática;Cálculo Diferencial;;4\n"
+                   + "851234567;pedro@escola.mz;Pedro Matos;Ciências;Biologia;;4\n";
+        byte[] bytes = csv.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("text/csv; charset=UTF-8"));
+        headers.setContentDispositionFormData("attachment", "modelo_professores.csv");
+        return ResponseEntity.ok().headers(headers).body(bytes);
     }
 
 }

@@ -8,8 +8,10 @@ public class CreateQuizDTO {
 
     private String descricao;
 
-    @NotBlank
     private String disciplina;
+
+    private Long subjectId;
+    private String subjectName;
 
     private Integer tempoLimiteMinutos;
     private String thumbnailUrl;
@@ -21,6 +23,10 @@ public class CreateQuizDTO {
     public void setDescricao(String descricao) { this.descricao = descricao; }
     public String getDisciplina() { return disciplina; }
     public void setDisciplina(String disciplina) { this.disciplina = disciplina; }
+    public Long getSubjectId() { return subjectId; }
+    public void setSubjectId(Long subjectId) { this.subjectId = subjectId; }
+    public String getSubjectName() { return subjectName; }
+    public void setSubjectName(String subjectName) { this.subjectName = subjectName; }
     public Integer getTempoLimiteMinutos() { return tempoLimiteMinutos; }
     public void setTempoLimiteMinutos(Integer t) { this.tempoLimiteMinutos = t; }
     public String getThumbnailUrl() { return thumbnailUrl; }

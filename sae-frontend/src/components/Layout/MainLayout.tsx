@@ -84,8 +84,10 @@ function iconByRoute(route: string): React.ReactNode | null {
   if (/\/library$/.test(route))             return <SearchIcon />;
   // Metas
   if (/\/goals/.test(route))                return <GoalsIcon />;
-  // Director de Turma
+  // Director de Turma / Matrícula / Professores
   if (/\/director-classroom/.test(route))   return <DirectorIcon />;
+  if (/\/students/.test(route))             return <StudentsIcon />;
+  if (/\/professors/.test(route))           return <PersonIcon />;
   // Professor / Aluno raíz
   if (/\/dashboard/.test(route))            return <DashboardIcon />;
   if (/\/my-classes/.test(route))           return <ClassIcon />;
@@ -97,6 +99,8 @@ function iconByRoute(route: string): React.ReactNode | null {
   if (/\/assignments/.test(route))         return <AssignmentIcon />;
   if (/\/submissions/.test(route))         return <AssignmentIcon />;
   // Admin
+  if (/\/curriculum/.test(route))          return <SubjectIcon />;
+  if (/\/academic-groups/.test(route))     return <CategoriesIcon />;
   if (/\/schools/.test(route))             return <SchoolIcon />;
   if (/\/classrooms/.test(route))          return <ClassroomIcon />;
   if (/\/subjects/.test(route))            return <MenuBookIcon />;

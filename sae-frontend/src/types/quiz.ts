@@ -145,6 +145,17 @@ export interface QuizResult {
   teachingMode?: boolean;
   suggestProfessor?: boolean;
   attemptCount?: number;
+  certificateId?: number;
+}
+
+export interface Certificate {
+  id: number;
+  quizId: number;
+  quizTitulo: string;
+  disciplina: string;
+  disciplinaLabel: string;
+  score: number;
+  issuedAt: string;
 }
 
 // ── Oral Test ────────────────────────────────────────────────────

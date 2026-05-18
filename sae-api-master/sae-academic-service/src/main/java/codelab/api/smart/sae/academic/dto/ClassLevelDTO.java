@@ -7,6 +7,7 @@ public class ClassLevelDTO implements Serializable {
 
     private Long id;
     private String name;
+    private String cycle;
 
     public ClassLevelDTO() {}
 
@@ -15,4 +16,7 @@ public class ClassLevelDTO implements Serializable {
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
+    public String getCycle() { return cycle; }
+    public void setCycle(String cycle) { this.cycle = cycle; }
 }
