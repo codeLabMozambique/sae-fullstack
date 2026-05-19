@@ -12,8 +12,8 @@ import {
 import api from '../../../services/api';
 import { useAuth } from '../../../context/AuthContext';
 import {
-  studentService, schoolService, classroomService,
-  type StudentProfileDTO, type SchoolDTO, type ClassroomDTO,
+  studentService, schoolService, classroomService, classLevelService,
+  type StudentProfileDTO, type SchoolDTO, type ClassroomDTO, type ClassLevelDTO,
 } from '../../../services/academicService';
 
 const ACCENT  = '#00A651';
@@ -55,10 +55,12 @@ const StudentsEnrollmentPage: React.FC = () => {
   const { user: authUser } = useAuth();
   const isSchoolAdmin = authUser?.role === 'Administrador de Escola' || authUser?.role === 'SCHOOL_ADMIN';
 
-  const [students,   setStudents]   = useState<StudentProfileDTO[]>([]);
-  const [schools,    setSchools]    = useState<SchoolDTO[]>([]);
-  const [classrooms, setClassrooms] = useState<ClassroomDTO[]>([]);
-  const [mySchoolId, setMySchoolId] = useState<number | null>(null);
+  const [students,    setStudents]    = useState<StudentProfileDTO[]>([]);
+  const [schools,     setSchools]     = useState<SchoolDTO[]>([]);
+  const [classrooms,  setClassrooms]  = useState<ClassroomDTO[]>([]);
+  const [classLevels, setClassLevels] = useState<ClassLevelDTO[]>([]);
+  const [mySchoolId,  setMySchoolId]  = useState<number | null>(null);
+  const [enrollLevelId, setEnrollLevelId] = useState<number | ''>('');
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState<string | null>(null);
   const [search,     setSearch]     = useState('');
@@ -74,14 +76,16 @@ const StudentsEnrollmentPage: React.FC = () => {
   const load = async () => {
     try {
       setLoading(true); setError(null);
-      const [studs, schs, cls] = await Promise.all([
+      const [studs, schs, cls, lvls] = await Promise.all([
         studentService.findAll(),
         schoolService.findAll(),
         classroomService.findAll(),
+        classLevelService.findAll(),
       ]);
       setStudents(studs);
       setSchools(schs);
       setClassrooms(cls);
+      setClassLevels(lvls);
     } catch { setError('Erro ao carregar estudantes.'); }
     finally   { setLoading(false); }
   };
@@ -116,9 +120,18 @@ const StudentsEnrollmentPage: React.FC = () => {
   const schoolName   = (id?: number | null) => schools.find(s => s.id === id)?.name ?? '—';
   const classroomName = (id?: number | null) => classrooms.find(c => c.id === id)?.name ?? '—';
 
-  const classroomsForSchool = useMemo(() =>
-    enrollForm.schoolId ? classrooms.filter(c => c.schoolId === Number(enrollForm.schoolId)) : classrooms,
-    [classrooms, enrollForm.schoolId]);
+  const levelsForSchool = useMemo(() => {
+    if (!enrollForm.schoolId) return classLevels;
+    const ids = new Set(classrooms.filter(c => c.schoolId === Number(enrollForm.schoolId)).map(c => c.classLevelId));
+    return classLevels.filter(l => l.id !== undefined && ids.has(l.id!));
+  }, [classrooms, classLevels, enrollForm.schoolId]);
+
+  const classroomsForSchool = useMemo(() => {
+    let res = classrooms;
+    if (enrollForm.schoolId) res = res.filter(c => c.schoolId === Number(enrollForm.schoolId));
+    if (enrollLevelId !== '') res = res.filter(c => c.classLevelId === enrollLevelId);
+    return res;
+  }, [classrooms, enrollForm.schoolId, enrollLevelId]);
 
   const openEnroll = (s: StudentProfileDTO) => {
     const sid = isSchoolAdmin && mySchoolId ? String(mySchoolId) : String(s.schoolId ?? '');
@@ -130,6 +143,12 @@ const StudentsEnrollmentPage: React.FC = () => {
       age: String(s.age ?? ''),
       studentName: s.fullName,
     });
+    if (s.classroomId) {
+      const room = classrooms.find(c => c.id === s.classroomId);
+      setEnrollLevelId(room?.classLevelId ?? '');
+    } else {
+      setEnrollLevelId('');
+    }
     setEnrollOpen(true);
   };
 
@@ -339,30 +358,37 @@ const StudentsEnrollmentPage: React.FC = () => {
         </DialogTitle>
         <DialogContent sx={{ pt: 3, pb: 1 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <FormControl size="small" fullWidth sx={inputSx} disabled={isSchoolAdmin}>
-                <InputLabel>Escola *</InputLabel>
-                <Select label="Escola *" value={enrollForm.schoolId}
-                  onChange={e => setEnrollForm(p => ({ ...p, schoolId: String(e.target.value), classroomId: '' }))}>
-                  <MenuItem value=""><em>— Selecionar —</em></MenuItem>
-                  {schools.map(s => <MenuItem key={s.id} value={String(s.id)}>{s.name}</MenuItem>)}
-                </Select>
-              </FormControl>
-              <FormControl size="small" fullWidth sx={inputSx}>
-                <InputLabel>Turma *</InputLabel>
-                <Select label="Turma *" value={enrollForm.classroomId}
-                  onChange={e => setEnrollForm(p => ({ ...p, classroomId: String(e.target.value) }))}>
-                  <MenuItem value=""><em>— Selecionar —</em></MenuItem>
-                  {classroomsForSchool.map(c => <MenuItem key={c.id} value={String(c.id)}>{c.name}</MenuItem>)}
-                </Select>
-              </FormControl>
-            </Box>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField label="Nível de Ensino" size="small" fullWidth value={enrollForm.grade}
-                onChange={e => setEnrollForm(p => ({ ...p, grade: e.target.value }))} sx={inputSx} placeholder="Ex: 10ª Classe" />
-              <TextField label="Idade" size="small" fullWidth value={enrollForm.age} type="number"
-                onChange={e => setEnrollForm(p => ({ ...p, age: e.target.value }))} sx={inputSx} />
-            </Box>
+            <FormControl size="small" fullWidth sx={inputSx} disabled={isSchoolAdmin}>
+              <InputLabel>Escola *</InputLabel>
+              <Select label="Escola *" value={enrollForm.schoolId}
+                onChange={e => { setEnrollForm(p => ({ ...p, schoolId: String(e.target.value), classroomId: '', grade: '' })); setEnrollLevelId(''); }}>
+                <MenuItem value=""><em>— Selecionar —</em></MenuItem>
+                {schools.map(s => <MenuItem key={s.id} value={String(s.id)}>{s.name}</MenuItem>)}
+              </Select>
+            </FormControl>
+            <FormControl size="small" fullWidth sx={inputSx} disabled={!enrollForm.schoolId}>
+              <InputLabel>Nível de Ensino *</InputLabel>
+              <Select label="Nível de Ensino *" value={enrollLevelId}
+                onChange={e => { setEnrollLevelId(Number(e.target.value)); setEnrollForm(p => ({ ...p, classroomId: '', grade: '' })); }}>
+                <MenuItem value=""><em>— Selecionar —</em></MenuItem>
+                {levelsForSchool.map(l => <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>)}
+              </Select>
+            </FormControl>
+            <FormControl size="small" fullWidth sx={inputSx} disabled={!enrollLevelId}>
+              <InputLabel>Turma *</InputLabel>
+              <Select label="Turma *" value={enrollForm.classroomId}
+                onChange={e => {
+                  const cId = Number(e.target.value);
+                  const room = classrooms.find(c => c.id === cId);
+                  const level = room ? classLevels.find(l => l.id === room.classLevelId) : null;
+                  setEnrollForm(p => ({ ...p, classroomId: String(cId), grade: level?.name ?? '' }));
+                }}>
+                <MenuItem value=""><em>— Selecionar —</em></MenuItem>
+                {classroomsForSchool.map(c => <MenuItem key={c.id} value={String(c.id)}>{c.name}</MenuItem>)}
+              </Select>
+            </FormControl>
+            <TextField label="Idade" size="small" fullWidth value={enrollForm.age} type="number"
+              onChange={e => setEnrollForm(p => ({ ...p, age: e.target.value }))} sx={inputSx} />
           </Box>
         </DialogContent>
         <Box sx={{ px: 3, pb: 3, pt: 2, display: 'flex', justifyContent: 'flex-end', gap: 1.5, borderTop: '1px solid rgba(0,0,0,0.06)' }}>

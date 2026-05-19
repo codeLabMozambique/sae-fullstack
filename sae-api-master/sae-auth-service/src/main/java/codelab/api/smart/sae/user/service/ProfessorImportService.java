@@ -5,6 +5,8 @@ import codelab.api.smart.sae.user.dto.BulkImportResultDTO;
 import codelab.api.smart.sae.user.dto.ProfessorRegisterDTO;
 import codelab.api.smart.sae.user.enums.UserRoles;
 import codelab.api.smart.sae.user.repository.SchoolAdminProfileRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
@@ -38,9 +40,12 @@ public class ProfessorImportService {
     @Autowired
     private SchoolAdminProfileRepository schoolAdminProfileRepository;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     // ── Colunas esperadas (0-based) ──────────────────────────────────────────
     // 0: nTelefone | 1: email | 2: nomeCompleto | 3: departamento
-    // 4: especializacao | 5: contactoInstitucional | 6: idEscola (opcional)
+    // 4: especializacao | 5: contactoInstitucional | 6: nomeEscola (opcional)
 
     public BulkImportResultDTO importFromFile(MultipartFile file, Authentication auth) throws IOException {
         Long defaultSchoolId = resolveDefaultSchoolId(auth);
@@ -55,18 +60,23 @@ public class ProfessorImportService {
             // skip completely empty rows
             if (allBlank(cols)) continue;
 
-            String phone           = col(cols, 0);
-            String email           = col(cols, 1);
-            String fullname        = col(cols, 2);
-            String department      = col(cols, 3);
-            String specialization  = col(cols, 4);
-            String contact         = col(cols, 5);
-            String schoolIdStr     = col(cols, 6);
+            String phone          = col(cols, 0);
+            String email          = col(cols, 1);
+            String fullname       = col(cols, 2);
+            String department     = col(cols, 3);
+            String specialization = col(cols, 4);
+            String contact        = col(cols, 5);
+            String schoolName     = col(cols, 6);  // nome da escola (não ID)
 
             Long schoolId = defaultSchoolId;
-            if (schoolIdStr != null && !schoolIdStr.isBlank()) {
-                try { schoolId = Long.parseLong(schoolIdStr.trim()); }
-                catch (NumberFormatException ignored) {}
+            if (schoolName != null && !schoolName.isBlank()) {
+                Long resolved = resolveSchoolIdByName(schoolName.trim());
+                if (resolved == null) {
+                    fail(result, i + 1, phone, fullname,
+                            "Escola não encontrada: \"" + schoolName.trim() + "\"");
+                    continue;
+                }
+                schoolId = resolved;
             }
 
             if (blank(phone) || blank(email) || blank(fullname)) {
@@ -74,7 +84,7 @@ public class ProfessorImportService {
                 continue;
             }
             if (schoolId == null) {
-                fail(result, i + 1, phone, fullname, "ID de escola não especificado na linha nem no perfil do admin");
+                fail(result, i + 1, phone, fullname, "Nome de escola não especificado na linha nem no perfil do admin");
                 continue;
             }
 
@@ -89,8 +99,8 @@ public class ProfessorImportService {
             dto.setInstitutionalContact(blank(contact) ? null : contact.trim());
 
             try {
-                userService.createProfessor(dto);
-                result.getRows().add(new BulkImportResultDTO.RowResult(i + 1, phone, fullname, true, null));
+                BulkImportResultDTO.RowResult row = userService.upsertProfessor(dto, i + 1);
+                result.getRows().add(row);
                 result.setImported(result.getImported() + 1);
             } catch (Exception e) {
                 String msg = (e instanceof BusinessException) ? e.getMessage() : "Erro interno ao criar professor";
@@ -102,6 +112,18 @@ public class ProfessorImportService {
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────
+
+    private Long resolveSchoolIdByName(String name) {
+        try {
+            Object id = entityManager
+                    .createNativeQuery("SELECT id FROM ac_SCHOOL WHERE LOWER(name) = LOWER(:name)")
+                    .setParameter("name", name)
+                    .getSingleResult();
+            return ((Number) id).longValue();
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
     private void fail(BulkImportResultDTO r, int rowNum, String phone, String name, String err) {
         r.getRows().add(new BulkImportResultDTO.RowResult(rowNum, phone, name, false, err));

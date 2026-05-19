@@ -4,6 +4,7 @@ import type {
   PageResponse, CreateQuestionRequest, CreateAnswerRequest,
   QuestionType, QuestionStatus, DisciplinaEnum, ProfessorInfo,
   ForumStatsOverview, ProfessorAssistanceStats, ForumMember, SubjectInfo,
+  AttendanceReport, ProfessorCertificate,
 } from '../types/forum';
 
 const BASE = '/forum';
@@ -143,4 +144,44 @@ export const forumService = {
   // Disciplinas filtradas pelo nível/grupo do utilizador autenticado (vem da BD)
   getDisciplinesForMe: (): Promise<string[]> =>
     api.get<string[]>(`${BASE}/disciplines/for-me`).then(r => r.data),
+
+  // Estatísticas do fórum com filtro de escola (ADMIN / SCHOOL_ADMIN)
+  getStatsFiltered: (schoolId?: number): Promise<ForumStatsOverview> =>
+    api.get<ForumStatsOverview>(`${BASE}/questions/reports/stats`, {
+      params: schoolId ? { schoolId } : undefined,
+    }).then(r => r.data),
+
+  // Relatório de atendimento por período
+  getAttendanceReport: (params: {
+    from: string; to: string; schoolId?: number; discipline?: string;
+  }): Promise<AttendanceReport> =>
+    api.get<AttendanceReport>(`${BASE}/questions/reports/attendance`, { params }).then(r => r.data),
+
+  // Exportar relatório de atendimento
+  exportAttendanceReport: (params: {
+    from: string; to: string; schoolId?: number; discipline?: string; format: 'csv' | 'excel' | 'pdf';
+  }): Promise<Blob> =>
+    api.get(`${BASE}/questions/reports/attendance/export`, {
+      params, responseType: 'blob',
+    }).then(r => r.data),
+
+  // Certificados do professor autenticado
+  getMyCertificates: (): Promise<ProfessorCertificate[]> =>
+    api.get<ProfessorCertificate[]>(`${BASE}/certificates/mine`).then(r => r.data),
+
+  // Publicar certificado (professor)
+  publishCertificate: (id: number): Promise<ProfessorCertificate> =>
+    api.put<ProfessorCertificate>(`${BASE}/certificates/${id}/publish`).then(r => r.data),
+
+  // Certificados de um professor (ADMIN/SCHOOL_ADMIN)
+  getProfessorCertificates: (username: string): Promise<ProfessorCertificate[]> =>
+    api.get<ProfessorCertificate[]>(`${BASE}/certificates/professor/${username}`).then(r => r.data),
+
+  // Toggle publicação pelo admin
+  adminPublishCertificate: (id: number): Promise<ProfessorCertificate> =>
+    api.put<ProfessorCertificate>(`${BASE}/certificates/${id}/admin-publish`).then(r => r.data),
+
+  // Certificados públicos (sem auth)
+  getPublicCertificates: (): Promise<ProfessorCertificate[]> =>
+    api.get<ProfessorCertificate[]>(`${BASE}/certificates/public`).then(r => r.data),
 };

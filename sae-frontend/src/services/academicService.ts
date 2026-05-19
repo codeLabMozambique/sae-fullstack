@@ -92,6 +92,8 @@ export const subjectService = {
   findByClassLevel: (classLevelId: number) => api.get<SubjectDTO[]>(`/academic/subject/by-class-level/${classLevelId}`).then(r => r.data),
   findBySchoolAndClassLevel: (schoolId: number, classLevelId: number) =>
     api.get<SubjectDTO[]>(`/academic/subject/by-school/${schoolId}/by-class-level/${classLevelId}`).then(r => r.data),
+  findByClassroom: (classroomId: number) =>
+    api.get<SubjectDTO[]>('/academic/subject/by-classroom', { params: { classroomId } }).then(r => r.data),
   save: (dto: SubjectDTO) => api.post<SubjectDTO>('/academic/subject/save', dto).then(r => r.data),
   update: (dto: SubjectDTO) => api.post<SubjectDTO>('/academic/subject/update', dto).then(r => r.data),
   deactivate: (id: number) => api.post('/academic/subject/deactivate', { id }),

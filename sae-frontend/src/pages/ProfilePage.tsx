@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Paper, Avatar, TextField, Button, Stack, Chip,
   Divider, Alert, CircularProgress, IconButton, InputAdornment,
@@ -12,12 +13,15 @@ import {
   AdminPanelSettings as AdminIcon, School as SchoolIcon,
   Person as StudentIcon, Public as GuestIcon,
   CheckCircle as CheckIcon, VerifiedUser as VerifiedIcon,
+  Download as DownloadIcon, Shield as ShieldIcon,
 } from '@mui/icons-material';
 import {
   getMyProfile, updateMyProfile, changeMyPassword,
   type MyProfile,
 } from '../services/userService';
+import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { validateEmail, validatePhone, carrierForPhone } from '../utils/validators';
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -47,7 +51,11 @@ function roleConfig(role: string | null | undefined) {
 // ── Componente ────────────────────────────────────────────────
 
 const ProfilePage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, clearMustChangePassword } = useAuth();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const forceChange = searchParams.get('forceChange') === 'true' || !!user?.mustChangePassword;
+  const pwdSectionRef = useRef<HTMLDivElement>(null);
   const [profile, setProfile] = useState<MyProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +78,12 @@ const ProfilePage: React.FC = () => {
   useEffect(() => {
     refresh();
   }, []);
+
+  useEffect(() => {
+    if (forceChange && pwdSectionRef.current) {
+      setTimeout(() => pwdSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 400);
+    }
+  }, [forceChange]);
 
   const refresh = async () => {
     try {
@@ -142,10 +156,42 @@ const ProfilePage: React.FC = () => {
       await changeMyPassword(currentPwd, newPwd);
       setSuccess('Password actualizada com sucesso');
       setCurrentPwd(''); setNewPwd(''); setConfirmPwd('');
+      if (forceChange) {
+        clearMustChangePassword();
+        const role = user?.role ?? '';
+        setTimeout(() => {
+          if (role.includes('PROFESSOR') || role === 'Professor') navigate('/professor/dashboard');
+          else if (role.includes('STUDENT') || role === 'Estudante') navigate('/student/dashboard');
+          else if (role.includes('ADMIN') || role === 'Administrador') navigate('/admin/dashboard');
+          else navigate('/');
+        }, 1500);
+      }
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || 'Falha ao mudar password');
     } finally {
       setChangingPwd(false);
+    }
+  };
+
+  // LGPD
+  const [exportingData, setExportingData] = useState(false);
+
+  const handleExportMyData = async () => {
+    setExportingData(true);
+    setError(null);
+    try {
+      const { data } = await api.get<Record<string, unknown>>('/auth/users/me/export');
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = 'meus_dados_sae.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError('Não foi possível exportar os dados. Tenta novamente.');
+    } finally {
+      setExportingData(false);
     }
   };
 
@@ -171,6 +217,15 @@ const ProfilePage: React.FC = () => {
 
   return (
     <Box sx={{ maxWidth: 1100, mx: 'auto' }}>
+      {forceChange && (
+        <Alert
+          severity="warning"
+          icon={<WarningAmberIcon />}
+          sx={{ mb: 2, borderRadius: 2, fontWeight: 600 }}
+        >
+          Primeiro acesso — defina uma nova password pessoal para continuar a usar a plataforma.
+        </Alert>
+      )}
       {/* ── Hero card ─────────────────────────────────────────── */}
       <Paper
         elevation={0}
@@ -360,7 +415,28 @@ const ProfilePage: React.FC = () => {
 
         {/* ── Segurança ──────────────────────────────────────── */}
         <Grid size={{ xs: 12, md: 5 }}>
-          <Paper sx={{ p: { xs: 2.5, md: 3.5 }, borderRadius: 4, border: '1px solid #F1F5F9' }} elevation={0}>
+          <Paper
+            ref={pwdSectionRef}
+            sx={{
+              p: { xs: 2.5, md: 3.5 }, borderRadius: 4,
+              border: forceChange ? '2px solid #F59E0B' : '1px solid #F1F5F9',
+              boxShadow: forceChange ? '0 0 0 4px rgba(245,158,11,0.12)' : 'none',
+            }}
+            elevation={0}
+          >
+            {forceChange && (
+              <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start', bgcolor: '#FFFBEB', border: '1px solid #FCD34D', borderRadius: 2, p: 1.5, mb: 2 }}>
+                <WarningAmberIcon sx={{ color: '#D97706', mt: 0.2, flexShrink: 0 }} />
+                <Box>
+                  <Typography variant="body2" fontWeight={700} color="#92400E">
+                    Mude a sua password antes de continuar
+                  </Typography>
+                  <Typography variant="caption" color="#B45309">
+                    A sua conta foi criada com uma password temporária. Por segurança, defina uma nova agora.
+                  </Typography>
+                </Box>
+              </Box>
+            )}
             <Typography variant="overline" sx={{ fontWeight: 700, color: '#6B7280', letterSpacing: 1.5 }}>
               SEGURANÇA
             </Typography>
@@ -460,6 +536,34 @@ const ProfilePage: React.FC = () => {
           </Card>
         </Grid>
       </Grid>
+
+      {/* ── LGPD ──────────────────────────────────────────────── */}
+      <Paper elevation={0} sx={{ p: { xs: 2.5, md: 3 }, borderRadius: 4, border: '1px solid #FEE2E2', mt: 3, bgcolor: '#FFFBFB' }}>
+        <Stack direction="row" alignItems="center" spacing={1.25} mb={1.5}>
+          <ShieldIcon sx={{ color: '#DC2626', fontSize: 22 }} />
+          <Box>
+            <Typography variant="overline" sx={{ fontWeight: 700, color: '#DC2626', letterSpacing: 1.5 }}>
+              PRIVACIDADE (LGPD)
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Tens o direito de aceder e exportar os teus dados pessoais armazenados na plataforma.
+            </Typography>
+          </Box>
+        </Stack>
+        <Button
+          variant="outlined"
+          startIcon={exportingData ? <CircularProgress size={16} /> : <DownloadIcon />}
+          onClick={handleExportMyData}
+          disabled={exportingData}
+          sx={{
+            textTransform: 'none', fontWeight: 700, borderRadius: 2,
+            borderColor: '#DC2626', color: '#DC2626',
+            '&:hover': { bgcolor: '#FEF2F2', borderColor: '#B91C1C' },
+          }}
+        >
+          {exportingData ? 'A exportar…' : 'Exportar os meus dados (JSON)'}
+        </Button>
+      </Paper>
     </Box>
   );
 };

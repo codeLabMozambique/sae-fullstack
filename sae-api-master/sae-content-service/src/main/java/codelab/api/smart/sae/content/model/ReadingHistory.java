@@ -33,6 +33,10 @@ public class ReadingHistory {
     @Field("read_at")
     private LocalDateTime readAt;
 
+    // "ONLINE" ou "OFFLINE"
+    @Field("access_mode")
+    private String accessMode = "ONLINE";
+
     public ReadingHistory() {
         this.readAt = LocalDateTime.now();
     }
@@ -60,4 +64,7 @@ public class ReadingHistory {
 
     public LocalDateTime getReadAt() { return readAt; }
     public void setReadAt(LocalDateTime readAt) { this.readAt = readAt; }
+
+    public String getAccessMode() { return accessMode; }
+    public void setAccessMode(String accessMode) { this.accessMode = accessMode; }
 }

@@ -29,6 +29,7 @@ import codelab.api.smart.sae.user.dto.UserUpdateDTO;
 import codelab.api.smart.sae.user.dto.ProfessorProfileUpdateDTO;
 import codelab.api.smart.sae.user.dto.StudentProfileDTO;
 import codelab.api.smart.sae.user.dto.StudentProfileUpdateDTO;
+import codelab.api.smart.sae.user.dto.BulkImportResultDTO;
 import codelab.api.smart.sae.user.dto.ProfessorRegisterDTO;
 import codelab.api.smart.sae.user.dto.RegisterRequestDTO;
 import codelab.api.smart.sae.user.dto.StudentRegisterDTO;
@@ -188,7 +189,7 @@ public class UserService {
     public ProfessorProfileEntity createProfessor(ProfessorRegisterDTO request) {
         String pPhone = ContactValidator.requireValidPhone(request.getNTelefone());
         request.setNTelefone(pPhone);
-        String pEmail = ContactValidator.requireValidEmail(request.getEmail(), true);
+        String pEmail = ContactValidator.requireValidEmail(request.getEmail(), false);
         request.setEmail(pEmail);
 
         if (userRepository.existsByUsername(pPhone)) {
@@ -233,11 +234,84 @@ public class UserService {
         return professorProfileRepository.save(profile);
     }
 
+    /**
+     * Import em massa: cria o professor se não existir, actualiza o perfil se já existir.
+     * Garante que não falha para utilizadores já registados como PROFESSOR.
+     */
+    @Transactional
+    public BulkImportResultDTO.RowResult upsertProfessor(ProfessorRegisterDTO request, int rowNum) {
+        String pPhone = ContactValidator.requireValidPhone(request.getNTelefone());
+        request.setNTelefone(pPhone);
+        String pEmail = ContactValidator.requireValidEmail(request.getEmail(), true);
+        request.setEmail(pEmail);
+
+        java.util.Optional<UserEntity> existing = userRepository.findByUsername(pPhone);
+        if (existing.isPresent()) {
+            UserEntity user = existing.get();
+            String roleName = (user.getRole() != null && user.getRole().getRole() != null)
+                    ? user.getRole().getRole().name() : "";
+            if (!roleName.contains("PROFESSOR")) {
+                throw new BusinessException("Utilizador já existe com outro perfil (não é professor)");
+            }
+            ProfessorProfileEntity profile = professorProfileRepository.findByUser_Id(user.getId())
+                    .orElseThrow(() -> new BusinessException("Perfil de professor não encontrado"));
+            if (request.getSchoolId() != null)
+                profile.setSchoolId(request.getSchoolId());
+            if (request.getDepartment() != null && !request.getDepartment().isBlank())
+                profile.setDepartment(request.getDepartment());
+            if (request.getSpecialization() != null && !request.getSpecialization().isBlank())
+                profile.setSpecialization(request.getSpecialization());
+            if (request.getInstitutionalContact() != null && !request.getInstitutionalContact().isBlank())
+                profile.setInstitutionalContact(request.getInstitutionalContact());
+            professorProfileRepository.save(profile);
+            return new codelab.api.smart.sae.user.dto.BulkImportResultDTO.RowResult(
+                    rowNum, pPhone, request.getFullname(), true, "Perfil actualizado (já existia)");
+        }
+
+        if (userRepository.existsByEmail(pEmail)) {
+            throw new BusinessException("Já existe uma conta com este email");
+        }
+
+        UserEntity user = new UserEntity();
+        user.setFullname(request.getFullname());
+        user.setUsername(pPhone);
+        user.setEmail(pEmail);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setEnabled(true);
+        user.setMustChangePassword(true);
+        user.setCreatedDate(LocalDateTime.now());
+
+        List<RoleTransactionEntity> roles = roleTransactionRepository
+                .findByRoleAndAppTransactionTypeOrderByAppTransactionCode(UserRoles.PROFESSOR, MenuType.HEADER);
+        if (roles.isEmpty())
+            throw new BusinessException("Erro de configuração do sistema: Role PROFESSOR não encontrada.");
+        user.setRole(roles.get(0));
+        userRepository.save(user);
+
+        if (request.getEmail() != null && !request.getEmail().isBlank())
+            emailService.sendCredentials(request.getEmail(), request.getFullname(),
+                    request.getNTelefone(), request.getPassword(), "Professor");
+
+        ProfessorProfileEntity profile = new ProfessorProfileEntity();
+        profile.setUser(user);
+        profile.setSchoolId(request.getSchoolId());
+        profile.setDepartment(request.getDepartment());
+        profile.setSpecialization(request.getSpecialization());
+        profile.setInstitutionalContact(request.getInstitutionalContact());
+        profile.setOnline(false);
+        profile = professorProfileRepository.save(profile);
+        profile.setProfessorCode(String.format("COD-%s-PROF-%05d",
+                getSchoolInitials(request.getSchoolId()), profile.getId()));
+        professorProfileRepository.save(profile);
+        return new codelab.api.smart.sae.user.dto.BulkImportResultDTO.RowResult(
+                rowNum, pPhone, request.getFullname(), true, null);
+    }
+
     @Transactional
     public StudentProfileEntity createStudent(StudentRegisterDTO request) {
         String sPhone = ContactValidator.requireValidPhone(request.getNTelefone());
         request.setNTelefone(sPhone);
-        String sEmail = ContactValidator.requireValidEmail(request.getEmail(), true);
+        String sEmail = ContactValidator.requireValidEmail(request.getEmail(), false);
         request.setEmail(sEmail);
 
         if (userRepository.existsByUsername(sPhone)) {
@@ -454,8 +528,8 @@ public class UserService {
     }
 
     @Transactional
-    public ProfessorProfileDTO approveProfessor(Long profileId) {
-        ProfessorProfileEntity p = professorProfileRepository.findById(profileId)
+    public ProfessorProfileDTO approveProfessor(Long userId) {
+        ProfessorProfileEntity p = professorProfileRepository.findByUser_Id(userId)
                 .orElseThrow(() -> new BusinessException("Perfil de professor não encontrado"));
         p.setApprovalStatus("APPROVED");
         p.setRejectionReason(null);
@@ -463,8 +537,8 @@ public class UserService {
     }
 
     @Transactional
-    public ProfessorProfileDTO rejectProfessor(Long profileId, String reason) {
-        ProfessorProfileEntity p = professorProfileRepository.findById(profileId)
+    public ProfessorProfileDTO rejectProfessor(Long userId, String reason) {
+        ProfessorProfileEntity p = professorProfileRepository.findByUser_Id(userId)
                 .orElseThrow(() -> new BusinessException("Perfil de professor não encontrado"));
         p.setApprovalStatus("REJECTED");
         p.setRejectionReason(reason);
@@ -605,6 +679,7 @@ public class UserService {
             throw new BusinessException("Password actual incorrecta");
         }
         u.setPassword(passwordEncoder.encode(newPassword));
+        u.setMustChangePassword(false);
         userRepository.save(u);
     }
 
@@ -742,6 +817,63 @@ public class UserService {
                 sb.append(Character.toUpperCase(word.charAt(0)));
         }
         return sb.length() > 0 ? sb.toString() : "GEN";
+    }
+
+    // ── LGPD: exportação de dados pessoais ──────────────────────────────────
+
+    public java.util.Map<String, Object> exportMyData(String username) {
+        UserEntity user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new BusinessException("Utilizador não encontrado"));
+
+        java.util.Map<String, Object> data = new java.util.LinkedHashMap<>();
+        data.put("username", user.getUsername());
+        data.put("fullName", user.getFullname());
+        data.put("email", user.getEmail());
+        data.put("createdDate", user.getCreatedDate());
+        data.put("enabled", user.isEnabled());
+        data.put("role", user.getRole() != null ? user.getRole().getRole() : null);
+
+        professorProfileRepository.findByUserUsername(username).ifPresent(p -> {
+            java.util.Map<String, Object> prof = new java.util.LinkedHashMap<>();
+            prof.put("department", p.getDepartment());
+            prof.put("specialization", p.getSpecialization());
+            prof.put("schoolId", p.getSchoolId());
+            prof.put("approvalStatus", p.getApprovalStatus());
+            prof.put("teachingCycle", p.getTeachingCycle());
+            data.put("professorProfile", prof);
+        });
+
+        studentProfileRepository.findByUsername(username).ifPresent(s -> {
+            java.util.Map<String, Object> std = new java.util.LinkedHashMap<>();
+            std.put("schoolId", s.getSchoolId());
+            std.put("classroomId", s.getClassroomId());
+            std.put("grade", s.getGrade());
+            data.put("studentProfile", std);
+        });
+
+        return data;
+    }
+
+    // ── LGPD: anonimização de conta ─────────────────────────────────────────
+
+    @Transactional
+    public void anonymizeAccount(String username) {
+        UserEntity user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new BusinessException("Utilizador não encontrado"));
+
+        String anon = "[ANONIMIZADO-" + user.getId() + "]";
+        user.setFullname(anon);
+        user.setEmail(null);
+        user.setEnabled(false);
+        userRepository.save(user);
+
+        professorProfileRepository.findByUserUsername(username).ifPresent(p -> {
+            p.setDepartment(null);
+            p.setSpecialization(null);
+            p.setInstitutionalContact(null);
+            p.setIdDocumentNumber(null);
+            professorProfileRepository.save(p);
+        });
     }
 
     private String normalize(String input) {

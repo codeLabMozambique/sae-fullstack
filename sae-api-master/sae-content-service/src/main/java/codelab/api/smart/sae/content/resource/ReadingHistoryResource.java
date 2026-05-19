@@ -21,14 +21,18 @@ public class ReadingHistoryResource {
     private ReadingHistoryService readingHistoryService;
 
     @PostMapping
-    public ResponseEntity<Void> record(@RequestBody Map<String, Object> payload, Principal principal) {
+    public ResponseEntity<Void> record(
+            @RequestBody Map<String, Object> payload,
+            @RequestHeader(value = "X-Access-Mode", required = false) String accessMode,
+            Principal principal) {
         if (principal == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        
+
         String contentId = (String) payload.get("contentId");
         int pagesRead = (int) payload.getOrDefault("pagesRead", 0);
         long durationSeconds = ((Number) payload.getOrDefault("durationSeconds", 0)).longValue();
-        
-        readingHistoryService.recordSession(principal.getName(), contentId, pagesRead, durationSeconds);
+        String mode = accessMode != null ? accessMode : (String) payload.getOrDefault("accessMode", "ONLINE");
+
+        readingHistoryService.recordSession(principal.getName(), contentId, pagesRead, durationSeconds, mode);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 

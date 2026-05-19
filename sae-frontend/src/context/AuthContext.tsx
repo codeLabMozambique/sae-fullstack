@@ -10,6 +10,7 @@ interface AuthUser {
   fullName: string;
   role: string;
   menus: any[];
+  mustChangePassword?: boolean;
 }
 
 interface AuthContextType {
@@ -20,6 +21,7 @@ interface AuthContextType {
   signupStudent: (data: StudentRegisterRequest) => Promise<void>;
   signupProfessor: (data: ProfessorRegisterRequest) => Promise<void>;
   logout: () => void;
+  clearMustChangePassword: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -56,12 +58,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       fullName: response.fullName,
       role: response.role,
       menus: response.menus,
+      mustChangePassword: response.mustChangePassword,
     };
     localStorage.setItem('sae_token', response.token);
     localStorage.setItem('sae_user', JSON.stringify(authUser));
     setToken(response.token);
     setUser(authUser);
     return authUser;
+  };
+
+  const clearMustChangePassword = () => {
+    setUser(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, mustChangePassword: false };
+      localStorage.setItem('sae_user', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const signupStudent = async (data: StudentRegisterRequest) => {
@@ -80,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated, login, signupStudent, signupProfessor, logout }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated, login, signupStudent, signupProfessor, logout, clearMustChangePassword }}>
       {children}
     </AuthContext.Provider>
   );

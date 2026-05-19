@@ -15,12 +15,17 @@ import {
   AccessTime as TimeIcon,
   Groups as StudentsIcon,
   MenuBook as BookIcon,
+  TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon,
+  TrendingFlat as TrendingFlatIcon,
+  WifiOff as OfflineIcon,
+  Wifi as OnlineIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { forumService } from '../../services/forumService';
-import { getMostAccessed } from '../../services/contentService';
-import type { ContentStats } from '../../services/contentService';
+import { getMostAccessed, getAccessModeStats } from '../../services/contentService';
+import type { ContentStats, AccessModeStats } from '../../services/contentService';
 import type { ForumStatsOverview } from '../../types/forum';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -111,6 +116,9 @@ const AdminDashboardPage: React.FC = () => {
   const [topContent, setTopContent] = useState<ContentStats[]>([]);
   const [contentStatsLoading, setContentStatsLoading] = useState(true);
   const [contentPeriod, setContentPeriod] = useState<'week' | 'month' | 'all'>('month');
+  const [accessMode, setAccessMode] = useState<AccessModeStats | null>(null);
+  const [accessModePeriod, setAccessModePeriod] = useState<'week' | 'month' | 'all'>('month');
+  const [accessModeLoading, setAccessModeLoading] = useState(true);
 
   useEffect(() => {
     const loadSystem = async () => {
@@ -162,6 +170,14 @@ const AdminDashboardPage: React.FC = () => {
       .finally(() => setContentStatsLoading(false));
   }, [contentPeriod]);
 
+  useEffect(() => {
+    setAccessModeLoading(true);
+    getAccessModeStats(accessModePeriod)
+      .then(setAccessMode)
+      .catch(() => setAccessMode(null))
+      .finally(() => setAccessModeLoading(false));
+  }, [accessModePeriod]);
+
   // ── helpers ─────────────────────────────────────────────────────────────────
 
   const fmt = (mins: number | null): string => {
@@ -186,6 +202,9 @@ const AdminDashboardPage: React.FC = () => {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 8)
     : [];
+
+  const interactionType = forumStats?.totalByInteractionType ?? {};
+  const hotTopics       = forumStats?.hotTopics ?? [];
 
   // ── render ───────────────────────────────────────────────────────────────────
 
@@ -456,6 +475,89 @@ const AdminDashboardPage: React.FC = () => {
         </Grid>
 
         {/* ════════════════════════════════════════════════════════
+            SECÇÃO 3b — Tipo de Interação (Professor / IA / Estudante)
+            ════════════════════════════════════════════════════════ */}
+
+        {Object.keys(interactionType).length > 0 && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Card sx={{ height: '100%', borderRadius: 3, boxShadow: '0 1px 8px rgba(0,0,0,0.06)', border: '1px solid #F3F4F6' }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="h6" fontWeight={700} color="#111827" sx={{ mb: 2 }}>
+                  Respostas por Tipo de Interação
+                </Typography>
+                <Stack spacing={2}>
+                  {[
+                    { key: 'PROFESSOR', label: 'Professor', color: '#7C3AED', bg: '#EDE9FE' },
+                    { key: 'AI',        label: 'Assistente IA', color: '#0891B2', bg: '#F0F9FF' },
+                    { key: 'ESTUDANTE', label: 'Estudante', color: '#16A34A', bg: '#DCFCE7' },
+                    { key: 'SEM_RESPOSTA', label: 'Sem Resposta', color: '#DC2626', bg: '#FEF2F2' },
+                  ].map(({ key, label, color, bg }) => {
+                    const val   = interactionType[key] ?? 0;
+                    const total = Object.values(interactionType).reduce((s, v) => s + v, 0);
+                    const pct   = total > 0 ? Math.round((val / total) * 100) : 0;
+                    return (
+                      <Box key={key}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                          <Typography variant="body2" fontWeight={600} color="#374151">{label}</Typography>
+                          <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center' }}>
+                            <Typography variant="body2" fontWeight={800} color={color}>{val}</Typography>
+                            <Chip label={`${pct}%`} size="small"
+                              sx={{ bgcolor: bg, color, fontWeight: 700, fontSize: '0.65rem', height: 18, '& .MuiChip-label': { px: 0.75 } }} />
+                          </Box>
+                        </Box>
+                        <LinearProgress variant="determinate" value={pct}
+                          sx={{ height: 7, borderRadius: 4, bgcolor: '#F3F4F6',
+                            '& .MuiLinearProgress-bar': { bgcolor: color, borderRadius: 4 } }} />
+                      </Box>
+                    );
+                  })}
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
+        {/* Tópicos em alta */}
+        {hotTopics.length > 0 && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Card sx={{ height: '100%', borderRadius: 3, boxShadow: '0 1px 8px rgba(0,0,0,0.06)', border: '1px solid #F3F4F6' }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="h6" fontWeight={700} color="#111827" sx={{ mb: 2 }}>
+                  Áreas em Alta (últimos 30 dias)
+                </Typography>
+                <Stack spacing={1.5}>
+                  {hotTopics.map(ht => {
+                    const trendIcon = ht.trend === 'UP'
+                      ? <TrendingUpIcon sx={{ fontSize: 18, color: '#16A34A' }} />
+                      : ht.trend === 'DOWN'
+                      ? <TrendingDownIcon sx={{ fontSize: 18, color: '#DC2626' }} />
+                      : <TrendingFlatIcon sx={{ fontSize: 18, color: '#6B7280' }} />;
+                    const trendColor = ht.trend === 'UP' ? '#16A34A' : ht.trend === 'DOWN' ? '#DC2626' : '#6B7280';
+                    return (
+                      <Box key={ht.discipline} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        p: 1.25, bgcolor: '#F9FAFB', borderRadius: 2 }}>
+                        <Typography variant="body2" fontWeight={600} color="#374151">
+                          {ht.discipline}
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="body2" fontWeight={700} color="#111827">{ht.questionCount}</Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+                            {trendIcon}
+                            <Typography variant="caption" fontWeight={600} color={trendColor}>
+                              {ht.trend === 'UP' ? 'Subida' : ht.trend === 'DOWN' ? 'Descida' : 'Estável'}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Box>
+                    );
+                  })}
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
+        {/* ════════════════════════════════════════════════════════
             SECÇÃO 4 — Conteúdo mais acedido na Biblioteca
             ════════════════════════════════════════════════════════ */}
         <Grid size={{ xs: 12 }}>
@@ -563,6 +665,86 @@ const AdminDashboardPage: React.FC = () => {
                       </Box>
                     );
                   })}
+                </Stack>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* ════════════════════════════════════════════════════════
+            SECÇÃO 5 — Acesso Online vs Offline
+            ════════════════════════════════════════════════════════ */}
+        <Grid size={{ xs: 12 }}>
+          <Typography variant="overline" color="text.secondary"
+            sx={{ fontWeight: 700, letterSpacing: 1, display: 'block' }}>
+            Acesso Online vs Offline
+          </Typography>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 5 }}>
+          <Card sx={{ height: '100%', borderRadius: 3, boxShadow: '0 1px 8px rgba(0,0,0,0.06)', border: '1px solid #F3F4F6' }}>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                <Typography variant="h6" fontWeight={700} color="#111827">Modo de Acesso</Typography>
+                <Box sx={{ display: 'flex', gap: 0.75 }}>
+                  {(['week', 'month', 'all'] as const).map(p => (
+                    <Chip key={p}
+                      label={p === 'week' ? '7 dias' : p === 'month' ? '30 dias' : 'Tudo'}
+                      onClick={() => setAccessModePeriod(p)}
+                      size="small"
+                      sx={{ fontWeight: 700, cursor: 'pointer',
+                        bgcolor: accessModePeriod === p ? '#0891B2' : '#F3F4F6',
+                        color:   accessModePeriod === p ? '#fff'    : '#6B7280',
+                        '&:hover': { bgcolor: accessModePeriod === p ? '#0E7490' : '#E5E7EB' },
+                      }}
+                    />
+                  ))}
+                </Box>
+              </Box>
+
+              {accessModeLoading ? (
+                <Stack spacing={1.5}>
+                  <Skeleton variant="rounded" height={52} sx={{ borderRadius: 2 }} />
+                  <Skeleton variant="rounded" height={52} sx={{ borderRadius: 2 }} />
+                </Stack>
+              ) : !accessMode || accessMode.totalCount === 0 ? (
+                <Typography variant="body2" color="text.secondary">Sem dados de acesso para o período.</Typography>
+              ) : (
+                <Stack spacing={2.5}>
+                  {[
+                    {
+                      label: 'Online', icon: <OnlineIcon sx={{ fontSize: 18, color: '#0891B2' }} />,
+                      value: accessMode.onlineCount,
+                      pct: 100 - Math.round(accessMode.offlinePercentage),
+                      color: '#0891B2', bg: '#F0F9FF',
+                    },
+                    {
+                      label: 'Offline', icon: <OfflineIcon sx={{ fontSize: 18, color: '#D97706' }} />,
+                      value: accessMode.offlineCount,
+                      pct: Math.round(accessMode.offlinePercentage),
+                      color: '#D97706', bg: '#FEF3C7',
+                    },
+                  ].map(({ label, icon, value, pct, color, bg }) => (
+                    <Box key={label}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.75 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          {icon}
+                          <Typography variant="body2" fontWeight={600} color="#374151">{label}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center' }}>
+                          <Typography variant="body2" fontWeight={800} color={color}>{value}</Typography>
+                          <Chip label={`${pct}%`} size="small"
+                            sx={{ bgcolor: bg, color, fontWeight: 700, fontSize: '0.65rem', height: 18, '& .MuiChip-label': { px: 0.75 } }} />
+                        </Box>
+                      </Box>
+                      <LinearProgress variant="determinate" value={pct}
+                        sx={{ height: 8, borderRadius: 4, bgcolor: '#F3F4F6',
+                          '& .MuiLinearProgress-bar': { bgcolor: color, borderRadius: 4 } }} />
+                    </Box>
+                  ))}
+                  <Typography variant="caption" color="text.secondary">
+                    Total de sessões: {accessMode.totalCount}
+                  </Typography>
                 </Stack>
               )}
             </CardContent>

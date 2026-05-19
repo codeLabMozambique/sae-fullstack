@@ -469,3 +469,17 @@ export async function getMostAccessed(period = 'month', limit = 10): Promise<Con
   });
   return data;
 }
+
+export interface AccessModeStats {
+  onlineCount: number;
+  offlineCount: number;
+  totalCount: number;
+  offlinePercentage: number;
+}
+
+export async function getAccessModeStats(period = 'month'): Promise<AccessModeStats> {
+  const { data } = await api.get<AccessModeStats>('/content/api/analytics/access-mode', {
+    params: { period },
+  });
+  return data;
+}

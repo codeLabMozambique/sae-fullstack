@@ -20,6 +20,10 @@ public class ReadingHistoryService {
     private ContentRepository contentRepository;
 
     public void recordSession(String userId, String contentId, int pagesRead, long durationSeconds) {
+        recordSession(userId, contentId, pagesRead, durationSeconds, "ONLINE");
+    }
+
+    public void recordSession(String userId, String contentId, int pagesRead, long durationSeconds, String accessMode) {
         Content content = contentRepository.findById(contentId).orElse(null);
         String discipline = (content != null) ? content.getDiscipline() : "N/A";
         String title = (content != null) ? content.getTitle() : contentId;
@@ -31,6 +35,7 @@ public class ReadingHistoryService {
         history.setDiscipline(discipline);
         history.setPagesRead(pagesRead);
         history.setDurationSeconds(durationSeconds);
+        history.setAccessMode(accessMode != null && accessMode.equalsIgnoreCase("OFFLINE") ? "OFFLINE" : "ONLINE");
 
         readingHistoryRepository.save(history);
     }

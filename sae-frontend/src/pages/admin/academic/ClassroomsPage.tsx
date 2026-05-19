@@ -4,7 +4,7 @@ import {
   TableHead, TableRow, TablePagination, Chip, Button, IconButton, Dialog, DialogTitle,
   DialogContent, TextField, Alert, CircularProgress, Tooltip,
   Avatar, InputAdornment, Select, MenuItem, FormControl, InputLabel,
-  Autocomplete, Divider,
+  Autocomplete, Divider, Drawer,
 } from '@mui/material';
 import {
   Add as AddIcon, Edit as EditIcon, Block as BlockIcon,
@@ -12,7 +12,8 @@ import {
   FilterList as FilterIcon, WbSunny as MorningIcon,
   WbTwilight as AfternoonIcon, NightsStay as NightIcon,
   People as PeopleIcon, PersonRemove as PersonRemoveIcon,
-  Star as StarIcon,
+  Star as StarIcon, Visibility as ViewIcon,
+  School as SchoolIcon, MenuBook as BookIcon,
 } from '@mui/icons-material';
 import {
   classroomService, schoolService, classLevelService, studentService,
@@ -97,6 +98,13 @@ const ClassroomsPage: React.FC = () => {
   const [academicGroups, setAcademicGroups] = useState<AcademicGroupDTO[]>([]);
 
   const [professors, setProfessors]                   = useState<ProfessorDTO[]>([]);
+
+  const [detailOpen, setDetailOpen]             = useState(false);
+  const [detailRoom, setDetailRoom]             = useState<ClassroomDTO | null>(null);
+  const [detailAssignments, setDetailAssignments] = useState<ProfessorAssignmentDetailDTO[]>([]);
+  const [detailStudents, setDetailStudents]     = useState<StudentProfileDTO[]>([]);
+  const [detailLoading, setDetailLoading]       = useState(false);
+
   const [directorOpen, setDirectorOpen]               = useState(false);
   const [directorClassroom, setDirectorClassroom]     = useState<ClassroomDTO | null>(null);
   const [classroomProfessors, setClassroomProfessors] = useState<ProfessorDTO[]>([]);
@@ -153,6 +161,16 @@ const ClassroomsPage: React.FC = () => {
   }), [classrooms, schools, search, schoolFilter, shiftFilter, yearFilter]);
 
   useEffect(() => { setPage(0); }, [search, schoolFilter, shiftFilter, yearFilter]);
+
+  const detailSubjectMap = useMemo(() => {
+    const map = new Map<number, { name: string; profs: string[] }>();
+    detailAssignments.forEach(a => {
+      if (!map.has(a.subjectId)) map.set(a.subjectId, { name: a.subjectName, profs: [] });
+      const name = professors.find(p => p.id === a.professorId)?.fullName ?? `Prof. #${a.professorId}`;
+      map.get(a.subjectId)!.profs.push(name);
+    });
+    return [...map.values()];
+  }, [detailAssignments, professors]);
 
   const openCreate  = () => {
     setEditing(null);
@@ -264,6 +282,22 @@ const ClassroomsPage: React.FC = () => {
   };
 
   const closeDirector = () => { setDirectorOpen(false); setDirectorClassroom(null); };
+
+  const openDetail = async (classroom: ClassroomDTO) => {
+    setDetailRoom(classroom);
+    setDetailOpen(true);
+    setDetailLoading(true);
+    try {
+      const [assignments, students] = await Promise.all([
+        professorAssignmentService.findByClassroom(classroom.id!),
+        studentService.findByClassroom(classroom.id!),
+      ]);
+      setDetailAssignments(assignments);
+      setDetailStudents(students);
+    } catch { /* ignore */ }
+    finally { setDetailLoading(false); }
+  };
+  const closeDetail = () => { setDetailOpen(false); setDetailRoom(null); };
 
   const handleSetDirector = async (professorId: number | null) => {
     if (!directorClassroom) return;
@@ -442,6 +476,12 @@ const ClassroomsPage: React.FC = () => {
                             sx={{ bgcolor: 'rgba(0,0,0,0.04)', color: '#475569', fontWeight: 600, border: '1px solid rgba(0,0,0,0.08)' }} />
                         </TableCell>
                         <TableCell sx={{ py: 1 }}>
+                          <Tooltip title="Ver Detalhes" placement="top">
+                            <IconButton size="small" onClick={() => openDetail(row)}
+                              sx={{ color: '#1565c0', mr: 0.5, '&:hover': { bgcolor: 'rgba(21,101,192,0.08)' } }}>
+                              <ViewIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                           <Tooltip title="Alunos" placement="top">
                             <IconButton size="small" onClick={() => openEnroll(row)}
                               sx={{ color: ACCENT, mr: 0.5, '&:hover': { bgcolor: 'rgba(0,166,81,0.08)' } }}>
@@ -678,6 +718,144 @@ const ClassroomsPage: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* ── Detail Drawer ── */}
+      <Drawer
+        anchor="right"
+        open={detailOpen}
+        onClose={closeDetail}
+        slotProps={{ backdrop: { sx: { backdropFilter: 'blur(3px)', backgroundColor: 'rgba(10,22,40,0.4)' } } }}
+        PaperProps={{ sx: { width: { xs: '100vw', sm: 480 }, bgcolor: '#f8fafc', boxShadow: '-8px 0 40px rgba(0,0,0,0.15)' } }}
+      >
+        {detailRoom && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            {/* Header */}
+            <Box sx={{ background: 'linear-gradient(135deg,#0A1628 0%,#00A651 100%)', p: 3, flexShrink: 0 }}>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h5" color="white" fontWeight={800}>{detailRoom.name}</Typography>
+                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.65)', mt: 0.5 }}>
+                    {levelName(detailRoom.classLevelId)}
+                    {detailRoom.academicGroupName ? ` — ${detailRoom.academicGroupName}` : ''}
+                  </Typography>
+                </Box>
+                <IconButton onClick={closeDetail} size="small" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white', bgcolor: 'rgba(255,255,255,0.1)' } }}>
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1, mt: 2, flexWrap: 'wrap' }}>
+                {(() => { const s = shiftStyle[detailRoom.shift]; return s ? (
+                  <Chip icon={s.icon as React.ReactElement} label={detailRoom.shift} size="small"
+                    sx={{ bgcolor: 'rgba(255,255,255,0.12)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', '& .MuiChip-icon': { color: 'white' } }} />
+                ) : null; })()}
+                <Chip label={detailRoom.academicYear || '—'} size="small"
+                  sx={{ bgcolor: 'rgba(255,255,255,0.12)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }} />
+              </Box>
+            </Box>
+
+            {/* Scrollable content */}
+            <Box sx={{ flex: 1, overflowY: 'auto', p: 2.5, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+              {detailLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
+                  <CircularProgress sx={{ color: ACCENT }} />
+                </Box>
+              ) : (
+                <>
+                  {/* Escola */}
+                  <Box sx={{ bgcolor: 'white', borderRadius: 3, p: 2, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                      <SchoolIcon sx={{ color: ACCENT, fontSize: 18 }} />
+                      <Typography variant="caption" fontWeight={700} sx={{ color: ACCENT, textTransform: 'uppercase', letterSpacing: 0.8 }}>Escola</Typography>
+                    </Box>
+                    <Typography variant="body1" fontWeight={600} color={PRIMARY}>{schoolName(detailRoom.schoolId)}</Typography>
+                  </Box>
+
+                  {/* Diretor de Turma */}
+                  <Box sx={{ bgcolor: 'white', borderRadius: 3, p: 2, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                      <StarIcon sx={{ color: '#f59e0b', fontSize: 18 }} />
+                      <Typography variant="caption" fontWeight={700} sx={{ color: '#d97706', textTransform: 'uppercase', letterSpacing: 0.8 }}>Director de Turma</Typography>
+                    </Box>
+                    {detailRoom.directorId ? (() => {
+                      const dir = professors.find(p => p.id === detailRoom.directorId);
+                      return (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5, borderRadius: 2, bgcolor: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                          <Avatar sx={{ width: 38, height: 38, bgcolor: 'rgba(245,158,11,0.15)', color: '#d97706', fontWeight: 800, fontSize: '0.75rem' }}>
+                            {(dir?.fullName ?? dir?.username ?? '??').slice(0, 2).toUpperCase()}
+                          </Avatar>
+                          <Box>
+                            <Typography variant="body2" fontWeight={700} color={PRIMARY}>{dir?.fullName ?? `Prof. #${detailRoom.directorId}`}</Typography>
+                            {dir?.username && <Typography variant="caption" color="text.secondary">{dir.username}</Typography>}
+                          </Box>
+                          <Chip label="Director" size="small" sx={{ ml: 'auto', bgcolor: 'rgba(245,158,11,0.12)', color: '#d97706', border: '1px solid rgba(245,158,11,0.25)', fontWeight: 700, fontSize: '0.65rem' }} />
+                        </Box>
+                      );
+                    })() : (
+                      <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>Não definido</Typography>
+                    )}
+                  </Box>
+
+                  {/* Disciplinas */}
+                  <Box sx={{ bgcolor: 'white', borderRadius: 3, p: 2, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                      <BookIcon sx={{ color: '#1565c0', fontSize: 18 }} />
+                      <Typography variant="caption" fontWeight={700} sx={{ color: '#1565c0', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                        Disciplinas Lecionadas
+                      </Typography>
+                      <Chip label={detailSubjectMap.length} size="small" sx={{ ml: 'auto', bgcolor: 'rgba(21,101,192,0.08)', color: '#1565c0', border: '1px solid rgba(21,101,192,0.2)', fontWeight: 700 }} />
+                    </Box>
+                    {detailSubjectMap.length === 0 ? (
+                      <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>Nenhuma disciplina atribuída</Typography>
+                    ) : (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                        {detailSubjectMap.map((subj, i) => (
+                          <Box key={i} sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(21,101,192,0.04)', border: '1px solid rgba(21,101,192,0.1)' }}>
+                            <Typography variant="body2" fontWeight={700} color={PRIMARY}>{subj.name}</Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {subj.profs.length > 0 ? subj.profs.join(' · ') : 'Sem professor atribuído'}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
+                  </Box>
+
+                  {/* Alunos */}
+                  <Box sx={{ bgcolor: 'white', borderRadius: 3, p: 2, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                      <PeopleIcon sx={{ color: ACCENT, fontSize: 18 }} />
+                      <Typography variant="caption" fontWeight={700} sx={{ color: ACCENT, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                        Alunos Inscritos
+                      </Typography>
+                      <Chip label={detailStudents.length} size="small" sx={{ ml: 'auto', bgcolor: 'rgba(0,166,81,0.08)', color: ACCENT, border: '1px solid rgba(0,166,81,0.2)', fontWeight: 700 }} />
+                    </Box>
+                    {detailStudents.length === 0 ? (
+                      <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>Nenhum aluno inscrito</Typography>
+                    ) : (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
+                        {detailStudents.map((s, i) => (
+                          <Box key={s.userId} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 1.2, borderRadius: 2, bgcolor: i % 2 === 0 ? 'rgba(0,166,81,0.03)' : 'transparent', border: '1px solid rgba(0,166,81,0.08)' }}>
+                            <Avatar sx={{ width: 30, height: 30, bgcolor: 'rgba(0,166,81,0.12)', color: ACCENT, fontWeight: 800, fontSize: '0.65rem' }}>
+                              {(s.fullName ?? '??').slice(0, 2).toUpperCase()}
+                            </Avatar>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography variant="body2" fontWeight={600} color={PRIMARY} noWrap>{s.fullName}</Typography>
+                              <Typography variant="caption" color="text.secondary" noWrap>{s.username}</Typography>
+                            </Box>
+                            {s.grade && (
+                              <Chip label={s.grade} size="small" sx={{ bgcolor: 'rgba(0,0,0,0.04)', color: '#475569', fontSize: '0.65rem', border: '1px solid rgba(0,0,0,0.08)' }} />
+                            )}
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
+                  </Box>
+                </>
+              )}
+            </Box>
+          </Box>
+        )}
+      </Drawer>
 
       {/* ── Director Dialog ── */}
       <Dialog open={directorOpen} onClose={closeDirector} maxWidth="xs" fullWidth
