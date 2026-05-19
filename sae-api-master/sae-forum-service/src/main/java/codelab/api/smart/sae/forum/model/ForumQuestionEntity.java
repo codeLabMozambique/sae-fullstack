@@ -57,6 +57,10 @@ public class ForumQuestionEntity implements Serializable {
     @Column(name = "MENTIONED_PROFESSOR_USERNAME", length = 100)
     private String mentionedProfessorUsername;
 
+    // ── Nome completo do professor desta sala expert (guardado na criação) ───
+    @Column(name = "PROFESSOR_FULL_NAME", length = 200)
+    private String professorFullName;
+
     // ── Campo legado (mantido para compatibilidade com dados existentes) ──────
     @Convert(converter = DisciplinaEnumConverter.class)
     @Column(name = "AREA", length = 100)
@@ -118,6 +122,9 @@ public class ForumQuestionEntity implements Serializable {
 
     public String getMentionedProfessorUsername() { return mentionedProfessorUsername; }
     public void setMentionedProfessorUsername(String mentionedProfessorUsername) { this.mentionedProfessorUsername = mentionedProfessorUsername; }
+
+    public String getProfessorFullName() { return professorFullName; }
+    public void setProfessorFullName(String professorFullName) { this.professorFullName = professorFullName; }
 
     public codelab.api.smart.sae.forum.enums.DisciplinaEnum getDisciplina() { return disciplina; }
     public void setDisciplina(codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina) { this.disciplina = disciplina; }

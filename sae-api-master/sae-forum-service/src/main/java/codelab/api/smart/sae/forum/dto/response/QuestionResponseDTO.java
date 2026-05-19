@@ -21,6 +21,7 @@ public class QuestionResponseDTO {
     private Long classroomId;
     private Long schoolId;
     private String mentionedProfessorUsername;
+    private String professorFullName;
 
     // ── Legado ───────────────────────────────────────────────────────────────
     private codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina;
@@ -45,6 +46,7 @@ public class QuestionResponseDTO {
         dto.classroomId = e.getClassroomId();
         dto.schoolId    = e.getSchoolId();
         dto.mentionedProfessorUsername = e.getMentionedProfessorUsername();
+        dto.professorFullName = e.getProfessorFullName();
         dto.disciplina  = e.getDisciplina();
         dto.questionType = e.getQuestionType();
         dto.status      = e.getStatus();
@@ -64,6 +66,8 @@ public class QuestionResponseDTO {
     public Long getClassroomId() { return classroomId; }
     public Long getSchoolId() { return schoolId; }
     public String getMentionedProfessorUsername() { return mentionedProfessorUsername; }
+    public String getProfessorFullName() { return professorFullName; }
+    public void setProfessorFullName(String v) { this.professorFullName = v; }
     public codelab.api.smart.sae.forum.enums.DisciplinaEnum getDisciplina() { return disciplina; }
     public QuestionType getQuestionType() { return questionType; }
     public QuestionStatus getStatus() { return status; }

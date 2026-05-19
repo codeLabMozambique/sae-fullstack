@@ -1384,12 +1384,23 @@ export default function StudentForumPage() {
       .finally(() => setLoadingMembers(false));
   };
 
-  // Busca o nome completo do professor para cada sala ESPECIALIZADO da sidebar
+  // Resolve professor name for each expert room in the sidebar
   useEffect(() => {
     const expertQs = myQuestions.filter(q => q.questionType === 'ESPECIALIZADO' && q.subjectId != null);
     if (!expertQs.length) return;
+
+    // Use stored name immediately — no API call needed for these
+    const stored = new Map<number, string>();
+    const needsFetch: typeof expertQs = [];
+    for (const q of expertQs) {
+      if (q.professorFullName) stored.set(q.id, q.professorFullName);
+      else needsFetch.push(q);
+    }
+    if (stored.size) setProfNamesMap(prev => new Map([...prev, ...stored]));
+    if (!needsFetch.length) return;
+
     Promise.allSettled(
-      expertQs.map(q =>
+      needsFetch.map(q =>
         forumService.getForumMembers(q.subjectId!, q.classroomId ?? undefined)
           .then(members => ({ qId: q.id, members }))
       )
@@ -1517,9 +1528,19 @@ export default function StudentForumPage() {
   const isValidDisciplina = (d: unknown): d is string =>
     typeof d === 'string' && d.length > 0 && d !== 'null';
 
-  // Fetch professor info for expert rooms — prefer forum members (has fullname + online)
+  // Fetch professor info for expert rooms — prefer stored professorFullName, then forum members
   const refreshProfessor = (q: ForumQuestion) => {
     if (q.questionType !== 'ESPECIALIZADO') { setRoomProfessor(null); return; }
+
+    // Use the name stored on the question immediately (avoids flicker)
+    if (q.professorFullName) {
+      setRoomProfessor(prev => ({
+        username: q.mentionedProfessorUsername ?? prev?.username ?? '',
+        fullname: q.professorFullName!,
+        online: prev?.online ?? false,
+        specialization: prev?.specialization ?? '',
+      }));
+    }
 
     const fallbackByDisciplina = () => {
       if (isValidDisciplina(q.disciplina)) {
@@ -1527,8 +1548,8 @@ export default function StudentForumPage() {
           .then(profs => setRoomProfessor(profs[0] ?? null))
           .catch(() => setRoomProfessor(null));
       } else if (q.mentionedProfessorUsername) {
-        setRoomProfessor({ username: q.mentionedProfessorUsername, fullname: q.mentionedProfessorUsername, online: false, specialization: '' });
-      } else {
+        setRoomProfessor({ username: q.mentionedProfessorUsername, fullname: q.professorFullName ?? q.mentionedProfessorUsername, online: false, specialization: '' });
+      } else if (!q.professorFullName) {
         setRoomProfessor(null);
       }
     };
@@ -1541,7 +1562,7 @@ export default function StudentForumPage() {
             (q.mentionedProfessorUsername && m.username === q.mentionedProfessorUsername)
           );
           if (prof) {
-            setRoomProfessor({ username: prof.username, fullname: prof.fullname, online: prof.online, specialization: '' });
+            setRoomProfessor({ username: prof.username, fullname: prof.fullname || q.professorFullName || prof.username, online: prof.online, specialization: '' });
           } else {
             fallbackByDisciplina();
           }
@@ -1581,7 +1602,7 @@ export default function StudentForumPage() {
   const isOwner = activeQ?.createdBy === user?.username;
   const membersMap = new Map(forumMembers.map(m => [m.username, m.fullname]));
   const activeProfName = activeQ?.questionType === 'ESPECIALIZADO'
-    ? (roomProfessor?.fullname ?? profNamesMap.get(activeQ.id))
+    ? (roomProfessor?.fullname ?? activeQ.professorFullName ?? profNamesMap.get(activeQ.id))
     : undefined;
 
   const getFilteredList = () => {
@@ -1780,7 +1801,7 @@ export default function StudentForumPage() {
               active={activeQ?.id === q.id}
               onClick={() => handleSelectQuestion(q, sidebarTab)}
               subjectsMap={subjectsMap}
-              professorName={profNamesMap.get(q.id)}
+              professorName={profNamesMap.get(q.id) ?? q.professorFullName ?? undefined}
             />
           ))}
         </Box>

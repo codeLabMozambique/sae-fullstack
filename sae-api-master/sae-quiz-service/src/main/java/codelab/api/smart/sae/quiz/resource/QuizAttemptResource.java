@@ -44,4 +44,14 @@ public class QuizAttemptResource {
     public ResponseEntity<List<QuizSummaryDTO>> getMyAttempts(Authentication auth) {
         return ResponseEntity.ok(attemptService.getMyAttempts(auth.getName()));
     }
+
+    @GetMapping("/for-professor")
+    public ResponseEntity<List<QuizAttemptSummaryDTO>> getAttemptsForProfessor(Authentication auth) {
+        return ResponseEntity.ok(attemptService.getAttemptsForProfessor(auth.getName()));
+    }
+
+    @GetMapping("/count/total")
+    public ResponseEntity<java.util.Map<String, Integer>> getTotalCount() {
+        return ResponseEntity.ok(java.util.Map.of("total", attemptService.getTotalCompletedAttempts()));
+    }
 }

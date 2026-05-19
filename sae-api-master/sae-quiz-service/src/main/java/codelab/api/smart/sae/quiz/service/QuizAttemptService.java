@@ -135,6 +135,39 @@ public class QuizAttemptService {
                 .collect(Collectors.toList());
     }
 
+    // ── Attempts for professor ─────────────────────────────────────
+    @Transactional(readOnly = true)
+    public List<QuizAttemptSummaryDTO> getAttemptsForProfessor(String professorUsername) {
+        List<QuizEntity> quizzes = quizRepository.findByCreatedBy(professorUsername);
+        if (quizzes.isEmpty()) return List.of();
+
+        List<Long> quizIds = quizzes.stream().map(QuizEntity::getId).collect(Collectors.toList());
+        Map<Long, String> titles = quizzes.stream()
+                .collect(Collectors.toMap(QuizEntity::getId, QuizEntity::getTitulo));
+
+        return attemptRepository.findByQuizIdInAndCompleted(quizIds, true).stream()
+                .map(a -> new QuizAttemptSummaryDTO(
+                    a.getId(),
+                    a.getQuizId(),
+                    titles.getOrDefault(a.getQuizId(), "Quiz #" + a.getQuizId()),
+                    a.getStudentUsername(),
+                    a.getSubmittedAt(),
+                    a.getScore(),
+                    a.getTotalQuestions()
+                ))
+                .sorted(java.util.Comparator.comparing(
+                    QuizAttemptSummaryDTO::getSubmittedAt,
+                    java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder())
+                ))
+                .collect(Collectors.toList());
+    }
+
+    // ── Total completed attempts (admin overview) ──────────────────
+    @Transactional(readOnly = true)
+    public int getTotalCompletedAttempts() {
+        return attemptRepository.countByCompleted(true);
+    }
+
     // ── Build result ──────────────────────────────────────────────
     private QuizResultDTO buildResult(QuizAttemptEntity attempt, QuizEntity quiz, List<QuizAttemptAnswerEntity> savedAnswers) {
         Map<Long, QuizAttemptAnswerEntity> answerByQuestion = savedAnswers.stream()

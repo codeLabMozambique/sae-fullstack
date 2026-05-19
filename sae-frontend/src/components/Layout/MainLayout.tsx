@@ -40,6 +40,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import OfflineIndicator from '../OfflineIndicator';
+import NotificationPanel from '../NotificationPanel';
 import { useAuth } from '../../context/AuthContext';
 import type { MenuDTO } from '../../services/authService';
 import api from '../../services/api';
@@ -347,13 +348,16 @@ const MainLayout: React.FC<Props> = ({ children }) => {
   const drawer = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'linear-gradient(180deg, #001B33 0%, #002B50 100%)' }}>
       {/* Logo */}
-      <Box sx={{ p: 3, pb: 2 }}>
-        <Typography variant="h5" fontWeight={800} color="white" letterSpacing={-0.5}>
-          smart<span style={{ color: '#00A651' }}>SAE</span>
-        </Typography>
-        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', letterSpacing: 1 }}>
-          PLATAFORMA EDUCACIONAL
-        </Typography>
+      <Box sx={{ p: 3, pb: 2, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <Box>
+          <Typography variant="h5" fontWeight={800} color="white" letterSpacing={-0.5}>
+            smart<span style={{ color: '#00A651' }}>SAE</span>
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', letterSpacing: 1 }}>
+            PLATAFORMA EDUCACIONAL
+          </Typography>
+        </Box>
+        <NotificationPanel />
       </Box>
 
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)' }} />

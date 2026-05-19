@@ -9,4 +9,6 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttemptEntity, 
     List<QuizAttemptEntity> findByQuizIdAndStudentUsernameAndCompleted(Long quizId, String studentUsername, boolean completed);
     List<QuizAttemptEntity> findByQuizIdAndCompleted(Long quizId, boolean completed);
     int countByQuizIdAndCompleted(Long quizId, boolean completed);
+    List<QuizAttemptEntity> findByQuizIdInAndCompleted(List<Long> quizIds, boolean completed);
+    int countByCompleted(boolean completed);
 }

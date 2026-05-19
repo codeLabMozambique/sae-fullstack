@@ -114,6 +114,7 @@ export interface ForumQuestion {
   classroomId?: number | null;
   schoolId?: number | null;
   mentionedProfessorUsername?: string | null;
+  professorFullName?: string | null;
   // Legado
   disciplina: DisciplinaEnum;
   questionType: QuestionType;

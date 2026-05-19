@@ -184,7 +184,10 @@ public class ForumQuestionService {
                 room.setQuestionType(QuestionType.ESPECIALIZADO);
                 room.setStatus(QuestionStatus.ABERTA);
                 room.setCreatedBy(studentUsername);
-                return QuestionResponseDTO.from(Objects.requireNonNull(questionRepository.save(room)));
+                ForumQuestionEntity saved = Objects.requireNonNull(questionRepository.save(room));
+                saved = enrichProfessorInfo(saved,
+                    academicServiceClient.getProfessorIdsByClassroomAndSubject(classroomId, subjectId));
+                return QuestionResponseDTO.from(saved);
             });
     }
 
@@ -204,7 +207,10 @@ public class ForumQuestionService {
                 room.setQuestionType(QuestionType.ESPECIALIZADO);
                 room.setStatus(QuestionStatus.ABERTA);
                 room.setCreatedBy(studentUsername);
-                return QuestionResponseDTO.from(Objects.requireNonNull(questionRepository.save(room)));
+                ForumQuestionEntity saved = Objects.requireNonNull(questionRepository.save(room));
+                saved = enrichProfessorInfo(saved,
+                    academicServiceClient.getProfessorIdsBySubject(subjectId));
+                return QuestionResponseDTO.from(saved);
             });
     }
 
@@ -488,17 +494,53 @@ public class ForumQuestionService {
     }
 
     private QuestionResponseDTO enrichWithAnswers(ForumQuestionEntity q) {
-        QuestionResponseDTO dto = QuestionResponseDTO.from(q);
-        List<ExpertAnswerResponseDTO> expertAnswers =
-            expertAnswerRepository.findByQuestionIdOrderByCreatedAtAsc(q.getId()).stream()
-                .map(ExpertAnswerResponseDTO::from).collect(Collectors.toList());
+        List<ExpertAnswerEntity> expertEntities =
+            expertAnswerRepository.findByQuestionIdOrderByCreatedAtAsc(q.getId());
+        List<ExpertAnswerResponseDTO> expertAnswers = expertEntities.stream()
+            .map(ExpertAnswerResponseDTO::from).collect(Collectors.toList());
         List<CollaborativeAnswerResponseDTO> collabAnswers =
             collaborativeAnswerRepository.findByQuestionIdOrderByCreatedAtAsc(q.getId()).stream()
                 .map(CollaborativeAnswerResponseDTO::from).collect(Collectors.toList());
+
+        // Lazy-populate professorFullName for existing expert rooms that predate this feature
+        if (QuestionType.ESPECIALIZADO.equals(q.getQuestionType())
+                && q.getProfessorFullName() == null
+                && !expertEntities.isEmpty()) {
+            String profUsername = expertEntities.get(0).getAnsweredBy();
+            if (profUsername != null && !profUsername.isBlank()) {
+                try {
+                    Long userId = authServiceClient.getUserIdByUsername(profUsername);
+                    if (userId != null) {
+                        AuthServiceClient.ProfessorInfo info = authServiceClient.getProfessorInfoByUserId(userId);
+                        if (info != null && info.getFullname() != null) {
+                            q.setMentionedProfessorUsername(info.getUsername());
+                            q.setProfessorFullName(info.getFullname());
+                            questionRepository.save(q);
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+
+        QuestionResponseDTO dto = QuestionResponseDTO.from(q);
         dto.setExpertAnswers(expertAnswers);
         dto.setCollaborativeAnswers(collabAnswers);
         dto.setResponseTimeMinutes(computeResponseTime(q.getCreatedAt(), expertAnswers, collabAnswers));
         return dto;
+    }
+
+    /** Looks up professor info from a list of professor user-IDs and persists it on the room entity. */
+    private ForumQuestionEntity enrichProfessorInfo(ForumQuestionEntity room, List<Long> professorIds) {
+        if (professorIds.isEmpty()) return room;
+        try {
+            AuthServiceClient.ProfessorInfo info = authServiceClient.getProfessorInfoByUserId(professorIds.get(0));
+            if (info != null && info.getFullname() != null) {
+                room.setMentionedProfessorUsername(info.getUsername());
+                room.setProfessorFullName(info.getFullname());
+                return Objects.requireNonNull(questionRepository.save(room));
+            }
+        } catch (Exception ignored) {}
+        return room;
     }
 
     private Long computeResponseTime(LocalDateTime questionCreatedAt,
