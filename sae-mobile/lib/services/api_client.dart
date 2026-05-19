@@ -7,8 +7,11 @@ class ApiClient {
 
   // Para emulador Android usa-se 10.0.2.2 em vez de localhost.
   static const String defaultBaseUrl = 'http://10.0.2.2:8080';
+  /// Serviço Python (sae-ai-service) — corre directo (sem gateway).
+  static const String aiBaseUrl = 'http://10.0.2.2:8000';
   static const String tokenKey = 'sae_token';
   static const String userKey = 'sae_user';
+  static const String sessionKey = 'sae_chat_session_id';
 
   late final Dio dio = _build();
 

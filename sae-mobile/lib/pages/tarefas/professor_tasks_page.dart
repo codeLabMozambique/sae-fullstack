@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../services/assignment_service.dart';
 import '../../theme.dart';
+import '../../widgets/empty_state.dart';
+import '../../widgets/neumorphic.dart';
+import '../file_viewer_page.dart';
+import 'create_task_page.dart';
 
 class ProfessorTasksPage extends StatefulWidget {
   const ProfessorTasksPage({super.key});
@@ -35,36 +38,77 @@ class _ProfessorTasksPageState extends State<ProfessorTasksPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Center(child: CircularProgressIndicator());
-    if (_error != null) return Center(child: Text(_error!));
-    if (_items.isEmpty) return const Center(child: Text('Sem tarefas atribuídas.'));
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView.separated(
-        padding: const EdgeInsets.all(12),
-        itemCount: _items.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 8),
-        itemBuilder: (_, i) {
-          final a = _items[i];
-          return Card(
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              leading: CircleAvatar(
-                backgroundColor: SaeColors.primary.withValues(alpha: 0.12),
-                child: const Icon(Icons.assignment_ind, color: SaeColors.primary),
-              ),
-              title: Text(a.title, style: const TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: Text(
-                'Turma ${a.classroomId} • prazo ${a.deadline}',
-                style: const TextStyle(color: SaeColors.textSecondary, fontSize: 12),
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => _SubmissionsPage(assignment: a),
-              )),
-            ),
+    return Scaffold(
+      backgroundColor: SaeColors.bg,
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(child: Text(_error!))
+              : _items.isEmpty
+                  ? const EmptyState(
+                      icon: Icons.assignment_outlined,
+                      title: 'Ainda não publicou tarefas',
+                      subtitle: 'Toque em "Criar tarefa" para publicar a primeira.',
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(14, 14, 14, 100),
+                        itemCount: _items.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (_, i) {
+                          final a = _items[i];
+                          return NeuCard(
+                            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                              builder: (_) => _SubmissionsPage(assignment: a),
+                            )),
+                            child: Row(children: [
+                              Container(
+                                width: 44, height: 44,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: SaeColors.primary.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: const Icon(Icons.assignment_ind,
+                                    color: SaeColors.primary),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(a.title,
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w800)),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Turma ${a.classroomId} · prazo ${a.deadline}',
+                                      style: const TextStyle(
+                                          color: SaeColors.textSecondary,
+                                          fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(Icons.chevron_right,
+                                  color: SaeColors.textSecondary),
+                            ]),
+                          );
+                        },
+                      ),
+                    ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: SaeColors.primary,
+        foregroundColor: Colors.white,
+        onPressed: () async {
+          final created = await Navigator.of(context).push<bool>(
+            MaterialPageRoute(builder: (_) => const CreateTaskPage()),
           );
+          if (created == true) _load();
         },
+        icon: const Icon(Icons.add),
+        label: const Text('Criar tarefa'),
       ),
     );
   }
@@ -185,10 +229,13 @@ class _SubmissionsPageState extends State<_SubmissionsPage> {
                                   const Spacer(),
                                   if (s.fileOriginalName != null)
                                     IconButton(
-                                      onPressed: () => launchUrl(
-                                          Uri.parse(_service.submissionFileUrl(s.id)),
-                                          mode: LaunchMode.externalApplication),
-                                      icon: const Icon(Icons.download),
+                                      onPressed: () => Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                              builder: (_) => FileViewerPage(
+                                                    url: _service.submissionFileUrl(s.id),
+                                                    title: s.fileOriginalName ?? 'Submissão',
+                                                  ))),
+                                      icon: const Icon(Icons.visibility),
                                       tooltip: 'Ver ficheiro',
                                     ),
                                   ElevatedButton.icon(
