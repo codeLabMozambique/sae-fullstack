@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useSubjects } from '../../hooks/useSubjects';
 import {
@@ -134,7 +134,9 @@ async function uploadAttachment(file: File, context: string, contextId?: string)
   form.append('file', file);
   if (context) form.append('context', context);
   if (contextId) form.append('contextId', contextId);
-  const res = await api.post<AttachmentInfo>('/content/api/user/uploads', form);
+  const res = await api.post<AttachmentInfo>('/content/api/user/uploads', form, {
+    headers: { 'Content-Type': undefined } // let Axios set the boundary automatically
+  });
   return res.data;
 }
 
@@ -170,9 +172,10 @@ function getQuestionTitle(q: ForumQuestion, subjectsMap: Map<number, SubjectInfo
 
 // ─── Sidebar conversation item ─────────────────────────────────────────────────
 
-function SidebarItem({ q, active, onClick, subjectsMap }: {
+function SidebarItem({ q, active, onClick, subjectsMap, professorName }: {
   q: ForumQuestion; active: boolean; onClick: () => void;
   subjectsMap: Map<number, SubjectInfo>;
+  professorName?: string;
 }) {
   const isExpert = q.questionType === 'ESPECIALIZADO';
   const allAnswers = [...(q.expertAnswers ?? []), ...(q.collaborativeAnswers ?? [])];
@@ -181,7 +184,9 @@ function SidebarItem({ q, active, onClick, subjectsMap }: {
   const unread = hasUnread(q);
   const nUnread = countUnread(q);
   const subjectName = getSubjectLabel(q, subjectsMap);
-  const displayTitle = isExpert ? `Prof. ${subjectName}` : `Fórum · ${subjectName}`;
+  const displayTitle = isExpert
+    ? (professorName ? `Prof. ${professorName}` : `Prof. ${subjectName}`)
+    : 'Fórum da Turma';
 
   return (
     <Box
@@ -255,6 +260,136 @@ function SidebarItem({ q, active, onClick, subjectsMap }: {
   );
 }
 
+// ─── Message Attachment Component ──────────────────────────────────────────────
+
+function MessageAttachment({ attachmentId, isOwn }: { attachmentId: string, isOwn: boolean }) {
+  const [info, setInfo] = useState<AttachmentInfo | null>(null);
+  const [open, setOpen] = useState(false);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let activeBlobUrl: string | null = null;
+
+    api.get(`/content/api/user/uploads/${attachmentId}/info`)
+      .then(r => {
+        setInfo(r.data);
+        return api.get(`/content/api/user/uploads/${attachmentId}`, { responseType: 'blob' });
+      })
+      .then(res => {
+        const blob = new Blob([res.data], { type: res.headers['content-type'] || 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        activeBlobUrl = url;
+        setBlobUrl(url);
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
+
+    return () => {
+      if (activeBlobUrl) {
+        URL.revokeObjectURL(activeBlobUrl);
+      }
+    };
+  }, [attachmentId]);
+
+  if (loading || !info) {
+    return <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, opacity: 0.7 }}>
+      <CircularProgress size={14} sx={{ color: isOwn ? 'white' : '#00A651' }} />
+      <Typography variant="caption" sx={{ color: isOwn ? 'white' : '#64748B' }}>A carregar anexo...</Typography>
+    </Box>;
+  }
+
+  const isImage = info.contentType?.startsWith('image/');
+
+  return (
+    <>
+      <Box 
+        onClick={() => setOpen(true)}
+        sx={{
+          mt: 1.5, mb: 0.5, borderRadius: 2, overflow: 'hidden',
+          bgcolor: isImage ? 'transparent' : (isOwn ? 'rgba(0,0,0,0.1)' : 'white'),
+          border: isImage ? 'none' : '1px solid rgba(0,0,0,0.08)',
+          cursor: 'pointer',
+          maxWidth: '100%',
+          '&:hover': { opacity: 0.95, transform: 'translateY(-1px)', boxShadow: isImage ? 'none' : '0 4px 12px rgba(0,0,0,0.05)' },
+          transition: 'all 0.2s',
+        }}
+      >
+        {isImage && blobUrl ? (
+          <Box component="img" src={blobUrl} alt={info.originalName} 
+            sx={{ width: '100%', maxHeight: 240, objectFit: 'cover', display: 'block', borderRadius: 2 }} />
+        ) : (
+          <Stack direction="row" spacing={2} alignItems="center" p={2}>
+            <Box sx={{ 
+              width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              bgcolor: isOwn ? 'rgba(255,255,255,0.2)' : '#E8F5E9', borderRadius: 2 
+            }}>
+              <MenuBookIcon sx={{ fontSize: 26, color: isOwn ? 'white' : '#00A651' }} />
+            </Box>
+            <Box flex={1} minWidth={0}>
+              <Typography noWrap sx={{ fontSize: 14, fontWeight: 800, color: isOwn ? 'white' : '#0F172A', mb: 0.5 }}>{info.originalName}</Typography>
+              <Typography noWrap sx={{ fontSize: 12, fontWeight: 500, color: isOwn ? 'rgba(255,255,255,0.8)' : '#64748B', mb: 0.5 }}>
+                Clique para visualizar e ler o conteúdo do documento...
+              </Typography>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Chip label={info.contentType?.split('/')[1]?.toUpperCase() || 'DOC'} size="small" 
+                  sx={{ height: 18, fontSize: 9, fontWeight: 800, bgcolor: isOwn ? 'rgba(255,255,255,0.2)' : '#F1F5F9', color: isOwn ? 'white' : '#475569' }} />
+                <Typography sx={{ fontSize: 11, fontWeight: 700, color: isOwn ? 'rgba(255,255,255,0.6)' : '#94A3B8' }}>
+                  {formatBytes(info.size)}
+                </Typography>
+              </Stack>
+            </Box>
+          </Stack>
+        )}
+      </Box>
+
+      {/* Preview Modal */}
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="lg" fullWidth
+        PaperProps={{ sx: { bgcolor: '#1E293B', boxShadow: '0 24px 48px rgba(0,0,0,0.5)', overflow: 'hidden', height: '90vh', borderRadius: 3 } }}>
+        <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+          {/* Header */}
+          <Stack direction="row" alignItems="center" justifyContent="space-between" px={2} py={1.5} sx={{ bgcolor: '#0F172A', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+            <Stack direction="row" spacing={1.5} alignItems="center" minWidth={0}>
+              <Box sx={{ p: 0.5, bgcolor: '#00A651', borderRadius: 1, display: 'flex' }}>
+                <MenuBookIcon sx={{ fontSize: 18, color: 'white' }} />
+              </Box>
+              <Typography noWrap sx={{ color: 'white', fontWeight: 600, fontSize: 14 }}>{info.originalName}</Typography>
+            </Stack>
+            <Stack direction="row" spacing={1}>
+              <Button 
+                variant="contained" component="a" href={blobUrl || '#'} download={info.originalName}
+                sx={{ bgcolor: '#00A651', color: 'white', '&:hover': { bgcolor: '#008f44' }, borderRadius: 2, textTransform: 'none', px: 2, fontWeight: 600, height: 32 }}
+              >
+                Baixar
+              </Button>
+              <IconButton onClick={() => setOpen(false)} size="small" sx={{ color: '#94A3B8', '&:hover': { color: 'white', bgcolor: 'rgba(255,255,255,0.1)' } }}>
+                <CloseIcon />
+              </IconButton>
+            </Stack>
+          </Stack>
+          
+          {/* Content */}
+          <Box sx={{ flex: 1, width: '100%', bgcolor: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+            {isImage && blobUrl ? (
+              <img src={blobUrl} alt={info.originalName} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+            ) : blobUrl ? (
+              <iframe 
+                src={blobUrl} 
+                title={info.originalName}
+                style={{ width: '100%', height: '100%', border: 'none', backgroundColor: '#F8FAFC' }} 
+              />
+            ) : (
+              <Typography sx={{ color: '#64748B', fontWeight: 600 }}>Não foi possível carregar o documento.</Typography>
+            )}
+          </Box>
+        </Box>
+      </Dialog>
+    </>
+  );
+}
+
 // ─── Chat messages ─────────────────────────────────────────────────────────────
 
 function ChatMessages({
@@ -286,8 +421,9 @@ function ChatMessages({
   }, [messages.length]);
 
   useEffect(() => {
-    if (!isExpert || messages.length > 0) { setAllProfOffline(false); return; }
-    forumService.getProfessorsByDisciplina(q.disciplina)
+    const d = q.disciplina;
+    if (!isExpert || messages.length > 0 || !d || d === 'null') { setAllProfOffline(false); return; }
+    forumService.getProfessorsByDisciplina(d)
       .then(profs => setAllProfOffline(profs.length > 0 && profs.every(p => !p.online)))
       .catch(() => {});
   }, [q.id, isExpert, messages.length]);
@@ -371,16 +507,7 @@ function ChatMessages({
               <Typography sx={{ fontSize: 14.5, lineHeight: 1.5, whiteSpace: 'pre-wrap', fontWeight: 500 }}>{a.conteudo}</Typography>
               
               {a.attachmentId && (
-                <Box sx={{ 
-                  mt: 1, p: 1, borderRadius: 1.5, 
-                  bgcolor: isOwn ? 'rgba(0,0,0,0.1)' : '#F1F5F9',
-                  display: 'flex', alignItems: 'center', gap: 1,
-                  cursor: 'pointer',
-                  '&:hover': { bgcolor: isOwn ? 'rgba(0,0,0,0.15)' : '#E2E8F0' }
-                }} component="a" href={`/content/api/user/uploads/${a.attachmentId}`} target="_blank">
-                  <InsertDriveFileIcon sx={{ fontSize: 18, color: isOwn ? 'white' : '#64748B' }} />
-                  <Typography variant="caption" sx={{ fontWeight: 700, color: isOwn ? 'white' : '#1E293B' }}>Ver Anexo</Typography>
-                </Box>
+                <MessageAttachment attachmentId={a.attachmentId} isOwn={isOwn} />
               )}
 
               <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end" mt={0.5}>
@@ -535,8 +662,9 @@ function ChatInput({ questionId, questionType, onSent, prefillText, onPrefillCon
         attachmentId = att.id;
         setUploading(false);
       }
-      if (isExpert && isProfessor) await forumService.createExpertAnswer(questionId, { conteudo: text, attachmentId });
-      else await forumService.createCollaborativeAnswer(questionId, { conteudo: text, attachmentId });
+      const conteudo = text.trim() || (file ? `📎 ${file.name}` : '_');
+      if (isExpert && isProfessor) await forumService.createExpertAnswer(questionId, { conteudo, attachmentId });
+      else await forumService.createCollaborativeAnswer(questionId, { conteudo, attachmentId });
       setText(''); setFile(null); setMentionQuery(null); onSent();
     } catch (e: any) {
       setError(e?.response?.data?.message ?? 'Erro ao enviar.');
@@ -691,18 +819,17 @@ function DetailPanelExpert({ q, onSuggestionClick, subjectsMap, roomProfessor }:
         }}>
           {roomProfessor ? initials(profFullName) : <SchoolIcon sx={{ fontSize: 30 }} />}
         </Avatar>
-        <Typography variant="subtitle1" fontWeight={800} sx={{ color: '#0F172A', mb: 0.2 }}>{profFullName}</Typography>
-        <Typography variant="caption" sx={{ color: '#00A651', fontWeight: 700 }}>
-          Professor · {getSubjectLabel(q, subjectsMap)}
+        <Typography variant="subtitle1" fontWeight={800} sx={{ color: '#0F172A', mb: 0.2 }}>
+          {profFullName !== 'Professor' ? `Prof. ${profFullName}` : 'Professor'}
         </Typography>
-        {roomProfessor && (
-          <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="center" mt={0.8}>
-            <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: roomProfessor.online ? '#00A651' : '#94A3B8' }} />
-            <Typography variant="caption" sx={{ color: '#64748B', fontSize: 10.5, fontWeight: 600 }}>
-              {roomProfessor.online ? 'Disponível agora' : 'Offline'}
-            </Typography>
-          </Stack>
-        )}
+        <Stack direction="row" spacing={0.8} alignItems="center" justifyContent="center" mt={0.5}>
+          {roomProfessor && (
+            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: roomProfessor.online ? '#00A651' : '#94A3B8' }} />
+          )}
+          <Typography variant="caption" sx={{ color: '#00A651', fontWeight: 700 }}>
+            {(roomProfessor ? (roomProfessor.online ? 'Disponível agora' : 'Offline') : 'Professor')} • {getSubjectLabel(q, subjectsMap)}
+          </Typography>
+        </Stack>
       </Box>
 
       <Box sx={{ flex: 1, overflowY: 'auto' }}>
@@ -835,6 +962,7 @@ function DetailPanelCollab({ q, subjectsMap }: { q: ForumQuestion; subjectsMap: 
   const allAnswers = [...(q.expertAnswers ?? []), ...(q.collaborativeAnswers ?? [])];
   const sharedFiles = allAnswers.filter(a => a.attachmentId);
   const participants = [q.createdBy, ...allAnswers.map(a => a.answeredBy)]
+    .filter(p => p?.toLowerCase() !== 'system')
     .filter((v, i, arr) => arr.indexOf(v) === i);
 
   return (
@@ -1239,6 +1367,7 @@ export default function StudentForumPage() {
   const [membersOpen, setMembersOpen] = useState(false);
   const [forumMembers, setForumMembers] = useState<ForumMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
+  const [profNamesMap, setProfNamesMap] = useState<Map<number, string>>(new Map());
 
   const loadMyQuestions = () => {
     setLoadingMy(true);
@@ -1254,6 +1383,27 @@ export default function StudentForumPage() {
       .catch(() => {})
       .finally(() => setLoadingMembers(false));
   };
+
+  // Busca o nome completo do professor para cada sala ESPECIALIZADO da sidebar
+  useEffect(() => {
+    const expertQs = myQuestions.filter(q => q.questionType === 'ESPECIALIZADO' && q.subjectId != null);
+    if (!expertQs.length) return;
+    Promise.allSettled(
+      expertQs.map(q =>
+        forumService.getForumMembers(q.subjectId!, q.classroomId ?? undefined)
+          .then(members => ({ qId: q.id, members }))
+      )
+    ).then(results => {
+      const map = new Map<number, string>();
+      for (const r of results) {
+        if (r.status === 'fulfilled') {
+          const prof = r.value.members.find(m => m.role === 'PROFESSOR');
+          if (prof?.fullname) map.set(r.value.qId, prof.fullname);
+        }
+      }
+      if (map.size) setProfNamesMap(prev => new Map([...prev, ...map]));
+    });
+  }, [myQuestions.length]);
 
   const loadGeneralQuestions = () => {
     setLoadingGeneral(true);
@@ -1330,15 +1480,16 @@ export default function StudentForumPage() {
 
 
   const handleSelectQuestion = (q: ForumQuestion, fromTab?: string) => {
+    markSeen(q.id);
     setActiveQ(q);
     setForumMembers([]);
     loadForumMembers(q);
     setLoadingDetail(true);
     forumService.getQuestion(q.id).then(detail => {
+      markSeen(detail.id);
       setActiveQ(detail);
       loadForumMembers(detail);
       if (fromTab === 'mine_answered') {
-        markSeen(q.id);
         setSidebarTab(q.questionType === 'ESPECIALIZADO' ? 'mine_all' : 'forum');
       }
     }).finally(() => setLoadingDetail(false));
@@ -1363,9 +1514,25 @@ export default function StudentForumPage() {
     });
   };
 
+  const isValidDisciplina = (d: unknown): d is string =>
+    typeof d === 'string' && d.length > 0 && d !== 'null';
+
   // Fetch professor info for expert rooms — prefer forum members (has fullname + online)
   const refreshProfessor = (q: ForumQuestion) => {
     if (q.questionType !== 'ESPECIALIZADO') { setRoomProfessor(null); return; }
+
+    const fallbackByDisciplina = () => {
+      if (isValidDisciplina(q.disciplina)) {
+        forumService.getProfessorsByDisciplina(q.disciplina)
+          .then(profs => setRoomProfessor(profs[0] ?? null))
+          .catch(() => setRoomProfessor(null));
+      } else if (q.mentionedProfessorUsername) {
+        setRoomProfessor({ username: q.mentionedProfessorUsername, fullname: q.mentionedProfessorUsername, online: false, specialization: '' });
+      } else {
+        setRoomProfessor(null);
+      }
+    };
+
     if (q.subjectId) {
       forumService.getForumMembers(q.subjectId, q.classroomId ?? undefined)
         .then(members => {
@@ -1376,20 +1543,12 @@ export default function StudentForumPage() {
           if (prof) {
             setRoomProfessor({ username: prof.username, fullname: prof.fullname, online: prof.online, specialization: '' });
           } else {
-            forumService.getProfessorsByDisciplina(q.disciplina)
-              .then(profs => setRoomProfessor(profs[0] ?? null))
-              .catch(() => setRoomProfessor(null));
+            fallbackByDisciplina();
           }
         })
-        .catch(() => {
-          forumService.getProfessorsByDisciplina(q.disciplina)
-            .then(profs => setRoomProfessor(profs[0] ?? null))
-            .catch(() => setRoomProfessor(null));
-        });
+        .catch(() => fallbackByDisciplina());
     } else {
-      forumService.getProfessorsByDisciplina(q.disciplina)
-        .then(profs => setRoomProfessor(profs[0] ?? null))
-        .catch(() => setRoomProfessor(null));
+      fallbackByDisciplina();
     }
   };
 
@@ -1403,6 +1562,7 @@ export default function StudentForumPage() {
     if (!activeQ) return;
     const id = setInterval(() => {
       forumService.getQuestion(activeQ.id).then(detail => {
+        markSeen(detail.id);
         setActiveQ(detail);
         setMyQuestions(prev => upsertQuestion(prev, detail));
         setGeneralQuestions(prev => upsertQuestion(prev, detail));
@@ -1420,6 +1580,9 @@ export default function StudentForumPage() {
 
   const isOwner = activeQ?.createdBy === user?.username;
   const membersMap = new Map(forumMembers.map(m => [m.username, m.fullname]));
+  const activeProfName = activeQ?.questionType === 'ESPECIALIZADO'
+    ? (roomProfessor?.fullname ?? profNamesMap.get(activeQ.id))
+    : undefined;
 
   const getFilteredList = () => {
     let list: ForumQuestion[] = [];
@@ -1430,10 +1593,17 @@ export default function StudentForumPage() {
     } else if (sidebarTab === 'mine_answered') {
       list = myQuestions.filter(hasUnread);
     } else {
-      list = generalQuestions.filter(q => q.questionType === 'COLABORATIVO');
+      // Salas colaborativas: mostrar apenas as que têm mensagens (esconde salas vazias auto-criadas por "system")
+      list = generalQuestions.filter(q => {
+        if (q.questionType !== 'COLABORATIVO') return false;
+        if (q.createdBy?.toLowerCase() === 'system') {
+          return (q.collaborativeAnswers?.length ?? 0) > 0 || (q.expertAnswers?.length ?? 0) > 0;
+        }
+        return true;
+      });
     }
     return list
-      .filter(q => sidebarTab === 'forum' || q.createdBy?.toLowerCase() !== 'system')
+      .filter(q => q.createdBy?.toLowerCase() !== 'system' || sidebarTab === 'forum')
       .filter(q => !search || q.titulo.toLowerCase().includes(search.toLowerCase())
         || (q.disciplina && DISCIPLINA_LABELS[q.disciplina]?.toLowerCase().includes(search.toLowerCase())));
   };
@@ -1511,7 +1681,7 @@ export default function StudentForumPage() {
           <Divider orientation="vertical" flexItem sx={{ height: 32, mx: 0.5 }} />
           <Stack direction="row" spacing={1.5} alignItems="center">
             <Avatar sx={{ width: 36, height: 36, bgcolor: '#1E293B', fontSize: 13, fontWeight: 700 }}>
-              {user?.username ? initials(user.fullname ?? user.username) : 'U'}
+              {user?.username ? initials(user.fullName ?? user.username) : 'U'}
             </Avatar>
             <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
               <Typography sx={{ fontWeight: 700, fontSize: 14, color: '#0F172A', lineHeight: 1.2 }}>
@@ -1610,6 +1780,7 @@ export default function StudentForumPage() {
               active={activeQ?.id === q.id}
               onClick={() => handleSelectQuestion(q, sidebarTab)}
               subjectsMap={subjectsMap}
+              professorName={profNamesMap.get(q.id)}
             />
           ))}
         </Box>
@@ -1639,9 +1810,9 @@ export default function StudentForumPage() {
               </Avatar>
               <Box>
                 <Typography fontWeight={700} sx={{ color: '#191C1E', fontSize: { xs: 14, md: 15 }, lineHeight: 1.3 }}>
-                  {activeQ.questionType === 'ESPECIALIZADO' && roomProfessor
-                    ? roomProfessor.fullname
-                    : getQuestionTitle(activeQ, subjectsMap)}
+                  {activeQ.questionType === 'ESPECIALIZADO'
+                    ? (activeProfName ? `Prof. ${activeProfName}` : 'Professor')
+                    : 'Fórum da Turma'}
                 </Typography>
                 <Stack direction="row" spacing={0.8} alignItems="center">
                   <Box sx={{

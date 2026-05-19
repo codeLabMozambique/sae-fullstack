@@ -104,7 +104,9 @@ function iconByRoute(route: string): React.ReactNode | null {
   if (/\/professors/.test(route))           return <PersonIcon />;
   // Professor / Aluno raíz
   if (/\/dashboard/.test(route))            return <DashboardIcon />;
+  if (/\/grades/.test(route))               return <AssignmentIcon />;
   if (/\/my-classes/.test(route))           return <ClassIcon />;
+  if (/\/classes$/.test(route))             return <ClassIcon />;
   if (/\/students/.test(route))             return <StudentsIcon />;
   if (/\/quiz/.test(route))                return <QuizIcon />;
   if (/\/forum/.test(route))               return <ForumIcon />;
@@ -215,7 +217,11 @@ const DynamicNav: React.FC<DynamicNavProps> = ({ menus, location, navigate }) =>
               <Collapse in={isExpanded} timeout="auto" unmountOnExit>
                 <List disablePadding sx={{ pl: 1.5, mb: 0.5 }}>
                   {menu.items.map(item => {
-                    const isActive = location.pathname.startsWith(item.routerLink);
+                    const isActive =
+                      location.pathname === item.routerLink ||
+                      (location.pathname.startsWith(item.routerLink + '/') &&
+                        !menu.items.some(s => s.routerLink !== item.routerLink &&
+                          location.pathname.startsWith(s.routerLink)));
                     return (
                       <ListItem key={item.code} disablePadding sx={{ mb: 0.3 }}>
                         <ListItemButton

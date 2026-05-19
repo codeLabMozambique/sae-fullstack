@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../services/forum_service.dart';
 import '../../state/auth_state.dart';
 import '../../theme.dart';
+import '../../widgets/neumorphic.dart';
 import 'question_detail_page.dart';
 import 'new_question_page.dart';
 
@@ -58,23 +59,28 @@ class _ForumPageState extends State<ForumPage> with SingleTickerProviderStateMix
       backgroundColor: Colors.transparent,
       body: Column(
         children: [
-          Material(
-            color: Colors.white,
-            child: TabBar(
-              controller: _tab,
-              labelColor: SaeColors.primary,
-              unselectedLabelColor: SaeColors.textSecondary,
-              indicatorColor: SaeColors.primary,
-              tabs: _isProf
-                  ? const [
-                      Tab(text: 'Todas'),
-                      Tab(text: 'Pendentes'),
-                      Tab(text: 'Respondidas'),
-                    ]
-                  : const [
-                      Tab(text: 'Todas'),
-                      Tab(text: 'Minhas'),
-                    ],
+          SizedBox(
+            height: 56,
+            child: AnimatedBuilder(
+              animation: _tab,
+              builder: (_, __) {
+                final labels = _isProf
+                    ? const ['Todas', 'Pendentes', 'Respondidas']
+                    : const ['Todas', 'Minhas'];
+                return ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  itemCount: labels.length,
+                  itemBuilder: (_, i) => Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: NeuChip(
+                      label: labels[i],
+                      selected: _tab.index == i,
+                      onTap: () => _tab.animateTo(i),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
           Expanded(

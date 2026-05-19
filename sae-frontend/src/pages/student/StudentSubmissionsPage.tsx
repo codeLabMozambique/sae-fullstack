@@ -19,7 +19,6 @@ import {
 import {
   Visibility as ViewIcon,
   Assignment as AssignmentIcon,
-  History as HistoryIcon,
   EmojiEvents as GradeIcon,
   Schedule as ScheduleIcon,
 } from '@mui/icons-material';
@@ -64,23 +63,11 @@ export default function StudentSubmissionsPage() {
 
   return (
     <Box>
-      <Box 
-        sx={{ 
-          background: 'linear-gradient(135deg, #0A1628 0%, #00A651 100%)',
-          borderRadius: 4,
-          p: 4,
-          mb: 4,
-          color: '#fff',
-          boxShadow: '0 10px 30px rgba(0, 166, 81, 0.2)'
-        }}
-      >
-        <Box display="flex" alignItems="center" gap={2}>
-          <HistoryIcon sx={{ fontSize: 40 }} />
-          <Box>
-            <Typography variant="h4" fontWeight={800} gutterBottom>Histórico de Entregas</Typography>
-            <Typography variant="body1" sx={{ opacity: 0.9 }}>Acompanha o estado e as notas das tuas submissões.</Typography>
-          </Box>
-        </Box>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h5" fontWeight={800} color="#0A1628">Histórico de Entregas</Typography>
+        <Typography variant="body2" color="text.secondary">
+          Acompanha o estado e as notas das tuas submissões.
+        </Typography>
       </Box>
 
       {error ? (

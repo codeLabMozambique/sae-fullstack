@@ -1,8 +1,9 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../services/assignment_service.dart';
+import '../../services/connectivity_service.dart';
 import '../../theme.dart';
+import '../file_viewer_page.dart';
 
 class SubmitTaskPage extends StatefulWidget {
   final Assignment assignment;
@@ -27,6 +28,13 @@ class _SubmitTaskPageState extends State<SubmitTaskPage> {
   }
 
   Future<void> _submit() async {
+    if (!ConnectivityService.instance.isOnline) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text(
+            'Sem ligação. Submeter trabalhos requer Internet (anexos não podem ser guardados offline).'),
+      ));
+      return;
+    }
     setState(() => _saving = true);
     try {
       await _service.submit(
@@ -76,10 +84,14 @@ class _SubmitTaskPageState extends State<SubmitTaskPage> {
           if (a.fileOriginalName != null) ...[
             const SizedBox(height: 12),
             OutlinedButton.icon(
-              onPressed: () => launchUrl(Uri.parse(_service.assignmentFileUrl(a.id)),
-                  mode: LaunchMode.externalApplication),
-              icon: const Icon(Icons.download),
-              label: Text('Ficheiro: ${a.fileOriginalName}'),
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => FileViewerPage(
+                  url: _service.assignmentFileUrl(a.id),
+                  title: a.fileOriginalName ?? a.title,
+                ),
+              )),
+              icon: const Icon(Icons.visibility),
+              label: Text('Ver: ${a.fileOriginalName}'),
             ),
           ],
           const Divider(height: 28),

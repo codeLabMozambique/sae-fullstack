@@ -13,6 +13,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.UUID;
 
 @Service
@@ -22,19 +28,26 @@ public class FileStorageService {
 
     private final MinioClient minioClient;
     private final String bucketName;
+    private final String localFallbackDir;
 
     public FileStorageService(MinioClient minioClient, 
                                @Value("${smartsae.minio.bucket}") String bucketName) {
         this.minioClient = minioClient;
         this.bucketName = bucketName;
+        this.localFallbackDir = System.getProperty("java.io.tmpdir") + File.separator + "sae-uploads";
+        
         try {
+            File fallbackDir = new File(this.localFallbackDir);
+            if (!fallbackDir.exists()) {
+                fallbackDir.mkdirs();
+            }
+            
             boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
             if (!found) {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
             }
         } catch (Exception e) {
-            logger.error("Erro ao verificar ou criar bucket no MinIO: {}", e.getMessage());
-            throw new RuntimeException("Falha ao inicializar o bucket", e);
+            logger.warn("Erro ao inicializar o bucket MinIO. O sistema usará o fallback local em: {}", this.localFallbackDir);
         }
     }
 
@@ -59,8 +72,16 @@ public class FileStorageService {
             );
             return fileName;
         } catch (Exception e) {
-            logger.error("Erro ao salvar ficheiro no MinIO: {}", e.getMessage());
-            throw new RuntimeException("Falha ao salvar ficheiro", e);
+            logger.warn("Erro ao salvar ficheiro no MinIO: {}. Tentando fallback local...", e.getMessage());
+            try {
+                Path path = Paths.get(this.localFallbackDir, fileName);
+                Files.createDirectories(path.getParent());
+                Files.write(path, fileBytes);
+                return fileName;
+            } catch (Exception ex) {
+                logger.error("Erro ao salvar ficheiro localmente: {}", ex.getMessage());
+                throw new RuntimeException("Falha ao salvar ficheiro", ex);
+            }
         }
     }
 
@@ -75,8 +96,15 @@ public class FileStorageService {
                     .build()
             );
         } catch (Exception e) {
-            logger.error("Erro ao salvar ficheiro no MinIO: {}", e.getMessage());
-            throw new RuntimeException("Falha ao salvar ficheiro", e);
+            logger.warn("Erro ao salvar ficheiro no MinIO: {}. Tentando fallback local...", e.getMessage());
+            try {
+                Path path = Paths.get(this.localFallbackDir, key);
+                Files.createDirectories(path.getParent());
+                Files.write(path, fileBytes);
+            } catch (Exception ex) {
+                logger.error("Erro ao salvar ficheiro localmente: {}", ex.getMessage());
+                throw new RuntimeException("Falha ao salvar ficheiro", ex);
+            }
         }
     }
 
@@ -89,7 +117,15 @@ public class FileStorageService {
                     .build()
             );
         } catch (Exception e) {
-            logger.error("Erro ao ler ficheiro do MinIO: {}", e.getMessage());
+            logger.warn("Erro ao ler ficheiro do MinIO: {}. Tentando fallback local...", e.getMessage());
+            try {
+                File file = new File(this.localFallbackDir, fileName);
+                if (file.exists()) {
+                    return new FileInputStream(file);
+                }
+            } catch (Exception ex) {
+                // ignore and fall through to throw
+            }
             throw new RuntimeException("Ficheiro não encontrado", e);
         }
     }
@@ -112,7 +148,15 @@ public class FileStorageService {
                     .build()
             );
         } catch (Exception e) {
-            logger.error("Erro ao apagar ficheiro do MinIO: {}", e.getMessage());
+            logger.warn("Erro ao apagar ficheiro do MinIO: {}. Tentando fallback local...", e.getMessage());
+            try {
+                File file = new File(this.localFallbackDir, fileName);
+                if (file.exists()) {
+                    file.delete();
+                }
+            } catch (Exception ex) {
+                // ignore
+            }
         }
     }
 }

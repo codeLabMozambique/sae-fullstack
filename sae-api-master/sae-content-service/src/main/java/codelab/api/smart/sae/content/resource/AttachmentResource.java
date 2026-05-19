@@ -32,14 +32,20 @@ public class AttachmentResource {
     private AttachmentService attachmentService;
 
     @PostMapping(consumes = "multipart/form-data")
-    public ResponseEntity<Attachment> upload(
+    public ResponseEntity<?> upload(
             @RequestPart("file") MultipartFile file,
             @RequestParam(required = false) String context,
             @RequestParam(required = false) String contextId,
             Principal principal) {
-        if (principal == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-        Attachment saved = attachmentService.upload(file, principal.getName(), context, contextId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+        try {
+            if (principal == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+            Attachment saved = attachmentService.upload(file, principal.getName(), context, contextId);
+            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Map.of("message", "DEBUG ERRO: " + e.getMessage() + " | CAUSE: " + (e.getCause() != null ? e.getCause().getMessage() : "")));
+        }
     }
 
     @GetMapping("/{id}")

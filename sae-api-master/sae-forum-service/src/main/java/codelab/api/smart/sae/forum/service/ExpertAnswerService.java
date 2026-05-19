@@ -81,7 +81,6 @@ public class ExpertAnswerService {
 
         answer.setAccepted(true);
         answerRepository.save(answer);
-        questionService.closeQuestion(question.getId());
         notificationService.notifyAnswerAccepted(question.getId(), answerId);
 
         return ExpertAnswerResponseDTO.from(answer);

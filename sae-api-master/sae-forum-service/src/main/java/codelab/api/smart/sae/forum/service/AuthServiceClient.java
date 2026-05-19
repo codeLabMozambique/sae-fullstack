@@ -1,5 +1,6 @@
 package codelab.api.smart.sae.forum.service;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -151,6 +152,7 @@ public class AuthServiceClient {
 
     public static class ProfessorInfo {
         private String username;
+        @JsonProperty("fullName")
         private String fullname;
         private boolean online;
         private String specialization;

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Box, Typography, Chip, Card, CardContent, Button, Dialog, DialogContent,
   DialogTitle, DialogActions, LinearProgress, Radio, RadioGroup, FormControlLabel, FormControl,
@@ -37,8 +37,220 @@ import type {
   StudyPrepRequestDTO, OralTestRequestDTO, OralTestEvaluateDTO, OralTestResult, Certificate,
 } from '../../types/quiz';
 import VoiceRecorderButton from '../../components/VoiceRecorderButton';
+import api from '../../services/api';
 
 type View = 'browse' | 'taking' | 'result' | 'oral-taking' | 'oral-result';
+
+function formatBytes(bytes: number, decimals = 2) {
+  if (!bytes) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+// ─── Secure Quiz Media Preview Component ──────────────────────────────────────────────
+function QuizMediaPreview({ mediaUrl, mediaType }: { mediaUrl: string; mediaType: string }) {
+  const [open, setOpen] = useState(false);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [info, setInfo] = useState<{ originalName: string; contentType: string; size: number } | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    let activeBlobUrl: string | null = null;
+    setLoading(true);
+
+    const match = mediaUrl.match(/\/uploads\/([a-zA-Z0-9-]+)/);
+    const attachmentId = match ? match[1] : null;
+
+    const fetchInfo = attachmentId 
+      ? api.get(`/content/api/user/uploads/${attachmentId}/info`).then(r => r.data)
+      : Promise.resolve({
+          originalName: mediaUrl.split('/').pop() || 'documento.pdf',
+          contentType: mediaType === 'DOCUMENT' ? 'application/pdf' : 'image/png',
+          size: 0
+        });
+
+    fetchInfo
+      .then(infoData => {
+        setInfo(infoData);
+        return api.get(mediaUrl, { responseType: 'blob' });
+      })
+      .then(res => {
+        const blob = new Blob([res.data], { type: res.headers['content-type'] || 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        activeBlobUrl = url;
+        setBlobUrl(url);
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
+
+    return () => {
+      if (activeBlobUrl) {
+        URL.revokeObjectURL(activeBlobUrl);
+      }
+    };
+  }, [open, mediaUrl, mediaType]);
+
+  const isImage = mediaType === 'IMAGE' || (!mediaType && !mediaUrl.endsWith('.pdf'));
+
+  if (mediaType === 'VIDEO') {
+    return (
+      <Box sx={{ mb: 2.5, borderRadius: 2, overflow: 'hidden', border: '1px solid #E5E7EB' }}>
+        <Box component="video" src={mediaUrl} controls
+          sx={{ width: '100%', maxHeight: 320, display: 'block', bgcolor: '#000' }} />
+      </Box>
+    );
+  }
+
+  if (mediaType === 'AUDIO') {
+    return (
+      <Box sx={{ mb: 2.5, borderRadius: 2, overflow: 'hidden', border: '1px solid #E5E7EB', p: 2, bgcolor: '#F8FAFC', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <AudioIcon sx={{ color: '#6366f1' }} />
+        <Box component="audio" src={mediaUrl} controls sx={{ flex: 1 }} />
+      </Box>
+    );
+  }
+
+  const displayName = info?.originalName || mediaUrl.split('/').pop() || 'Ficheiro de apoio';
+
+  return (
+    <>
+      <Box sx={{ mb: 2.5, borderRadius: 2, overflow: 'hidden', border: '1px solid #E5E7EB' }}>
+        {mediaType === 'DOCUMENT' ? (
+          <Box 
+            onClick={() => setOpen(true)}
+            sx={{
+              p: 2, bgcolor: '#fff', display: 'flex', alignItems: 'center', gap: 2, cursor: 'pointer',
+              '&:hover': { bgcolor: '#F8FAFC', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' },
+              transition: 'all 0.2s',
+            }}
+          >
+            <Box sx={{ 
+              width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              bgcolor: '#E8F5E9', borderRadius: 2 
+            }}>
+              <BookIcon sx={{ fontSize: 24, color: '#00A651' }} />
+            </Box>
+            <Box flex={1} minWidth={0}>
+              <Typography noWrap sx={{ fontSize: 13, fontWeight: 800, color: '#0F172A', mb: 0.5 }}>
+                {displayName}
+              </Typography>
+              <Typography noWrap sx={{ fontSize: 11, fontWeight: 500, color: '#64748B' }}>
+                Clique para abrir o livro e ler o conteúdo de apoio...
+              </Typography>
+            </Box>
+            <Button size="small" variant="contained"
+              sx={{ bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' }, textTransform: 'none', fontWeight: 700, borderRadius: 1.5 }}>
+              Ler Livro
+            </Button>
+          </Box>
+        ) : (
+          <QuizImageThumbnail mediaUrl={mediaUrl} alt={displayName} onClick={() => setOpen(true)} />
+        )}
+        <Box sx={{ px: 2, py: 0.8, bgcolor: '#F8FAFC', borderTop: '1px solid #E5E7EB' }}>
+          <Typography variant="caption" color="text.secondary">
+            📎 Analisa este conteúdo antes de responder (clique para ampliar/ler)
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* Preview Dialog */}
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="lg" fullWidth
+        PaperProps={{ sx: { bgcolor: '#1E293B', boxShadow: '0 24px 48px rgba(0,0,0,0.5)', overflow: 'hidden', height: '90vh', borderRadius: 3 } }}>
+        <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+          {/* Header */}
+          <Stack direction="row" alignItems="center" justifyContent="space-between" px={2} py={1.5} sx={{ bgcolor: '#0F172A', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+            <Stack direction="row" spacing={1.5} alignItems="center" minWidth={0}>
+              <Box sx={{ p: 0.5, bgcolor: '#00A651', borderRadius: 1, display: 'flex' }}>
+                <BookIcon sx={{ fontSize: 18, color: 'white' }} />
+              </Box>
+              <Typography noWrap sx={{ color: 'white', fontWeight: 600, fontSize: 14 }}>{displayName}</Typography>
+            </Stack>
+            <Stack direction="row" spacing={1}>
+              <Button 
+                variant="contained" component="a" href={blobUrl || '#'} download={displayName}
+                sx={{ bgcolor: '#00A651', color: 'white', '&:hover': { bgcolor: '#008f44' }, borderRadius: 2, textTransform: 'none', px: 2, fontWeight: 600, height: 32 }}
+              >
+                Baixar
+              </Button>
+              <IconButton onClick={() => setOpen(false)} size="small" sx={{ color: '#94A3B8', '&:hover': { color: 'white', bgcolor: 'rgba(255,255,255,0.1)' } }}>
+                <CloseIcon />
+              </IconButton>
+            </Stack>
+          </Stack>
+          
+          {/* Content */}
+          <Box sx={{ flex: 1, width: '100%', bgcolor: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+            {loading ? (
+              <Stack spacing={2} alignItems="center">
+                <CircularProgress sx={{ color: '#00A651' }} />
+                <Typography sx={{ color: '#64748B', fontWeight: 600 }}>A carregar conteúdo...</Typography>
+              </Stack>
+            ) : isImage && blobUrl ? (
+              <img src={blobUrl} alt={displayName} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+            ) : blobUrl ? (
+              <iframe 
+                src={blobUrl} 
+                title={displayName}
+                style={{ width: '100%', height: '100%', border: 'none', backgroundColor: '#F8FAFC' }} 
+              />
+            ) : (
+              <Typography sx={{ color: '#64748B', fontWeight: 600 }}>Não foi possível carregar o documento.</Typography>
+            )}
+          </Box>
+        </Box>
+      </Dialog>
+    </>
+  );
+}
+
+// Helper component to securely load quiz image thumbnails using authorization headers
+function QuizImageThumbnail({ mediaUrl, alt, onClick }: { mediaUrl: string; alt: string; onClick: () => void }) {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let activeUrl: string | null = null;
+    api.get(mediaUrl, { responseType: 'blob' })
+      .then(res => {
+        const url = URL.createObjectURL(res.data);
+        activeUrl = url;
+        setBlobUrl(url);
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
+
+    return () => {
+      if (activeUrl) URL.revokeObjectURL(activeUrl);
+    };
+  }, [mediaUrl]);
+
+  if (loading) {
+    return (
+      <Box sx={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f5f5f5' }}>
+        <CircularProgress size={24} sx={{ color: '#00A651' }} />
+      </Box>
+    );
+  }
+
+  return (
+    <Box 
+      component="img" 
+      src={blobUrl || mediaUrl} 
+      alt={alt} 
+      onClick={onClick}
+      sx={{ width: '100%', maxHeight: 320, objectFit: 'contain', display: 'block', bgcolor: '#f5f5f5', cursor: 'pointer', '&:hover': { opacity: 0.95 } }} 
+    />
+  );
+}
 
 function formatTime(secs: number): string {
   const m = Math.floor(secs / 60);
@@ -854,35 +1066,7 @@ export default function StudentQuizPage() {
             <CardContent sx={{ p: 3 }}>
               {/* Media evidence */}
               {currentQuestion.mediaUrl && (
-                <Box sx={{ mb: 2.5, borderRadius: 2, overflow: 'hidden', border: '1px solid #E5E7EB' }}>
-                  {currentQuestion.mediaType === 'VIDEO' ? (
-                    <Box component="video" src={currentQuestion.mediaUrl} controls
-                      sx={{ width: '100%', maxHeight: 320, display: 'block', bgcolor: '#000' }} />
-                  ) : currentQuestion.mediaType === 'AUDIO' ? (
-                    <Box sx={{ p: 2, bgcolor: '#F8FAFC', display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                      <AudioIcon sx={{ color: '#6366f1' }} />
-                      <Box component="audio" src={currentQuestion.mediaUrl} controls sx={{ flex: 1 }} />
-                    </Box>
-                  ) : currentQuestion.mediaType === 'DOCUMENT' ? (
-                    <Box sx={{ p: 2, bgcolor: '#F8FAFC', display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                      <DocIcon sx={{ color: '#f59e0b' }} />
-                      <Typography variant="body2" sx={{ flex: 1 }}>Documento de apoio</Typography>
-                      <Button size="small" startIcon={<DownloadIcon />} href={currentQuestion.mediaUrl}
-                        target="_blank" rel="noopener noreferrer"
-                        sx={{ textTransform: 'none', color: '#6366f1' }}>
-                        Abrir
-                      </Button>
-                    </Box>
-                  ) : (
-                    <Box component="img" src={currentQuestion.mediaUrl} alt="Evidência"
-                      sx={{ width: '100%', maxHeight: 320, objectFit: 'contain', display: 'block', bgcolor: '#f5f5f5' }} />
-                  )}
-                  <Box sx={{ px: 2, py: 0.8, bgcolor: '#F8FAFC', borderTop: '1px solid #E5E7EB' }}>
-                    <Typography variant="caption" color="text.secondary">
-                      📎 Analisa este conteúdo antes de responder
-                    </Typography>
-                  </Box>
-                </Box>
+                <QuizMediaPreview mediaUrl={currentQuestion.mediaUrl} mediaType={currentQuestion.mediaType} />
               )}
               <Typography variant="h6" fontWeight={700} color="#0A1628" sx={{ mb: 3, lineHeight: 1.5 }}>
                 {currentQuestion.enunciado}
@@ -1097,27 +1281,8 @@ export default function StudentQuizPage() {
 
                 {/* Media (thumbnail in review) */}
                 {qr.mediaUrl && (
-                  <Box sx={{ ml: 4, mb: 1.5, borderRadius: 1.5, overflow: 'hidden',
-                    border: '1px solid #E5E7EB', maxWidth: 320 }}>
-                    {qr.mediaType === 'VIDEO'
-                      ? <Box component="video" src={qr.mediaUrl} controls
-                          sx={{ width: '100%', maxHeight: 160, display: 'block', bgcolor: '#000' }} />
-                      : qr.mediaType === 'AUDIO'
-                      ? <Box sx={{ p: 1.5, display: 'flex', gap: 1, alignItems: 'center' }}>
-                          <AudioIcon sx={{ color: '#6366f1', fontSize: 18 }} />
-                          <Box component="audio" src={qr.mediaUrl} controls sx={{ flex: 1, height: 32 }} />
-                        </Box>
-                      : qr.mediaType === 'DOCUMENT'
-                      ? <Box sx={{ p: 1.5, display: 'flex', gap: 1, alignItems: 'center' }}>
-                          <DocIcon sx={{ color: '#f59e0b', fontSize: 18 }} />
-                          <Button size="small" href={qr.mediaUrl} target="_blank" rel="noopener noreferrer"
-                            sx={{ textTransform: 'none', color: '#6366f1', fontSize: '0.75rem' }}>
-                            Abrir documento
-                          </Button>
-                        </Box>
-                      : <Box component="img" src={qr.mediaUrl} alt="Evidência"
-                          sx={{ width: '100%', maxHeight: 160, objectFit: 'contain', display: 'block', bgcolor: '#f5f5f5' }} />
-                    }
+                  <Box sx={{ ml: 4, maxWidth: 500 }}>
+                    <QuizMediaPreview mediaUrl={qr.mediaUrl} mediaType={qr.mediaType} />
                   </Box>
                 )}
 
