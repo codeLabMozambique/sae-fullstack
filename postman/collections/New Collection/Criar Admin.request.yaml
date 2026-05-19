@@ -1,5 +1,0 @@
-$kind: http-request
-name: Criar Admin
-url: ""
-method: GET
-order: 4490493617221814

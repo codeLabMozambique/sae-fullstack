@@ -631,7 +631,7 @@ const ProfessorDashboard: React.FC = () => {
             <QuickAction
               icon={<CheckIcon />}
               label="Validar Respostas"
-              onClick={() => navigate('/app/forum/validations')}
+              onClick={() => navigate('/professor/forum')}
               color="#00A651"
             />
             <QuickAction
@@ -689,7 +689,7 @@ const ProfessorDashboard: React.FC = () => {
             </Box>
             <Button
               variant="contained"
-              onClick={() => navigate('/app/forum/validations')}
+              onClick={() => navigate('/professor/forum')}
               sx={{
                 bgcolor: 'rgba(255,255,255,0.15)', color: 'white', textTransform: 'none',
                 fontWeight: 700, borderRadius: 2.5, border: '1px solid rgba(255,255,255,0.25)',
