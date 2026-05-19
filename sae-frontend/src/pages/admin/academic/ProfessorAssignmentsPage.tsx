@@ -12,7 +12,9 @@ import {
 } from '@mui/icons-material';
 import {
   professorAssignmentService, professorService, classroomService, subjectService,
+  classLevelService, schoolService,
   type ProfessorAssignmentDTO, type ProfessorDTO, type ClassroomDTO, type SubjectDTO,
+  type ClassLevelDTO, type SchoolDTO,
 } from '../../../services/academicService';
 import api from '../../../services/api';
 import { useAuth } from '../../../context/AuthContext';
@@ -70,6 +72,8 @@ const ProfessorAssignmentsPage: React.FC = () => {
   const [professors, setProfessors]   = useState<ProfessorDTO[]>([]);
   const [classrooms, setClassrooms]   = useState<ClassroomDTO[]>([]);
   const [subjects, setSubjects]       = useState<SubjectDTO[]>([]);
+  const [schools, setSchools]         = useState<SchoolDTO[]>([]);
+  const [classLevels, setClassLevels] = useState<ClassLevelDTO[]>([]);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState<string | null>(null);
   const [dialogOpen, setDialogOpen]   = useState(false);
@@ -80,6 +84,13 @@ const ProfessorAssignmentsPage: React.FC = () => {
   const [subjectFilter, setSubjectFilter]     = useState('');
   const [page, setPage]               = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  /* dialog cascade state */
+  const [dialogSchoolId, setDialogSchoolId]       = useState<number>(0);
+  const [dialogClassLevelId, setDialogClassLevelId] = useState<number>(0);
+  const [dialogSubjects, setDialogSubjects]       = useState<SubjectDTO[]>([]);
+  const [dialogClassrooms, setDialogClassrooms]   = useState<ClassroomDTO[]>([]);
+  const [dialogLoading, setDialogLoading]         = useState(false);
 
   const load = async (sid?: number) => {
     const schoolId = sid ?? schoolAdminSchoolId;
@@ -133,10 +144,73 @@ const ProfessorAssignmentsPage: React.FC = () => {
       && (!subjectFilter || String(a.subjectId) === subjectFilter);
   }), [assignments, professors, search, classroomFilter, subjectFilter]);
 
+  useEffect(() => {
+    Promise.all([classLevelService.findAll(), schoolService.findAll()])
+      .then(([lvls, schs]) => { setClassLevels(lvls); setSchools(schs); })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => { setPage(0); }, [search, classroomFilter, subjectFilter]);
 
-  const openCreate  = () => { setForm(emptyForm); setDialogOpen(true); };
-  const closeDialog = () => { setDialogOpen(false); setForm(emptyForm); };
+  const openCreate = async () => {
+    setForm(emptyForm);
+    setDialogClassLevelId(0);
+    setDialogSubjects([]);
+    setDialogOpen(true);
+    if (isSchoolAdmin && schoolAdminSchoolId) {
+      setDialogSchoolId(schoolAdminSchoolId);
+      try {
+        setDialogLoading(true);
+        const cls = await classroomService.findBySchool(schoolAdminSchoolId);
+        setDialogClassrooms(cls);
+      } finally { setDialogLoading(false); }
+    } else {
+      setDialogSchoolId(0);
+      setDialogClassrooms([]);
+    }
+  };
+
+  const closeDialog = () => {
+    setDialogOpen(false);
+    setForm(emptyForm);
+    setDialogSchoolId(0);
+    setDialogClassLevelId(0);
+    setDialogSubjects([]);
+    setDialogClassrooms([]);
+  };
+
+  const handleDialogSchoolChange = async (schoolId: number) => {
+    setDialogSchoolId(schoolId);
+    setDialogClassLevelId(0);
+    setForm(p => ({ ...p, subjectId: 0, classroomId: 0 }));
+    setDialogSubjects([]);
+    setDialogClassrooms([]);
+    if (schoolId) {
+      try {
+        setDialogLoading(true);
+        const cls = await classroomService.findBySchool(schoolId);
+        setDialogClassrooms(cls);
+      } finally { setDialogLoading(false); }
+    }
+  };
+
+  const handleDialogClassLevelChange = (classLevelId: number) => {
+    setDialogClassLevelId(classLevelId);
+    setForm(p => ({ ...p, classroomId: 0, subjectId: 0 }));
+    setDialogSubjects([]);
+  };
+
+  const handleDialogClassroomChange = async (classroomId: number) => {
+    setForm(p => ({ ...p, classroomId, subjectId: 0 }));
+    setDialogSubjects([]);
+    if (classroomId) {
+      try {
+        setDialogLoading(true);
+        const subj = await subjectService.findByClassroom(classroomId);
+        setDialogSubjects(subj);
+      } finally { setDialogLoading(false); }
+    }
+  };
 
   const handleSubmit = async () => {
     if (!form.professorId || !form.classroomId || !form.subjectId) {
@@ -157,8 +231,8 @@ const ProfessorAssignmentsPage: React.FC = () => {
   };
 
   const profName  = (id: number) => { const p = professors.find(p => p.id === id); return p ? (p.fullName || p.username) : `ID ${id}`; };
-  const clsName   = (id: number) => classrooms.find(c => c.id === id)?.name ?? `ID ${id}`;
-  const subjName  = (id: number) => subjects.find(s => s.id === id)?.name ?? `ID ${id}`;
+  const clsName   = (id: number) => (classrooms.find(c => c.id === id) ?? dialogClassrooms.find(c => c.id === id))?.name ?? `ID ${id}`;
+  const subjName  = (id: number) => (subjects.find(s => s.id === id) ?? dialogSubjects.find(s => s.id === id))?.name ?? `ID ${id}`;
   const hasFilters = !!(search || classroomFilter || subjectFilter);
 
   return (
@@ -342,7 +416,7 @@ const ProfessorAssignmentsPage: React.FC = () => {
         </DialogTitle>
 
         <DialogContent sx={{ pt: 3, pb: 2, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          {/* Professor select with avatar preview */}
+          {/* 1 — Professor */}
           <FormControl fullWidth size="small" sx={inputSx}>
             <InputLabel>Professor *</InputLabel>
             <Select value={form.professorId || ''} label="Professor *"
@@ -366,39 +440,74 @@ const ProfessorAssignmentsPage: React.FC = () => {
             </Select>
           </FormControl>
 
-          <FormControl fullWidth size="small" sx={inputSx}>
-            <InputLabel>Turma *</InputLabel>
-            <Select value={form.classroomId || ''} label="Turma *"
-              onChange={e => setForm(p => ({ ...p, classroomId: Number(e.target.value), subjectId: 0 }))}>
-              {classrooms.map(c => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
+          {/* 2 — Escola */}
+          {isSchoolAdmin ? (
+            <Box sx={{ px: 1.5, py: 1, borderRadius: 2, bgcolor: 'rgba(0,166,81,0.06)', border: '1px solid rgba(0,166,81,0.15)', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="body2" color="text.secondary" fontWeight={500}>Escola:</Typography>
+              <Typography variant="body2" fontWeight={700} color={PRIMARY}>
+                {schools.find(s => s.id === dialogSchoolId)?.name ?? '—'}
+              </Typography>
+            </Box>
+          ) : (
+            <FormControl fullWidth size="small" sx={inputSx}>
+              <InputLabel>Escola *</InputLabel>
+              <Select value={dialogSchoolId || ''} label="Escola *"
+                onChange={e => handleDialogSchoolChange(Number(e.target.value))}>
+                {schools.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
+              </Select>
+            </FormControl>
+          )}
+
+          {/* 3 — Nível de Classe */}
+          <FormControl fullWidth size="small" sx={inputSx} disabled={!dialogSchoolId || dialogLoading}>
+            <InputLabel>Nível de Classe *</InputLabel>
+            <Select value={dialogClassLevelId || ''} label="Nível de Classe *"
+              onChange={e => handleDialogClassLevelChange(Number(e.target.value))}>
+              {classLevels.map(l => <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>)}
             </Select>
           </FormControl>
 
+          {/* 4 — Turma (filtrada por nível seleccionado) */}
           {(() => {
-            const selectedClassroom = classrooms.find(c => c.id === form.classroomId);
-            const availableSubjects = selectedClassroom?.classLevelId
-              ? subjects.filter(s => s.classLevelId === selectedClassroom.classLevelId)
-              : subjects;
+            const filteredClassrooms = dialogClassrooms.filter(c => !dialogClassLevelId || c.classLevelId === dialogClassLevelId);
             return (
-              <FormControl fullWidth size="small" sx={inputSx} disabled={!form.classroomId}>
-                <InputLabel>Disciplina *</InputLabel>
-                <Select value={form.subjectId || ''} label="Disciplina *"
-                  onChange={e => setForm(p => ({ ...p, subjectId: Number(e.target.value) }))}>
-                  {availableSubjects.length === 0
-                    ? <MenuItem disabled value="">Nenhuma disciplina para este nível</MenuItem>
-                    : availableSubjects.map(s => (
-                      <MenuItem key={s.id} value={s.id}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          {s.code && <Chip label={s.code} size="small" sx={{ height: 18, fontSize: '0.65rem', bgcolor: 'rgba(0,166,81,0.1)', color: ACCENT }} />}
-                          <Typography variant="body2">{s.name}</Typography>
-                        </Box>
-                      </MenuItem>
-                    ))
+              <FormControl fullWidth size="small" sx={inputSx} disabled={!dialogClassLevelId || dialogLoading}>
+                <InputLabel>Turma *</InputLabel>
+                <Select value={form.classroomId || ''} label="Turma *"
+                  onChange={e => handleDialogClassroomChange(Number(e.target.value))}>
+                  {filteredClassrooms.length === 0
+                    ? <MenuItem disabled value="">Nenhuma turma para este nível</MenuItem>
+                    : filteredClassrooms.map(c => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)
                   }
                 </Select>
               </FormControl>
             );
           })()}
+
+          {/* 5 — Disciplina (carregada a partir da turma seleccionada) */}
+          <FormControl fullWidth size="small" sx={inputSx} disabled={!form.classroomId || dialogLoading}>
+            <InputLabel>Disciplina *</InputLabel>
+            <Select value={form.subjectId || ''} label="Disciplina *"
+              onChange={e => setForm(p => ({ ...p, subjectId: Number(e.target.value) }))}>
+              {dialogSubjects.length === 0
+                ? <MenuItem disabled value="">Seleccione uma turma primeiro</MenuItem>
+                : dialogSubjects.map(s => (
+                  <MenuItem key={s.id} value={s.id}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {s.code && <Chip label={s.code} size="small" sx={{ height: 18, fontSize: '0.65rem', bgcolor: 'rgba(0,166,81,0.1)', color: ACCENT }} />}
+                      <Typography variant="body2">{s.name}</Typography>
+                    </Box>
+                  </MenuItem>
+                ))
+              }
+            </Select>
+          </FormControl>
+
+          {dialogLoading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 0.5 }}>
+              <CircularProgress size={20} sx={{ color: ACCENT }} />
+            </Box>
+          )}
 
           {/* Summary preview */}
           {form.professorId > 0 && form.classroomId > 0 && form.subjectId > 0 && (

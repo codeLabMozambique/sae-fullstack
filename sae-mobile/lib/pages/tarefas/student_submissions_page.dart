@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../services/assignment_service.dart';
 import '../../theme.dart';
+import '../file_viewer_page.dart';
 
 class StudentSubmissionsPage extends StatefulWidget {
   const StudentSubmissionsPage({super.key});
@@ -77,9 +77,13 @@ class _StudentSubmissionsPageState extends State<StudentSubmissionsPage> {
                     const Spacer(),
                     if (s.fileOriginalName != null)
                       TextButton.icon(
-                        onPressed: () => launchUrl(Uri.parse(_service.submissionFileUrl(s.id)),
-                            mode: LaunchMode.externalApplication),
-                        icon: const Icon(Icons.download),
+                        onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => FileViewerPage(
+                            url: _service.submissionFileUrl(s.id),
+                            title: s.fileOriginalName ?? 'Submissão',
+                          ),
+                        )),
+                        icon: const Icon(Icons.visibility),
                         label: const Text('Ver ficheiro'),
                       ),
                   ]),

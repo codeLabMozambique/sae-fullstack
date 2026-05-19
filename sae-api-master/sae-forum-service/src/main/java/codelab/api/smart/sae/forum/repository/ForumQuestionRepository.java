@@ -87,4 +87,19 @@ public interface ForumQuestionRepository extends JpaRepository<ForumQuestionEnti
     /** Perguntas de uma turma (para filtro no inbox do professor) */
     List<ForumQuestionEntity> findByQuestionTypeAndSubjectIdInAndClassroomIdAndStatus(
         QuestionType questionType, List<Long> subjectIds, Long classroomId, QuestionStatus status);
+
+    /** Perguntas de uma escola específica */
+    List<ForumQuestionEntity> findBySchoolId(Long schoolId);
+
+    /** Perguntas num intervalo de datas */
+    @Query(value = "SELECT * FROM forum_question WHERE created_at >= :from AND created_at <= :to " +
+                   "AND (:schoolId IS NULL OR school_id = :schoolId) " +
+                   "AND (:disciplina IS NULL OR area = :disciplina) " +
+                   "ORDER BY created_at DESC", nativeQuery = true)
+    List<ForumQuestionEntity> findByDateRangeAndFilters(
+        @Param("from")      java.time.LocalDateTime from,
+        @Param("to")        java.time.LocalDateTime to,
+        @Param("schoolId")  Long schoolId,
+        @Param("disciplina") String disciplina
+    );
 }

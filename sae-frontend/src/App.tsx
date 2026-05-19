@@ -35,6 +35,8 @@ import StudentTasksPage from './pages/student/StudentTasksPage';
 import StudentTaskDetailsPage from './pages/student/StudentTaskDetailsPage';
 import StudentSubmissionsPage from './pages/student/StudentSubmissionsPage';
 import StudentCertificatesPage from './pages/student/StudentCertificatesPage';
+import ProfessorCertificatesPage from './pages/professor/ProfessorCertificatesPage';
+import AdminReportsPage from './pages/admin/AdminReportsPage';
 
 // Biblioteca / Content-service pages
 import ForumList from './pages/forum/ForumList';
@@ -170,6 +172,9 @@ function App() {
             <Route path="/professor/assignments" element={<Layout><ProfessorTasksPage /></Layout>} />
             <Route path="/professor/assignments/:id" element={<Layout><ProfessorTaskDetailsPage /></Layout>} />
 
+            {/* ── PROFESSOR — Certificados de apoio ─────────── */}
+            <Route path="/professor/certificates" element={<Layout><ProfessorCertificatesPage /></Layout>} />
+
             {/* ── PROFESSOR — Quizzes ───────────────────────── */}
             <Route path="/professor/quiz" element={<Layout><ProfessorQuizPage /></Layout>} />
             <Route path="/professor/quiz/manage" element={<Layout><ProfessorQuizPage /></Layout>} />
@@ -194,6 +199,7 @@ function App() {
 
             {/* ── ADMIN — Dashboard de monitorização ─────────── */}
             <Route path="/admin/dashboard" element={<Layout><AdminDashboardPage /></Layout>} />
+            <Route path="/admin/reports" element={<Layout><AdminReportsPage /></Layout>} />
 
             {/* ── ADMIN — Biblioteca ─────────────────────────── */}
             <Route path="/admin/library" element={<Layout><Biblioteca /></Layout>} />

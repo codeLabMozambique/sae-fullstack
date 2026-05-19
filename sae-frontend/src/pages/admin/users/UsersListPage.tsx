@@ -55,6 +55,7 @@ interface ClassroomDTO {
   id: number;
   name: string;
   schoolId: number;
+  classLevelId: number;
 }
 
 interface ClassLevelDTO {
@@ -179,6 +180,10 @@ const UsersListPage: React.FC = () => {
   const [studUpdate, setStudUpdate] = useState({ userId: 0, schoolId: '', classroomId: '', grade: '', age: '' });
   const [studSaving, setStudSaving] = useState(false);
 
+  /* ── Student level selectors (cascade) ── */
+  const [createStudLevelId, setCreateStudLevelId] = useState<number | ''>('');
+  const [studLevelId, setStudLevelId] = useState<number | ''>('');
+
   /* ── Pagination ── */
   const [page, setPage]               = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -226,13 +231,31 @@ const UsersListPage: React.FC = () => {
 
   useEffect(() => { setPage(0); }, [search, roleFilter]);
 
-  const classroomsForCreate = useMemo(() =>
-    createForm.schoolId ? classrooms.filter(c => c.schoolId === Number(createForm.schoolId)) : classrooms,
-    [classrooms, createForm.schoolId]);
+  const levelsForCreateSchool = useMemo(() => {
+    if (!createForm.schoolId) return classLevels;
+    const ids = new Set(classrooms.filter(c => c.schoolId === Number(createForm.schoolId)).map(c => c.classLevelId));
+    return classLevels.filter(l => l.id !== undefined && ids.has(l.id!));
+  }, [classrooms, classLevels, createForm.schoolId]);
 
-  const classroomsForStudent = useMemo(() =>
-    studUpdate.schoolId ? classrooms.filter(c => c.schoolId === Number(studUpdate.schoolId)) : classrooms,
-    [classrooms, studUpdate.schoolId]);
+  const levelsForStudSchool = useMemo(() => {
+    if (!studUpdate.schoolId) return classLevels;
+    const ids = new Set(classrooms.filter(c => c.schoolId === Number(studUpdate.schoolId)).map(c => c.classLevelId));
+    return classLevels.filter(l => l.id !== undefined && ids.has(l.id!));
+  }, [classrooms, classLevels, studUpdate.schoolId]);
+
+  const classroomsForCreate = useMemo(() => {
+    let res = classrooms;
+    if (createForm.schoolId) res = res.filter(c => c.schoolId === Number(createForm.schoolId));
+    if (createStudLevelId !== '') res = res.filter(c => c.classLevelId === createStudLevelId);
+    return res;
+  }, [classrooms, createForm.schoolId, createStudLevelId]);
+
+  const classroomsForStudent = useMemo(() => {
+    let res = classrooms;
+    if (studUpdate.schoolId) res = res.filter(c => c.schoolId === Number(studUpdate.schoolId));
+    if (studLevelId !== '') res = res.filter(c => c.classLevelId === studLevelId);
+    return res;
+  }, [classrooms, studUpdate.schoolId, studLevelId]);
 
   const allowedRoles = isSchoolAdmin ? ['PROFESSOR', 'STUDENT'] : ROLES;
 
@@ -241,6 +264,7 @@ const UsersListPage: React.FC = () => {
     const defaultSchoolId = isSchoolAdmin && schoolAdminSchoolId ? String(schoolAdminSchoolId) : '';
     setCreateForm({ fullname: '', nTelefone: '', email: '', password: '', schoolId: defaultSchoolId, department: '', specialization: '', institutionalContact: '', classroomId: '', grade: '', age: '' });
     setCreateRole(isSchoolAdmin ? 'PROFESSOR' : 'ADMIN');
+    setCreateStudLevelId('');
     setCreateOpen(true);
   };
 
@@ -283,7 +307,10 @@ const UsersListPage: React.FC = () => {
         });
       }
       setCreateOpen(false); await load();
-    } catch { setError('Erro ao criar utilizador.'); }
+    } catch (err: any) {
+      const msg = err?.response?.data?.message;
+      setError(typeof msg === 'string' ? msg : 'Erro ao criar utilizador.');
+    }
     finally  { setCreating(false); }
   };
 
@@ -337,9 +364,16 @@ const UsersListPage: React.FC = () => {
       const { data } = await api.get<StudentProfileDTO>(`/auth/users/student-profile?userId=${u.id}`);
       setStudForm(data);
       setStudUpdate({ userId: u.id, schoolId: String(data.schoolId ?? ''), classroomId: String(data.classroomId ?? ''), grade: data.grade ?? '', age: String(data.age ?? '') });
+      if (data.classroomId) {
+        const room = classrooms.find(c => c.id === data.classroomId);
+        setStudLevelId(room?.classLevelId ?? '');
+      } else {
+        setStudLevelId('');
+      }
     } catch {
       setStudForm(null);
       setStudUpdate({ userId: u.id, schoolId: '', classroomId: '', grade: '', age: '' });
+      setStudLevelId('');
     }
     setStudOpen(true);
   };
@@ -583,36 +617,37 @@ const UsersListPage: React.FC = () => {
 
             {createRole === 'STUDENT' && (
               <>
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <FormControl size="small" fullWidth sx={inputSx} disabled={isSchoolAdmin}>
-                    <InputLabel>Escola</InputLabel>
-                    <Select label="Escola" value={createForm.schoolId}
-                      onChange={e => setCreateForm(p => ({ ...p, schoolId: String(e.target.value), classroomId: '' }))}>
-                      <MenuItem value=""><em>— Selecionar escola —</em></MenuItem>
-                      {schools.map(s => <MenuItem key={s.id} value={String(s.id)}>{s.name}</MenuItem>)}
-                    </Select>
-                  </FormControl>
-                  <FormControl size="small" fullWidth sx={inputSx}>
-                    <InputLabel>Turma</InputLabel>
-                    <Select label="Turma" value={createForm.classroomId}
-                      onChange={e => setCreateForm(p => ({ ...p, classroomId: String(e.target.value) }))}>
-                      <MenuItem value=""><em>— Selecionar turma —</em></MenuItem>
-                      {classroomsForCreate.map(c => <MenuItem key={c.id} value={String(c.id)}>{c.name}</MenuItem>)}
-                    </Select>
-                  </FormControl>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <FormControl size="small" fullWidth sx={inputSx}>
-                    <InputLabel>Nível de Ensino</InputLabel>
-                    <Select label="Nível de Ensino" value={createForm.grade}
-                      onChange={e => setCreateForm(p => ({ ...p, grade: e.target.value }))}>
-                      <MenuItem value=""><em>— Selecionar nível —</em></MenuItem>
-                      {classLevels.map(l => <MenuItem key={l.id} value={l.name}>{l.name}</MenuItem>)}
-                    </Select>
-                  </FormControl>
-                  <TextField label="Idade" size="small" fullWidth value={createForm.age}
-                    onChange={e => setCreateForm(p => ({ ...p, age: e.target.value }))} sx={inputSx} />
-                </Box>
+                <FormControl size="small" fullWidth sx={inputSx} disabled={isSchoolAdmin}>
+                  <InputLabel>Escola</InputLabel>
+                  <Select label="Escola" value={createForm.schoolId}
+                    onChange={e => { setCreateForm(p => ({ ...p, schoolId: String(e.target.value), classroomId: '', grade: '' })); setCreateStudLevelId(''); }}>
+                    <MenuItem value=""><em>— Selecionar escola —</em></MenuItem>
+                    {schools.map(s => <MenuItem key={s.id} value={String(s.id)}>{s.name}</MenuItem>)}
+                  </Select>
+                </FormControl>
+                <FormControl size="small" fullWidth sx={inputSx} disabled={!createForm.schoolId}>
+                  <InputLabel>Nível de Ensino</InputLabel>
+                  <Select label="Nível de Ensino" value={createStudLevelId}
+                    onChange={e => { setCreateStudLevelId(Number(e.target.value)); setCreateForm(p => ({ ...p, classroomId: '', grade: '' })); }}>
+                    <MenuItem value=""><em>— Selecionar nível —</em></MenuItem>
+                    {levelsForCreateSchool.map(l => <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>)}
+                  </Select>
+                </FormControl>
+                <FormControl size="small" fullWidth sx={inputSx} disabled={!createStudLevelId}>
+                  <InputLabel>Turma</InputLabel>
+                  <Select label="Turma" value={createForm.classroomId}
+                    onChange={e => {
+                      const cId = Number(e.target.value);
+                      const room = classrooms.find(c => c.id === cId);
+                      const level = room ? classLevels.find(l => l.id === room.classLevelId) : null;
+                      setCreateForm(p => ({ ...p, classroomId: String(cId), grade: level?.name ?? '' }));
+                    }}>
+                    <MenuItem value=""><em>— Selecionar turma —</em></MenuItem>
+                    {classroomsForCreate.map(c => <MenuItem key={c.id} value={String(c.id)}>{c.name}</MenuItem>)}
+                  </Select>
+                </FormControl>
+                <TextField label="Idade" size="small" fullWidth value={createForm.age}
+                  onChange={e => setCreateForm(p => ({ ...p, age: e.target.value }))} sx={inputSx} />
               </>
             )}
           </Box>
@@ -695,36 +730,37 @@ const UsersListPage: React.FC = () => {
             </Box>
           )}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <FormControl size="small" fullWidth sx={inputSx}>
-                <InputLabel>Escola</InputLabel>
-                <Select label="Escola" value={studUpdate.schoolId}
-                  onChange={e => setStudUpdate(p => ({ ...p, schoolId: String(e.target.value), classroomId: '' }))}>
-                  <MenuItem value=""><em>— Selecionar escola —</em></MenuItem>
-                  {schools.map(s => <MenuItem key={s.id} value={String(s.id)}>{s.name}</MenuItem>)}
-                </Select>
-              </FormControl>
-              <FormControl size="small" fullWidth sx={inputSx}>
-                <InputLabel>Turma</InputLabel>
-                <Select label="Turma" value={studUpdate.classroomId}
-                  onChange={e => setStudUpdate(p => ({ ...p, classroomId: String(e.target.value) }))}>
-                  <MenuItem value=""><em>— Selecionar turma —</em></MenuItem>
-                  {classroomsForStudent.map(c => <MenuItem key={c.id} value={String(c.id)}>{c.name}</MenuItem>)}
-                </Select>
-              </FormControl>
-            </Box>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <FormControl size="small" fullWidth sx={inputSx}>
-                <InputLabel>Nível de Ensino</InputLabel>
-                <Select label="Nível de Ensino" value={studUpdate.grade}
-                  onChange={e => setStudUpdate(p => ({ ...p, grade: e.target.value }))}>
-                  <MenuItem value=""><em>— Selecionar nível —</em></MenuItem>
-                  {classLevels.map(l => <MenuItem key={l.id} value={l.name}>{l.name}</MenuItem>)}
-                </Select>
-              </FormControl>
-              <TextField label="Idade" size="small" fullWidth value={studUpdate.age}
-                onChange={e => setStudUpdate(p => ({ ...p, age: e.target.value }))} sx={inputSx} />
-            </Box>
+            <FormControl size="small" fullWidth sx={inputSx}>
+              <InputLabel>Escola</InputLabel>
+              <Select label="Escola" value={studUpdate.schoolId}
+                onChange={e => { setStudUpdate(p => ({ ...p, schoolId: String(e.target.value), classroomId: '', grade: '' })); setStudLevelId(''); }}>
+                <MenuItem value=""><em>— Selecionar escola —</em></MenuItem>
+                {schools.map(s => <MenuItem key={s.id} value={String(s.id)}>{s.name}</MenuItem>)}
+              </Select>
+            </FormControl>
+            <FormControl size="small" fullWidth sx={inputSx} disabled={!studUpdate.schoolId}>
+              <InputLabel>Nível de Ensino</InputLabel>
+              <Select label="Nível de Ensino" value={studLevelId}
+                onChange={e => { setStudLevelId(Number(e.target.value)); setStudUpdate(p => ({ ...p, classroomId: '', grade: '' })); }}>
+                <MenuItem value=""><em>— Selecionar nível —</em></MenuItem>
+                {levelsForStudSchool.map(l => <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>)}
+              </Select>
+            </FormControl>
+            <FormControl size="small" fullWidth sx={inputSx} disabled={!studLevelId}>
+              <InputLabel>Turma</InputLabel>
+              <Select label="Turma" value={studUpdate.classroomId}
+                onChange={e => {
+                  const cId = Number(e.target.value);
+                  const room = classrooms.find(c => c.id === cId);
+                  const level = room ? classLevels.find(l => l.id === room.classLevelId) : null;
+                  setStudUpdate(p => ({ ...p, classroomId: String(cId), grade: level?.name ?? '' }));
+                }}>
+                <MenuItem value=""><em>— Selecionar turma —</em></MenuItem>
+                {classroomsForStudent.map(c => <MenuItem key={c.id} value={String(c.id)}>{c.name}</MenuItem>)}
+              </Select>
+            </FormControl>
+            <TextField label="Idade" size="small" fullWidth value={studUpdate.age}
+              onChange={e => setStudUpdate(p => ({ ...p, age: e.target.value }))} sx={inputSx} />
           </Box>
         </DialogContent>
         <Box sx={{ px: 3, pb: 3, pt: 2, display: 'flex', justifyContent: 'flex-end', gap: 1.5, borderTop: '1px solid rgba(0,0,0,0.06)' }}>

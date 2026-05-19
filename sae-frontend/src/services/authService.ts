@@ -46,6 +46,7 @@ export interface AuthResponse {
   username: string;
   fullName: string;
   role: string;
+  mustChangePassword: boolean;
   menus: MenuDTO[];
 }
 

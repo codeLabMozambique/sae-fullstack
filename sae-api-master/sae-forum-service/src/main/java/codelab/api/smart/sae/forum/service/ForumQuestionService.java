@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -369,7 +370,13 @@ public class ForumQuestionService {
     // ── Estatísticas ─────────────────────────────────────────────────────────
 
     public ForumStatsDTO getStatsOverview() {
-        List<ForumQuestionEntity> all = questionRepository.findAll();
+        return getStatsOverview(null);
+    }
+
+    public ForumStatsDTO getStatsOverview(Long schoolId) {
+        List<ForumQuestionEntity> all = schoolId != null
+            ? questionRepository.findBySchoolId(schoolId)
+            : questionRepository.findAll();
 
         ForumStatsDTO stats = new ForumStatsDTO();
         stats.setTotalQuestions((long) all.size());
@@ -383,6 +390,51 @@ public class ForumQuestionService {
 
         stats.setTotalByStatus(all.stream()
             .collect(Collectors.groupingBy(q -> q.getStatus().name(), TreeMap::new, Collectors.counting())));
+
+        // Breakdown por escola
+        stats.setTotalBySchool(all.stream()
+            .filter(q -> q.getSchoolId() != null)
+            .collect(Collectors.groupingBy(q -> "Escola #" + q.getSchoolId(), TreeMap::new, Collectors.counting())));
+
+        // Breakdown por tipo de interação
+        Map<String, Long> interactionType = new TreeMap<>();
+        for (ForumQuestionEntity q : all) {
+            boolean hasExpert = expertAnswerRepository.existsByQuestionId(q.getId());
+            boolean hasAI     = expertAnswerRepository.existsByQuestionIdAndAiGeneratedTrue(q.getId());
+            boolean hasCollab = collaborativeAnswerRepository.existsByQuestionId(q.getId());
+            if (hasAI)         interactionType.merge("IA", 1L, Long::sum);
+            else if (hasExpert) interactionType.merge("PROFESSOR", 1L, Long::sum);
+            else if (hasCollab) interactionType.merge("ESTUDANTE", 1L, Long::sum);
+            else               interactionType.merge("SEM_RESPOSTA", 1L, Long::sum);
+        }
+        stats.setTotalByInteractionType(interactionType);
+
+        // Hot topics — top 5 disciplinas por volume (últimos 7 dias vs últimos 30 dias)
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime since7  = now.minusDays(7);
+        LocalDateTime since30 = now.minusDays(30);
+        Map<String, Long> last7  = all.stream()
+            .filter(q -> q.getCreatedAt() != null && q.getCreatedAt().isAfter(since7))
+            .filter(q -> q.getDisciplina() != null)
+            .collect(Collectors.groupingBy(q -> q.getDisciplina().name(), Collectors.counting()));
+        Map<String, Long> last30 = all.stream()
+            .filter(q -> q.getCreatedAt() != null && q.getCreatedAt().isAfter(since30))
+            .filter(q -> q.getDisciplina() != null)
+            .collect(Collectors.groupingBy(q -> q.getDisciplina().name(), Collectors.counting()));
+
+        List<codelab.api.smart.sae.forum.dto.response.HotTopicDTO> hotTopics = last30.entrySet().stream()
+            .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+            .limit(5)
+            .map(e -> {
+                long cnt7  = last7.getOrDefault(e.getKey(), 0L);
+                long cnt30 = e.getValue();
+                double daily7  = cnt7 / 7.0;
+                double daily30 = cnt30 / 30.0;
+                String trend = daily7 > daily30 * 1.2 ? "UP" : (daily7 < daily30 * 0.8 ? "DOWN" : "STABLE");
+                return new codelab.api.smart.sae.forum.dto.response.HotTopicDTO(e.getKey(), cnt30, trend);
+            })
+            .collect(Collectors.toList());
+        stats.setHotTopics(hotTopics);
 
         List<Long> responseTimes = all.stream()
             .map(q -> {

@@ -6,8 +6,8 @@ class SaeColors {
   static const primaryLight = Color(0xFF4CAF50);
   static const secondary = Color(0xFF0A1628);
   static const secondaryLight = Color(0xFF334155);
-  static const bg = Color(0xFFF5F5F5);
-  static const surface = Colors.white;
+  static const bg = Color(0xFFEDF1F0); // neumorphic background
+  static const surface = Color(0xFFF2F6F4);
   static const textPrimary = Color(0xFF0A1628);
   static const textSecondary = Color(0xFF475569);
   static const error = Color(0xFFEF5350);
@@ -27,9 +27,11 @@ ThemeData buildSaeTheme() {
     ),
     scaffoldBackgroundColor: SaeColors.bg,
     appBarTheme: const AppBarTheme(
-      backgroundColor: Colors.white,
+      backgroundColor: SaeColors.bg,
       foregroundColor: SaeColors.textPrimary,
       elevation: 0,
+      scrolledUnderElevation: 0,
+      surfaceTintColor: Colors.transparent,
       centerTitle: false,
       titleTextStyle: TextStyle(
         color: SaeColors.textPrimary,

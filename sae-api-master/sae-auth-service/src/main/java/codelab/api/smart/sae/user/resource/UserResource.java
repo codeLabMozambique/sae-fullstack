@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -174,6 +175,7 @@ public class UserResource {
                 jwt, userService.findTransactionsByRole(principal),
                 UserRoleValidator.validate(roleName));
         response.setUserId(principal.getId());
+        response.setMustChangePassword(principal.isMustChangePassword());
         if (roleName.contains("PROFESSOR"))
             userService.setProfessorOnline(principal.getUsername(), true);
         return ResponseEntity.ok(response);
@@ -329,14 +331,31 @@ public class UserResource {
     @GetMapping("/professors/import-template")
     @PreAuthorize("hasAnyAuthority('ADMIN','SCHOOL_ADMIN')")
     public ResponseEntity<byte[]> downloadImportTemplate() {
-        String csv = "nTelefone;email;nomeCompleto;departamento;especializacao;contactoInstitucional;idEscola\n"
-                   + "841234567;professor@escola.mz;Ana Silva;Matemática;Cálculo Diferencial;;4\n"
-                   + "851234567;pedro@escola.mz;Pedro Matos;Ciências;Biologia;;4\n";
+        String csv = "nTelefone;email;nomeCompleto;departamento;especializacao;contactoInstitucional;nomeEscola\n"
+                   + "841234567;professor@escola.mz;Ana Silva;Matemática;Cálculo Diferencial;;Escola Secundária de Nampula\n"
+                   + "851234567;pedro@escola.mz;Pedro Matos;Ciências;Biologia;;Escola Secundária de Nampula\n";
         byte[] bytes = csv.getBytes(java.nio.charset.StandardCharsets.UTF_8);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("text/csv; charset=UTF-8"));
         headers.setContentDispositionFormData("attachment", "modelo_professores.csv");
         return ResponseEntity.ok().headers(headers).body(bytes);
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // LGPD — DADOS PESSOAIS
+    // ════════════════════════════════════════════════════════════
+
+    @GetMapping("/me/export")
+    public ResponseEntity<java.util.Map<String, Object>> exportMyData(Authentication auth) {
+        if (auth == null) return ResponseEntity.status(401).build();
+        return ResponseEntity.ok(userService.exportMyData(auth.getName()));
+    }
+
+    @DeleteMapping("/me/anonymize")
+    public ResponseEntity<java.util.Map<String, String>> anonymizeMyAccount(Authentication auth) {
+        if (auth == null) return ResponseEntity.status(401).build();
+        userService.anonymizeAccount(auth.getName());
+        return ResponseEntity.ok(java.util.Map.of("message", "Conta anonimizada com sucesso"));
     }
 
 }

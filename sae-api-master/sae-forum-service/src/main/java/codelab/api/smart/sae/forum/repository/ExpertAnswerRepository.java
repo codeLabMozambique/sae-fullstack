@@ -17,4 +17,8 @@ public interface ExpertAnswerRepository extends JpaRepository<ExpertAnswerEntity
     boolean existsByQuestionIdAndAnsweredBy(Long questionId, String answeredBy);
 
     List<ExpertAnswerEntity> findByAnsweredBy(String answeredBy);
+
+    boolean existsByQuestionId(Long questionId);
+
+    boolean existsByQuestionIdAndAiGeneratedTrue(Long questionId);
 }

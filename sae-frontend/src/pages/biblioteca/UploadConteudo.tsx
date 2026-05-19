@@ -518,7 +518,7 @@ const UploadConteudo: React.FC = () => {
                 <Typography fontWeight={700}>O que acontece?</Typography>
               </Stack>
               <Stack spacing={1.5}>
-                <InfoLine n={1} text="Upload do PDF para o storage seguro (MinIO)" />
+                <InfoLine n={1} text="Upload do PDF para o storage seguro" />
                 <InfoLine n={2} text="Extracção automática do número de páginas" />
                 <InfoLine n={3} text="Geração de thumbnail (1ª página = capa)" />
                 <InfoLine n={4} text="Indexação para pesquisa full-text" />

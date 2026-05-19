@@ -127,12 +127,46 @@ export interface ForumQuestion {
   responseTimeMinutes?: number | null;
 }
 
+export interface HotTopic {
+  discipline: string;
+  questionCount: number;
+  trend: 'UP' | 'STABLE' | 'DOWN';
+}
+
 export interface ForumStatsOverview {
   totalQuestions: number;
   totalByDisciplina: Record<string, number>;
   totalByType: Record<string, number>;
   totalByStatus: Record<string, number>;
   avgResponseTimeMinutes: number | null;
+  totalBySchool?: Record<string, number>;
+  totalByInteractionType?: Record<string, number>;
+  hotTopics?: HotTopic[];
+}
+
+export interface AttendanceReport {
+  from: string;
+  to: string;
+  schoolId: number | null;
+  schoolName: string | null;
+  discipline: string | null;
+  totalQuestions: number;
+  answeredByProfessor: number;
+  answeredByAI: number;
+  answeredByStudent: number;
+  unanswered: number;
+  avgResponseTimeMinutes: number | null;
+}
+
+export interface ProfessorCertificate {
+  id: number;
+  professorUsername: string;
+  discipline: string;
+  assistancePercentage: number;
+  totalAnswered: number;
+  isPublic: boolean;
+  issuedAt: string;
+  publishedAt: string | null;
 }
 
 export interface ProfessorAssistanceStats {

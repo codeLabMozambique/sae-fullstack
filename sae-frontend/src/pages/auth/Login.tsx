@@ -23,6 +23,10 @@ const Login: React.FC = () => {
     setSubmitting(true);
     try {
       const authUser = await login({ username: phone, password });
+      if (authUser.mustChangePassword) {
+        navigate('/perfil?forceChange=true');
+        return;
+      }
       if (authUser.role === 'Professor') navigate('/professor/dashboard');
       else if (authUser.role === 'Estudante') navigate('/student/dashboard');
       else if (authUser.role === 'Administrador') navigate('/admin/academic/schools');

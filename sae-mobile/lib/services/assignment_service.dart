@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'api_client.dart';
 
@@ -50,6 +51,8 @@ class Assignment {
   final String? fileOriginalName;
   final String? createdByName;
   final Submission? mySubmission;
+  final int? submissionCount;
+  final int? gradedCount;
 
   Assignment({
     required this.id,
@@ -61,6 +64,8 @@ class Assignment {
     this.fileOriginalName,
     this.createdByName,
     this.mySubmission,
+    this.submissionCount,
+    this.gradedCount,
   });
 
   factory Assignment.fromJson(Map<String, dynamic> j) => Assignment(
@@ -71,6 +76,8 @@ class Assignment {
         deadline: j['deadline'] ?? '',
         maxScore: (j['maxScore'] as num).toDouble(),
         fileOriginalName: j['fileOriginalName'],
+        submissionCount: j['submissionCount'] == null ? null : (j['submissionCount'] as num).toInt(),
+        gradedCount: j['gradedCount'] == null ? null : (j['gradedCount'] as num).toInt(),
         createdByName: j['createdByName'],
         mySubmission: j['mySubmission'] == null
             ? null
@@ -82,6 +89,37 @@ class AssignmentService {
   final _api = ApiClient.instance.dio;
 
   // Professor
+  Future<Assignment> createAssignment({
+    required int classroomId,
+    required String title,
+    required String deadlineIso,
+    required double maxScore,
+    String? description,
+    String? filePath,
+    String? fileName,
+  }) async {
+    final metadata = {
+      'classroomId': classroomId,
+      'title': title,
+      'description': description,
+      'deadline': deadlineIso,
+      'maxScore': maxScore,
+    };
+    if (filePath != null) {
+      final fd = FormData.fromMap({
+        'metadata': MultipartFile.fromString(
+          jsonEncode(metadata),
+          contentType: DioMediaType.parse('application/json'),
+        ),
+        'file': await MultipartFile.fromFile(filePath, filename: fileName),
+      });
+      final res = await _api.post('/content/api/professor/assignments', data: fd);
+      return Assignment.fromJson(res.data as Map<String, dynamic>);
+    }
+    final res = await _api.post('/content/api/professor/assignments', data: metadata);
+    return Assignment.fromJson(res.data as Map<String, dynamic>);
+  }
+
   Future<List<Assignment>> listProfessor({int? classroomId}) async {
     final res = await _api.get('/content/api/professor/assignments',
         queryParameters: classroomId == null ? {} : {'classroomId': classroomId});

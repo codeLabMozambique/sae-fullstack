@@ -12,7 +12,7 @@
 
 -- =============================================================================
 -- SECÇÃO 1 — ESTRUTURA DAS TABELAS DE MENU
--- =============================================================================
+-- ============================================================================= 
 
 CREATE TABLE IF NOT EXISTS app_transaction (
     id          BIGSERIAL    PRIMARY KEY,
@@ -523,6 +523,97 @@ ALTER TABLE professor_profile
 UPDATE professor_profile SET approval_status = 'APPROVED' WHERE approval_status IS NULL OR approval_status = '';
 
 -- =============================================================================
+-- BLOCO 26 — Certificados de apoio de professor (feature D)
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS professor_certificate (
+    id                     BIGSERIAL    PRIMARY KEY,
+    professor_username     VARCHAR(256) NOT NULL,
+    discipline             VARCHAR(256) NOT NULL,
+    assistance_percentage  DOUBLE PRECISION NOT NULL,
+    total_answered         BIGINT       NOT NULL DEFAULT 0,
+    is_public              BOOLEAN      NOT NULL DEFAULT FALSE,
+    issued_at              TIMESTAMP    NOT NULL DEFAULT NOW(),
+    published_at           TIMESTAMP,
+    UNIQUE (professor_username, discipline)
+);
+
+-- =============================================================================
+-- BLOCO 27 — Menu: mapeamento de todas as novas rotas implementadas
+--
+-- Novas entradas:
+--   ADMIN    → Dashboard (/admin/dashboard)
+--              Fórum     (/admin/forum)
+--              Relatórios (/admin/reports)
+--   PROFESSOR → Certificados (/professor/certificates)
+--               Sugerir Leitura (/professor/library/suggest)
+--   STUDENT   → Sugestões de Leitura (/student/library/suggestions)
+-- =============================================================================
+
+-- ── 27a. Novos HEADERS ────────────────────────────────────────────────────────
+INSERT INTO app_transaction (status, code, type, label, router_link, position, parent_id) VALUES
+-- ADMIN: Dashboard (posição 0 — aparece primeiro no menu)
+(1, 'ADM-DASH',  'HEADER', 'Dashboard',   '/admin/dashboard', 0, NULL),
+-- ADMIN: Fórum (posição 5 — após Quizzes)
+(1, 'ADM-FORUM', 'HEADER', 'Fórum',        '/admin/forum',    5, NULL),
+-- ADMIN: Relatórios (posição 6)
+(1, 'ADM-RPT',   'HEADER', 'Relatórios',   '/admin/reports',  6, NULL),
+-- PROFESSOR: Certificados de Apoio (posição 8 — após Director de Turma)
+(1, 'PRF-CERT',  'HEADER', 'Certificados', '/professor/certificates', 8, NULL)
+ON CONFLICT (code) DO UPDATE SET
+    label       = EXCLUDED.label,
+    router_link = EXCLUDED.router_link,
+    position    = EXCLUDED.position;
+
+-- ── 27b. Novos MENU_ITEMs ─────────────────────────────────────────────────────
+INSERT INTO app_transaction (status, code, type, label, router_link, position, parent_id)
+SELECT v.status, v.code, v.type, v.label, v.router_link, v.position,
+       (SELECT id FROM app_transaction WHERE code = v.parent_code)
+FROM (VALUES
+    -- ADMIN — Dashboard
+    (1,'ADM-DASH-001', 'MENU_ITEM','Visão Geral',                '/admin/dashboard',                   1,'ADM-DASH'),
+    -- ADMIN — Fórum
+    (1,'ADM-FORUM-001','MENU_ITEM','Ver Fórum',                  '/admin/forum',                        1,'ADM-FORUM'),
+    -- ADMIN — Relatórios
+    (1,'ADM-RPT-001',  'MENU_ITEM','Relatório de Atendimento',   '/admin/reports',                      1,'ADM-RPT'),
+    -- PROFESSOR — Certificados
+    (1,'PRF-CERT-001', 'MENU_ITEM','Os Meus Certificados',       '/professor/certificates',             1,'PRF-CERT'),
+    -- PROFESSOR — Biblioteca: sugerir leitura (posição 8, após Offline)
+    (1,'PRF-LIB-008',  'MENU_ITEM','Sugerir Leitura',            '/professor/library/suggest',          8,'PRF-LIB'),
+    -- STUDENT — Biblioteca: sugestões de leitura (posição 7, após Offline)
+    (1,'STD-LIB-007',  'MENU_ITEM','Sugestões de Leitura',       '/student/library/suggestions',        7,'STD-LIB')
+) AS v(status, code, type, label, router_link, position, parent_code)
+ON CONFLICT (code) DO UPDATE SET
+    label       = EXCLUDED.label,
+    router_link = EXCLUDED.router_link,
+    position    = EXCLUDED.position,
+    parent_id   = EXCLUDED.parent_id;
+
+-- ── 27c. ROLE_TRANSACTION — permissões por role ───────────────────────────────
+INSERT INTO role_transaction (status, role, app_transaction_id)
+SELECT 1, v.role, a.id
+FROM (VALUES
+    -- ADMIN — novos módulos (Dashboard, Fórum, Relatórios)
+    ('ADMIN','ADM-DASH'),       ('ADMIN','ADM-DASH-001'),
+    ('ADMIN','ADM-FORUM'),      ('ADMIN','ADM-FORUM-001'),
+    ('ADMIN','ADM-RPT'),        ('ADMIN','ADM-RPT-001'),
+
+    -- SCHOOL_ADMIN — acesso aos mesmos módulos de admin
+    ('SCHOOL_ADMIN','ADM-DASH'),      ('SCHOOL_ADMIN','ADM-DASH-001'),
+    ('SCHOOL_ADMIN','ADM-FORUM'),     ('SCHOOL_ADMIN','ADM-FORUM-001'),
+    ('SCHOOL_ADMIN','ADM-RPT'),       ('SCHOOL_ADMIN','ADM-RPT-001'),
+
+    -- PROFESSOR — certificados + sugerir leitura
+    ('PROFESSOR','PRF-CERT'),         ('PROFESSOR','PRF-CERT-001'),
+    ('PROFESSOR','PRF-LIB-008'),
+
+    -- STUDENT — sugestões de leitura recebidas
+    ('STUDENT','STD-LIB-007')
+
+) AS v(role, tx_code)
+JOIN app_transaction a ON a.code = v.tx_code
+ON CONFLICT (role, app_transaction_id) DO NOTHING;
+
+-- =============================================================================
 -- VERIFICAÇÃO FINAL
 -- =============================================================================
 SELECT 'app_transaction' AS tabela, COUNT(*) AS total FROM app_transaction
@@ -534,6 +625,11 @@ UNION ALL
 SELECT 'ac_class_level',     COUNT(*) FROM ac_class_level
 UNION ALL
 SELECT 'ac_classroom',       COUNT(*) FROM ac_classroom;
+
+-- =============================================================================
+-- BLOCO 28 — Coluna must_change_password em sae_user (safe re-run)
+-- =============================================================================
+ALTER TABLE sae_user ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- =============================================================================
 -- NOTA: Todo o restante conteúdo é criado exclusivamente via frontend:

@@ -50,6 +50,9 @@ public class UserEntity extends UpdatableEntity implements UserDetails {
     @Column(name = "ENABLED")
     private boolean enabled;
 
+    @Column(name = "MUST_CHANGE_PASSWORD")
+    private boolean mustChangePassword = false;
+
     @ManyToOne
     @JoinColumn(name = "roleT_id")
     private RoleTransactionEntity role;
@@ -123,6 +126,9 @@ public class UserEntity extends UpdatableEntity implements UserDetails {
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
+
+    public boolean isMustChangePassword() { return mustChangePassword; }
+    public void setMustChangePassword(boolean mustChangePassword) { this.mustChangePassword = mustChangePassword; }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

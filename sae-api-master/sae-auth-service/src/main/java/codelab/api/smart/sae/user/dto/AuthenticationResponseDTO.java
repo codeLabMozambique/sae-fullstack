@@ -20,6 +20,7 @@ public class AuthenticationResponseDTO implements Serializable {
     private String username;
     private String token;
     private String role;
+    private boolean mustChangePassword;
     private List<MenuDTO> menus = new ArrayList<>();
 
     public AuthenticationResponseDTO() {
@@ -44,6 +45,9 @@ public class AuthenticationResponseDTO implements Serializable {
 
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
+
+    public boolean isMustChangePassword() { return mustChangePassword; }
+    public void setMustChangePassword(boolean mustChangePassword) { this.mustChangePassword = mustChangePassword; }
 
     /**
      * @return the role

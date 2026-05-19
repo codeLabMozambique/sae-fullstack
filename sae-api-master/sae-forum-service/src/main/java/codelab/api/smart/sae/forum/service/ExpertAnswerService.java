@@ -20,6 +20,7 @@ public class ExpertAnswerService {
     @Autowired private ForumQuestionService questionService;
     @Autowired private AuthServiceClient authServiceClient;
     @Autowired private NotificationService notificationService;
+    @Autowired private ProfessorCertificateService certificateService;
 
     @Transactional
     public ExpertAnswerResponseDTO create(Long questionId, CreateExpertAnswerRequestDTO request, String professorUsername) {
@@ -54,6 +55,9 @@ public class ExpertAnswerService {
         answer = java.util.Objects.requireNonNull(answerRepository.save(answer));
 
         notificationService.notifyNewAnswer(questionId, "EXPERT");
+
+        try { certificateService.checkAndIssue(professorUsername); }
+        catch (Exception ignored) {}
 
         return ExpertAnswerResponseDTO.from(answer);
     }

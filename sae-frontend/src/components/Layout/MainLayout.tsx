@@ -37,6 +37,9 @@ import {
   Quiz as QuizIcon,
   Assignment as AssignmentIcon,
   Star as DirectorIcon,
+  Assessment as ReportIcon,
+  Verified as CertIcon,
+  Recommend as SuggestIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import OfflineIndicator from '../OfflineIndicator';
@@ -69,12 +72,20 @@ function menuIcon(code: string): React.ReactNode {
   if (code.startsWith('SADM')) return <AdminIcon />;
   if (code === 'PRF-DIR') return <DirectorIcon />;
   if (code.includes('QUIZ')) return <QuizIcon />;
+  if (code === 'ADM-DASH' || code.includes('DASH')) return <DashboardIcon />;
+  if (code === 'ADM-FORUM' || code === 'PRF-002' || code.includes('FORUM')) return <ForumIcon />;
+  if (code === 'ADM-RPT') return <ReportIcon />;
+  if (code === 'PRF-CERT') return <CertIcon />;
+  if (code.includes('LIB')) return <LibraryIcon />;
+  if (code.includes('GOALS')) return <GoalsIcon />;
   return <AssignmentIcon />;
 }
 
 /* ── Route-based icon (preciso e semântico) ── */
 function iconByRoute(route: string): React.ReactNode | null {
-  // Biblioteca — sub-itens
+  // Biblioteca — sub-itens (específicos antes do genérico /library$)
+  if (/\/library\/suggest/.test(route))     return <SuggestIcon />;
+  if (/\/library\/suggestions/.test(route)) return <SuggestIcon />;
   if (/\/library\/my-content/.test(route))  return <MyContentIcon />;
   if (/\/library\/upload/.test(route))      return <UploadIcon />;
   if (/\/library\/categories/.test(route))  return <CategoriesIcon />;
@@ -83,6 +94,9 @@ function iconByRoute(route: string): React.ReactNode | null {
   if (/\/library\/history/.test(route))     return <HistoryIcon />;
   if (/\/library\/offline/.test(route))     return <OfflineIcon />;
   if (/\/library$/.test(route))             return <SearchIcon />;
+  // Certificados & Relatórios
+  if (/\/certificates/.test(route))         return <CertIcon />;
+  if (/\/reports/.test(route))              return <ReportIcon />;
   // Metas
   if (/\/goals/.test(route))                return <GoalsIcon />;
   // Director de Turma / Matrícula / Professores

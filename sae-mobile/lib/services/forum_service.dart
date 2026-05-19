@@ -4,12 +4,13 @@ class ForumQuestion {
   final int id;
   final String titulo;
   final String? descricao;
-  final String? questionType; // ESPECIALIZADO / COLABORATIVO
-  final String? status;       // ABERTA / RESPONDIDA
+  final String? questionType;
+  final String? status;
   final String? disciplina;
   final String? autorUsername;
   final String? autorNome;
   final String? createdAt;
+  final String? attachmentId;
 
   ForumQuestion({
     required this.id,
@@ -21,6 +22,7 @@ class ForumQuestion {
     this.autorUsername,
     this.autorNome,
     this.createdAt,
+    this.attachmentId,
   });
 
   factory ForumQuestion.fromJson(Map<String, dynamic> j) => ForumQuestion(
@@ -33,6 +35,7 @@ class ForumQuestion {
         autorUsername: j['autorUsername'] ?? j['createdBy'],
         autorNome: j['autorNome'] ?? j['createdByName'],
         createdAt: j['createdAt']?.toString(),
+        attachmentId: j['attachmentId']?.toString(),
       );
 }
 
@@ -43,6 +46,7 @@ class ForumAnswer {
   final String? autorUsername;
   final String? createdAt;
   final bool aceita;
+  final String? attachmentId;
 
   ForumAnswer({
     required this.id,
@@ -51,6 +55,7 @@ class ForumAnswer {
     this.autorUsername,
     this.createdAt,
     this.aceita = false,
+    this.attachmentId,
   });
 
   factory ForumAnswer.fromJson(Map<String, dynamic> j) => ForumAnswer(
@@ -60,6 +65,7 @@ class ForumAnswer {
         autorUsername: j['autorUsername'] ?? j['createdBy'],
         createdAt: j['createdAt']?.toString(),
         aceita: j['aceita'] == true || j['accepted'] == true,
+        attachmentId: j['attachmentId']?.toString(),
       );
 }
 
@@ -120,6 +126,7 @@ class ForumService {
     required String descricao,
     required String questionType, // ESPECIALIZADO / COLABORATIVO
     String? disciplina,
+    String? attachmentId,
   }) async {
     final endpoint = questionType == 'COLABORATIVO'
         ? '/forum/questions/collaborative'
@@ -129,20 +136,34 @@ class ForumService {
       'descricao': descricao,
       'questionType': questionType,
       if (disciplina != null) 'disciplina': disciplina,
+      if (attachmentId != null) 'attachmentId': attachmentId,
     });
     return ForumQuestion.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<ForumAnswer> answerExpert(int questionId, String texto) async {
-    final res = await _api.post('/forum/questions/$questionId/expert-answers', data: {'texto': texto});
+  Future<ForumAnswer> answerExpert(int questionId, String texto, {String? attachmentId}) async {
+    final res = await _api.post('/forum/questions/$questionId/expert-answers', data: {
+      'texto': texto,
+      if (attachmentId != null) 'attachmentId': attachmentId,
+    });
     return ForumAnswer.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<ForumAnswer> answerCollaborative(int questionId, String texto) async {
-    final res = await _api.post('/forum/collaborative/questions/$questionId/answers', data: {'texto': texto});
+  Future<ForumAnswer> answerCollaborative(int questionId, String texto, {String? attachmentId}) async {
+    final res = await _api.post('/forum/collaborative/questions/$questionId/answers', data: {
+      'texto': texto,
+      if (attachmentId != null) 'attachmentId': attachmentId,
+    });
     return ForumAnswer.fromJson(res.data as Map<String, dynamic>);
   }
 
   Future<void> accept(int answerId) =>
       _api.put('/forum/expert-answers/$answerId/accept');
+
+  /// Pede ao AI service uma resposta automática para a pergunta.
+  /// Usado quando o professor não está disponível.
+  Future<ForumAnswer> requestAIAnswer(int questionId) async {
+    final res = await _api.post('/forum/questions/$questionId/ai-answer');
+    return ForumAnswer.fromJson(res.data as Map<String, dynamic>);
+  }
 }
