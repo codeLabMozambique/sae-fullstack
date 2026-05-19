@@ -69,37 +69,11 @@ export default function StudentTasksPage() {
 
   return (
     <Box>
-      {/* Header com Gradiente Premium */}
-      <Box 
-        sx={{ 
-          background: 'linear-gradient(135deg, #0A1628 0%, #00A651 100%)',
-          borderRadius: 4,
-          p: 4,
-          mb: 4,
-          color: '#fff',
-          position: 'relative',
-          overflow: 'hidden',
-          boxShadow: '0 10px 30px rgba(0, 166, 81, 0.2)'
-        }}
-      >
-        <Box sx={{ position: 'relative', zIndex: 1 }}>
-          <Typography variant="h4" fontWeight={800} gutterBottom>
-            Minhas Tarefas
-          </Typography>
-          <Typography variant="body1" sx={{ opacity: 0.9 }}>
-            Acompanha os teus trabalhos e prazos de entrega.
-          </Typography>
-        </Box>
-        <AssignmentIcon 
-          sx={{ 
-            position: 'absolute', 
-            right: -20, 
-            bottom: -20, 
-            fontSize: 180, 
-            opacity: 0.1,
-            transform: 'rotate(-15deg)'
-          }} 
-        />
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h5" fontWeight={800} color="#0A1628">Minhas Tarefas</Typography>
+        <Typography variant="body2" color="text.secondary">
+          Acompanha os teus trabalhos e prazos de entrega.
+        </Typography>
       </Box>
 
       {error || classroomsError ? (

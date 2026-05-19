@@ -54,6 +54,14 @@ ALTER TABLE role_transaction ADD CONSTRAINT uq_role_transaction_role_menu
     UNIQUE (role, app_transaction_id);
 
 -- =============================================================================
+-- LIMPEZA — Remove itens de menu obsoletos (safe em re-execuções)
+-- =============================================================================
+DELETE FROM role_transaction WHERE app_transaction_id IN (
+    SELECT id FROM app_transaction WHERE code IN ('PRF-002-002', 'PRF-QUIZ-002', 'STD-002-002', 'STD-001-001', 'STD-001-002')
+);
+DELETE FROM app_transaction WHERE code IN ('PRF-002-002', 'PRF-QUIZ-002', 'STD-002-002', 'STD-001-001', 'STD-001-002');
+
+-- =============================================================================
 -- PASSO 1 — HEADERS (entradas de topo, sem parent_id)
 -- Inseridos primeiro para que os MENU_ITEMs os possam referenciar por code.
 -- =============================================================================
@@ -145,11 +153,10 @@ FROM (VALUES
     (1,'SADM-PRF-001','MENU_ITEM','Ver Perfis',             '/school-admin/professors',              1,'SADM-PRF'),
 
     -- PROFESSOR — Dashboard
-    (1,'PRF-001-001','MENU_ITEM','Minhas Turmas',           '/professor/classes',                    1,'PRF-001'),
+    (1,'PRF-001-001','MENU_ITEM','Minhas Turmas',           '/professor/my-classes',                 1,'PRF-001'),
     (1,'PRF-001-002','MENU_ITEM','Gestão de Notas',         '/professor/grades',                     2,'PRF-001'),
     -- PROFESSOR — Fórum
-    (1,'PRF-002-001','MENU_ITEM','Perguntas Pendentes',     '/professor/forum/pending',              1,'PRF-002'),
-    (1,'PRF-002-002','MENU_ITEM','Respondidas',             '/professor/forum/answered',             2,'PRF-002'),
+    (1,'PRF-002-001','MENU_ITEM','Gerir Forum',             '/professor/forum',                      1,'PRF-002'),
     -- PROFESSOR — Biblioteca
     (1,'PRF-LIB-001','MENU_ITEM','Pesquisar',               '/professor/library',                    1,'PRF-LIB'),
     (1,'PRF-LIB-002','MENU_ITEM','Os Meus Conteúdos',      '/professor/library/my-content',         2,'PRF-LIB'),
@@ -161,17 +168,12 @@ FROM (VALUES
     -- PROFESSOR — Metas
     (1,'PRF-GOALS-001','MENU_ITEM','Minhas Metas',          '/professor/goals',                      1,'PRF-GOALS'),
     -- PROFESSOR — Quiz
-    (1,'PRF-QUIZ-001','MENU_ITEM','Gerir Quizzes',          '/professor/quiz/manage',                1,'PRF-QUIZ'),
-    (1,'PRF-QUIZ-002','MENU_ITEM','Criar Quiz',             '/professor/quiz/create',                2,'PRF-QUIZ'),
+    (1,'PRF-QUIZ-001','MENU_ITEM','Gerir Quizzes',          '/professor/quiz',                       1,'PRF-QUIZ'),
     -- PROFESSOR — Tarefas
     (1,'PRF-ASG-001','MENU_ITEM','Gerir Tarefas',           '/professor/assignments',                1,'PRF-ASG'),
 
-    -- STUDENT — Dashboard
-    (1,'STD-001-001','MENU_ITEM','Minhas Aulas',            '/student/classes',                      1,'STD-001'),
-    (1,'STD-001-002','MENU_ITEM','Notas',                   '/student/grades',                       2,'STD-001'),
     -- STUDENT — Fórum
-    (1,'STD-002-001','MENU_ITEM','Minhas Perguntas',        '/student/forum/questions',              1,'STD-002'),
-    (1,'STD-002-002','MENU_ITEM','Nova Pergunta',           '/student/forum/new',                    2,'STD-002'),
+    (1,'STD-002-001','MENU_ITEM','Forum',                   '/student/forum',                        1,'STD-002'),
     -- STUDENT — Biblioteca
     (1,'STD-LIB-001','MENU_ITEM','Pesquisar',               '/student/library',                      1,'STD-LIB'),
     (1,'STD-LIB-002','MENU_ITEM','Categorias',              '/student/library/categories',           2,'STD-LIB'),
@@ -248,20 +250,20 @@ FROM (VALUES
 
     -- PROFESSOR — dashboard + fórum
     ('PROFESSOR','PRF-001'),    ('PROFESSOR','PRF-001-001'),('PROFESSOR','PRF-001-002'),
-    ('PROFESSOR','PRF-002'),    ('PROFESSOR','PRF-002-001'),('PROFESSOR','PRF-002-002'),
+    ('PROFESSOR','PRF-002'),    ('PROFESSOR','PRF-002-001'),
     -- PROFESSOR — biblioteca + metas
     ('PROFESSOR','PRF-LIB'),   ('PROFESSOR','PRF-LIB-001'),('PROFESSOR','PRF-LIB-002'),
     ('PROFESSOR','PRF-LIB-003'),('PROFESSOR','PRF-LIB-004'),('PROFESSOR','PRF-LIB-005'),
     ('PROFESSOR','PRF-LIB-006'),('PROFESSOR','PRF-LIB-007'),
     ('PROFESSOR','PRF-GOALS'), ('PROFESSOR','PRF-GOALS-001'),
     -- PROFESSOR — quiz + tarefas + director de turma
-    ('PROFESSOR','PRF-QUIZ'),  ('PROFESSOR','PRF-QUIZ-001'),('PROFESSOR','PRF-QUIZ-002'),
+    ('PROFESSOR','PRF-QUIZ'),  ('PROFESSOR','PRF-QUIZ-001'),
     ('PROFESSOR','PRF-ASG'),   ('PROFESSOR','PRF-ASG-001'),
     ('PROFESSOR','PRF-DIR'),
 
     -- STUDENT — dashboard + fórum
-    ('STUDENT','STD-001'),    ('STUDENT','STD-001-001'),('STUDENT','STD-001-002'),
-    ('STUDENT','STD-002'),    ('STUDENT','STD-002-001'),('STUDENT','STD-002-002'),
+    ('STUDENT','STD-001'),
+    ('STUDENT','STD-002'),    ('STUDENT','STD-002-001'),
     -- STUDENT — biblioteca + metas
     ('STUDENT','STD-LIB'),   ('STUDENT','STD-LIB-001'),('STUDENT','STD-LIB-002'),
     ('STUDENT','STD-LIB-003'),('STUDENT','STD-LIB-004'),('STUDENT','STD-LIB-005'),
@@ -302,13 +304,6 @@ ALTER TABLE IF EXISTS ac_class_level ADD COLUMN IF NOT EXISTS cycle VARCHAR(10);
 ALTER TABLE IF EXISTS ac_classroom ADD COLUMN IF NOT EXISTS turma_group VARCHAR(10);
 
 -- Garantir que os níveis de ensino 11-15 (8ª–12ª) existem antes da FK das turmas
-INSERT INTO ac_class_level (id, status, created_by, created_date, last_modified_by, last_modified_date, name) VALUES
-(11, 1, 0, NOW(), 0, NOW(), '8ª Classe'),
-(12, 1, 0, NOW(), 0, NOW(), '9ª Classe'),
-(13, 1, 0, NOW(), 0, NOW(), '10ª Classe'),
-(14, 1, 0, NOW(), 0, NOW(), '11ª Classe'),
-(15, 1, 0, NOW(), 0, NOW(), '12ª Classe')
-
 INSERT INTO ac_class_level (id, status, created_by, created_date, last_modified_by, last_modified_date, name, cycle) VALUES
 (11, 1, 0, NOW(), 0, NOW(), '8ª Classe',  'BASICO'),
 (12, 1, 0, NOW(), 0, NOW(), '9ª Classe',  'BASICO'),

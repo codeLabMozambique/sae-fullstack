@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box, Card, CardContent, Typography, Button, IconButton,
   CircularProgress, Alert, LinearProgress, Dialog, DialogTitle,
@@ -89,6 +89,7 @@ const TYPE_OPTS = [
 
 const Metas: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [items, setItems]       = useState<StudyGoal[]>([]);
   const [disciplines, setDisciplines] = useState<Discipline[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -141,6 +142,11 @@ const Metas: React.FC = () => {
       .finally(() => setLoading(false));
   };
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    if (location.pathname.endsWith('/new')) openCreate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.key]);
 
   const filtered = useMemo(() => {
     if (tab === 1) return items.filter(g => g.status === 'ACTIVE');
