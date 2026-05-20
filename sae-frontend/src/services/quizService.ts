@@ -49,10 +49,10 @@ export const quizService = {
     api.get<QuizSummary[]>(`${BASE}/attempts/my`).then(r => r.data),
 
   generateFromContent: (dto: GenerateFromContentDTO): Promise<QuizAdmin> =>
-    api.post<QuizAdmin>(`${BASE}/quizzes/generate-from-content`, dto).then(r => r.data),
+    api.post<QuizAdmin>(`${BASE}/quizzes/generate-from-content`, dto, { timeout: 90000 }).then(r => r.data),
 
   generateStudyPrep: (dto: StudyPrepRequestDTO): Promise<QuizAdmin> =>
-    api.post<QuizAdmin>(`${BASE}/quizzes/study-prep`, dto).then(r => r.data),
+    api.post<QuizAdmin>(`${BASE}/quizzes/study-prep`, dto, { timeout: 90000 }).then(r => r.data),
 
   getDisciplinesAll: (): Promise<string[]> =>
     api.get<string[]>('/quiz/disciplines/all').then(r => r.data),

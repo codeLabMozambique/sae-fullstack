@@ -22,6 +22,12 @@ public class SchoolResource {
         return ResponseEntity.ok(schoolService.findAllActive());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<SchoolDTO> findByIdGet(@PathVariable Long id) {
+        SchoolDTO dto = schoolService.findById(id);
+        return dto != null ? ResponseEntity.ok(dto) : ResponseEntity.notFound().build();
+    }
+
     @PostMapping("/details")
     public ResponseEntity<SchoolDTO> findById(@RequestBody SchoolDTO request) {
         SchoolDTO dto = schoolService.findById(request.getId());

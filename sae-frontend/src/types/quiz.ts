@@ -47,6 +47,7 @@ export interface StudyPrepRequestDTO {
   mode: 'TEST' | 'EXAM';
   contentId?: string;
   numQuestions?: number;
+  forumContext?: string;
 }
 
 export interface QuizOption {

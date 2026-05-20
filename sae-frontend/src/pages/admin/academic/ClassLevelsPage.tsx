@@ -110,17 +110,13 @@ const ClassLevelsPage: React.FC = () => {
       <Box sx={{ position: 'relative', zIndex: 1 }}>
 
         {/* ── Page header ── */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg,#0A1628 0%,#00A651 100%)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, p: 2.5, mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ p: 1.2, borderRadius: 2, background: 'rgba(0,166,81,0.15)', border: '1px solid rgba(0,166,81,0.25)', display: 'flex' }}>
-              <LevelIcon sx={{ color: '#4caf50', fontSize: 26 }} />
-            </Box>
-            <Box>
-              <Typography variant="h5" color="white" sx={{ lineHeight: 1.2 }}>Níveis de Ensino</Typography>
-              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)', mt: 0.3 }}>Gestão dos graus académicos (ex: 8ª, 9ª, 10ª Classe)</Typography>
-            </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Box>
+            <Typography variant="h5" fontWeight={700} color="#0A1628">Níveis de Ensino</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Gestão dos graus académicos (ex: 8ª, 9ª, 10ª Classe)</Typography>
           </Box>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate} sx={{ ...gradBtn, px: 3 }}>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate}
+            sx={{ bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' }, borderRadius: 2, textTransform: 'none', fontWeight: 700, px: 3 }}>
             Novo Nível
           </Button>
         </Box>

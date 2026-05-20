@@ -181,23 +181,18 @@ const StudentsEnrollmentPage: React.FC = () => {
     <Box sx={{ minHeight: '100%', background: 'linear-gradient(160deg,#f0fdf4 0%,#f8fafc 50%,#eff6ff 100%)', p: 3 }}>
 
       {/* Header */}
-      <Box sx={{ background: 'linear-gradient(135deg,#0A1628 0%,#00A651 100%)', borderRadius: 3, p: 2.5, mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Box sx={{ p: 1.2, borderRadius: 2, background: 'rgba(0,166,81,0.2)', border: '1px solid rgba(0,166,81,0.3)', display: 'flex' }}>
-            <EnrollIcon sx={{ color: '#6ee7b7', fontSize: 26 }} />
-          </Box>
-          <Box>
-            <Typography variant="h5" color="white" fontWeight={700}>Matrícula de Estudantes</Typography>
-            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)', mt: 0.3 }}>
-              {isSchoolAdmin ? 'Estudantes da sua escola' : 'Todos os estudantes do sistema'}
-            </Typography>
-          </Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box>
+          <Typography variant="h5" fontWeight={700} color="#0A1628">Matrícula de Estudantes</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            {isSchoolAdmin ? 'Estudantes da sua escola' : 'Todos os estudantes do sistema'}
+          </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Chip label={`${enrolled.length} matriculados`} size="small"
-            sx={{ bgcolor: 'rgba(0,166,81,0.2)', color: '#6ee7b7', border: '1px solid rgba(0,166,81,0.3)' }} />
+            sx={{ bgcolor: 'rgba(0,166,81,0.1)', color: '#00A651', fontWeight: 600 }} />
           <Chip label={`${notEnrolled.length} por matricular`} size="small"
-            sx={{ bgcolor: 'rgba(251,191,36,0.2)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.3)' }} />
+            sx={{ bgcolor: '#FEF3C7', color: '#D97706', fontWeight: 600 }} />
         </Box>
       </Box>
 

@@ -402,17 +402,13 @@ const UsersListPage: React.FC = () => {
       <Box sx={{ position: 'relative', zIndex: 1 }}>
 
         {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: `linear-gradient(135deg,${PRIMARY} 0%,#00A651 100%)`, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, p: 2.5, mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ p: 1.2, borderRadius: 2, background: 'rgba(0,166,81,0.15)', border: '1px solid rgba(0,166,81,0.25)', display: 'flex' }}>
-              <GroupIcon sx={{ color: '#4caf50', fontSize: 26 }} />
-            </Box>
-            <Box>
-              <Typography variant="h5" color="white" sx={{ lineHeight: 1.2 }}>Utilizadores</Typography>
-              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)', mt: 0.3 }}>Gestão de todos os utilizadores do sistema</Typography>
-            </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Box>
+            <Typography variant="h5" fontWeight={700} color="#0A1628">Utilizadores</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Gestão de todos os utilizadores do sistema</Typography>
           </Box>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate} sx={{ ...gradBtn, px: 3 }}>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate}
+            sx={{ bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' }, borderRadius: 2, textTransform: 'none', fontWeight: 700, px: 3 }}>
             Novo Utilizador
           </Button>
         </Box>
@@ -449,14 +445,11 @@ const UsersListPage: React.FC = () => {
 
         {/* Table */}
         <Box sx={{ ...glass, borderRadius: 3, overflow: 'hidden' }}>
-          <Box sx={{ px: 3, py: 2, background: `linear-gradient(135deg,${PRIMARY} 0%,#1e3a5f 100%)`, display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ p: 0.8, borderRadius: 1.5, background: 'rgba(0,166,81,0.15)', border: '1px solid rgba(0,166,81,0.2)', display: 'flex' }}>
-              <GroupIcon sx={{ color: '#4caf50', fontSize: 20 }} />
-            </Box>
-            <Typography variant="h6" color="white" sx={{ flex: 1 }}>Lista de Utilizadores</Typography>
+          <Box sx={{ px: 3, py: 2, display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #F3F4F6' }}>
+            <Typography variant="subtitle1" fontWeight={700} color="#0A1628" sx={{ flex: 1 }}>Lista de Utilizadores</Typography>
             {!loading && (
               <Chip label={`${users.length} registo${users.length !== 1 ? 's' : ''}`} size="small"
-                sx={{ bgcolor: 'rgba(0,166,81,0.15)', color: '#4caf50', border: '1px solid rgba(0,166,81,0.25)' }} />
+                sx={{ bgcolor: 'rgba(0,166,81,0.1)', color: '#00A651', fontWeight: 600 }} />
             )}
           </Box>
 

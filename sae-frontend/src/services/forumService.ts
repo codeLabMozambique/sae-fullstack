@@ -173,13 +173,17 @@ export const forumService = {
   publishCertificate: (id: number): Promise<ProfessorCertificate> =>
     api.put<ProfessorCertificate>(`${BASE}/certificates/${id}/publish`).then(r => r.data),
 
+  // Admin: todos os certificados
+  getAllCertificates: (): Promise<ProfessorCertificate[]> =>
+    api.get<ProfessorCertificate[]>(`${BASE}/certificates/all`).then(r => r.data),
+
   // Certificados de um professor (ADMIN/SCHOOL_ADMIN)
   getProfessorCertificates: (username: string): Promise<ProfessorCertificate[]> =>
     api.get<ProfessorCertificate[]>(`${BASE}/certificates/professor/${username}`).then(r => r.data),
 
   // Toggle publicação pelo admin
-  adminPublishCertificate: (id: number): Promise<ProfessorCertificate> =>
-    api.put<ProfessorCertificate>(`${BASE}/certificates/${id}/admin-publish`).then(r => r.data),
+  adminPublishCertificate: (id: number, isPublic: boolean): Promise<ProfessorCertificate> =>
+    api.put<ProfessorCertificate>(`${BASE}/certificates/${id}/admin-publish`, { isPublic }).then(r => r.data),
 
   // Certificados públicos (sem auth)
   getPublicCertificates: (): Promise<ProfessorCertificate[]> =>

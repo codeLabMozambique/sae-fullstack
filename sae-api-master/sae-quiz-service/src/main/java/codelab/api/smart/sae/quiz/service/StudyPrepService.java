@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
@@ -26,13 +27,20 @@ import java.util.*;
 public class StudyPrepService {
 
     private static final Logger log = LoggerFactory.getLogger(StudyPrepService.class);
-    private static final String ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-    private static final String MODEL = "claude-sonnet-4-6";
+    private static final String OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+    private static final String MODEL = "gpt-4o-mini";
 
-    @Value("${anthropic.api.key:}")
+    @Value("${openai.api.key:}")
     private String apiKey;
 
-    private final RestTemplate rest = new RestTemplate();
+    private final RestTemplate rest;
+
+    public StudyPrepService() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(10_000);
+        factory.setReadTimeout(60_000);
+        this.rest = new RestTemplate(factory);
+    }
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired private ContentServiceClient contentClient;
@@ -63,14 +71,15 @@ public class StudyPrepService {
         }
 
         List<GeneratedQuestion> questions = generateQuestions(
-                contentText, contentTitle, dto.getDisciplina(), numQ, isExam, totalPages);
+                contentText, contentTitle, dto.getDisciplina(), numQ, isExam, totalPages,
+                dto.getForumContext());
 
         QuizEntity quiz = new QuizEntity();
         String modeLabel = isExam ? "Preparação para Exame" : "Preparação para Teste";
         quiz.setTitulo(modeLabel + " — " + (dto.getDisciplina() != null ? dto.getDisciplina() : "Geral"));
         quiz.setDescricao(isExam
-                ? "Quiz personalizado para preparação de exame gerado por IA com base no conteúdo da disciplina."
-                : "Quiz personalizado para preparação de teste gerado por IA com base no conteúdo recente da disciplina.");
+                ? "Quiz personalizado para preparação de exame, gerado por IA com base nos conteúdos da disciplina."
+                : "Quiz personalizado para preparação de teste, gerado por IA com base nos conteúdos recentes da disciplina.");
 
         String disc = dto.getDisciplina() != null ? dto.getDisciplina().toUpperCase() : "GERAL";
         try { quiz.setDisciplina(DisciplinaEnum.valueOf(disc)); }
@@ -106,70 +115,92 @@ public class StudyPrepService {
     }
 
     private List<GeneratedQuestion> generateQuestions(
-            String text, String title, String disc, int numQ, boolean isExam, int totalPages) {
+            String text, String title, String disc, int numQ, boolean isExam,
+            int totalPages, String forumContext) {
         if (apiKey != null && !apiKey.isBlank()) {
-            try { return callClaude(text, title, disc, numQ, isExam, totalPages); }
-            catch (Exception e) { log.error("Claude API error no StudyPrep: {}", e.getMessage()); }
+            try { return callOpenAI(text, title, disc, numQ, isExam, totalPages, forumContext); }
+            catch (Exception e) { log.error("Erro na API OpenAI (StudyPrep): {}", e.getMessage()); }
         }
+        log.warn("Chave OpenAI não configurada — a usar questões de exemplo. Adiciona a chave em application.yml.");
         return fallback(disc, numQ);
     }
 
-    private List<GeneratedQuestion> callClaude(
-            String text, String title, String disc, int numQ, boolean isExam, int totalPages) throws Exception {
+    private List<GeneratedQuestion> callOpenAI(
+            String text, String title, String disc, int numQ, boolean isExam,
+            int totalPages, String forumContext) throws Exception {
 
-        String truncated = text.length() > 10000 ? text.substring(0, 10000) : text;
+        String truncated = text.length() > 12000 ? text.substring(0, 12000) : text;
+
         String modeInstructions = isExam
-                ? "Cria questões abrangentes para um EXAME FINAL. Inclui questões de análise, síntese e aplicação de conceitos. Abrange todos os temas do conteúdo."
-                : "Cria questões para um TESTE NORMAL. Foca nos conceitos mais recentes e fundamentais do conteúdo.";
+                ? "Cria questões abrangentes para um EXAME FINAL. Inclui questões de análise, síntese e aplicação de conceitos. Abrange todos os temas do programa."
+                : "Cria questões para um TESTE NORMAL. Foca nos conceitos mais recentes e fundamentais do programa.";
 
         String pageRef = totalPages > 0
-                ? " Na explicação, indica a página do livro onde o estudante pode encontrar mais informação (ex: 'Ver página 23.')."
+                ? " Na explicação, indica a página do livro onde o estudante pode encontrar mais informação (ex.: «Ver página 23.»)."
                 : "";
 
-        String prompt = String.format(
-            "És um professor experiente de %s em Moçambique a preparar os seus alunos para avaliações.\n\n" +
-            "%s\n\n" +
-            "Com base no conteúdo do livro \"%s\":\n%s\n\n" +
-            "Gera exactamente %d questões de escolha múltipla (4 opções A/B/C/D, 1 correcta).\n" +
-            "Para cada questão:\n" +
-            "- O enunciado deve ser claro e pedagogicamente correcto\n" +
-            "- A explicação deve justificar a resposta correcta em 1-2 frases%s\n" +
-            "- As opções erradas devem ser plausíveis (não obviamente erradas)\n\n" +
-            "Responde APENAS com JSON válido:\n" +
-            "{\"questions\":[{\"enunciado\":\"...\",\"explicacao\":\"...\",\"options\":[" +
-            "{\"letra\":\"A\",\"texto\":\"...\",\"correta\":true}," +
-            "{\"letra\":\"B\",\"texto\":\"...\",\"correta\":false}," +
-            "{\"letra\":\"C\",\"texto\":\"...\",\"correta\":false}," +
-            "{\"letra\":\"D\",\"texto\":\"...\",\"correta\":false}]}]}",
-            disc != null ? disc : "Geral", modeInstructions, title, truncated, numQ, pageRef);
+        String forumSection = "";
+        if (forumContext != null && !forumContext.isBlank()) {
+            forumSection = "\n\nDúvidas e respostas reais dos alunos no fórum desta disciplina (usa como referência adicional para identificar tópicos onde os alunos têm dificuldades):\n"
+                    + forumContext.substring(0, Math.min(forumContext.length(), 3000));
+        }
+
+        // Seed de aleatoriedade para garantir questões diferentes em cada geração
+        String seed = "Sessão " + System.currentTimeMillis() % 100000;
+
+        String systemPrompt = "És um professor experiente de " + (disc != null ? disc : "Geral")
+                + " em Moçambique, especializado no programa do INDE (Instituto Nacional do Desenvolvimento da Educação). "
+                + "Escreves sempre em português europeu (de Portugal), com ortografia correcta, acentuação completa e gramática rigorosa. "
+                + "Nunca uses expressões brasileiras. Geras questões pedagógicas, claras e com nível de dificuldade adequado ao ensino secundário moçambicano.";
+
+        String userPrompt = String.format(
+                "%s\n\n" +
+                "Conteúdo do livro «%s»:\n%s%s\n\n" +
+                "(%s) Gera EXACTAMENTE %d questões de escolha múltipla diferentes (4 opções A/B/C/D, exactamente 1 correcta cada). " +
+                "As questões devem ser variadas: evita repetir a mesma estrutura. " +
+                "As opções erradas devem ser plausíveis e pedagogicamente relevantes (não podem ser obviamente incorrectas). " +
+                "Para cada questão, inclui uma explicação clara (1-2 frases) de porquê a resposta está correcta.%s\n\n" +
+                "Responde APENAS com JSON válido, sem texto adicional:\n" +
+                "{\"questions\":[{\"enunciado\":\"...\",\"explicacao\":\"...\",\"options\":[" +
+                "{\"letra\":\"A\",\"texto\":\"...\",\"correta\":true}," +
+                "{\"letra\":\"B\",\"texto\":\"...\",\"correta\":false}," +
+                "{\"letra\":\"C\",\"texto\":\"...\",\"correta\":false}," +
+                "{\"letra\":\"D\",\"texto\":\"...\",\"correta\":false}]}]}",
+                modeInstructions, title, truncated, forumSection, seed, numQ, pageRef);
 
         HttpHeaders h = new HttpHeaders();
         h.setContentType(MediaType.APPLICATION_JSON);
-        h.set("x-api-key", apiKey);
-        h.set("anthropic-version", "2023-06-01");
+        h.set("Authorization", "Bearer " + apiKey);
 
-        Map<String, Object> body = Map.of(
-            "model", MODEL, "max_tokens", 6000,
-            "messages", List.of(Map.of("role", "user", "content", prompt)));
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("model", MODEL);
+        body.put("max_tokens", 6000);
+        body.put("temperature", 0.85);
+        body.put("messages", List.of(
+                Map.of("role", "system", "content", systemPrompt),
+                Map.of("role", "user",   "content", userPrompt)
+        ));
 
         ResponseEntity<Map<String, Object>> resp = rest.exchange(
-            ANTHROPIC_URL, HttpMethod.POST, new HttpEntity<>(body, h),
-            new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
+                OPENAI_URL, HttpMethod.POST, new HttpEntity<>(body, h),
+                new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
 
         Map<String, Object> responseBody = resp.getBody();
-        if (responseBody == null) throw new RuntimeException("Resposta vazia da API Anthropic");
-        List<?> content = (List<?>) responseBody.get("content");
-        String json = (String) ((Map<?, ?>) content.get(0)).get("text");
-        json = json.trim();
+        if (responseBody == null) throw new RuntimeException("Resposta vazia da API OpenAI");
+
+        List<?> choices = (List<?>) responseBody.get("choices");
+        Map<?, ?> choice = (Map<?, ?>) choices.get(0);
+        Map<?, ?> message = (Map<?, ?>) choice.get("message");
+        String json = ((String) message.get("content")).trim();
         if (json.startsWith("```")) json = json.replaceAll("```json\\n?", "").replaceAll("```\\n?", "").trim();
 
         JsonNode root = objectMapper.readTree(json);
         List<GeneratedQuestion> result = new ArrayList<>();
         for (JsonNode qn : root.get("questions")) {
             GeneratedQuestion gq = new GeneratedQuestion();
-            gq.enunciado = qn.get("enunciado").asText();
+            gq.enunciado  = qn.get("enunciado").asText();
             gq.explicacao = qn.has("explicacao") ? qn.get("explicacao").asText() : null;
-            gq.options = new ArrayList<>();
+            gq.options    = new ArrayList<>();
             for (JsonNode on : qn.get("options")) {
                 GeneratedOption go = new GeneratedOption();
                 go.letra   = on.get("letra").asText();
@@ -184,17 +215,23 @@ public class StudyPrepService {
 
     private List<GeneratedQuestion> fallback(String disc, int numQ) {
         List<GeneratedQuestion> result = new ArrayList<>();
-        String[] topics = {"conceitos fundamentais", "aplicações práticas", "definições", "análise crítica"};
+        String d = disc != null ? disc : "Geral";
+        String[] topics = {
+            "conceitos fundamentais de " + d,
+            "aplicações práticas de " + d,
+            "definições e terminologia de " + d,
+            "análise e interpretação em " + d
+        };
         for (int i = 0; i < numQ; i++) {
             GeneratedQuestion gq = new GeneratedQuestion();
-            gq.enunciado  = "Questão de preparação " + (i + 1) + " sobre " + topics[i % 4] + " de " + disc + "?";
-            gq.explicacao = "Esta é a explicação da resposta correcta para a questão " + (i + 1) + ".";
-            gq.options = new ArrayList<>();
+            gq.enunciado  = "Questão de preparação " + (i + 1) + " sobre " + topics[i % 4] + ".";
+            gq.explicacao = "A opção A é a correcta. Configura a chave OpenAI para geres questões reais.";
+            gq.options    = new ArrayList<>();
             String[] lets = {"A", "B", "C", "D"};
             for (int j = 0; j < 4; j++) {
                 GeneratedOption go = new GeneratedOption();
                 go.letra   = lets[j];
-                go.texto   = "Opção " + lets[j] + " da questão " + (i + 1);
+                go.texto   = j == 0 ? "Resposta correcta (exemplo)" : "Opção " + lets[j] + " (exemplo)";
                 go.correta = (j == 0);
                 gq.options.add(go);
             }

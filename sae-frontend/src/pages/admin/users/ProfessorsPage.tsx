@@ -240,39 +240,35 @@ const ProfessorsPage: React.FC = () => {
     <Box sx={{ minHeight: '100%', background: 'linear-gradient(160deg,#eff6ff 0%,#f8fafc 50%,#f0fdf4 100%)', p: 3 }}>
 
       {/* Header */}
-      <Box sx={{ background: 'linear-gradient(135deg,#0A1628 0%,#1565c0 100%)', borderRadius: 3, p: 2.5, mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Box sx={{ p: 1.2, borderRadius: 2, background: 'rgba(96,165,250,0.2)', border: '1px solid rgba(96,165,250,0.3)', display: 'flex' }}>
-            <PersonIcon sx={{ color: '#93c5fd', fontSize: 26 }} />
-          </Box>
-          <Box>
-            <Typography variant="h5" color="white" fontWeight={700}>Professores</Typography>
-            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)', mt: 0.3 }}>
-              {isSchoolAdmin ? 'Professores da sua escola' : 'Todos os professores do sistema'}
-            </Typography>
-          </Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box>
+          <Typography variant="h5" fontWeight={700} color="#0A1628">Professores</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            {isSchoolAdmin ? 'Professores da sua escola' : 'Todos os professores do sistema'}
+          </Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           {byStatus.pending.length > 0 && (
             <Chip
-              icon={<PendingIcon sx={{ fontSize: '15px !important', color: '#fbbf24 !important' }} />}
+              icon={<PendingIcon sx={{ fontSize: '15px !important', color: '#D97706 !important' }} />}
               label={`${byStatus.pending.length} pendente${byStatus.pending.length !== 1 ? 's' : ''}`}
               size="small"
-              sx={{ bgcolor: 'rgba(251,191,36,0.15)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.3)', fontWeight: 700 }}
+              sx={{ bgcolor: '#FEF3C7', color: '#D97706', fontWeight: 700 }}
             />
           )}
           {!loading && (
             <Chip label={`${professors.length} total`} size="small"
-              sx={{ bgcolor: 'rgba(96,165,250,0.2)', color: '#93c5fd', border: '1px solid rgba(96,165,250,0.3)' }} />
+              sx={{ bgcolor: 'rgba(0,166,81,0.1)', color: '#00A651', fontWeight: 600 }} />
           )}
           <Button
+            variant="outlined"
             startIcon={<UploadIcon sx={{ fontSize: '16px !important' }} />}
             onClick={openImport}
             size="small"
             sx={{
-              bgcolor: 'rgba(255,255,255,0.12)', color: 'white', border: '1px solid rgba(255,255,255,0.25)',
-              textTransform: 'none', fontWeight: 700, borderRadius: '8px', px: 2,
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
+              borderColor: '#00A651', color: '#00A651',
+              textTransform: 'none', fontWeight: 700, borderRadius: 2, px: 2,
+              '&:hover': { bgcolor: 'rgba(0,166,81,0.06)', borderColor: '#008f44' },
             }}
           >
             Importar
