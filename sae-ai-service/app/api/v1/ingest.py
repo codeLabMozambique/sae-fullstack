@@ -1,16 +1,9 @@
-<<<<<<< HEAD
 from fastapi import APIRouter, Request, HTTPException, Header
 from pydantic import BaseModel
 from app.services import rag_service
 from app.services.auth import require_role
 from app.core.config import settings
 from typing import Optional
-=======
-from fastapi import APIRouter, Request, HTTPException
-from pydantic import BaseModel
-from app.services import rag_service
-from app.services.auth import require_role
->>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
 
 router = APIRouter(prefix="/ingest", tags=["Ingest"])
 
@@ -22,7 +15,6 @@ class IngestRequest(BaseModel):
     discipline: str = ""
 
 
-<<<<<<< HEAD
 def _is_internal(x_service_key: Optional[str]) -> bool:
     return x_service_key == settings.INTERNAL_SERVICE_KEY
 
@@ -39,16 +31,6 @@ async def ingest_content(
     """
     if not _is_internal(x_service_key):
         require_role(request, "PROFESSOR", "ADMIN", "ROOT")
-=======
-@router.post("")
-async def ingest_content(body: IngestRequest, request: Request):
-    """
-    Ingere um PDF na base de dados vectorial (ChromaDB).
-    Chamado automaticamente após upload de conteúdo pelo professor/admin.
-    Roles: PROFESSOR, ADMIN, ROOT
-    """
-    require_role(request, "PROFESSOR", "ADMIN", "ROOT")
->>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
     try:
         chunks = await rag_service.ingest(
             content_id=body.content_id,
@@ -59,7 +41,6 @@ async def ingest_content(body: IngestRequest, request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro na ingestão: {str(e)}")
     return {"message": "Ingestão concluída", "content_id": body.content_id, "chunks": chunks}
-<<<<<<< HEAD
 
 
 @router.delete("/{content_id}")
@@ -77,5 +58,3 @@ async def remove_content(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao remover: {str(e)}")
     return {"message": "Conteúdo removido do índice", "content_id": content_id}
-=======
->>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
