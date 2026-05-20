@@ -62,7 +62,6 @@ async def ingest(content_id: str, file_url: str, title: str, discipline: str = "
     return len(chunks)
 
 
-<<<<<<< HEAD
 def search(query: str, discipline: Optional[str] = None, content_id: Optional[str] = None, n: int = 5) -> list[dict]:
     col = get_collection()
     # content_id filter takes priority — search only that specific book
@@ -72,11 +71,6 @@ def search(query: str, discipline: Optional[str] = None, content_id: Optional[st
         where = {"discipline": discipline}
     else:
         where = None
-=======
-def search(query: str, discipline: Optional[str] = None, n: int = 5) -> list[dict]:
-    col = get_collection()
-    where = {"discipline": discipline} if discipline else None
->>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
     try:
         results = col.query(query_texts=[query], n_results=n, where=where)
     except Exception:
