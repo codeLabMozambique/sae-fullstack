@@ -2,44 +2,56 @@ import redis.asyncio as redis
 from app.core.config import settings
 import json
 import logging
+from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 
+# In-memory fallback when Redis is unavailable
+_memory_store: Dict[str, List] = {}
+
+
 class RedisService:
     def __init__(self):
-        self.redis_client = None
-        self.connect()
+        self._client = None
+        self._available = False
+        self._try_connect()
 
-    def connect(self):
+    def _try_connect(self):
         try:
-            self.redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+            self._client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+            self._available = True
         except Exception as e:
-            logger.error(f"Erro ao conectar ao Redis (modo simulado ativo): {e}")
+            logger.warning("Redis indisponível — usando memória: %s", e)
+            self._available = False
 
     async def get_chat_history(self, session_id: str) -> list:
-        if not self.redis_client: return []
-        try:
-            data = await self.redis_client.get(f"chat:{session_id}")
-            return json.loads(data) if data else []
-        except Exception:
-            return []
+        if self._available:
+            try:
+                data = await self._client.get(f"chat:{session_id}")
+                return json.loads(data) if data else []
+            except Exception:
+                pass
+        return _memory_store.get(session_id, [])
 
     async def save_chat_history(self, session_id: str, messages: list):
-        if not self.redis_client: return
-        try:
-            await self.redis_client.setex(
-                f"chat:{session_id}",
-                settings.CACHE_TTL,
-                json.dumps(messages)
-            )
-        except Exception as e:
-            logger.error(f"Erro ao salvar no Redis: {e}")
+        if self._available:
+            try:
+                await self._client.setex(
+                    f"chat:{session_id}", settings.CACHE_TTL, json.dumps(messages)
+                )
+                return
+            except Exception:
+                pass
+        _memory_store[session_id] = messages[-20:]  # keep last 20 messages
 
     async def clear_chat_history(self, session_id: str):
-        if not self.redis_client: return
-        try:
-            await self.redis_client.delete(f"chat:{session_id}")
-        except Exception:
-            pass
+        if self._available:
+            try:
+                await self._client.delete(f"chat:{session_id}")
+                return
+            except Exception:
+                pass
+        _memory_store.pop(session_id, None)
+
 
 redis_service = RedisService()

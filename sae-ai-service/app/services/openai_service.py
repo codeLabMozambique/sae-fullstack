@@ -2,63 +2,92 @@ from openai import AsyncOpenAI
 from app.core.config import settings
 import json
 
-client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+_client: AsyncOpenAI | None = None
+
+def _get_client() -> AsyncOpenAI:
+    global _client
+    if _client is None:
+        _client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+    return _client
+
+# ──────────────────────────────────────────────────────────────────
+# Prompt base: restringe SEMPRE a tópicos académicos
+# ──────────────────────────────────────────────────────────────────
+_ACADEMIC_SYSTEM = """És o assistente de IA do SAE (Sistema de Apoio ao Estudante) de Moçambique.
+O teu único domínio é o contexto académico do ensino secundário moçambicano:
+disciplinas, livros da biblioteca digital, quizzes, dúvidas de estudo, currículos, turmas e professores.
+
+REGRAS ABSOLUTAS:
+1. Responde SEMPRE em Português de Moçambique.
+2. Recusa educadamente qualquer pergunta que não seja académica ou educativa.
+   Exemplo de recusa: "Só posso ajudar com assuntos académicos e educativos. Tens alguma dúvida de estudo?"
+3. Nunca respondas a pedidos de código malicioso, conteúdo adulto, política, entretenimento ou outros temas não académicos.
+4. Sê didáctico, encorajador e claro nas respostas.
+5. Quando usares informação de livros da biblioteca, cita o título da fonte."""
+
 
 class OpenAIService:
+
     @staticmethod
-    async def generate_educational_chat_response(messages: list, context: str = "") -> str:
-        system_prompt = (
-            "Você é um tutor educacional do SAE Moçambique, focado no currículo do Ensino Secundário. "
-            "Sempre responda em português de Moçambique, de forma didática e encorajadora."
-        )
-        if context:
-            system_prompt += f"\nContexto adicional da sessão: {context}"
-            
-        api_messages = [{"role": "system", "content": system_prompt}]
+    async def generate_educational_chat_response(
+        messages: list,
+        extra_context: str = "",
+    ) -> str:
+        system = _ACADEMIC_SYSTEM
+        if extra_context:
+            system += f"\n\n{extra_context}"
+
+        api_messages = [{"role": "system", "content": system}]
         api_messages.extend(messages)
-        
+
         try:
-            response = await client.chat.completions.create(
+            response = await _get_client().chat.completions.create(
                 model=settings.OPENAI_MODEL,
                 messages=api_messages,
                 max_tokens=settings.OPENAI_MAX_TOKENS,
-                temperature=settings.OPENAI_TEMPERATURE
+                temperature=settings.OPENAI_TEMPERATURE,
             )
             return response.choices[0].message.content
         except Exception as e:
-            return f"[Resposta simulada da IA]: Detetámos um problema em processar o prompt. Erro: {str(e)}"
+            return f"Erro ao contactar a IA: {str(e)}"
 
     @staticmethod
     async def generate_quiz(topic: str, difficulty: str, num_questions: int) -> dict:
+        system = (
+            _ACADEMIC_SYSTEM
+            + "\n\nResponde APENAS com JSON válido, sem markdown nem explicações extra."
+        )
         prompt = (
-            f"Gere um quiz de múltipla escolha sobre '{topic}' com dificuldade '{difficulty}'. "
-            f"O quiz deve conter exatamente {num_questions} perguntas. "
-            "Formato: JSON bruto com chave 'questions' (lista). Cada questão tem 'question_text', "
-            "'options' (lista de 4 itens), 'correct_answer', 'explanation'."
+            f"Gera {num_questions} questões de múltipla escolha sobre o seguinte tópico académico:\n"
+            f"{topic}\n"
+            f"Dificuldade: {difficulty}.\n"
+            "Formato JSON obrigatório:\n"
+            '{"questions": [{"question_text": "...", "options": ["A) ...", "B) ...", "C) ...", "D) ..."], '
+            '"correct_answer": "A", "explanation": "..."}]}'
         )
         try:
-            response = await client.chat.completions.create(
+            response = await _get_client().chat.completions.create(
                 model=settings.OPENAI_MODEL,
                 messages=[
-                    {"role": "system", "content": "Você é um gerador de quizzes JSON para Moçambique. Retorne apenas JSON válido sem formatação markdown markdown."},
-                    {"role": "user", "content": prompt}
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": prompt},
                 ],
-                max_tokens=1500,
+                max_tokens=2000,
                 temperature=0.7,
-                response_format={ "type": "json_object" }
+                response_format={"type": "json_object"},
             )
-            content = response.choices[0].message.content
-            return json.loads(content)
+            return json.loads(response.choices[0].message.content)
         except Exception as e:
             return {
                 "questions": [
                     {
-                        "question_text": f"Pergunta de teste sobre {topic} - erro API: {str(e)}",
-                        "options": ["A", "B", "C", "D"],
+                        "question_text": f"Erro ao gerar questão: {str(e)}",
+                        "options": ["A) —", "B) —", "C) —", "D) —"],
                         "correct_answer": "A",
-                        "explanation": "Explicação simulada."
+                        "explanation": "",
                     }
                 ]
             }
+
 
 openai_service = OpenAIService()
