@@ -128,22 +128,22 @@ public class ForumQuestionService {
     /** TURMA: sala colaborativa específica de uma turma + disciplina */
     @Transactional
     public QuestionResponseDTO getOrCreateCollaborativeRoomBySubject(Long subjectId, Long classroomId) {
-        return questionRepository
+        java.util.Optional<ForumQuestionEntity> existing = questionRepository
             .findFirstBySubjectIdAndClassroomIdAndQuestionTypeOrderByCreatedAtAsc(
-                subjectId, classroomId, QuestionType.COLABORATIVO)
-            .map(QuestionResponseDTO::from)
-            .orElseGet(() -> {
-                ForumQuestionEntity room = new ForumQuestionEntity();
-                room.setTitulo("Chat da Turma - Disciplina #" + subjectId);
-                room.setDescricao("Sala de chat colaborativo para a turma");
-                room.setSubjectId(subjectId);
-                room.setClassroomId(classroomId);
-                room.setForumScope(ForumScope.TURMA);
-                room.setQuestionType(QuestionType.COLABORATIVO);
-                room.setStatus(QuestionStatus.ABERTA);
-                room.setCreatedBy("system");
-                return QuestionResponseDTO.from(Objects.requireNonNull(questionRepository.save(room)));
-            });
+                subjectId, classroomId, QuestionType.COLABORATIVO);
+        if (existing.isPresent()) {
+            return enrichWithAnswers(existing.get());
+        }
+        ForumQuestionEntity room = new ForumQuestionEntity();
+        room.setTitulo("Chat da Turma - Disciplina #" + subjectId);
+        room.setDescricao("Sala de chat colaborativo para a turma");
+        room.setSubjectId(subjectId);
+        room.setClassroomId(classroomId);
+        room.setForumScope(ForumScope.TURMA);
+        room.setQuestionType(QuestionType.COLABORATIVO);
+        room.setStatus(QuestionStatus.ABERTA);
+        room.setCreatedBy("system");
+        return QuestionResponseDTO.from(Objects.requireNonNull(questionRepository.save(room)));
     }
 
     /** DISCIPLINA: sala colaborativa broadcast (sem turma específica) */

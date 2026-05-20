@@ -1,0 +1,1015 @@
+=========================================================
+  SAE — UTILIZADORES DE TESTE
+  Senha de todos: SAE@2025!
+=========================================================
+
+
+=========================================================
+  ESCOLA SECUNDÁRIA SAE — ESTUDANTES
+=========================================================
+
+──── Turma A - 8ª Classe ────────────────────────────────
+
+ESTUDANTE 1:
+  Nome: Armindo Manuel Sitoe
+  Numero: +258840021001
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 8ª Classe (nivel)
+  Idade: 13 anos
+
+ESTUDANTE 2:
+  Nome: Beatriz Conceição Fumo
+  Numero: +258840021002
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 8ª Classe (nivel)
+  Idade: 14 anos
+
+ESTUDANTE 3:
+  Nome: Carlos Eduardo Nhaca
+  Numero: +258840021003
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 8ª Classe (nivel)
+  Idade: 13 anos
+
+ESTUDANTE 4:
+  Nome: Dina Amélia Cossa
+  Numero: +258840021004
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 8ª Classe (nivel)
+  Idade: 14 anos
+
+ESTUDANTE 5:
+  Nome: Ernesto Filipe Mabjaia
+  Numero: +258840021005
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 8ª Classe (nivel)
+  Idade: 13 anos
+
+ESTUDANTE 6:
+  Nome: Felicidade António Mabunda
+  Numero: +258840021006
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 8ª Classe (nivel)
+  Idade: 14 anos
+
+ESTUDANTE 7:
+  Nome: Gabriel Domingos Machava
+  Numero: +258840021007
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 8ª Classe (nivel)
+  Idade: 13 anos
+
+ESTUDANTE 8:
+  Nome: Helena Júlia Mahlombe
+  Numero: +258840021008
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 8ª Classe (nivel)
+  Idade: 14 anos
+
+ESTUDANTE 9:
+  Nome: Isaque Nunes Guambe
+  Numero: +258840021009
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 8ª Classe (nivel)
+  Idade: 13 anos
+
+──── Turma A - 9ª Classe ────────────────────────────────
+
+ESTUDANTE 10:
+  Nome: Jacinto Paulo Mondlane
+  Numero: +258840022001
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 9ª Classe (nivel)
+  Idade: 14 anos
+
+ESTUDANTE 11:
+  Nome: Keiti Artur Libombo
+  Numero: +258840022002
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 9ª Classe (nivel)
+  Idade: 15 anos
+
+ESTUDANTE 12:
+  Nome: Lourenço Virgílio Sitoe
+  Numero: +258840022003
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 9ª Classe (nivel)
+  Idade: 14 anos
+
+ESTUDANTE 13:
+  Nome: Marta Filomena Nhambe
+  Numero: +258840022004
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 9ª Classe (nivel)
+  Idade: 15 anos
+
+ESTUDANTE 14:
+  Nome: Narciso Damiano Cuna
+  Numero: +258840022005
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 9ª Classe (nivel)
+  Idade: 14 anos
+
+ESTUDANTE 15:
+  Nome: Olinda Sofia Macandja
+  Numero: +258840022006
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 9ª Classe (nivel)
+  Idade: 15 anos
+
+ESTUDANTE 16:
+  Nome: Plácido Ernesto Zita
+  Numero: +258840022007
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 9ª Classe (nivel)
+  Idade: 14 anos
+
+ESTUDANTE 17:
+  Nome: Raquel Julieta Nhampossa
+  Numero: +258840022008
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 9ª Classe (nivel)
+  Idade: 15 anos
+
+ESTUDANTE 18:
+  Nome: Sebastião Alberto Chuele
+  Numero: +258840022009
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 9ª Classe (nivel)
+  Idade: 14 anos
+
+──── Turma A - 10ª Classe ───────────────────────────────
+
+ESTUDANTE 19:
+  Nome: Tomás Fernando Zunguze
+  Numero: +258840023001
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 10ª Classe (nivel)
+  Idade: 15 anos
+
+ESTUDANTE 20:
+  Nome: Ursulina Bento Chirindza
+  Numero: +258840023002
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 10ª Classe (nivel)
+  Idade: 16 anos
+
+ESTUDANTE 21:
+  Nome: Valentim Júlio Nhanombe
+  Numero: +258840023003
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 10ª Classe (nivel)
+  Idade: 15 anos
+
+ESTUDANTE 22:
+  Nome: Wanda Emília Macuácua
+  Numero: +258840023004
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 10ª Classe (nivel)
+  Idade: 16 anos
+
+ESTUDANTE 23:
+  Nome: Xisto Luciano Manhique
+  Numero: +258840023005
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 10ª Classe (nivel)
+  Idade: 15 anos
+
+ESTUDANTE 24:
+  Nome: Yolanda Filipe Nhabite
+  Numero: +258840023006
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 10ª Classe (nivel)
+  Idade: 16 anos
+
+ESTUDANTE 25:
+  Nome: Zacarias Álvaro Vilanculo
+  Numero: +258840023007
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 10ª Classe (nivel)
+  Idade: 15 anos
+
+ESTUDANTE 26:
+  Nome: Ana Beatriz Mussane
+  Numero: +258840023008
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 10ª Classe (nivel)
+  Idade: 16 anos
+
+ESTUDANTE 27:
+  Nome: Bruno Celestino Cumbe
+  Numero: +258840023009
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 10ª Classe (nivel)
+  Idade: 15 anos
+
+──── Turma A - 11ª Classe (Letras) ─────────────────────
+
+ESTUDANTE 28:
+  Nome: Celeste Dionísio Guirrugo
+  Numero: +258840024001
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 11ª Classe, Grupo Letras (nivel)
+  Idade: 16 anos
+
+ESTUDANTE 29:
+  Nome: David Justino Amade
+  Numero: +258840024002
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 11ª Classe, Grupo Letras (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 30:
+  Nome: Estela Rodrigues Tembe
+  Numero: +258840024003
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 11ª Classe, Grupo Letras (nivel)
+  Idade: 16 anos
+
+ESTUDANTE 31:
+  Nome: Fausto Lúcio Chabala
+  Numero: +258840024004
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 11ª Classe, Grupo Letras (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 32:
+  Nome: Glória Maria Mondlane
+  Numero: +258840024005
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 11ª Classe, Grupo Letras (nivel)
+  Idade: 16 anos
+
+ESTUDANTE 33:
+  Nome: Hélio Cristóvão Sitoe
+  Numero: +258840024006
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 11ª Classe, Grupo Letras (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 34:
+  Nome: Inês Patrícia Machava
+  Numero: +258840024007
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 11ª Classe, Grupo Letras (nivel)
+  Idade: 16 anos
+
+ESTUDANTE 35:
+  Nome: João Domingos Fumo
+  Numero: +258840024008
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 11ª Classe, Grupo Letras (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 36:
+  Nome: Lúcia Fernanda Nhaca
+  Numero: +258840024009
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 11ª Classe, Grupo Letras (nivel)
+  Idade: 16 anos
+
+──── Turma B - 11ª Classe (Ciências Biológicas) ─────────
+
+ESTUDANTE 37:
+  Nome: Mário Esperança Cossa
+  Numero: +258840025001
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma B - 11ª Classe, Grupo Ciências Bio (nivel)
+  Idade: 16 anos
+
+ESTUDANTE 38:
+  Nome: Natália Guido Mabjaia
+  Numero: +258840025002
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma B - 11ª Classe, Grupo Ciências Bio (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 39:
+  Nome: Osvaldo Teófilo Mabunda
+  Numero: +258840025003
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma B - 11ª Classe, Grupo Ciências Bio (nivel)
+  Idade: 16 anos
+
+ESTUDANTE 40:
+  Nome: Paula Cecília Libombo
+  Numero: +258840025004
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma B - 11ª Classe, Grupo Ciências Bio (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 41:
+  Nome: Quintino Elias Nhambe
+  Numero: +258840025005
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma B - 11ª Classe, Grupo Ciências Bio (nivel)
+  Idade: 16 anos
+
+ESTUDANTE 42:
+  Nome: Rosa Albertina Cuna
+  Numero: +258840025006
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma B - 11ª Classe, Grupo Ciências Bio (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 43:
+  Nome: Simão Baltazar Macandja
+  Numero: +258840025007
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma B - 11ª Classe, Grupo Ciências Bio (nivel)
+  Idade: 16 anos
+
+ESTUDANTE 44:
+  Nome: Teresa Cândida Zita
+  Numero: +258840025008
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma B - 11ª Classe, Grupo Ciências Bio (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 45:
+  Nome: Ulisses Benigno Nhampossa
+  Numero: +258840025009
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma B - 11ª Classe, Grupo Ciências Bio (nivel)
+  Idade: 16 anos
+
+──── Turma C - 11ª Classe (Ciências Exactas) ────────────
+
+ESTUDANTE 46:
+  Nome: Vânia Gertrudes Chuele
+  Numero: +258840026001
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma C - 11ª Classe, Grupo Ciências Exactas (nivel)
+  Idade: 16 anos
+
+ESTUDANTE 47:
+  Nome: Walter Hipólito Zunguze
+  Numero: +258840026002
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma C - 11ª Classe, Grupo Ciências Exactas (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 48:
+  Nome: Xénia Irene Chirindza
+  Numero: +258840026003
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma C - 11ª Classe, Grupo Ciências Exactas (nivel)
+  Idade: 16 anos
+
+ESTUDANTE 49:
+  Nome: Yanis Joaquim Nhanombe
+  Numero: +258840026004
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma C - 11ª Classe, Grupo Ciências Exactas (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 50:
+  Nome: Zilda Kátia Macuácua
+  Numero: +258840026005
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma C - 11ª Classe, Grupo Ciências Exactas (nivel)
+  Idade: 16 anos
+
+ESTUDANTE 51:
+  Nome: Alberto Lázaro Manhique
+  Numero: +258840026006
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma C - 11ª Classe, Grupo Ciências Exactas (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 52:
+  Nome: Belmira Maurício Nhabite
+  Numero: +258840026007
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma C - 11ª Classe, Grupo Ciências Exactas (nivel)
+  Idade: 16 anos
+
+ESTUDANTE 53:
+  Nome: Cláudio Nicolau Vilanculo
+  Numero: +258840026008
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma C - 11ª Classe, Grupo Ciências Exactas (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 54:
+  Nome: Deolinda Osvaldo Mussane
+  Numero: +258840026009
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma C - 11ª Classe, Grupo Ciências Exactas (nivel)
+  Idade: 16 anos
+
+──── Turma A - 12ª Classe (Letras) ─────────────────────
+
+ESTUDANTE 55:
+  Nome: Eduardo Paulo Cumbe
+  Numero: +258840027001
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 12ª Classe, Grupo Letras (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 56:
+  Nome: Filomena Quirino Guirrugo
+  Numero: +258840027002
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 12ª Classe, Grupo Letras (nivel)
+  Idade: 18 anos
+
+ESTUDANTE 57:
+  Nome: Geraldo Rosário Amade
+  Numero: +258840027003
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 12ª Classe, Grupo Letras (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 58:
+  Nome: Hermelinda Sérgio Tembe
+  Numero: +258840027004
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 12ª Classe, Grupo Letras (nivel)
+  Idade: 18 anos
+
+ESTUDANTE 59:
+  Nome: Ilídio Teotônio Chabala
+  Numero: +258840027005
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 12ª Classe, Grupo Letras (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 60:
+  Nome: Josefina Ubaldo Mondlane
+  Numero: +258840027006
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 12ª Classe, Grupo Letras (nivel)
+  Idade: 18 anos
+
+ESTUDANTE 61:
+  Nome: Leopoldo Valentim Sitoe
+  Numero: +258840027007
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 12ª Classe, Grupo Letras (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 62:
+  Nome: Madalena Waldemar Machava
+  Numero: +258840027008
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 12ª Classe, Grupo Letras (nivel)
+  Idade: 18 anos
+
+ESTUDANTE 63:
+  Nome: Noel Xavier Fumo
+  Numero: +258840027009
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma A - 12ª Classe, Grupo Letras (nivel)
+  Idade: 17 anos
+
+──── Turma B - 12ª Classe (Ciências Biológicas) ─────────
+
+ESTUDANTE 64:
+  Nome: Olavo Yolanda Nhaca
+  Numero: +258840028001
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma B - 12ª Classe, Grupo Ciências Bio (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 65:
+  Nome: Perpétua Zacarias Cossa
+  Numero: +258840028002
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma B - 12ª Classe, Grupo Ciências Bio (nivel)
+  Idade: 18 anos
+
+ESTUDANTE 66:
+  Nome: Quitéria Adriano Mabjaia
+  Numero: +258840028003
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma B - 12ª Classe, Grupo Ciências Bio (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 67:
+  Nome: Rodolfo Bernardino Mabunda
+  Numero: +258840028004
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma B - 12ª Classe, Grupo Ciências Bio (nivel)
+  Idade: 18 anos
+
+ESTUDANTE 68:
+  Nome: Salomé Cipriano Libombo
+  Numero: +258840028005
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma B - 12ª Classe, Grupo Ciências Bio (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 69:
+  Nome: Tobias Dário Nhambe
+  Numero: +258840028006
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma B - 12ª Classe, Grupo Ciências Bio (nivel)
+  Idade: 18 anos
+
+ESTUDANTE 70:
+  Nome: Umbelina Euclides Cuna
+  Numero: +258840028007
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma B - 12ª Classe, Grupo Ciências Bio (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 71:
+  Nome: Vitorino Florêncio Macandja
+  Numero: +258840028008
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma B - 12ª Classe, Grupo Ciências Bio (nivel)
+  Idade: 18 anos
+
+ESTUDANTE 72:
+  Nome: Wanda Graciano Zita
+  Numero: +258840028009
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma B - 12ª Classe, Grupo Ciências Bio (nivel)
+  Idade: 17 anos
+
+──── Turma C - 12ª Classe (Ciências Exactas) ────────────
+
+ESTUDANTE 73:
+  Nome: Ximena Hortêncio Nhampossa
+  Numero: +258840029001
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma C - 12ª Classe, Grupo Ciências Exactas (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 74:
+  Nome: Yolanda Ilídio Chuele
+  Numero: +258840029002
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma C - 12ª Classe, Grupo Ciências Exactas (nivel)
+  Idade: 18 anos
+
+ESTUDANTE 75:
+  Nome: Zaqueu Januário Zunguze
+  Numero: +258840029003
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma C - 12ª Classe, Grupo Ciências Exactas (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 76:
+  Nome: Américo Lopes Chirindza
+  Numero: +258840029004
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma C - 12ª Classe, Grupo Ciências Exactas (nivel)
+  Idade: 18 anos
+
+ESTUDANTE 77:
+  Nome: Benedita Mariana Nhanombe
+  Numero: +258840029005
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma C - 12ª Classe, Grupo Ciências Exactas (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 78:
+  Nome: Celestino Nuno Macuácua
+  Numero: +258840029006
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma C - 12ª Classe, Grupo Ciências Exactas (nivel)
+  Idade: 18 anos
+
+ESTUDANTE 79:
+  Nome: Domingas Onésimo Manhique
+  Numero: +258840029007
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma C - 12ª Classe, Grupo Ciências Exactas (nivel)
+  Idade: 17 anos
+
+ESTUDANTE 80:
+  Nome: Ernâni Policarpo Nhabite
+  Numero: +258840029008
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma C - 12ª Classe, Grupo Ciências Exactas (nivel)
+  Idade: 18 anos
+
+ESTUDANTE 81:
+  Nome: Francisca Quirino Vilanculo
+  Numero: +258840029009
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Turma C - 12ª Classe, Grupo Ciências Exactas (nivel)
+  Idade: 17 anos
+
+
+=========================================================
+  UNIVERSIDADE EDUARDO MONDLANE — ESTUDANTES
+=========================================================
+
+──── 1º Ano Turma B ─────────────────────────────────────
+
+ESTUDANTE 82:
+  Nome: Ana Luísa Muteto
+  Numero: +258860001001
+  Senha: SAE@2025!
+  Universidade Eduardo Mondlane
+  1º Ano, Turma B
+  Idade: 18 anos
+
+ESTUDANTE 83:
+  Nome: Bernardo Filipe Guambe
+  Numero: +258860001002
+  Senha: SAE@2025!
+  Universidade Eduardo Mondlane
+  1º Ano, Turma B
+  Idade: 17 anos
+
+ESTUDANTE 84:
+  Nome: Cátia Rosário Sitoe
+  Numero: +258860001003
+  Senha: SAE@2025!
+  Universidade Eduardo Mondlane
+  1º Ano, Turma B
+  Idade: 18 anos
+
+ESTUDANTE 85:
+  Nome: Domingos Artur Nhaca
+  Numero: +258860001004
+  Senha: SAE@2025!
+  Universidade Eduardo Mondlane
+  1º Ano, Turma B
+  Idade: 19 anos
+
+ESTUDANTE 86:
+  Nome: Elsa Conceição Fumo
+  Numero: +258860001005
+  Senha: SAE@2025!
+  Universidade Eduardo Mondlane
+  1º Ano, Turma B
+  Idade: 18 anos
+
+ESTUDANTE 87:
+  Nome: Frederico Manuel Cossa
+  Numero: +258860001006
+  Senha: SAE@2025!
+  Universidade Eduardo Mondlane
+  1º Ano, Turma B
+  Idade: 17 anos
+
+ESTUDANTE 88:
+  Nome: Gertrudes Lúcia Mabjaia
+  Numero: +258860001007
+  Senha: SAE@2025!
+  Universidade Eduardo Mondlane
+  1º Ano, Turma B
+  Idade: 18 anos
+
+ESTUDANTE 89:
+  Nome: Horácio Ernesto Mabunda
+  Numero: +258860001008
+  Senha: SAE@2025!
+  Universidade Eduardo Mondlane
+  1º Ano, Turma B
+  Idade: 19 anos
+
+ESTUDANTE 90:
+  Nome: Irene Beatriz Machava
+  Numero: +258860001009
+  Senha: SAE@2025!
+  Universidade Eduardo Mondlane
+  1º Ano, Turma B
+  Idade: 18 anos
+
+──── 2º Ano Turma A ─────────────────────────────────────
+
+ESTUDANTE 91:
+  Nome: Júlio César Libombo
+  Numero: +258860002001
+  Senha: SAE@2025!
+  Universidade Eduardo Mondlane
+  2º Ano, Turma A
+  Idade: 20 anos
+
+ESTUDANTE 92:
+  Nome: Karoline Sofia Nhambe
+  Numero: +258860002002
+  Senha: SAE@2025!
+  Universidade Eduardo Mondlane
+  2º Ano, Turma A
+  Idade: 19 anos
+
+ESTUDANTE 93:
+  Nome: Lisete Felicidade Cuna
+  Numero: +258860002003
+  Senha: SAE@2025!
+  Universidade Eduardo Mondlane
+  2º Ano, Turma A
+  Idade: 21 anos
+
+ESTUDANTE 94:
+  Nome: Marcos Eduardo Macandja
+  Numero: +258860002004
+  Senha: SAE@2025!
+  Universidade Eduardo Mondlane
+  2º Ano, Turma A
+  Idade: 20 anos
+
+ESTUDANTE 95:
+  Nome: Nádia Carla Zita
+  Numero: +258860002005
+  Senha: SAE@2025!
+  Universidade Eduardo Mondlane
+  2º Ano, Turma A
+  Idade: 19 anos
+
+ESTUDANTE 96:
+  Nome: Orlando Tomás Nhampossa
+  Numero: +258860002006
+  Senha: SAE@2025!
+  Universidade Eduardo Mondlane
+  2º Ano, Turma A
+  Idade: 22 anos
+
+ESTUDANTE 97:
+  Nome: Petra Almira Chuele
+  Numero: +258860002007
+  Senha: SAE@2025!
+  Universidade Eduardo Mondlane
+  2º Ano, Turma A
+  Idade: 20 anos
+
+ESTUDANTE 98:
+  Nome: Queila Fernanda Zunguze
+  Numero: +258860002008
+  Senha: SAE@2025!
+  Universidade Eduardo Mondlane
+  2º Ano, Turma A
+  Idade: 19 anos
+
+ESTUDANTE 99:
+  Nome: Renato Adriano Chirindza
+  Numero: +258860002009
+  Senha: SAE@2025!
+  Universidade Eduardo Mondlane
+  2º Ano, Turma A
+  Idade: 21 anos
+
+
+=========================================================
+  UNIVERSIDADE PEDAGÓGICA — ESTUDANTES
+=========================================================
+
+──── 2º Ano Turma A ─────────────────────────────────────
+
+ESTUDANTE 100:
+  Nome: Sónia Esperança Nhanombe
+  Numero: +258870001001
+  Senha: SAE@2025!
+  Universidade Pedagógica
+  2º Ano, Turma A
+  Idade: 22 anos
+
+ESTUDANTE 101:
+  Nome: Tiago Luís Macuácua
+  Numero: +258870001002
+  Senha: SAE@2025!
+  Universidade Pedagógica
+  2º Ano, Turma A
+  Idade: 21 anos
+
+ESTUDANTE 102:
+  Nome: Úrsula Dina Manhique
+  Numero: +258870001003
+  Senha: SAE@2025!
+  Universidade Pedagógica
+  2º Ano, Turma A
+  Idade: 23 anos
+
+ESTUDANTE 103:
+  Nome: Valter Ernesto Nhabite
+  Numero: +258870001004
+  Senha: SAE@2025!
+  Universidade Pedagógica
+  2º Ano, Turma A
+  Idade: 22 anos
+
+ESTUDANTE 104:
+  Nome: Xénia Teresa Vilanculo
+  Numero: +258870001005
+  Senha: SAE@2025!
+  Universidade Pedagógica
+  2º Ano, Turma A
+  Idade: 21 anos
+
+ESTUDANTE 105:
+  Nome: Yasmin Beatriz Mussane
+  Numero: +258870001006
+  Senha: SAE@2025!
+  Universidade Pedagógica
+  2º Ano, Turma A
+  Idade: 24 anos
+
+ESTUDANTE 106:
+  Nome: Zeferino Hilário Cumbe
+  Numero: +258870001007
+  Senha: SAE@2025!
+  Universidade Pedagógica
+  2º Ano, Turma A
+  Idade: 22 anos
+
+ESTUDANTE 107:
+  Nome: Adérito Filipe Guirrugo
+  Numero: +258870001008
+  Senha: SAE@2025!
+  Universidade Pedagógica
+  2º Ano, Turma A
+  Idade: 23 anos
+
+ESTUDANTE 108:
+  Nome: Blandina Sofia Amade
+  Numero: +258870001009
+  Senha: SAE@2025!
+  Universidade Pedagógica
+  2º Ano, Turma A
+  Idade: 21 anos
+
+
+=========================================================
+  ESCOLA SECUNDÁRIA SAE — PROFESSORES
+  (1 professor por disciplina do currículo)
+=========================================================
+
+PROFESSOR 1:
+  Nome: João António Tembe
+  Numero: +258850011001
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Disciplina: Matemática
+  Departamento: Ciências Exactas
+  Turmas atribuídas: Turma A 8ª, Turma A 10ª, Turma A 12ª (Letras)
+
+PROFESSOR 2:
+  Nome: Ana Paula Chirindza
+  Numero: +258850011002
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Disciplina: Português
+  Departamento: Línguas
+  Turmas atribuídas: Turma A 9ª, Turma B 11ª (Ciências Bio), Turma B 12ª (Ciências Bio)
+
+PROFESSOR 3:
+  Nome: Pedro Augusto Guambe
+  Numero: +258850011003
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Disciplina: Física
+  Departamento: Ciências Exactas
+  Turmas atribuídas: Turma A 10ª, Turma C 11ª (Ciências Exactas)
+
+PROFESSOR 4:
+  Nome: Rosa Elvira Libombo
+  Numero: +258850011004
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Disciplina: Química
+  Departamento: Ciências Exactas
+  Turmas atribuídas: Turma B 11ª (Ciências Bio), Turma C 12ª (Ciências Exactas)
+
+PROFESSOR 5:
+  Nome: Maria Isabel Mondlane
+  Numero: +258850011005
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Disciplina: História
+  Departamento: Ciências Sociais
+  Turmas atribuídas: Turma A 8ª, Turma A 11ª (Letras)
+
+PROFESSOR 6:
+  Nome: Fátima Rosária Nhanombe
+  Numero: +258850011006
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Disciplina: Biologia
+  Departamento: Ciências Naturais
+  Turmas atribuídas: Turma A 9ª, Turma B 11ª (Ciências Bio)
+
+PROFESSOR 7:
+  Nome: David Carlos Ferreira
+  Numero: +258850011007
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Disciplina: Inglês
+  Departamento: Línguas
+  Turmas atribuídas: Turma A 11ª (Letras), Turma C 11ª (Ciências Exactas), Turma C 12ª (Ciências Exactas)
+
+PROFESSOR 8:
+  Nome: Manuel Sérgio Sitoe
+  Numero: +258850011008
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Disciplina: Informática
+  Departamento: Tecnologias
+  Turmas atribuídas: Turma A 10ª (única turma com a disciplina)
+
+PROFESSOR 9:
+  Nome: Carlos José Machava
+  Numero: +258850011009
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Disciplina: Geografia
+  Departamento: Ciências Sociais
+  Turmas atribuídas: Turma A 8ª, Turma A 9ª
+
+PROFESSOR 10:
+  Nome: Amélia Graça Macuácua
+  Numero: +258850011010
+  Senha: SAE@2025!
+  Escola Secundária SAE
+  Disciplina: Filosofia
+  Departamento: Humanidades
+  Turmas atribuídas: Turma A 11ª (Letras), Turma A 12ª (Letras)
+
+
+=========================================================
+  RESUMO
+=========================================================
+  Total estudantes ESG:  81  (9 por turma × 9 turmas)
+  Total estudantes UEM:  18  (9 por turma × 2 turmas)
+  Total estudantes UP:    9  (9 por turma × 1 turma)
+  Total professores ESG: 10  (1 por disciplina)
+  ─────────────────────────────────────────────────────
+  TOTAL UTILIZADORES:   118
+=========================================================
