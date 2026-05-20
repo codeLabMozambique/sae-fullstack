@@ -12,7 +12,7 @@ import {
   CalendarToday as CalendarIcon, School as SchoolIcon, Category as CatIcon,
   CloudDownload as SaveOfflineIcon, DeleteOutline as RemoveOfflineIcon,
   CheckCircle as CheckIcon, Cancel as CancelIcon, AutoAwesome as AIIcon,
-  Quiz as QuizIcon, EmojiEvents as TrophyIcon,
+  Quiz as QuizIcon, EmojiEvents as TrophyIcon, SmartToy as BotIcon,
 } from '@mui/icons-material';
 import PdfReader from '../../components/biblioteca/PdfReader';
 import {
@@ -284,6 +284,28 @@ const Leitor: React.FC = () => {
           </Stack>
         </Box>
         <SpeechButton text={`${content.title}. ${content.description ?? ''}`} size="medium" />
+        <Button
+          variant="contained"
+          size="small"
+          startIcon={<BotIcon sx={{ fontSize: 16 }} />}
+          onClick={() => {
+            const chatPath = isAuthed ? '/chat' : '/biblioteca/chat';
+            navigate(chatPath, {
+              state: {
+                bookTitle: content.title,
+                subject: content.discipline ?? undefined,
+                initialMessage: `Tenho uma dúvida sobre o livro "${content.title}"${content.discipline ? ` (${content.discipline})` : ''}. `,
+              },
+            });
+          }}
+          sx={{
+            textTransform: 'none', bgcolor: '#00A651', '&:hover': { bgcolor: '#008C44' },
+            borderRadius: 2, fontWeight: 700, fontSize: '0.78rem', whiteSpace: 'nowrap', flexShrink: 0,
+            display: { xs: 'none', sm: 'flex' },
+          }}
+        >
+          Perguntar à IA
+        </Button>
       </Stack>
 
       {/* Section progress strip */}
