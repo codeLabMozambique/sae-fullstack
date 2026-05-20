@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import LandingPage from './pages/LandingPage';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import theme from './styles/theme';
@@ -98,7 +99,8 @@ function App() {
       <AuthProvider>
         <Router>
           <Routes>
-            <Route path="/" element={<RootRedirect />} />
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/home" element={<RootRedirect />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
 
@@ -122,6 +124,9 @@ function App() {
                 <MainApp />
               </ProtectedRoute>
             } />
+
+            {/* ── Chat IA (qualquer role autenticada) ─────────── */}
+            <Route path="/chat" element={<Layout><ChatIA /></Layout>} />
 
             {/* ── Leitor de PDF embebido (qualquer role) ─────── */}
             <Route path="/leitor/:id" element={<Layout><Leitor /></Layout>} />

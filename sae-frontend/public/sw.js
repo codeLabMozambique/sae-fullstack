@@ -168,11 +168,12 @@ self.addEventListener('fetch', (event) => {
 
 // ─── Mensagens vindas da app ────────────────────────────────
 
-self.addEventListener('message', async (event) => {
+self.addEventListener('message', (event) => {
   const { type, payload, msgId } = event.data || {};
   const reply = (data) => event.source?.postMessage({ msgId, ok: true, data });
   const fail  = (err)  => event.source?.postMessage({ msgId, ok: false, error: String(err) });
 
+  const handle = async () => {
   try {
     switch (type) {
       // Cacheia o PDF + thumbnail + metadata num único batch
@@ -289,4 +290,7 @@ self.addEventListener('message', async (event) => {
   } catch (e) {
     fail(e?.message || e);
   }
+  };
+
+  event.waitUntil(handle());
 });
