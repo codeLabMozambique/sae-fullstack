@@ -25,4 +25,5 @@ quiz:
     url: ${ACADEMIC_SERVICE_URL:http://localhost:8085}
 
 openai:
-  api: key:${OPENAI_API_KEY}
+  api: 
+    key:${OPENAI_API_KEY}
