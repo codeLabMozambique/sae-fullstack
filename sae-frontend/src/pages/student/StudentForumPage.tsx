@@ -1420,9 +1420,15 @@ export default function StudentForumPage() {
     setLoadingGeneral(true);
     forumService.listQuestions({ status: 'ABERTA', size: 50 })
       .then(r => setGeneralQuestions(prev => {
-        // Merge: update existing entries, add new ones, keep rooms not in server response
         const serverMap = new Map(r.content.map(q => [q.id, q]));
-        const merged = prev.map(q => serverMap.has(q.id) ? serverMap.get(q.id)! : q);
+        // Merge: keep enriched (has answers) over unenriched server version
+        const merged = prev.map(q => {
+          if (!serverMap.has(q.id)) return q;
+          const server = serverMap.get(q.id)!;
+          const prevAnswers = (q.collaborativeAnswers?.length ?? 0) + (q.expertAnswers?.length ?? 0);
+          const serverAnswers = (server.collaborativeAnswers?.length ?? 0) + (server.expertAnswers?.length ?? 0);
+          return prevAnswers > serverAnswers ? q : server;
+        });
         for (const q of r.content) {
           if (!merged.some(m => m.id === q.id)) merged.push(q);
         }
@@ -1451,29 +1457,36 @@ export default function StudentForumPage() {
     }
   }, []);
 
-  // Load collaborative rooms once subjects + classroomId are resolved (rooms may not appear in generic listQuestions)
+  // Load + periodically refresh collaborative rooms so new messages from classmates appear without page reload
+  const refreshCollaborativeRooms = useRef<(() => void) | null>(null);
   useEffect(() => {
     if (isProfessor || !availableSubjects.length || studentClassroomId === undefined) return;
-    Promise.allSettled(
-      availableSubjects.map(s =>
-        forumService.getCollaborativeRoomBySubject(s.id, studentClassroomId ?? undefined)
-      )
-    ).then(results => {
-      const rooms = results
-        .filter((r): r is PromiseFulfilledResult<ForumQuestion> => r.status === 'fulfilled')
-        .map(r => r.value);
-      if (rooms.length) {
-        setGeneralQuestions(prev => {
-          let next = [...prev];
-          for (const room of rooms) {
-            const idx = next.findIndex(q => q.id === room.id);
-            if (idx >= 0) next[idx] = room;
-            else next = [room, ...next];
-          }
-          return next;
-        });
-      }
-    });
+    const load = () => {
+      Promise.allSettled(
+        availableSubjects.map(s =>
+          forumService.getCollaborativeRoomBySubject(s.id, studentClassroomId ?? undefined)
+        )
+      ).then(results => {
+        const rooms = results
+          .filter((r): r is PromiseFulfilledResult<ForumQuestion> => r.status === 'fulfilled')
+          .map(r => r.value);
+        if (rooms.length) {
+          setGeneralQuestions(prev => {
+            let next = [...prev];
+            for (const room of rooms) {
+              const idx = next.findIndex(q => q.id === room.id);
+              if (idx >= 0) next[idx] = room;
+              else next = [room, ...next];
+            }
+            return next;
+          });
+        }
+      });
+    };
+    refreshCollaborativeRooms.current = load;
+    load();
+    const id = setInterval(load, 30_000);
+    return () => clearInterval(id);
   }, [isProfessor, availableSubjects.length, studentClassroomId]);
 
   // Auto-open a question when navigated here from Dashboard (e.g. recent questions click)
@@ -1638,7 +1651,14 @@ export default function StudentForumPage() {
     q.createdBy?.toLowerCase() !== 'system' && hasUnread(q)
   ).length;
   const countMine = myQuestions.filter(q => q.createdBy?.toLowerCase() !== 'system' && q.questionType === 'ESPECIALIZADO').length;
-  const countForum = generalQuestions.filter(q => q.questionType === 'COLABORATIVO').length;
+  const visibleForumRooms = generalQuestions.filter(q => {
+    if (q.questionType !== 'COLABORATIVO') return false;
+    if (q.createdBy?.toLowerCase() === 'system') {
+      return (q.collaborativeAnswers?.length ?? 0) > 0 || (q.expertAnswers?.length ?? 0) > 0;
+    }
+    return true;
+  });
+  const countForum = visibleForumRooms.filter(hasUnread).length;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', bgcolor: '#F7F9FB' }}>

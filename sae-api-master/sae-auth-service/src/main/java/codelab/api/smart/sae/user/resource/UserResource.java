@@ -80,7 +80,12 @@ public class UserResource {
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody RegisterRequestDTO registerRequest) throws Exception {
         UserEntity user = userService.createUser(registerRequest);
-        return new ResponseEntity<>(user, HttpStatus.CREATED);
+        return new ResponseEntity<>(java.util.Map.of(
+                "id",       user.getId() != null ? user.getId() : 0,
+                "username", user.getUsername(),
+                "fullname", user.getFullname() != null ? user.getFullname() : "",
+                "email",    user.getEmail() != null ? user.getEmail() : ""
+        ), HttpStatus.CREATED);
     }
 
     @PostMapping("/signup/professor")

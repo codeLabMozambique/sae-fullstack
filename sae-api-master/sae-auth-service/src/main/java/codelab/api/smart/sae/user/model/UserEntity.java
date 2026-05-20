@@ -51,7 +51,7 @@ public class UserEntity extends UpdatableEntity implements UserDetails {
     private boolean enabled;
 
     @Column(name = "MUST_CHANGE_PASSWORD")
-    private boolean mustChangePassword = false;
+    private Boolean mustChangePassword = false;
 
     @ManyToOne
     @JoinColumn(name = "roleT_id")
@@ -127,7 +127,7 @@ public class UserEntity extends UpdatableEntity implements UserDetails {
         this.enabled = enabled;
     }
 
-    public boolean isMustChangePassword() { return mustChangePassword; }
+    public boolean isMustChangePassword() { return mustChangePassword != null && mustChangePassword; }
     public void setMustChangePassword(boolean mustChangePassword) { this.mustChangePassword = mustChangePassword; }
 
     @Override
