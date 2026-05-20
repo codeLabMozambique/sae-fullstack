@@ -1,0 +1,29 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: sae-quiz-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sae_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+content:
+  service:
+    url: http://localhost:8082
+
+quiz:
+  academic-service:
+    url: ${ACADEMIC_SERVICE_URL:http://localhost:8085}
+
+openai:
+  api:
+    key:${OPENAI_API_KEY}
