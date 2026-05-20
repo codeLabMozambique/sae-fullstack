@@ -40,14 +40,11 @@ public class SecurityConfig {
                     AntPathRequestMatcher.antMatcher("/users/otpValidation/**"),
                     AntPathRequestMatcher.antMatcher("/users/professor/**/specializations"),
                     AntPathRequestMatcher.antMatcher("/users/professors/by-discipline"),
-<<<<<<< HEAD
-                    AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/users/forgot-password"),
-                    AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/users/reset-password"))
-=======
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/user-id-by-username"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/professor-profile"),
-                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/students-by-classroom"))
->>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
+                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/students-by-classroom"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/users/forgot-password"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/users/reset-password"))
                 .permitAll()
                 .requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/my-student-profile"))
                 .authenticated()
