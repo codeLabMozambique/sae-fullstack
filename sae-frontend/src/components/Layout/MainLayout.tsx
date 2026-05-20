@@ -333,9 +333,16 @@ const MainLayout: React.FC<Props> = ({ children }) => {
         .catch(() => {});
     } else if (user.role === 'Estudante') {
       api.get('/auth/users/student-profile-by-username', { params: { username: user.username } })
-        .then((r: any) => {
+        .then(async (r: any) => {
           const profile = r.data;
-          const parts = [profile.grade, profile.classroomId ? `Turma ${profile.classroomId}` : null].filter(Boolean);
+          let classroomLabel: string | null = profile.classroomId ? `Turma ${profile.classroomId}` : null;
+          if (profile.classroomId) {
+            try {
+              const cr = await api.post('/academic/classroom/details', { id: profile.classroomId });
+              if (cr.data?.name) classroomLabel = `Turma ${cr.data.name}`;
+            } catch {}
+          }
+          const parts = [profile.grade, classroomLabel].filter(Boolean);
           if (parts.length > 0) setSubInfo(parts.join(' · '));
         })
         .catch(() => {});

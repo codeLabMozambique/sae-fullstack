@@ -383,6 +383,7 @@ public class UserService {
         return menus;
     }
 
+    @Transactional(readOnly = true)
     public List<UserListDTO> findAllUsers() {
         return userRepository.findAll().stream()
                 .map(u -> new UserListDTO(
@@ -495,12 +496,14 @@ public class UserService {
         return toStudentDTO(s);
     }
 
+    @Transactional(readOnly = true)
     public List<ProfessorProfileDTO> findAllProfessors() {
         return professorProfileRepository.findAll().stream()
                 .map(this::toProfessorDTO)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<ProfessorProfileDTO> findProfessors(org.springframework.security.core.Authentication auth) {
         boolean isSchoolAdmin = auth != null && auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals(UserRoles.SCHOOL_ADMIN.name()));
@@ -565,6 +568,7 @@ public class UserService {
         return dto;
     }
 
+    @Transactional(readOnly = true)
     public List<StudentProfileDTO> findStudents(org.springframework.security.core.Authentication auth) {
         boolean isSchoolAdmin = auth != null && auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals(UserRoles.SCHOOL_ADMIN.name()));
@@ -604,6 +608,7 @@ public class UserService {
         }
     }
 
+    @Transactional(readOnly = true)
     public List<StudentProfileDTO> findStudentsByClassroom(Long classroomId) {
         return studentProfileRepository.findByClassroomId(classroomId).stream()
                 .map(this::toStudentDTO)
