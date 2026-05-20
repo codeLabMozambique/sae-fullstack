@@ -1,0 +1,73 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  http:
+    codecs:
+      max-in-memory-size: 60MB
+  cloud:
+    gateway:
+      server:
+        webflux:
+          globalcors:
+            add-to-simple-url-handler-mapping: true
+            cors-configurations:
+              '[/**]':
+                allowedOriginPatterns:
+                  - "${FRONTEND_URL:*}"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - OPTIONS
+                  - PATCH
+                allowedHeaders:
+                  - "*"
+                exposedHeaders:
+                  - "Authorization"
+                  - "Content-Disposition"
+                allowCredentials: true
+                maxAge: 3600
+          default-filters:
+            - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
+          routes:
+            - id: sae-auth-service
+              uri: http://sae-auth-service:8081
+              predicates:
+                - Path=/auth/**
+              filters:
+                - StripPrefix=1
+            - id: sae-content-service
+              uri: http://sae-content-service:8082
+              predicates:
+                - Path=/content/**
+              filters:
+                - StripPrefix=1
+            - id: sae-forum-service
+              uri: http://sae-forum-service:8083
+              predicates:
+                - Path=/forum/**
+              filters:
+                - StripPrefix=1
+            - id: sae-quiz-service
+              uri: http://sae-quiz-service:8084
+              predicates:
+                - Path=/quiz/**
+              filters:
+                - StripPrefix=1
+            - id: sae-academic-service
+              uri: http://sae-academic-service:8085
+              predicates:
+                - Path=/academic/**
+              filters:
+                - StripPrefix=1
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
