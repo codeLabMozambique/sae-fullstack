@@ -497,24 +497,51 @@ export default function StudentQuizPage() {
     setPreparingQuiz(true);
     setError('');
     try {
+      // Recolhe dúvidas reais dos alunos no fórum para enriquecer o contexto da geração
+      let forumContext = '';
+      try {
+        const disc = prepDisciplina as any;
+        const forumResp = await forumService.listQuestions({
+          disciplina: disc || undefined,
+          questionType: 'ESPECIALIZADO' as any,
+          status: 'ABERTA' as any,
+          size: 20,
+        });
+        const lines = forumResp.content
+          .filter(q => q.titulo || q.descricao)
+          .slice(0, 12)
+          .map(q => `- ${q.titulo || q.descricao}`)
+          .join('\n');
+        if (lines) forumContext = 'Dúvidas recentes dos alunos nesta disciplina:\n' + lines;
+      } catch {
+        // fórum indisponível — continua sem contexto
+      }
+
       const dto: StudyPrepRequestDTO = {
         disciplina: prepDisciplina || undefined,
         mode: prepMode,
         numQuestions: prepNumQ,
+        forumContext: forumContext || undefined,
       };
       const quiz = await quizService.generateStudyPrep(dto);
+      // Quiz criado com sucesso — fecha o diálogo e mostra na lista
       setPrepDialog(false);
-      // Auto-start the generated quiz
-      const { attemptId, quiz: fullQuiz } = await quizService.startAttempt(quiz.id);
-      setAttemptId(attemptId);
-      setActiveQuiz(fullQuiz);
-      setCurrentIdx(0);
-      setAnswers({});
-      setTimeLeft(fullQuiz.tempoLimiteMinutos ? fullQuiz.tempoLimiteMinutos * 60 : null);
-      setView('taking');
       loadQuizzes();
-    } catch {
-      setError('Não foi possível gerar o quiz de preparação. Tenta novamente.');
+      // Tenta auto-arrancar o quiz; se falhar, o utilizador pode clicá-lo na lista
+      try {
+        const { attemptId, quiz: fullQuiz } = await quizService.startAttempt(quiz.id);
+        setAttemptId(attemptId);
+        setActiveQuiz(fullQuiz);
+        setCurrentIdx(0);
+        setAnswers({});
+        setTimeLeft(fullQuiz.tempoLimiteMinutos ? fullQuiz.tempoLimiteMinutos * 60 : null);
+        setView('taking');
+      } catch {
+        // Auto-arranque falhou mas o quiz foi criado — já aparece na lista
+      }
+    } catch (e: any) {
+      const msg = e?.response?.data?.message ?? e?.message ?? '';
+      setError('Não foi possível gerar o quiz de preparação.' + (msg ? ' Detalhe: ' + msg : ' Tenta novamente.'));
     } finally {
       setPreparingQuiz(false);
     }

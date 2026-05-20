@@ -9,6 +9,8 @@ public class StudyPrepRequestDTO {
     private String contentId;
     /** Número de questões a gerar (padrão: 10) */
     private Integer numQuestions;
+    /** Perguntas e respostas do fórum da disciplina para enriquecer as questões geradas */
+    private String forumContext;
 
     public String getDisciplina() { return disciplina; }
     public void setDisciplina(String disciplina) { this.disciplina = disciplina; }
@@ -18,4 +20,6 @@ public class StudyPrepRequestDTO {
     public void setContentId(String contentId) { this.contentId = contentId; }
     public Integer getNumQuestions() { return numQuestions; }
     public void setNumQuestions(Integer numQuestions) { this.numQuestions = numQuestions; }
+    public String getForumContext() { return forumContext; }
+    public void setForumContext(String forumContext) { this.forumContext = forumContext; }
 }

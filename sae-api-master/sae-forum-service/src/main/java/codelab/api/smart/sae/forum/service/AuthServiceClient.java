@@ -34,6 +34,7 @@ public class AuthServiceClient {
     }
 
     public boolean canProfessorAnswerArea(String professorUsername, codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina) {
+        if (disciplina == null) return true; // sala novo modelo — sem restrição por disciplina legado
         try {
             String[] specializations = getProfessorSpecializations(professorUsername);
             if (specializations == null || specializations.length == 0) return true;
@@ -168,6 +169,27 @@ public class AuthServiceClient {
         public void setOnline(boolean v)        { this.online = v; }
         public void setSpecialization(String v) { this.specialization = v; }
         public void setLastSeen(String v)       { this.lastSeen = v; }
+    }
+
+    public List<StudentInfo> getStudentsByClassroom(Long classroomId) {
+        try {
+            String url = authServiceUrl + "/users/students-by-classroom?classroomId=" + classroomId;
+            StudentInfo[] result = restTemplate.getForObject(url, StudentInfo[].class);
+            return result != null ? Arrays.asList(result) : Collections.emptyList();
+        } catch (Exception e) {
+            log.warn("Nao foi possivel obter estudantes da turma {}: {}", classroomId, e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    public static class StudentInfo {
+        private String username;
+        @JsonProperty("fullName")
+        private String fullName;
+        public String getUsername() { return username; }
+        public void setUsername(String v) { this.username = v; }
+        public String getFullName() { return fullName; }
+        public void setFullName(String v) { this.fullName = v; }
     }
 
     private String normalize(String input) {

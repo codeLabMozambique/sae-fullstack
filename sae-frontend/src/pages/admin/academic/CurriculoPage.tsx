@@ -175,25 +175,15 @@ const CurriculoPage: React.FC = () => {
       <Box sx={{ position: 'relative', zIndex: 1 }}>
 
         {/* ── Header ── */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: `linear-gradient(135deg,${PRIMARY} 0%,${ACCENT} 100%)`, borderRadius: 3, p: 2.5, mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ p: 1.2, borderRadius: 2, background: 'rgba(0,166,81,0.2)', border: '1px solid rgba(0,166,81,0.3)', display: 'flex' }}>
-              <CurriculoIcon sx={{ color: 'white', fontSize: 26 }} />
-            </Box>
-            <Box>
-              <Typography variant="h5" color="white" sx={{ lineHeight: 1.2 }}>Currículo</Typography>
-              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)', mt: 0.3 }}>Gerir disciplinas por escola, nível e grupo académico</Typography>
-            </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Box>
+            <Typography variant="h5" fontWeight={700} color="#0A1628">Currículo</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Gerir disciplinas por escola, nível e grupo académico</Typography>
           </Box>
           {canView && (
             <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setAddSubjectId(''); setAddOpen(true); }}
               disabled={available.length === 0}
-              sx={{
-                background: 'linear-gradient(135deg,#00A651 0%,#00c96a 100%)',
-                '&:hover': { background: 'linear-gradient(135deg,#008f44 0%,#00a855 100%)' },
-                '&:disabled': { background: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.5)' },
-                boxShadow: '0 4px 15px rgba(0,166,81,0.35)', borderRadius: '10px', textTransform: 'none', fontWeight: 700, px: 3,
-              }}>
+              sx={{ bgcolor: '#00A651', '&:hover': { bgcolor: '#008f44' }, '&:disabled': { bgcolor: '#ccc' }, borderRadius: 2, textTransform: 'none', fontWeight: 700, px: 3 }}>
               Adicionar Disciplina
             </Button>
           )}

@@ -37,6 +37,7 @@ import StudentSubmissionsPage from './pages/student/StudentSubmissionsPage';
 import StudentCertificatesPage from './pages/student/StudentCertificatesPage';
 import ProfessorCertificatesPage from './pages/professor/ProfessorCertificatesPage';
 import AdminReportsPage from './pages/admin/AdminReportsPage';
+import AdminCertificatesPage from './pages/admin/AdminCertificatesPage';
 
 // Biblioteca / Content-service pages
 import ForumList from './pages/forum/ForumList';
@@ -200,6 +201,7 @@ function App() {
             {/* ── ADMIN — Dashboard de monitorização ─────────── */}
             <Route path="/admin/dashboard" element={<Layout><AdminDashboardPage /></Layout>} />
             <Route path="/admin/reports" element={<Layout><AdminReportsPage /></Layout>} />
+            <Route path="/admin/certificates" element={<Layout><AdminCertificatesPage /></Layout>} />
 
             {/* ── ADMIN — Biblioteca ─────────────────────────── */}
             <Route path="/admin/library" element={<Layout><Biblioteca /></Layout>} />

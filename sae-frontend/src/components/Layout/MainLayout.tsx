@@ -75,7 +75,7 @@ function menuIcon(code: string): React.ReactNode {
   if (code === 'ADM-DASH' || code.includes('DASH')) return <DashboardIcon />;
   if (code === 'ADM-FORUM' || code === 'PRF-002' || code.includes('FORUM')) return <ForumIcon />;
   if (code === 'ADM-RPT') return <ReportIcon />;
-  if (code === 'PRF-CERT') return <CertIcon />;
+  if (code === 'ADM-CERT' || code === 'PRF-CERT') return <CertIcon />;
   if (code.includes('LIB')) return <LibraryIcon />;
   if (code.includes('GOALS')) return <GoalsIcon />;
   return <AssignmentIcon />;
@@ -318,7 +318,16 @@ const MainLayout: React.FC<Props> = ({ children }) => {
   const isForumPage = location.pathname.includes('/forum');
   const { user, logout } = useAuth();
 
-  const dynamicMenus = (user?.menus ?? []) as MenuDTO[];
+  const rawMenus = (user?.menus ?? []) as MenuDTO[];
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'Administrador' || user?.role === 'SCHOOL_ADMIN';
+  const dynamicMenus: MenuDTO[] = isAdmin && rawMenus.length > 0 && !rawMenus.some(m => m.code === 'ADM-CERT')
+    ? [...rawMenus, {
+        code: 'ADM-CERT',
+        label: 'Certificados',
+        routerLink: '/admin/certificates',
+        items: [{ code: 'ADM-CERT-001', label: 'Certificados de Professores', routerLink: '/admin/certificates' }],
+      }]
+    : rawMenus;
   const hasDynamicMenus = dynamicMenus.length > 0;
 
   const userInitials = user?.fullName

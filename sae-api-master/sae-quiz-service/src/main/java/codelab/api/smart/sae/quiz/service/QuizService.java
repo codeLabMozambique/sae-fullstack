@@ -24,19 +24,35 @@ public class QuizService {
 
     // ── List ─────────────────────────────────────────────────────
     @Transactional(readOnly = true)
-    public List<QuizSummaryDTO> listQuizzes(String disciplinaStr, Long subjectId, boolean adminView, String username) {
+    public List<QuizSummaryDTO> listQuizzes(String disciplinaStr, Long subjectId,
+                                             boolean isAdmin, boolean isProfessor, String username) {
         List<QuizEntity> quizzes;
-        if (subjectId != null) {
-            quizzes = adminView ? quizRepository.findBySubjectId(subjectId) : quizRepository.findBySubjectIdAndActiveTrue(subjectId);
-        } else if (disciplinaStr != null && !disciplinaStr.isBlank()) {
-            try {
-                DisciplinaEnum d = DisciplinaEnum.valueOf(disciplinaStr.toUpperCase());
-                quizzes = adminView ? quizRepository.findByDisciplina(d) : quizRepository.findByDisciplinaAndActiveTrue(d);
-            } catch (IllegalArgumentException e) {
-                quizzes = adminView ? quizRepository.findAll() : quizRepository.findByActiveTrue();
-            }
+
+        if (isAdmin) {
+            // Admin: vê todos os quizzes
+            quizzes = baseQuery(disciplinaStr, subjectId, true);
+
+        } else if (isProfessor) {
+            // Professor: só vê os quizzes que ele próprio criou
+            List<QuizEntity> own = username != null
+                    ? quizRepository.findByCreatedBy(username)
+                    : java.util.Collections.emptyList();
+            quizzes = applyDisciplinaSubjectFilter(own, disciplinaStr, subjectId);
+
         } else {
-            quizzes = adminView ? quizRepository.findAll() : quizRepository.findByActiveTrue();
+            // Estudante: quizzes activos criados por professores/admins,
+            // mais os seus próprios quizzes STUDY_PREP / ORAL_TEST
+            List<QuizEntity> active = baseQuery(disciplinaStr, subjectId, false);
+            final String u = username;
+            quizzes = active.stream()
+                    .filter(q -> {
+                        String qt = q.getQuizType();
+                        if ("STUDY_PREP".equals(qt) || "ORAL_TEST".equals(qt)) {
+                            return u != null && u.equals(q.getCreatedBy());
+                        }
+                        return true;
+                    })
+                    .collect(Collectors.toList());
         }
 
         return quizzes.stream().map(q -> {
@@ -51,6 +67,36 @@ public class QuizService {
             }
             return dto;
         }).collect(Collectors.toList());
+    }
+
+    private List<QuizEntity> baseQuery(String disciplinaStr, Long subjectId, boolean includeInactive) {
+        if (subjectId != null) {
+            return includeInactive
+                    ? quizRepository.findBySubjectId(subjectId)
+                    : quizRepository.findBySubjectIdAndActiveTrue(subjectId);
+        }
+        if (disciplinaStr != null && !disciplinaStr.isBlank()) {
+            try {
+                DisciplinaEnum d = DisciplinaEnum.valueOf(disciplinaStr.toUpperCase());
+                return includeInactive
+                        ? quizRepository.findByDisciplina(d)
+                        : quizRepository.findByDisciplinaAndActiveTrue(d);
+            } catch (IllegalArgumentException ignored) {}
+        }
+        return includeInactive ? quizRepository.findAll() : quizRepository.findByActiveTrue();
+    }
+
+    private List<QuizEntity> applyDisciplinaSubjectFilter(List<QuizEntity> list, String disciplinaStr, Long subjectId) {
+        if (subjectId != null) {
+            return list.stream().filter(q -> subjectId.equals(q.getSubjectId())).collect(Collectors.toList());
+        }
+        if (disciplinaStr != null && !disciplinaStr.isBlank()) {
+            try {
+                DisciplinaEnum d = DisciplinaEnum.valueOf(disciplinaStr.toUpperCase());
+                return list.stream().filter(q -> d.equals(q.getDisciplina())).collect(Collectors.toList());
+            } catch (IllegalArgumentException ignored) {}
+        }
+        return list;
     }
 
     // ── Get quiz for student (no correct answers) ────────────────

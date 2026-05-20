@@ -113,6 +113,45 @@ public class AcademicServiceClient {
         }
     }
 
+    public List<String> getSubjectNamesByProfessorId(Long professorId) {
+        try {
+            String url = academicServiceUrl + "/professor-assignment/professor/" + professorId;
+            AssignmentDetailInfo[] details = restTemplate.getForObject(url, AssignmentDetailInfo[].class);
+            if (details == null) return Collections.emptyList();
+            return Arrays.stream(details)
+                .map(AssignmentDetailInfo::getSubjectName)
+                .filter(java.util.Objects::nonNull)
+                .filter(n -> !n.isBlank())
+                .distinct()
+                .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.warn("Não foi possível obter subjectNames do professor {}: {}", professorId, e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    public String getSchoolNameByProfessorId(Long professorId) {
+        try {
+            AssignmentDetailInfo[] details = restTemplate.getForObject(
+                academicServiceUrl + "/professor-assignment/professor/" + professorId,
+                AssignmentDetailInfo[].class);
+            if (details == null || details.length == 0) return null;
+            Long classroomId = Arrays.stream(details)
+                .map(AssignmentDetailInfo::getClassroomId)
+                .filter(java.util.Objects::nonNull).findFirst().orElse(null);
+            if (classroomId == null) return null;
+            ClassroomInfo classroom = restTemplate.getForObject(
+                academicServiceUrl + "/classroom/" + classroomId, ClassroomInfo.class);
+            if (classroom == null || classroom.getSchoolId() == null) return null;
+            SchoolInfo school = restTemplate.getForObject(
+                academicServiceUrl + "/school/" + classroom.getSchoolId(), SchoolInfo.class);
+            return school != null ? school.getName() : null;
+        } catch (Exception e) {
+            log.warn("Não foi possível obter schoolName do professor {}: {}", professorId, e.getMessage());
+            return null;
+        }
+    }
+
     // ── Inner DTOs ───────────────────────────────────────────────────────────
 
     public static class SubjectInfo {
@@ -129,6 +168,24 @@ public class AcademicServiceClient {
         public void setCode(String code) { this.code = code; }
         public String getDescription() { return description; }
         public void setDescription(String description) { this.description = description; }
+    }
+
+    public static class ClassroomInfo {
+        private Long id;
+        private Long schoolId;
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+        public Long getSchoolId() { return schoolId; }
+        public void setSchoolId(Long schoolId) { this.schoolId = schoolId; }
+    }
+
+    public static class SchoolInfo {
+        private Long id;
+        private String name;
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
     }
 
     public static class AssignmentDetailInfo {

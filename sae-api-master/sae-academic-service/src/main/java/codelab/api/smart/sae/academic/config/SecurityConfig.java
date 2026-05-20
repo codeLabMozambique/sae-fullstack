@@ -29,6 +29,10 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/error", "/health", "/actuator/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/professor-assignment/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/subject/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/classroom/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/school/**").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
