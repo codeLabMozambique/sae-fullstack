@@ -2,30 +2,30 @@ from pydantic_settings import BaseSettings
 from typing import List
 
 class Settings(BaseSettings):
-    # OpenAI
-    OPENAI_API_KEY: str = "your-api-key-here"
-    OPENAI_MODEL: str = "gpt-3.5-turbo"
-    OPENAI_MAX_TOKENS: int = 500
-    OPENAI_TEMPERATURE: float = 0.7
-    
-    # Banco de Dados
-    DATABASE_URL: str = "postgresql://user:password@localhost:5432/smartsae"
-    MONGODB_URL: str = "mongodb://localhost:27017"
+    OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "gpt-4o-mini"
+    OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
+    OPENAI_MAX_TOKENS: int = 1000
+    OPENAI_TEMPERATURE: float = 0.3
+
     REDIS_URL: str = "redis://localhost:6379"
-    RABBITMQ_URL: str = "amqp://guest:guest@localhost:5672/"
-    
-    # CORS
-    ALLOWED_ORIGINS: List[str] = ["*"]
-    
-    # Cache
-    CACHE_TTL: int = 3600  # 1 hora
-    
-    # Limites
-    MAX_MESSAGE_LENGTH: int = 1000
+    CACHE_TTL: int = 3600
+
+    CHROMA_PERSIST_DIR: str = "./chroma_db"
+    CONTENT_SERVICE_URL: str = "http://localhost:8082"
+
+    ALLOWED_ORIGINS: List[str] = [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5173",
+    ]
+
+    MAX_MESSAGE_LENGTH: int = 2000
     MAX_QUIZ_QUESTIONS: int = 20
 
     class Config:
         env_file = ".env"
-        env_file_encoding = 'utf-8'
+        env_file_encoding = "utf-8"
+        extra = "ignore"
 
 settings = Settings()

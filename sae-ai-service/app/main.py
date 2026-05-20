@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.v1 import chat, quiz, recommendations, accessibility
+from app.api.v1 import chat, quiz, recommendations, accessibility, ingest
 
 app = FastAPI(
     title="SmartSAE AI Microservice",
@@ -22,6 +22,7 @@ app.include_router(chat.router, prefix="/api/v1")
 app.include_router(quiz.router, prefix="/api/v1")
 app.include_router(recommendations.router, prefix="/api/v1")
 app.include_router(accessibility.router, prefix="/api/v1")
+app.include_router(ingest.router, prefix="/api/v1")
 
 @app.get("/health", tags=["Health"])
 async def health_check():
@@ -29,5 +30,4 @@ async def health_check():
 
 @app.get("/metrics", tags=["Health"])
 async def get_metrics():
-    # Placeholder for actual metrics
     return {"uptime": 100, "requests": 5000}

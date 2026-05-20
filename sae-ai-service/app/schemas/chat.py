@@ -9,6 +9,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
     session_id: str
+    sources: List[str] = []
 
 class ChatHistoryMessage(BaseModel):
     role: str
