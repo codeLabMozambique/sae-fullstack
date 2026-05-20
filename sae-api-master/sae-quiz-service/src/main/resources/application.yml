@@ -26,4 +26,4 @@ quiz:
 
 openai:
   api: 
-    key: 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
+    key: ${OPENAI_API_KEY}
