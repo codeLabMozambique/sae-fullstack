@@ -398,6 +398,25 @@ const MainLayout: React.FC<Props> = ({ children }) => {
         : <StaticNav location={location} navigate={navigate} />
       }
 
+      {/* Chat IA — always visible for all roles */}
+      <Box sx={{ px: 2, pb: 1 }}>
+        <ListItemButton
+          onClick={() => navigate('/chat')}
+          sx={{
+            borderRadius: 2.5, py: 1.2,
+            bgcolor: location.pathname === '/chat' ? 'rgba(0,166,81,0.15)' : 'rgba(0,166,81,0.07)',
+            border: location.pathname === '/chat' ? '1px solid rgba(0,166,81,0.4)' : '1px solid rgba(0,166,81,0.2)',
+            '&:hover': { bgcolor: 'rgba(0,166,81,0.18)' },
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 40, color: '#00A651' }}><ChatIcon /></ListItemIcon>
+          <ListItemText
+            primary="Chat com IA"
+            primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: 700, color: '#00A651' }}
+          />
+        </ListItemButton>
+      </Box>
+
       {/* User section */}
       <Box sx={{ p: 2, bgcolor: '#001B33' }}>
         <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)', mb: 2 }} />
