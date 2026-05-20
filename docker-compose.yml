@@ -343,7 +343,7 @@ services:
       REDIS_URL: redis://sae-redis:6379
       CONTENT_SERVICE_URL: http://sae-content-service:8082
       CHROMA_PERSIST_DIR: /data/chroma
-      ALLOWED_ORIGINS: ${FRONTEND_URL:-http://localhost},http://localhost:5173
+      ALLOWED_ORIGINS: '["${FRONTEND_URL:-http://localhost}", "http://localhost:5173"]'
     volumes:
       - ai_chroma_data:/data/chroma
     depends_on:
