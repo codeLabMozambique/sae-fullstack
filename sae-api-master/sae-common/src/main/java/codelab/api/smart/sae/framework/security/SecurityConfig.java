@@ -39,7 +39,9 @@ public class SecurityConfig {
                     AntPathRequestMatcher.antMatcher("/users/otpGen/**"),
                     AntPathRequestMatcher.antMatcher("/users/otpValidation/**"),
                     AntPathRequestMatcher.antMatcher("/users/professor/**/specializations"),
-                    AntPathRequestMatcher.antMatcher("/users/professors/by-discipline"))
+                    AntPathRequestMatcher.antMatcher("/users/professors/by-discipline"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/users/forgot-password"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/users/reset-password"))
                 .permitAll()
                 .requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/my-student-profile"))
                 .authenticated()

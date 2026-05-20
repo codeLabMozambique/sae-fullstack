@@ -30,15 +30,18 @@ public class ProfessorContentService {
     @Autowired
     private EventPublisherService eventPublisherService;
 
+    @Autowired
+    private AiIngestService aiIngestService;
+
     public Content uploadContent(MultipartFile file, Content metadata, String professorUsername, String token) {
         try {
             byte[] fileBytes = file.getBytes();
             String fileName = fileStorageService.saveFile(fileBytes, file.getOriginalFilename(), file.getContentType());
-            
+
             // Processamento Automático do PDF
             int pages = pdfProcessorService.getPageCount(fileBytes);
             byte[] thumbBytes = pdfProcessorService.generateThumbnail(fileBytes);
-            
+
             String thumbName = null;
             if (thumbBytes != null) {
                 String safeBase = (file.getOriginalFilename() == null ? "cover" : file.getOriginalFilename())
@@ -56,9 +59,9 @@ public class ProfessorContentService {
             metadata.setUploadedBy(professorUsername);
             metadata.setUploadedByRole("PROFESSOR");
             metadata.setUploadedByName(fullName);
-            
+
             Content saved = contentRepository.save(metadata);
-            
+
             // Log de Auditoria
             ContentLog log = new ContentLog();
             log.setContentId(saved.getId());
@@ -69,7 +72,10 @@ public class ProfessorContentService {
 
             // Publicar Evento
             eventPublisherService.publishContentCreated(saved.getId(), saved.getTitle(), saved.getUploadedByName());
-            
+
+            // Indexar PDF no AI service (ChromaDB) para RAG
+            aiIngestService.ingestAsync(saved);
+
             return saved;
         } catch (java.io.IOException e) {
             throw new RuntimeException("Erro ao processar ficheiro", e);

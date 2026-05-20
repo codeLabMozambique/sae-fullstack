@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -879,6 +880,60 @@ public class UserService {
             p.setIdDocumentNumber(null);
             professorProfileRepository.save(p);
         });
+    }
+
+    // ── Recuperação de senha por email ──────────────────────────────────────
+
+    @Value("${frontend.url:http://localhost:5173}")
+    private String frontendUrl;
+
+    /**
+     * Gera token de reset e envia email.
+     * Aceita email ou número de telefone como identificador.
+     */
+    @Transactional
+    public void forgotPassword(String identifier) {
+        if (identifier == null || identifier.isBlank())
+            throw new BusinessException("Email ou número de telefone obrigatório");
+
+        String normalized = identifier.trim().toLowerCase();
+        UserEntity user = userRepository.findByEmail(normalized)
+                .or(() -> userRepository.findByUsername(identifier.trim()))
+                .orElseThrow(() -> new BusinessException("Não existe conta com este contacto"));
+
+        if (user.getEmail() == null || user.getEmail().isBlank())
+            throw new BusinessException("A conta não tem email associado. Contacte o administrador.");
+
+        String token = java.util.UUID.randomUUID().toString();
+        user.setPasswordResetToken(token);
+        user.setPasswordResetExpiry(LocalDateTime.now().plusHours(1));
+        userRepository.save(user);
+
+        String link = frontendUrl + "/reset-password?token=" + token;
+        emailService.sendPasswordReset(user.getEmail(), user.getFullname(), link);
+    }
+
+    /**
+     * Valida o token e define a nova senha.
+     */
+    @Transactional
+    public void resetPassword(String token, String newPassword) {
+        if (token == null || token.isBlank())
+            throw new BusinessException("Token inválido");
+        if (newPassword == null || newPassword.length() < 6)
+            throw new BusinessException("A nova senha deve ter no mínimo 6 caracteres");
+
+        UserEntity user = userRepository.findByPasswordResetToken(token)
+                .orElseThrow(() -> new BusinessException("Token inválido ou já utilizado"));
+
+        if (user.getPasswordResetExpiry() == null || user.getPasswordResetExpiry().isBefore(LocalDateTime.now()))
+            throw new BusinessException("O link de recuperação expirou. Solicite um novo.");
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setMustChangePassword(false);
+        user.setPasswordResetToken(null);
+        user.setPasswordResetExpiry(null);
+        userRepository.save(user);
     }
 
     private String normalize(String input) {

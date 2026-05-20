@@ -13,6 +13,7 @@ class Settings(BaseSettings):
 
     CHROMA_PERSIST_DIR: str = "./chroma_db"
     CONTENT_SERVICE_URL: str = "http://localhost:8082"
+    INTERNAL_SERVICE_KEY: str = "sae-internal-key-2024"
 
     ALLOWED_ORIGINS: List[str] = [
         "http://localhost:5173",

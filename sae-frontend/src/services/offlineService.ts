@@ -15,20 +15,38 @@ function ask<T = any>(type: string, payload?: any, timeoutMs = 30000): Promise<T
 
     const msgId = `m-${Date.now()}-${counter++}`;
     const channel = new MessageChannel();
+    let settled = false;
+
+    const settle = (fn: () => void) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      try { channel.port1.close(); } catch { /* port já fechado */ }
+      fn();
+    };
+
     const timer = setTimeout(() => {
-      channel.port1.close();
-      reject(new Error('Timeout SW'));
+      settle(() => reject(new Error('Timeout SW')));
     }, timeoutMs);
 
     channel.port1.onmessage = (e) => {
-      clearTimeout(timer);
-      channel.port1.close();
-      const { ok, data, error } = e.data || {};
-      if (ok) resolve(data as T);
-      else reject(new Error(error || 'Erro SW'));
+      settle(() => {
+        const { ok, data, error } = e.data || {};
+        if (ok) resolve(data as T);
+        else reject(new Error(error || 'Erro SW'));
+      });
     };
 
-    sw.postMessage({ type, payload, msgId }, [channel.port2]);
+    channel.port1.onmessageerror = () => {
+      settle(() => reject(new Error('Erro de mensagem no port SW')));
+    };
+
+    try {
+      sw.postMessage({ type, payload, msgId }, [channel.port2]);
+    } catch (err) {
+      // Port desconectado (e.g. React DevTools ou navegação)
+      settle(() => reject(err instanceof Error ? err : new Error(String(err))));
+    }
   });
 }
 

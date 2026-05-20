@@ -170,8 +170,12 @@ self.addEventListener('fetch', (event) => {
 
 self.addEventListener('message', (event) => {
   const { type, payload, msgId } = event.data || {};
-  const reply = (data) => event.source?.postMessage({ msgId, ok: true, data });
-  const fail  = (err)  => event.source?.postMessage({ msgId, ok: false, error: String(err) });
+  const reply = (data) => {
+    try { event.source?.postMessage({ msgId, ok: true, data }); } catch { /* client desconectado */ }
+  };
+  const fail = (err) => {
+    try { event.source?.postMessage({ msgId, ok: false, error: String(err) }); } catch { /* client desconectado */ }
+  };
 
   const handle = async () => {
   try {
