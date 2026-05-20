@@ -1,5 +1,7 @@
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
 from typing import List
+import json
 
 class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
@@ -22,6 +24,16 @@ class Settings(BaseSettings):
 
     MAX_MESSAGE_LENGTH: int = 2000
     MAX_QUIZ_QUESTIONS: int = 20
+
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def parse_allowed_origins(cls, v):
+        if isinstance(v, str):
+            v = v.strip()
+            if v.startswith("["):
+                return json.loads(v)
+            return [o.strip() for o in v.split(",") if o.strip()]
+        return v
 
     class Config:
         env_file = ".env"

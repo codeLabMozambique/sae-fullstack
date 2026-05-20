@@ -35,3 +35,8 @@ build/
 
 jboss.server.log.dir_IS_UNDEFINED/
 package-lock.json
+
+# Variáveis de ambiente — nunca commitar
+.env
+*.env
+!.env.example

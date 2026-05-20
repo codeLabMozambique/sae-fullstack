@@ -16,7 +16,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   data:
     mongodb:
-      uri: mongodb://sae-mongodb:27017/sae_content
+      uri: mongodb://${MONGODB_USER:mongo}:${MONGODB_PASSWORD:mongo123}@sae-mongodb:27017/sae_content?authSource=admin
       auto-index-creation: true
   mail:
     host: smtp.gmail.com

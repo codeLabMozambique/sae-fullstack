@@ -62,6 +62,18 @@ spring:
                 - Path=/academic/**
               filters:
                 - StripPrefix=1
+            - id: sae-ai-python
+              uri: http://sae-ai-python:8087
+              predicates:
+                - Path=/ai/**
+              filters:
+                - StripPrefix=1
+            - id: sae-ai-service
+              uri: http://sae-ai-service:8086
+              predicates:
+                - Path=/ai-java/**
+              filters:
+                - StripPrefix=1
 
 management:
   endpoints:

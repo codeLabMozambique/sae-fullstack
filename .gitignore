@@ -1,0 +1,38 @@
+# Variáveis de ambiente — nunca commitar
+.env
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+chroma_db/
+
+# Java/Maven
+target/
+*.iml
+*.iws
+*.ipr
+.idea/
+.classpath
+.project
+.settings/
+
+# Node/frontend
+node_modules/
+dist/
+*.log
+
+# Logs locais
+*.log
+auth-service.log
+auth-service.err.log
+content-service.log
+content-service.err.log
+frontend.log
+frontend.err.log
+gateway.log
+gateway.err.log
