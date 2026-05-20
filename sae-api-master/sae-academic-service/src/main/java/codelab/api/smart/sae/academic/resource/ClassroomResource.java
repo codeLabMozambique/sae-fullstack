@@ -37,6 +37,12 @@ public class ClassroomResource {
         return ResponseEntity.ok(classroomService.findByClassLevel(classLevelId));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<ClassroomDTO> findByIdGet(@PathVariable Long id) {
+        ClassroomDTO dto = classroomService.findById(id);
+        return dto != null ? ResponseEntity.ok(dto) : ResponseEntity.notFound().build();
+    }
+
     @PostMapping("/details")
     public ResponseEntity<ClassroomDTO> findById(@RequestBody ClassroomDTO request) {
         ClassroomDTO dto = classroomService.findById(request.getId());

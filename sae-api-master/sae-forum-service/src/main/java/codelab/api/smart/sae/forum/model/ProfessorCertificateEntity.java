@@ -41,6 +41,9 @@ public class ProfessorCertificateEntity implements Serializable {
     @Column(name = "published_at")
     private LocalDateTime publishedAt;
 
+    @Column(name = "school_name", length = 200)
+    private String schoolName;
+
     @PrePersist
     protected void onCreate() {
         issuedAt = LocalDateTime.now();
@@ -69,4 +72,7 @@ public class ProfessorCertificateEntity implements Serializable {
 
     public LocalDateTime getPublishedAt() { return publishedAt; }
     public void setPublishedAt(LocalDateTime publishedAt) { this.publishedAt = publishedAt; }
+
+    public String getSchoolName() { return schoolName; }
+    public void setSchoolName(String schoolName) { this.schoolName = schoolName; }
 }

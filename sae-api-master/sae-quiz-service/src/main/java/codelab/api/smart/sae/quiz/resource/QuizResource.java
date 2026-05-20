@@ -32,9 +32,11 @@ public class QuizResource {
             @RequestParam(required = false) Long subjectId,
             Authentication auth) {
         boolean isAdmin = auth != null && auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ADMIN") || a.getAuthority().equals("PROFESSOR"));
+                .anyMatch(a -> a.getAuthority().equals("ADMIN") || a.getAuthority().equals("SCHOOL_ADMIN"));
+        boolean isProfessor = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("PROFESSOR"));
         String username = auth != null ? auth.getName() : null;
-        return ResponseEntity.ok(quizService.listQuizzes(disciplina, subjectId, isAdmin, username));
+        return ResponseEntity.ok(quizService.listQuizzes(disciplina, subjectId, isAdmin, isProfessor, username));
     }
 
     @GetMapping("/{id}")

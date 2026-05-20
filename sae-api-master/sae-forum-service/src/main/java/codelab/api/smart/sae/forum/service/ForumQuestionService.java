@@ -30,10 +30,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -272,88 +274,104 @@ public class ForumQuestionService {
 
     // ── Membros do fórum para @mention ───────────────────────────────────────
 
-    /**
-     * Devolve a lista de professores do fórum para autocomplete do @mention.
-     * Para TURMA: professores atribuídos à turma + disciplina.
-     * Para DISCIPLINA (ou sem classroomId): todos os professores da disciplina.
-     */
     public List<ForumMemberDTO> getForumMembers(Long subjectId, Long classroomId) {
+        List<ForumMemberDTO> members = new java.util.ArrayList<>();
+
         List<Long> professorIds = classroomId != null
             ? academicServiceClient.getProfessorIdsByClassroomAndSubject(classroomId, subjectId)
             : academicServiceClient.getProfessorIdsBySubject(subjectId);
 
-        return professorIds.stream()
+        professorIds.stream()
             .map(authServiceClient::getProfessorInfoByUserId)
             .filter(Objects::nonNull)
-            .map(info -> new ForumMemberDTO(
-                info.getUsername(),
-                info.getFullname(),
-                "PROFESSOR",
-                info.isOnline()
-            ))
-            .collect(Collectors.toList());
+            .map(info -> new ForumMemberDTO(info.getUsername(), info.getFullname(), "PROFESSOR", info.isOnline()))
+            .forEach(members::add);
+
+        if (classroomId != null) {
+            authServiceClient.getStudentsByClassroom(classroomId).stream()
+                .filter(s -> s.getUsername() != null && s.getFullName() != null)
+                .map(s -> new ForumMemberDTO(s.getUsername(), s.getFullName(), "STUDENT", false))
+                .forEach(members::add);
+        }
+
+        return members;
     }
 
     // ── Inbox do professor ────────────────────────────────────────────────────
 
     public List<QuestionResponseDTO> getProfessorPending(String professorUsername) {
-        List<Long> subjectIds = resolveSubjectIds(professorUsername);
+        Set<Long> seen = new HashSet<>();
+        List<ForumQuestionEntity> combined = new ArrayList<>();
 
-        if (subjectIds.isEmpty()) {
-            // Fallback legado
-            List<DisciplinaEnum> disciplines = resolveDisciplinasLegacy(professorUsername);
-            if (disciplines.isEmpty()) return List.of();
-            return buildPendingFromDisciplinas(disciplines, professorUsername);
+        // Path 1: novo modelo por subjectId
+        List<Long> subjectIds = resolveSubjectIds(professorUsername);
+        if (!subjectIds.isEmpty()) {
+            questionRepository
+                .findByQuestionTypeAndSubjectIdInAndStatus(QuestionType.ESPECIALIZADO, subjectIds, QuestionStatus.ABERTA)
+                .stream()
+                .filter(q -> !expertAnswerRepository.existsByQuestionIdAndAnsweredBy(q.getId(), professorUsername))
+                .filter(q -> seen.add(q.getId()))
+                .forEach(combined::add);
+
+            questionRepository
+                .findByQuestionTypeAndSubjectIdIn(QuestionType.COLABORATIVO, subjectIds)
+                .stream()
+                .filter(q -> !collaborativeAnswerRepository.existsByQuestionIdAndAnsweredBy(q.getId(), professorUsername))
+                .filter(q -> seen.add(q.getId()))
+                .forEach(combined::add);
         }
 
-        List<ForumQuestionEntity> expert = questionRepository
-            .findByQuestionTypeAndSubjectIdInAndStatus(
-                QuestionType.ESPECIALIZADO, subjectIds, QuestionStatus.ABERTA)
-            .stream()
-            .filter(q -> !expertAnswerRepository.existsByQuestionIdAndAnsweredBy(q.getId(), professorUsername))
-            .collect(Collectors.toList());
+        // Path 2: modelo legado por disciplina (compatibilidade com salas antigas)
+        List<DisciplinaEnum> disciplines = resolveDisciplinasLegacy(professorUsername);
+        if (!disciplines.isEmpty()) {
+            questionRepository
+                .findByQuestionTypeAndDisciplinaInAndStatus(QuestionType.ESPECIALIZADO, disciplines, QuestionStatus.ABERTA)
+                .stream()
+                .filter(q -> !expertAnswerRepository.existsByQuestionIdAndAnsweredBy(q.getId(), professorUsername))
+                .filter(q -> seen.add(q.getId()))
+                .forEach(combined::add);
 
-        List<ForumQuestionEntity> collab = questionRepository
-            .findByQuestionTypeAndSubjectIdIn(QuestionType.COLABORATIVO, subjectIds)
-            .stream()
-            .filter(q -> !collaborativeAnswerRepository.existsByQuestionIdAndAnsweredBy(q.getId(), professorUsername))
-            .collect(Collectors.toList());
+            questionRepository
+                .findByQuestionTypeAndDisciplinaIn(QuestionType.COLABORATIVO, disciplines)
+                .stream()
+                .filter(q -> !collaborativeAnswerRepository.existsByQuestionIdAndAnsweredBy(q.getId(), professorUsername))
+                .filter(q -> seen.add(q.getId()))
+                .forEach(combined::add);
+        }
 
-        List<ForumQuestionEntity> combined = new ArrayList<>(expert);
-        combined.addAll(collab);
         combined.sort(Comparator.comparing(ForumQuestionEntity::getCreatedAt).reversed());
         return combined.stream().map(this::enrichWithAnswers).collect(Collectors.toList());
     }
 
     public List<QuestionResponseDTO> getProfessorAnswered(String professorUsername) {
-        List<Long> subjectIds = resolveSubjectIds(professorUsername);
+        Map<Long, ForumQuestionEntity> map = new LinkedHashMap<>();
 
+        // Salas expert onde o professor respondeu (qualquer modelo)
         List<Long> expertIds = expertAnswerRepository.findByAnsweredBy(professorUsername)
             .stream().map(ExpertAnswerEntity::getQuestionId).distinct().collect(Collectors.toList());
-        List<ForumQuestionEntity> expertAnswered = expertIds.isEmpty()
-            ? List.of()
-            : questionRepository.findAllById(expertIds);
+        if (!expertIds.isEmpty()) {
+            questionRepository.findAllById(expertIds).forEach(q -> map.put(q.getId(), q));
+        }
 
-        List<ForumQuestionEntity> collabWithAnswers;
+        // Path 1: salas colaborativas pelo novo modelo (subjectId)
+        List<Long> subjectIds = resolveSubjectIds(professorUsername);
         if (!subjectIds.isEmpty()) {
-            collabWithAnswers = questionRepository
+            questionRepository
                 .findByQuestionTypeAndSubjectIdIn(QuestionType.COLABORATIVO, subjectIds)
                 .stream()
                 .filter(q -> collaborativeAnswerRepository.existsByQuestionId(q.getId()))
-                .collect(Collectors.toList());
-        } else {
-            // Fallback legado
-            List<DisciplinaEnum> disciplines = resolveDisciplinasLegacy(professorUsername);
-            collabWithAnswers = disciplines.isEmpty() ? List.of()
-                : questionRepository.findByQuestionTypeAndDisciplinaIn(QuestionType.COLABORATIVO, disciplines)
-                    .stream()
-                    .filter(q -> collaborativeAnswerRepository.existsByQuestionId(q.getId()))
-                    .collect(Collectors.toList());
+                .forEach(q -> map.put(q.getId(), q));
         }
 
-        Map<Long, ForumQuestionEntity> map = new LinkedHashMap<>();
-        expertAnswered.forEach(q -> map.put(q.getId(), q));
-        collabWithAnswers.forEach(q -> map.put(q.getId(), q));
+        // Path 2: salas colaborativas pelo modelo legado (disciplina)
+        List<DisciplinaEnum> disciplines = resolveDisciplinasLegacy(professorUsername);
+        if (!disciplines.isEmpty()) {
+            questionRepository
+                .findByQuestionTypeAndDisciplinaIn(QuestionType.COLABORATIVO, disciplines)
+                .stream()
+                .filter(q -> collaborativeAnswerRepository.existsByQuestionId(q.getId()))
+                .forEach(q -> map.put(q.getId(), q));
+        }
 
         List<ForumQuestionEntity> result = new ArrayList<>(map.values());
         result.sort(Comparator.comparing(ForumQuestionEntity::getCreatedAt).reversed());
@@ -466,6 +484,7 @@ public class ForumQuestionService {
         stats.setTotalAccepted(accepted);
         stats.setAcceptanceRate(answers.isEmpty() ? 0.0 : (accepted * 100.0 / answers.size()));
 
+        // Disciplinas legado (de perguntas antigas com campo disciplina preenchido)
         List<String> disciplinas = answers.stream()
             .map(ExpertAnswerEntity::getQuestionId)
             .distinct()
@@ -476,14 +495,34 @@ public class ForumQuestionService {
             .distinct()
             .sorted()
             .collect(Collectors.toList());
-        stats.setDisciplinas(disciplinas);
 
+        // Conta total de perguntas ESPECIALIZADO (novo modelo + legado)
+        long totalEspecializado = 0;
+
+        // Path 1: novo modelo por subjectId
+        List<Long> subjectIds = resolveSubjectIds(professorUsername);
+        if (!subjectIds.isEmpty()) {
+            totalEspecializado += questionRepository
+                .findByQuestionTypeAndSubjectIdIn(QuestionType.ESPECIALIZADO, subjectIds)
+                .size();
+            // Preenche lista de disciplinas com nomes das subjects se não houver disciplinas legado
+            if (disciplinas.isEmpty()) {
+                disciplinas.addAll(resolveSubjectNames(professorUsername));
+            }
+        }
+
+        // Path 2: modelo legado por disciplina
         List<DisciplinaEnum> disciplinaEnums = disciplinas.stream()
             .map(name -> { try { return DisciplinaEnum.valueOf(name); } catch (Exception e) { return null; } })
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
-        long totalEspecializado = disciplinaEnums.isEmpty() ? 0L :
-            questionRepository.findByQuestionTypeAndDisciplinaIn(QuestionType.ESPECIALIZADO, disciplinaEnums).size();
+        if (!disciplinaEnums.isEmpty()) {
+            totalEspecializado += questionRepository
+                .findByQuestionTypeAndDisciplinaIn(QuestionType.ESPECIALIZADO, disciplinaEnums)
+                .size();
+        }
+
+        stats.setDisciplinas(disciplinas);
         stats.setAssistancePercentage(totalEspecializado == 0 ? 0.0
             : (answers.size() * 100.0 / totalEspecializado));
 
@@ -509,6 +548,17 @@ public class ForumQuestionService {
             Long userId = authServiceClient.getUserIdByUsername(professorUsername);
             if (userId == null) return List.of();
             return academicServiceClient.getSubjectIdsByProfessorId(userId);
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
+    /** Resolve nomes das subjects do professor via auth + academic service */
+    private List<String> resolveSubjectNames(String professorUsername) {
+        try {
+            Long userId = authServiceClient.getUserIdByUsername(professorUsername);
+            if (userId == null) return List.of();
+            return academicServiceClient.getSubjectNamesByProfessorId(userId);
         } catch (Exception e) {
             return List.of();
         }

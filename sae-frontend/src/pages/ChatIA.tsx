@@ -6,7 +6,11 @@ import {
 import {
   Send as SendIcon, SmartToy as BotIcon, Person as UserIcon,
   DeleteOutline as ClearIcon, ContentCopy as CopyIcon,
+<<<<<<< HEAD
   MenuBook as BookIcon, AttachFile as AttachIcon,
+=======
+  MenuBook as BookIcon,
+>>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
 } from '@mui/icons-material';
 import { useLocation } from 'react-router-dom';
 import VoiceRecorderButton from '../components/VoiceRecorderButton';
@@ -17,7 +21,10 @@ interface Message {
   isBot: boolean;
   sources?: string[];
   ts: Date;
+<<<<<<< HEAD
   attachment?: string; // filename of attached file
+=======
+>>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
 }
 
 const SESSION_KEY = 'sae_ai_session_id';
@@ -42,7 +49,11 @@ function fmtTime(d: Date) {
 }
 
 const WELCOME: Message = {
+<<<<<<< HEAD
   text: 'Olá! Sou o assistente de IA do SAE.\n\nPosso ajudar com:\n• Explicações de matéria (Matemática, Física, Química, História…)\n• Resumos de capítulos\n• Preparação para exames\n• Dúvidas sobre o currículo nacional moçambicano\n\nEscreve a tua dúvida académica, usa os atalhos abaixo, ou anexa um ficheiro PDF.',
+=======
+  text: 'Olá! Sou o assistente de IA do SAE.\n\nPosso ajudar com:\n• Explicações de matéria (Matemática, Física, Química, História…)\n• Resumos de capítulos\n• Preparação para exames\n• Dúvidas sobre o currículo nacional moçambicano\n\nEscreve a tua dúvida académica ou usa os atalhos abaixo.',
+>>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
   isBot: true,
   ts: new Date(),
 };
@@ -55,7 +66,10 @@ const SUGGESTIONS = [
 ];
 
 interface BookContext {
+<<<<<<< HEAD
   contentId?: string;
+=======
+>>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
   bookTitle?: string;
   subject?: string;
   initialMessage?: string;
@@ -71,6 +85,7 @@ const ChatIA: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<number | null>(null);
   const [activeBook, setActiveBook] = useState<string | null>(null);
+<<<<<<< HEAD
   const [activeContentId, setActiveContentId] = useState<string | null>(null);
 
   // File attachment state
@@ -79,6 +94,8 @@ const ChatIA: React.FC = () => {
   const [fileContext, setFileContext] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+=======
+>>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
   const sessionId = useRef(getSessionId());
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -88,15 +105,23 @@ const ChatIA: React.FC = () => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
+<<<<<<< HEAD
+=======
+  // Pre-fill from book context (only once per navigation)
+>>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
   useEffect(() => {
     if (!bookCtx?.initialMessage || bookCtxUsed.current) return;
     bookCtxUsed.current = true;
     setActiveBook(bookCtx.bookTitle ?? null);
+<<<<<<< HEAD
     setActiveContentId(bookCtx.contentId ?? null);
+=======
+>>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
     setInput(bookCtx.initialMessage);
     setTimeout(() => inputRef.current?.focus(), 150);
   }, [bookCtx]);
 
+<<<<<<< HEAD
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -115,6 +140,42 @@ const ChatIA: React.FC = () => {
     } finally {
       setExtractingFile(false);
     }
+=======
+  const handleSend = async (text?: string) => {
+    const msg = (text ?? input).trim();
+    if (!msg || loading) return;
+    setInput('');
+    setError(null);
+    setMessages(prev => [...prev, { text: msg, isBot: false, ts: new Date() }]);
+    setLoading(true);
+    try {
+      const subject = bookCtx?.subject ?? undefined;
+      const res = await aiService.sendMessage(msg, sessionId.current, subject);
+      setMessages(prev => [...prev, { text: res.response, isBot: true, sources: res.sources, ts: new Date() }]);
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail || 'Erro ao contactar o assistente. Verifica a ligação.';
+      setError(detail);
+    } finally {
+      setLoading(false);
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  };
+
+  const handleClear = async () => {
+    sessionId.current = newSessionId();
+    setMessages([{ ...WELCOME, ts: new Date() }]);
+    setError(null);
+    setActiveBook(null);
+    bookCtxUsed.current = false;
+    try { await aiService.clearHistory(sessionId.current); } catch {}
+  };
+
+  const handleCopy = (text: string, idx: number) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(idx);
+      setTimeout(() => setCopied(null), 1500);
+    });
+>>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
   };
 
   const removeAttachment = () => {
@@ -207,12 +268,18 @@ const ChatIA: React.FC = () => {
           <BookIcon sx={{ fontSize: 16, color: '#00A651', flexShrink: 0 }} />
           <Typography variant="caption" sx={{ color: '#00A651', fontWeight: 600, flex: 1, lineHeight: 1.4 }}>
             Contexto: <Box component="span" sx={{ color: '#374151', fontWeight: 500 }}>{activeBook}</Box>
+<<<<<<< HEAD
             {activeContentId && (
               <Box component="span" sx={{ color: '#9CA3AF', fontSize: '0.6rem', ml: 1 }}>· conteúdo indexado</Box>
             )}
           </Typography>
           <Tooltip title="Remover contexto do livro">
             <IconButton size="small" onClick={() => { setActiveBook(null); setActiveContentId(null); }} sx={{ p: 0.25, color: '#9CA3AF', '&:hover': { color: '#374151' } }}>
+=======
+          </Typography>
+          <Tooltip title="Remover contexto do livro">
+            <IconButton size="small" onClick={() => setActiveBook(null)} sx={{ p: 0.25, color: '#9CA3AF', '&:hover': { color: '#374151' } }}>
+>>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
               <ClearIcon sx={{ fontSize: 14 }} />
             </IconButton>
           </Tooltip>
@@ -238,12 +305,15 @@ const ChatIA: React.FC = () => {
                   border: msg.isBot ? '1px solid rgba(0,0,0,0.05)' : 'none',
                   position: 'relative',
                 }}>
+<<<<<<< HEAD
                   {msg.attachment && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1, opacity: 0.85 }}>
                       <AttachIcon sx={{ fontSize: 14 }} />
                       <Typography variant="caption" sx={{ fontStyle: 'italic' }}>{msg.attachment}</Typography>
                     </Box>
                   )}
+=======
+>>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
                   <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.75 }}>
                     {msg.text}
                   </Typography>
@@ -292,6 +362,7 @@ const ChatIA: React.FC = () => {
         </Alert>
       )}
 
+<<<<<<< HEAD
       {/* Attached file preview */}
       {(attachedFile || extractingFile) && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, px: 1.5, py: 0.75, bgcolor: 'rgba(0,166,81,0.06)', border: '1px solid rgba(0,166,81,0.2)', borderRadius: 2 }}>
@@ -311,6 +382,8 @@ const ChatIA: React.FC = () => {
         </Box>
       )}
 
+=======
+>>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
       {/* Suggestions */}
       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1.5 }}>
         {SUGGESTIONS.map(s => (
@@ -319,6 +392,7 @@ const ChatIA: React.FC = () => {
         ))}
       </Box>
 
+<<<<<<< HEAD
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -330,6 +404,8 @@ const ChatIA: React.FC = () => {
         onChange={handleFileSelect}
       />
 
+=======
+>>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
       {/* Input */}
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end', bgcolor: '#fff', p: 1.5, borderRadius: 3, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: '1px solid', borderColor: 'divider' }}>
         <VoiceRecorderButton
@@ -354,7 +430,11 @@ const ChatIA: React.FC = () => {
           multiline
           minRows={1}
           maxRows={5}
+<<<<<<< HEAD
           placeholder={attachedFile ? 'Pergunta sobre o ficheiro (opcional)…' : 'Coloca a tua dúvida académica…'}
+=======
+          placeholder="Coloca a tua dúvida académica…"
+>>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => {
@@ -366,10 +446,17 @@ const ChatIA: React.FC = () => {
         />
         <Tooltip title={loading ? 'A aguardar resposta…' : 'Enviar (Enter)'}>
           <span>
+<<<<<<< HEAD
             <IconButton onClick={() => handleSend()} disabled={!canSend}
               sx={{
                 bgcolor: canSend ? '#00A651' : 'grey.200',
                 color: canSend ? '#fff' : 'grey.500',
+=======
+            <IconButton onClick={() => handleSend()} disabled={loading || !input.trim()}
+              sx={{
+                bgcolor: loading || !input.trim() ? 'grey.200' : '#00A651',
+                color: loading || !input.trim() ? 'grey.500' : '#fff',
+>>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
                 borderRadius: 2, width: 44, height: 44, transition: 'all 0.2s',
                 '&:hover': { bgcolor: '#008C44', transform: 'translateY(-1px)' },
                 '&.Mui-disabled': { bgcolor: 'grey.200', color: 'grey.400' },

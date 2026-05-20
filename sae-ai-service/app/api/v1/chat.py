@@ -1,11 +1,18 @@
+<<<<<<< HEAD
 from fastapi import APIRouter, HTTPException, Request, UploadFile, File
+=======
+from fastapi import APIRouter, HTTPException, Request
+>>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
 from typing import List, Optional
 from app.schemas.chat import ChatRequest, ChatResponse, ChatHistoryResponse, ChatHistoryMessage
 from app.services.openai_service import openai_service
 from app.services.redis_service import redis_service
 from app.services import rag_service
 from app.services.auth import get_username, get_role
+<<<<<<< HEAD
 import fitz
+=======
+>>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
@@ -25,6 +32,7 @@ async def chat_with_ai(request_body: ChatRequest, request: Request):
     history = await redis_service.get_chat_history(request_body.session_id)
     history.append({"role": "user", "content": request_body.message})
 
+<<<<<<< HEAD
     # RAG: search library books — filter by specific book if content_id provided
     # When a specific book is open, return more chunks to cover more pages
     n_chunks = 15 if request_body.content_id else 5
@@ -33,6 +41,13 @@ async def chat_with_ai(request_body: ChatRequest, request: Request):
         discipline=request_body.subject,
         content_id=request_body.content_id,
         n=n_chunks,
+=======
+    # RAG: search library books for relevant context
+    rag_results = rag_service.search(
+        query=request_body.message,
+        discipline=request_body.subject,
+        n=4,
+>>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
     )
     context = ""
     sources: List[str] = []
@@ -40,6 +55,7 @@ async def chat_with_ai(request_body: ChatRequest, request: Request):
         parts = []
         for r in rag_results:
             title = r["meta"].get("title", "")
+<<<<<<< HEAD
             chunk_idx = r["meta"].get("chunk", "")
             if title and title not in sources:
                 sources.append(title)
@@ -59,6 +75,17 @@ async def chat_with_ai(request_body: ChatRequest, request: Request):
             )
         else:
             extra += f"\n\nContexto dos livros da biblioteca:\n{context}"
+=======
+            if title and title not in sources:
+                sources.append(title)
+            parts.append(f"[{title}]: {r['text']}")
+        context = "\n\n".join(parts)
+
+    # Build extra context: role hint + RAG book excerpts
+    extra = _ROLE_SUFFIX.get(role, "")
+    if context:
+        extra += f"\n\nContexto dos livros da biblioteca:\n{context}"
+>>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
 
     response_text = await openai_service.generate_educational_chat_response(
         history, extra_context=extra
@@ -68,6 +95,7 @@ async def chat_with_ai(request_body: ChatRequest, request: Request):
 
     return ChatResponse(response=response_text, session_id=request_body.session_id, sources=sources)
 
+<<<<<<< HEAD
 
 @router.post("/extract-text")
 async def extract_text_from_file(file: UploadFile = File(...)):
@@ -104,6 +132,8 @@ async def extract_text_from_file(file: UploadFile = File(...)):
 
     return {"text": text.strip(), "filename": filename, "chars": len(text)}
 
+=======
+>>>>>>> bf8014b08160ac16714bfdd47fd2aa9f10097119
 
 @router.get("/history/{session_id}", response_model=ChatHistoryResponse)
 async def get_chat_history(session_id: str):

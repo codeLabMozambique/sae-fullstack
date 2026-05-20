@@ -14,6 +14,7 @@ public class ProfessorCertificateDTO {
     private Boolean isPublic;
     private LocalDateTime issuedAt;
     private LocalDateTime publishedAt;
+    private String schoolName;
 
     public static ProfessorCertificateDTO from(ProfessorCertificateEntity e) {
         ProfessorCertificateDTO dto = new ProfessorCertificateDTO();
@@ -25,6 +26,7 @@ public class ProfessorCertificateDTO {
         dto.isPublic = e.getIsPublic();
         dto.issuedAt = e.getIssuedAt();
         dto.publishedAt = e.getPublishedAt();
+        dto.schoolName = e.getSchoolName();
         return dto;
     }
 
@@ -36,4 +38,5 @@ public class ProfessorCertificateDTO {
     public Boolean getIsPublic() { return isPublic; }
     public LocalDateTime getIssuedAt() { return issuedAt; }
     public LocalDateTime getPublishedAt() { return publishedAt; }
+    public String getSchoolName() { return schoolName; }
 }

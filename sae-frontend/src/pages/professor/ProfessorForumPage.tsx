@@ -645,11 +645,25 @@ export default function ProfessorForumPage() {
   const [search, setSearch] = useState('');
   const [subjectsMap, setSubjectsMap] = useState<Map<number, SubjectInfo>>(new Map());
   const [infoOpen, setInfoOpen] = useState(false);
+  const [newPendingCount, setNewPendingCount] = useState(0);
+  const knownPendingIds = useRef<Set<number>>(new Set());
+  const isOnPendingTab = useRef(true);
+  const isInitialPendingLoad = useRef(true);
 
   const loadPending = () => {
     setLoadingPending(true);
     forumService.listProfessorPending()
-      .then(setPendingList)
+      .then(list => {
+        if (!isInitialPendingLoad.current) {
+          const newItems = list.filter(q => !knownPendingIds.current.has(q.id));
+          if (newItems.length > 0 && !isOnPendingTab.current) {
+            setNewPendingCount(prev => prev + newItems.length);
+          }
+        }
+        isInitialPendingLoad.current = false;
+        list.forEach(q => knownPendingIds.current.add(q.id));
+        setPendingList(list);
+      })
       .finally(() => setLoadingPending(false));
   };
 
@@ -668,8 +682,24 @@ export default function ProfessorForumPage() {
   }, []);
 
   useEffect(() => {
+    isOnPendingTab.current = sidebarTab === 'pending';
+    if (sidebarTab === 'pending') setNewPendingCount(0);
     if (sidebarTab === 'answered' && answeredList.length === 0) loadAnswered();
   }, [sidebarTab]);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      forumService.listProfessorPending().then(list => {
+        const newItems = list.filter(q => !knownPendingIds.current.has(q.id));
+        if (newItems.length > 0) {
+          if (!isOnPendingTab.current) setNewPendingCount(prev => prev + newItems.length);
+          list.forEach(q => knownPendingIds.current.add(q.id));
+          setPendingList(list);
+        }
+      }).catch(() => {});
+    }, 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   const handleSelectQuestion = (q: ForumQuestion) => {
     setActiveQ(q);
@@ -781,6 +811,7 @@ export default function ProfessorForumPage() {
             { key: 'answered', label: 'Respondidas',  count: answeredList.length },
           ].map(item => {
             const isActive = sidebarTab === item.key;
+            const tabLabel = `${item.label}${item.count > 0 ? ` (${item.count})` : ''}`;
             return (
               <Box
                 key={item.key}
@@ -797,7 +828,15 @@ export default function ProfessorForumPage() {
                   '&:hover': { color: '#00A651', borderBottom: '2px solid #00A651' },
                 }}
               >
-                {item.label}{item.count > 0 ? ` (${item.count})` : ''}
+                {item.key === 'pending' && newPendingCount > 0 ? (
+                  <Badge
+                    badgeContent={newPendingCount}
+                    color="error"
+                    sx={{ '& .MuiBadge-badge': { fontSize: 9, minWidth: 16, height: 16, top: -4, right: -6 } }}
+                  >
+                    {tabLabel}
+                  </Badge>
+                ) : tabLabel}
               </Box>
             );
           })}

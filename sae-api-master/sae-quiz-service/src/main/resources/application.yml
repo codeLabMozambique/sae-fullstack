@@ -24,6 +24,6 @@ quiz:
   academic-service:
     url: ${ACADEMIC_SERVICE_URL:http://localhost:8085}
 
-anthropic:
+openai:
   api:
-    key: ${ANTHROPIC_API_KEY:}
+    key:${OPENAI_API_KEY}

@@ -21,6 +21,8 @@ public class ProfessorCertificateService {
 
     @Autowired private ProfessorCertificateRepository repository;
     @Autowired private ForumQuestionService questionService;
+    @Autowired private AuthServiceClient authServiceClient;
+    @Autowired private AcademicServiceClient academicServiceClient;
 
     /**
      * Verifica se o professor atingiu o limiar de assistência e emite
@@ -56,6 +58,14 @@ public class ProfessorCertificateService {
                 .stream().map(ProfessorCertificateDTO::from).collect(Collectors.toList());
     }
 
+    public List<ProfessorCertificateDTO> getAllCertificates() {
+        return repository.findAll().stream()
+                .sorted(java.util.Comparator.comparing(
+                    c -> c.getIssuedAt() != null ? c.getIssuedAt() : java.time.LocalDateTime.MIN,
+                    java.util.Comparator.reverseOrder()))
+                .map(ProfessorCertificateDTO::from).collect(Collectors.toList());
+    }
+
     public List<ProfessorCertificateDTO> getPublicCertificates() {
         return repository.findByIsPublicTrueOrderByIssuedAtDesc()
                 .stream().map(ProfessorCertificateDTO::from).collect(Collectors.toList());
@@ -68,8 +78,9 @@ public class ProfessorCertificateService {
         if (!cert.getProfessorUsername().equals(professorUsername)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado");
         }
-        cert.setIsPublic(true);
-        cert.setPublishedAt(LocalDateTime.now());
+        boolean nowPublic = !Boolean.TRUE.equals(cert.getIsPublic());
+        cert.setIsPublic(nowPublic);
+        cert.setPublishedAt(nowPublic ? LocalDateTime.now() : null);
         return ProfessorCertificateDTO.from(repository.save(cert));
     }
 

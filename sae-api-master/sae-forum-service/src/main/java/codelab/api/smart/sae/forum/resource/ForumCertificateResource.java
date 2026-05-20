@@ -51,6 +51,13 @@ public class ForumCertificateResource {
         return ResponseEntity.ok(certificateService.adminPublish(id, makePublic));
     }
 
+    // Admin: listar todos os certificados
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SCHOOL_ADMIN')")
+    public ResponseEntity<List<ProfessorCertificateDTO>> getAll() {
+        return ResponseEntity.ok(certificateService.getAllCertificates());
+    }
+
     // Público: listar certificados publicados
     @GetMapping("/public")
     public ResponseEntity<List<ProfessorCertificateDTO>> getPublic() {
