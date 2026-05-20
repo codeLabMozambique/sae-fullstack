@@ -26,6 +26,9 @@ spring:
   jackson:
     date-format: yyyy-MM-dd
 
+frontend:
+  url: http://localhost:5173
+
 smartsae:
   security:
     allowed-origin: "*"

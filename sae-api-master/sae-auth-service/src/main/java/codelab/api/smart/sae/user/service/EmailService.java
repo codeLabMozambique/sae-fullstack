@@ -19,6 +19,47 @@ public class EmailService {
     private String from;
 
     @Async
+    public void sendPasswordReset(String toEmail, String fullname, String resetLink) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(java.util.Objects.requireNonNull(from));
+            helper.setTo(java.util.Objects.requireNonNull(toEmail));
+            helper.setSubject("SAE — Recuperação de Palavra-passe");
+            helper.setText(buildResetHtml(fullname, resetLink), true);
+            mailSender.send(message);
+        } catch (Exception e) {
+            System.err.println("Falha ao enviar email de reset para " + toEmail + ": " + e.getMessage());
+        }
+    }
+
+    private String buildResetHtml(String fullname, String resetLink) {
+        return "<!DOCTYPE html><html lang='pt'><head><meta charset='UTF-8'></head>" +
+            "<body style='margin:0;padding:0;background:linear-gradient(135deg,#e8f5e9,#f1f8e9);font-family:Arial,sans-serif'>" +
+            "<table width='100%' cellpadding='0' cellspacing='0' style='padding:40px 16px'><tr><td align='center'>" +
+            "<table width='540' cellpadding='0' cellspacing='0' style='background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,166,81,0.12)'>" +
+            "<tr><td style='background:linear-gradient(135deg,#00a651,#007d3c);padding:36px 40px 28px'>" +
+            "<h1 style='margin:0;font-size:26px;font-weight:800;color:#fff'>smartSAE</h1>" +
+            "<p style='margin:8px 0 0;font-size:13px;color:rgba(255,255,255,0.8)'>Recuperação de Palavra-passe</p>" +
+            "</td></tr>" +
+            "<tr><td style='padding:32px 40px'>" +
+            "<p style='margin:0;font-size:16px;color:#1a2e1a'>Olá, <strong>" + fullname + "</strong>!</p>" +
+            "<p style='margin:12px 0;font-size:14px;color:#555;line-height:1.7'>" +
+            "Recebemos um pedido para redefinir a palavra-passe da sua conta. " +
+            "Clique no botão abaixo para criar uma nova palavra-passe.</p>" +
+            "<div style='text-align:center;margin:28px 0'>" +
+            "<a href='" + resetLink + "' style='display:inline-block;background:#00a651;color:#fff;text-decoration:none;" +
+            "padding:14px 36px;border-radius:8px;font-size:15px;font-weight:700;letter-spacing:0.5px'>" +
+            "Redefinir Palavra-passe</a></div>" +
+            "<p style='margin:0;font-size:12px;color:#999;line-height:1.6'>" +
+            "Este link é válido por <strong>1 hora</strong>. Se não solicitou a recuperação, ignore este email." +
+            "</p></td></tr>" +
+            "<tr><td style='background:#f8fdf9;border-top:1px solid #e8f5e9;padding:18px 40px'>" +
+            "<p style='margin:0;font-size:12px;color:#aaa'>Atenciosamente, <strong style='color:#00a651'>Equipa smartSAE</strong></p>" +
+            "</td></tr></table></td></tr></table></body></html>";
+    }
+
+    @Async
     public void sendCredentials(String toEmail, String fullname, String username, String password, String role) {
         try {
             MimeMessage message = mailSender.createMimeMessage();

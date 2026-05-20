@@ -45,4 +45,17 @@ public class AdminContentResource {
         contentService.delete(id, username);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * Dispara a re-indexação de todos os PDFs existentes no ChromaDB (RAG).
+     * Útil para indexar livros carregados antes de o serviço AI estar disponível.
+     */
+    @PostMapping("/reindex-ai")
+    public ResponseEntity<java.util.Map<String, Object>> reindexAll() {
+        int count = adminContentService.reindexAllInAi();
+        return ResponseEntity.ok(java.util.Map.of(
+            "message", "Re-indexação iniciada de forma assíncrona",
+            "queued", count
+        ));
+    }
 }

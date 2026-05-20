@@ -42,7 +42,9 @@ public class SecurityConfig {
                     AntPathRequestMatcher.antMatcher("/users/professors/by-discipline"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/user-id-by-username"),
                     AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/professor-profile"),
-                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/students-by-classroom"))
+                    AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/students-by-classroom"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/users/forgot-password"),
+                    AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/users/reset-password"))
                 .permitAll()
                 .requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/users/my-student-profile"))
                 .authenticated()

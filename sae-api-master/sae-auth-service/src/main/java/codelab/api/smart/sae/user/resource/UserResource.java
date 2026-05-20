@@ -347,6 +347,33 @@ public class UserResource {
     }
 
     // ════════════════════════════════════════════════════════════
+    // RECUPERAÇÃO DE SENHA
+    // ════════════════════════════════════════════════════════════
+
+    /** Solicita email de recuperação — aceita email ou número de telefone. */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<java.util.Map<String, String>> forgotPassword(
+            @RequestBody java.util.Map<String, String> body) {
+        try {
+            userService.forgotPassword(body.get("identifier"));
+            return ResponseEntity.ok(java.util.Map.of("message",
+                "Se existe uma conta com esse contacto, receberá um email com instruções."));
+        } catch (codelab.api.smart.sae.framework.exception.BusinessException e) {
+            // Devolver sempre 200 para não expor se o email existe (segurança)
+            return ResponseEntity.ok(java.util.Map.of("message",
+                "Se existe uma conta com esse contacto, receberá um email com instruções."));
+        }
+    }
+
+    /** Redefine a senha usando o token recebido por email. */
+    @PostMapping("/reset-password")
+    public ResponseEntity<java.util.Map<String, String>> resetPassword(
+            @RequestBody java.util.Map<String, String> body) {
+        userService.resetPassword(body.get("token"), body.get("newPassword"));
+        return ResponseEntity.ok(java.util.Map.of("message", "Senha redefinida com sucesso."));
+    }
+
+    // ════════════════════════════════════════════════════════════
     // LGPD — DADOS PESSOAIS
     // ════════════════════════════════════════════════════════════
 
