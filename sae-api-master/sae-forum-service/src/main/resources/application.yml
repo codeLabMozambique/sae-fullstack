@@ -7,6 +7,8 @@ server:
 spring:
   application:
     name: sae-forum-service
+  config:
+    import: "optional:file:.env[.properties]"
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/sae_db}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
@@ -54,7 +56,7 @@ forum:
 
 openai:
   api: 
-    key: ${OPENAI_API_KEY}
+    key: ${OPENAI_API_KEY:}
 
 smartsae:
   security:

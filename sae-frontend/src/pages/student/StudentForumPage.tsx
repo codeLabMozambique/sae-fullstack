@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useSubjects } from '../../hooks/useSubjects';
+import { useWebSocket } from '../../hooks/useWebSocket';
 import {
   Box, Typography, Stack, Paper, Chip, Avatar,
   Button, Dialog, DialogContent, DialogActions,
@@ -18,7 +19,6 @@ import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import QuizIcon from '@mui/icons-material/Quiz';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import VideocamOutlinedIcon from '@mui/icons-material/VideocamOutlined';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
@@ -80,21 +80,6 @@ function timeAgo(iso: string) {
   return `${d} dias atrás`;
 }
 
-const AVATAR_PALETTE = [
-  { bg: '#DBEAFE', text: '#1D4ED8' },
-  { bg: '#FCE7F3', text: '#BE185D' },
-  { bg: '#D1FAE5', text: '#047857' },
-  { bg: '#FEF3C7', text: '#B45309' },
-  { bg: '#EDE9FE', text: '#7C3AED' },
-  { bg: '#FEE2E2', text: '#B91C1C' },
-  { bg: '#CFFAFE', text: '#0E7490' },
-];
-
-function avatarColor(seed: string) {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = seed.charCodeAt(i) + ((h << 5) - h);
-  return AVATAR_PALETTE[Math.abs(h) % AVATAR_PALETTE.length];
-}
 
 function countUnread(q: ForumQuestion): number {
   const allAnswers = [...(q.expertAnswers ?? []), ...(q.collaborativeAnswers ?? [])];
@@ -163,13 +148,6 @@ function getSubjectEmoji(q: ForumQuestion): string {
   return '📚';
 }
 
-function getQuestionTitle(q: ForumQuestion, subjectsMap: Map<number, SubjectInfo>): string {
-  if (q.subjectId != null) {
-    const name = subjectsMap.get(q.subjectId)?.name;
-    if (name) return q.titulo.replace(/Disciplina\s*#?\d+/gi, name);
-  }
-  return q.titulo;
-}
 
 // ─── Sidebar conversation item ─────────────────────────────────────────────────
 
@@ -278,7 +256,8 @@ function MessageAttachment({ attachmentId, isOwn }: { attachmentId: string, isOw
         return api.get(`/content/api/user/uploads/${attachmentId}`, { responseType: 'blob' });
       })
       .then(res => {
-        const blob = new Blob([res.data], { type: res.headers['content-type'] || 'application/octet-stream' });
+        const contentType = res.headers['content-type'];
+        const blob = new Blob([res.data], { type: (typeof contentType === 'string' ? contentType : '') || 'application/octet-stream' });
         const url = URL.createObjectURL(blob);
         activeBlobUrl = url;
         setBlobUrl(url);
@@ -423,7 +402,7 @@ function ChatMessages({
 
   useEffect(() => {
     const d = q.disciplina;
-    if (!isExpert || messages.length > 0 || !d || d === 'null') { setAllProfOffline(false); return; }
+    if (!isExpert || messages.length > 0 || !d || (d as string) === 'null') { setAllProfOffline(false); return; }
     forumService.getProfessorsByDisciplina(d)
       .then(profs => setAllProfOffline(profs.length > 0 && profs.every(p => !p.online)))
       .catch(() => {});
@@ -477,7 +456,7 @@ function ChatMessages({
         </Stack>
       )}
 
-      {messages.map((a, idx) => {
+      {messages.map((a) => {
         const isOwn = a.answeredBy === currentUser;
         const expertA = 'accepted' in a ? (a as ExpertAnswer) : null;
         const collabA = !expertA ? (a as CollaborativeAnswer) : null;
@@ -1328,6 +1307,8 @@ export default function StudentForumPage() {
 
   const isProfessor = user?.role === 'Professor';
 
+  const { subscribe, unsubscribe } = useWebSocket();
+
   // Student state
   const [myQuestions, setMyQuestions] = useState<ForumQuestion[]>([]);
   const [loadingMy, setLoadingMy] = useState(false);
@@ -1592,20 +1573,82 @@ export default function StudentForumPage() {
     refreshProfessor(activeQ);
   }, [activeQ?.id, activeQ?.subjectId, activeQ?.disciplina]);
 
-  // Poll for new messages every 5 s while a chat is open
+  // Real-time questions alerts for Professors
+  useEffect(() => {
+    if (!isProfessor) return;
+
+    const handleNewQuestion = () => {
+      loadProfessorPending();
+      loadProfessorAnswered();
+    };
+
+    subscribe('/topic/questions/GERAL', handleNewQuestion);
+
+    const disciplines: DisciplinaEnum[] = [
+      'MATEMATICA', 'FISICA', 'QUIMICA', 'BIOLOGIA', 'PORTUGUES',
+      'HISTORIA', 'GEOGRAFIA', 'INGLES', 'FILOSOFIA', 'INFORMATICA'
+    ];
+    disciplines.forEach(d => {
+      subscribe(`/topic/questions/${d}`, handleNewQuestion);
+    });
+
+    availableSubjects.forEach(s => {
+      subscribe(`/topic/questions/subject-${s.id}`, handleNewQuestion);
+    });
+
+    return () => {
+      unsubscribe('/topic/questions/GERAL');
+      disciplines.forEach(d => {
+        unsubscribe(`/topic/questions/${d}`);
+      });
+      availableSubjects.forEach(s => {
+        unsubscribe(`/topic/questions/subject-${s.id}`);
+      });
+    };
+  }, [isProfessor, availableSubjects, subscribe, unsubscribe]);
+
+  // Real-time answers and validations for the active chat room
   useEffect(() => {
     if (!activeQ) return;
-    const id = setInterval(() => {
-      forumService.getQuestion(activeQ.id).then(detail => {
-        markSeen(detail.id);
-        setActiveQ(detail);
-        setMyQuestions(prev => upsertQuestion(prev, detail));
-        setGeneralQuestions(prev => upsertQuestion(prev, detail));
-      }).catch(() => {});
+
+    const topicAnswers = `/topic/answers/${activeQ.id}`;
+    const topicValids = `/topic/validations/${activeQ.id}`;
+
+    const handleUpdate = () => {
+      markSeen(activeQ.id);
+      reloadActiveQ();
       if (activeQ.questionType === 'ESPECIALIZADO') refreshProfessor(activeQ);
-    }, 5000);
-    return () => clearInterval(id);
-  }, [activeQ?.id]);
+    };
+
+    subscribe(topicAnswers, handleUpdate);
+    subscribe(topicValids, handleUpdate);
+
+    return () => {
+      unsubscribe(topicAnswers);
+      unsubscribe(topicValids);
+    };
+  }, [activeQ?.id, subscribe, unsubscribe]);
+
+  // Personal student inbox topic — receives direct notification when professor replies
+  const activeQIdRef = useRef<number | null>(null);
+  useEffect(() => { activeQIdRef.current = activeQ?.id ?? null; }, [activeQ?.id]);
+  const loadMyQuestionsRef = useRef(loadMyQuestions);
+  useEffect(() => { loadMyQuestionsRef.current = loadMyQuestions; });
+
+  useEffect(() => {
+    if (isProfessor || !user?.username) return;
+    const personalTopic = `/topic/student/${user.username}`;
+    const handlePersonal = (payload: any) => {
+      // Always refresh sidebar list to update unread badges
+      loadMyQuestionsRef.current();
+      // If the notified question is currently open, reload it immediately
+      if (payload?.id != null && activeQIdRef.current === payload.id) {
+        reloadActiveQ();
+      }
+    };
+    subscribe(personalTopic, handlePersonal);
+    return () => unsubscribe(personalTopic);
+  }, [isProfessor, user?.username, subscribe, unsubscribe]);
 
   const handleAccept = async (answerId: number) => {
     setAccepting(answerId);
@@ -1977,7 +2020,7 @@ export default function StudentForumPage() {
         open={newOpen}
         onClose={() => setNewOpen(false)}
         subjects={loadingSubjects ? [] : availableSubjects}
-        classroomId={studentClassroomId}
+        classroomId={studentClassroomId ?? null}
         onCreated={(q) => {
           setActiveQ(q);
           if (q.questionType === 'ESPECIALIZADO') {
