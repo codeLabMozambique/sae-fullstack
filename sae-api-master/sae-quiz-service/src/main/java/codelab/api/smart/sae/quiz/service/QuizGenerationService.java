@@ -22,6 +22,7 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
+import java.util.Random;
 
 @Service
 public class QuizGenerationService {
@@ -134,16 +135,24 @@ public class QuizGenerationService {
                 "Com base no texto abaixo (páginas %d–%d do livro «%s»), gera EXACTAMENTE %d questões de escolha múltipla diferentes "
                 + "(4 opções A/B/C/D, exactamente 1 correcta cada). "
                 + "(%s) As questões devem ser variadas, com diferentes estruturas. "
+                + "IMPORTANTE: distribui as respostas correctas de forma variada — não uses sempre a mesma letra. "
+                + "Por exemplo, na 1ª questão pode ser B correcta, na 2ª pode ser D, na 3ª pode ser A, etc. "
                 + "As opções erradas devem ser plausíveis e pedagogicamente relevantes. "
                 + "Para cada questão, inclui uma explicação clara (1-2 frases) de porquê a resposta está correcta, "
                 + "indicando a página onde o aluno pode aprofundar o tema.\n\n"
                 + "Texto:\n%s\n\n"
                 + "Responde APENAS com JSON válido, sem texto adicional:\n"
-                + "{\"questions\":[{\"enunciado\":\"...\",\"explicacao\":\"...\",\"options\":["
-                + "{\"letra\":\"A\",\"texto\":\"...\",\"correta\":true},"
+                + "{\"questions\":["
+                + "{\"enunciado\":\"...\",\"explicacao\":\"...\",\"options\":["
+                + "{\"letra\":\"A\",\"texto\":\"...\",\"correta\":false},"
+                + "{\"letra\":\"B\",\"texto\":\"...\",\"correta\":true},"
+                + "{\"letra\":\"C\",\"texto\":\"...\",\"correta\":false},"
+                + "{\"letra\":\"D\",\"texto\":\"...\",\"correta\":false}]},"
+                + "{\"enunciado\":\"...\",\"explicacao\":\"...\",\"options\":["
+                + "{\"letra\":\"A\",\"texto\":\"...\",\"correta\":false},"
                 + "{\"letra\":\"B\",\"texto\":\"...\",\"correta\":false},"
                 + "{\"letra\":\"C\",\"texto\":\"...\",\"correta\":false},"
-                + "{\"letra\":\"D\",\"texto\":\"...\",\"correta\":false}]}]}",
+                + "{\"letra\":\"D\",\"texto\":\"...\",\"correta\":true}]}]}",
                 startPage, endPage, title, numQ, seed, truncated);
 
         HttpHeaders h = new HttpHeaders();
@@ -199,18 +208,20 @@ public class QuizGenerationService {
             "definições e terminologia de " + d,
             "exemplos teóricos de " + d
         };
+        String[] lets = {"A", "B", "C", "D"};
         List<GeneratedQuestion> result = new ArrayList<>();
+        Random rng = new Random();
         for (int i = 0; i < numQ; i++) {
+            int correctIdx = rng.nextInt(4);
             GeneratedQuestion gq = new GeneratedQuestion();
             gq.enunciado  = "Questão " + (i + 1) + " sobre " + topics[i % 4] + ".";
-            gq.explicacao = "A opção A é a correcta. Configura a chave OpenAI para geres questões reais.";
+            gq.explicacao = "A opção " + lets[correctIdx] + " é a correcta. Configura a chave OpenAI para geres questões reais.";
             gq.options    = new ArrayList<>();
-            String[] lets = {"A", "B", "C", "D"};
             for (int j = 0; j < 4; j++) {
                 GeneratedOption go = new GeneratedOption();
                 go.letra   = lets[j];
-                go.texto   = j == 0 ? "Resposta correcta (exemplo)" : "Opção " + lets[j] + " (exemplo)";
-                go.correta = (j == 0);
+                go.texto   = j == correctIdx ? "Resposta correcta (exemplo)" : "Opção " + lets[j] + " (exemplo)";
+                go.correta = (j == correctIdx);
                 gq.options.add(go);
             }
             result.add(gq);

@@ -7,7 +7,6 @@ import org.springframework.core.Ordered;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
@@ -39,7 +38,7 @@ public class ContentSecurityConfig {
     public SecurityFilterChain contentApiFilterChain(HttpSecurity http) throws Exception {
         http
                 .securityMatcher(AntPathRequestMatcher.antMatcher("/api/**"))
-                .cors(Customizer.withDefaults())
+                .cors(cors -> cors.disable())
                 .csrf(csrf -> csrf.disable())
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

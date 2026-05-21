@@ -130,6 +130,17 @@ public class AcademicServiceClient {
         }
     }
 
+    public String getSubjectNameById(Long subjectId) {
+        try {
+            String url = academicServiceUrl + "/subject/" + subjectId;
+            SubjectInfo info = restTemplate.getForObject(url, SubjectInfo.class);
+            return info != null ? info.getName() : null;
+        } catch (Exception e) {
+            log.warn("Não foi possível obter nome da disciplina {}: {}", subjectId, e.getMessage());
+            return null;
+        }
+    }
+
     public String getSchoolNameByProfessorId(Long professorId) {
         try {
             AssignmentDetailInfo[] details = restTemplate.getForObject(

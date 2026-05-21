@@ -111,6 +111,7 @@ export interface ForumQuestion {
   // Novo modelo
   forumScope?: ForumScope;
   subjectId?: number | null;
+  subjectName?: string | null;
   classroomId?: number | null;
   schoolId?: number | null;
   mentionedProfessorUsername?: string | null;
@@ -167,6 +168,7 @@ export interface ProfessorCertificate {
   isPublic: boolean;
   issuedAt: string;
   publishedAt: string | null;
+  schoolName: string | null;
 }
 
 export interface ProfessorAssistanceStats {

@@ -38,6 +38,7 @@ interface QuizAttemptSummary {
 export function useNotifications() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [seenCounts, setSeenCounts] = useState<Record<string, number>>(getSeenMap);
 
   const role = user?.role ?? '';
   const isProfessor = role.includes('PROFESSOR') || role.includes('Professor');
@@ -56,15 +57,12 @@ export function useNotifications() {
       try {
         const pending = await forumService.listProfessorPending();
         if (pending.length > 0) {
-          const route = pending.length === 1
-            ? '/professor/forum'
-            : '/professor/forum';
           items.push({
             id: 'forum_pending',
             label: 'Perguntas Pendentes',
             description: `${pending.length} pergunta${pending.length !== 1 ? 's' : ''} de alunos aguardam resposta`,
             count: pending.length,
-            route,
+            route: '/professor/forum',
             color: '#EF4444',
             iconType: 'forum',
           });
@@ -191,26 +189,29 @@ export function useNotifications() {
     return () => clearInterval(id);
   }, [fetchNotifs]);
 
-  const seen = getSeenMap();
   const newCount = notifications.reduce((sum, n) => {
-    return sum + Math.max(0, n.count - (seen[n.id] ?? 0));
+    return sum + Math.max(0, n.count - (seenCounts[n.id] ?? 0));
   }, 0);
 
-  const markAllSeen = () => {
-    const map = getSeenMap();
-    notifications.forEach(n => { map[n.id] = n.count; });
-    saveSeenMap(map);
-    setNotifications(prev => [...prev]);
-  };
+  const markAllSeen = useCallback(() => {
+    setSeenCounts(prev => {
+      const updated = { ...prev };
+      notifications.forEach(n => { updated[n.id] = n.count; });
+      saveSeenMap(updated);
+      return updated;
+    });
+  }, [notifications]);
 
-  const dismissOne = (id: string) => {
+  const dismissOne = useCallback((id: string) => {
     const n = notifications.find(x => x.id === id);
     if (!n) return;
-    const map = getSeenMap();
-    map[id] = n.count;
-    saveSeenMap(map);
-    setNotifications(prev => [...prev]);
-  };
+    setNotifications(prev => prev.filter(x => x.id !== id));
+    setSeenCounts(prev => {
+      const updated = { ...prev, [id]: n.count };
+      saveSeenMap(updated);
+      return updated;
+    });
+  }, [notifications]);
 
-  return { notifications, newCount, refresh: fetchNotifs, markAllSeen, dismissOne };
+  return { notifications, newCount, seenCounts, refresh: fetchNotifs, markAllSeen, dismissOne };
 }

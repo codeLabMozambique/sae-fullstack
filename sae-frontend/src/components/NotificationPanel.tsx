@@ -95,7 +95,7 @@ function NotifItem({
 
 export default function NotificationPanel() {
   const navigate = useNavigate();
-  const { notifications, newCount, markAllSeen, dismissOne } = useNotifications();
+  const { notifications, newCount, seenCounts, markAllSeen, dismissOne } = useNotifications();
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLButtonElement>(null);
 
@@ -113,10 +113,6 @@ export default function NotificationPanel() {
     navigate(route);
   };
 
-  const seenMap = (() => {
-    try { return JSON.parse(localStorage.getItem('notif_seen') ?? '{}') as Record<string, number>; }
-    catch { return {} as Record<string, number>; }
-  })();
 
   return (
     <>
@@ -208,7 +204,7 @@ export default function NotificationPanel() {
             </Box>
           ) : (
             notifications.map((n, i) => {
-              const isNew = n.count > (seenMap[n.id] ?? 0);
+              const isNew = n.count > (seenCounts[n.id] ?? 0);
               return (
                 <Box key={n.id}>
                   <NotifItem

@@ -152,6 +152,7 @@ const DETAIL_W = 300;
 // ─── Subject resolution helpers ───────────────────────────────────────────────
 
 function getSubjectLabel(q: ForumQuestion, subjectsMap: Map<number, SubjectInfo>): string {
+  if (q.subjectName) return q.subjectName;
   if (q.subjectId != null) return subjectsMap.get(q.subjectId)?.name ?? `Disciplina #${q.subjectId}`;
   if (q.disciplina && q.disciplina !== 'GERAL') return DISCIPLINA_LABELS[q.disciplina] ?? q.disciplina;
   return 'Geral';

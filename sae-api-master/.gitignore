@@ -35,3 +35,9 @@ build/
 
 jboss.server.log.dir_IS_UNDEFINED/
 package-lock.json
+
+### Secrets ###
+.env
+.env.local
+**/src/main/resources/application-local.yml
+**/src/main/resources/application-secrets.yml

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, TextField, Button, InputAdornment, IconButton, Link, Alert, CircularProgress } from '@mui/material';
 import { Phone as PhoneIcon, Lock as LockIcon, Visibility, VisibilityOff, ArrowForward as ArrowIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -13,6 +13,14 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  useEffect(() => {
+    if (sessionStorage.getItem('session_expired')) {
+      setSessionExpired(true);
+      sessionStorage.removeItem('session_expired');
+    }
+  }, []);
 
   const handleLogin = async () => {
     setError(null);
@@ -109,6 +117,12 @@ const Login: React.FC = () => {
           <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
             Bem-vindo. Por favor, introduza as suas credenciais.
           </Typography>
+
+          {sessionExpired && (
+            <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
+              A sua sessão expirou. Por favor, faça login novamente.
+            </Alert>
+          )}
 
           {error && (
             <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>

@@ -21,6 +21,12 @@ public class SubjectResource {
         return ResponseEntity.ok(subjectService.findAllActive());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<SubjectDTO> findById(@PathVariable Long id) {
+        SubjectDTO dto = subjectService.findById(id);
+        return dto != null ? ResponseEntity.ok(dto) : ResponseEntity.notFound().build();
+    }
+
     @GetMapping("/by-school/{schoolId}")
     public ResponseEntity<List<SubjectDTO>> findBySchool(@PathVariable Long schoolId) {
         return ResponseEntity.ok(subjectService.findBySchool(schoolId));

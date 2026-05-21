@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Box, Typography, Card, CardContent, Button, CircularProgress, Alert,
   Chip, Switch, FormControlLabel, Tooltip, Stack, Dialog, DialogContent,
@@ -17,660 +17,421 @@ import { forumService } from '../../services/forumService';
 import { useAuth } from '../../context/AuthContext';
 import type { ProfessorCertificate } from '../../types/forum';
 
-// ─── Discipline label map ──────────────────────────────────────────────────────
+const GREEN = '#00A651';
+const NAVY  = '#0A1628';
+const WHITE = '#FFFFFF';
 
 const DISC_LABELS: Record<string, string> = {
-  MATEMATICA: 'Matemática', FISICA: 'Física', QUIMICA: 'Química',
-  BIOLOGIA: 'Biologia', PORTUGUES: 'Português', HISTORIA: 'História',
-  GEOGRAFIA: 'Geografia', INGLES: 'Inglês', FILOSOFIA: 'Filosofia',
-  INFORMATICA: 'Informática', PROGRAMACAO: 'Programação',
-  ECONOMIA: 'Economia', GERAL: 'Geral',
+  MATEMATICA:'Matemática', FISICA:'Física', QUIMICA:'Química',
+  BIOLOGIA:'Biologia', PORTUGUES:'Português', HISTORIA:'História',
+  GEOGRAFIA:'Geografia', INGLES:'Inglês', FILOSOFIA:'Filosofia',
+  INFORMATICA:'Informática', PROGRAMACAO:'Programação',
+  ECONOMIA:'Economia', GERAL:'Geral',
 };
+const dl = (d: string) => DISC_LABELS[d] ?? d;
 
-function discLabel(d: string) {
-  return DISC_LABELS[d] ?? d;
+const CERT_W = 1122;
+const CERT_H = 794;
+
+// ── 12-point starburst polygon (center=40,40 · outer R=35 · inner r=25) ─────
+const STAR_PTS =
+  '40,5 46.5,15.9 57.5,9.7 57.7,22.3 70.3,22.5 64.1,33.5 ' +
+  '75,40 64.1,46.5 70.3,57.5 57.7,57.7 57.5,70.3 46.5,64.1 ' +
+  '40,75 33.5,64.1 22.5,70.3 22.3,57.7 9.7,57.5 15.9,46.5 ' +
+  '5,40 15.9,33.5 9.7,22.5 22.3,22.3 22.5,9.7 33.5,15.9';
+
+function sealSVG(size = 80): string {
+  const s = size;
+  const cx = s / 2;
+  const cy = s / 2;
+  const scale = s / 80;
+
+  // Scale polygon points
+  const pts = STAR_PTS.split(' ').map(p => {
+    const [x, y] = p.split(',').map(Number);
+    return `${(x * scale).toFixed(1)},${(y * scale).toFixed(1)}`;
+  }).join(' ');
+
+  return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <polygon points="${pts}" fill="${NAVY}" stroke="${GREEN}" stroke-width="${(0.8 * scale).toFixed(1)}" filter="url(#glow)"/>
+  <circle cx="${cx}" cy="${cy}" r="${(22 * scale).toFixed(1)}" fill="${NAVY}" stroke="${GREEN}" stroke-width="${(1.2 * scale).toFixed(1)}"/>
+  <circle cx="${cx}" cy="${cy}" r="${(16 * scale).toFixed(1)}" fill="none" stroke="rgba(0,166,81,0.3)" stroke-width="${(0.6 * scale).toFixed(1)}"/>
+  <text x="${cx}" y="${(cy - 2 * scale).toFixed(1)}" font-size="${(11 * scale).toFixed(1)}" fill="${GREEN}" text-anchor="middle" dominant-baseline="middle" font-family="Georgia,serif">&#9733;</text>
+  <text x="${cx}" y="${(cy + 10 * scale).toFixed(1)}" font-size="${(4 * scale).toFixed(1)}" fill="${GREEN}" text-anchor="middle" font-family="sans-serif" letter-spacing="${(1.2 * scale).toFixed(1)}" font-weight="bold">SAE</text>
+</svg>`;
 }
 
-// ─── PDF generation ────────────────────────────────────────────────────────────
+// ── guilloché SVG pattern (sine-wave overlay) ─────────────────────────────────
+function guillocheSVG(w: number, h: number): string {
+  const lines: string[] = [];
+  const step = 5;
+  const amp  = 3;
+  for (let y = 0; y <= h; y += step) {
+    let d = `M 0 ${y}`;
+    for (let x = 0; x <= w; x += 2) {
+      const wy = y + amp * Math.sin((x / w) * Math.PI * 8);
+      d += ` L ${x} ${wy.toFixed(2)}`;
+    }
+    lines.push(`<path d="${d}" fill="none" stroke="rgba(0,166,81,0.07)" stroke-width="0.5"/>`);
+  }
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;pointer-events:none">${lines.join('')}</svg>`;
+}
 
-function generateCertificateHTML(cert: ProfessorCertificate, fullName: string): string {
-  const issuedDate = new Date(cert.issuedAt).toLocaleDateString('pt-PT', {
-    day: 'numeric', month: 'long', year: 'numeric',
-  });
-  const discipline = discLabel(cert.discipline);
-  const serial = `SAE-${cert.id.toString().padStart(6, '0')}-${new Date(cert.issuedAt).getFullYear()}`;
-  const percent = cert.assistancePercentage.toFixed(1);
+// ── certificate HTML ──────────────────────────────────────────────────────────
+function buildHTML(cert: ProfessorCertificate, fullName: string, autoprint = true): string {
+  const discipline = dl(cert.discipline);
+  const school     = cert.schoolName ?? 'Escola Pública';
+  const pct        = cert.assistancePercentage.toFixed(1);
+  const year       = new Date(cert.issuedAt).getFullYear();
+  const issued     = new Date(cert.issuedAt).toLocaleDateString('pt-PT', {
+                       day: 'numeric', month: 'long', year: 'numeric',
+                     });
+  const serial     = `SAE-${String(cert.id).padStart(6, '0')}-${year}`;
+  const seal       = sealSVG(80);
+  const gc         = guillocheSVG(520, 110);
+  const ps         = autoprint
+    ? `<script>document.fonts.ready.then(()=>{window.print();setTimeout(()=>window.close(),900);});<\/script>`
+    : '';
 
   return `<!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8"/>
-  <title>Certificado – ${fullName}</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;600;700&display=swap');
-    @page { size: A4 portrait; margin: 0; }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { background:#fff; }
+<meta charset="UTF-8"/>
+<title>Certificado – ${fullName}</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400;1,700&family=Lato:wght@300;400;700;900&display=swap');
 
-    .page {
-      width:210mm; height:297mm;
-      background:#ffffff;
-      position:relative;
-      overflow:hidden;
-      font-family:'Lato',sans-serif;
-    }
+@page { size: A4 landscape; margin: 0; }
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 297mm; height: 210mm; overflow: hidden; font-family: 'Lato', sans-serif; background: #fff; }
 
-    /* Outer decorative border */
-    .border-outer {
-      position:absolute; inset:8mm;
-      border:3px solid #C9A227;
-    }
-    .border-inner {
-      position:absolute; inset:11mm;
-      border:1px solid #C9A227;
-    }
+/* ══ PAGE ══ */
+.page { width: 297mm; height: 210mm; display: flex; flex-direction: column; position: relative; overflow: hidden; background: #fff; }
 
-    /* Corner ornaments */
-    .corner {
-      position:absolute; width:14mm; height:14mm;
-    }
-    .corner svg { width:100%; height:100%; }
-    .c-tl { top:6mm; left:6mm; }
-    .c-tr { top:6mm; right:6mm; transform:scaleX(-1); }
-    .c-bl { bottom:6mm; left:6mm; transform:scaleY(-1); }
-    .c-br { bottom:6mm; right:6mm; transform:scale(-1); }
+/* ══ RIBBON ══ */
+.ribbon {
+  width: 100%; height: 22mm; flex-shrink: 0;
+  background: #00A651;
+  display: flex; align-items: center; justify-content: center; gap: 4mm;
+  position: relative; z-index: 2;
+}
+.ribbon::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1.5px;
+  background: rgba(255,255,255,0.25);
+}
+.r-brand { font-size: 16pt; font-weight: 900; color: #fff; letter-spacing: 0.5px; line-height: 1; }
+.r-brand .g { color: rgba(255,255,255,0.65); }
+.r-sep { font-size: 10pt; color: rgba(255,255,255,0.45); margin: 0 1mm; }
+.r-sub { font-size: 7pt; color: rgba(255,255,255,0.7); letter-spacing: 2px; text-transform: uppercase; }
+.r-star { font-size: 9pt; color: rgba(255,255,255,0.5); }
+.r-divider { width: 1px; height: 8mm; background: rgba(255,255,255,0.3); margin: 0 3mm; }
 
-    /* Watermark */
-    .watermark {
-      position:absolute;
-      top:50%; left:50%;
-      transform:translate(-50%,-50%) rotate(-35deg);
-      font-size:52pt;
-      font-family:'Playfair Display',serif;
-      font-weight:700;
-      color:rgba(10,22,40,0.04);
-      white-space:nowrap;
-      letter-spacing:6px;
-      pointer-events:none;
-      user-select:none;
-    }
+/* ══ NAVY ACCENT LINE ══ */
+.navy-line {
+  width: 100%; height: 3px; flex-shrink: 0;
+  background: linear-gradient(to right, transparent 0%, #0A1628 15%, #0A1628 85%, transparent 100%);
+}
 
-    /* Content wrapper */
-    .content {
-      position:absolute;
-      inset:14mm;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-    }
+/* ══ CONTENT ══ */
+.content {
+  flex: 1; position: relative;
+  padding: 7mm 14mm 6mm;
+  display: flex; flex-direction: column;
+}
 
-    /* Header band */
-    .header-band {
-      width:100%;
-      background:#0A1628;
-      padding:7mm 0 6mm;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:2mm;
-    }
-    .platform-name {
-      font-family:'Lato',sans-serif;
-      font-size:9pt;
-      font-weight:700;
-      letter-spacing:5px;
-      color:#C9A227;
-      text-transform:uppercase;
-    }
-    .platform-sub {
-      font-size:7pt;
-      color:rgba(255,255,255,0.55);
-      letter-spacing:2px;
-      text-transform:uppercase;
-    }
+/* Corner ornaments */
+.co { position: absolute; width: 13mm; height: 13mm; }
+.co.tl { top: 4mm; left: 10mm; border-top: 1.5px solid rgba(0,166,81,0.4); border-left: 1.5px solid rgba(0,166,81,0.4); }
+.co.tr { top: 4mm; right: 10mm; border-top: 1.5px solid rgba(0,166,81,0.4); border-right: 1.5px solid rgba(0,166,81,0.4); }
+.co.bl { bottom: 3.5mm; left: 10mm; border-bottom: 1.5px solid rgba(0,166,81,0.4); border-left: 1.5px solid rgba(0,166,81,0.4); }
+.co.br { bottom: 3.5mm; right: 10mm; border-bottom: 1.5px solid rgba(0,166,81,0.4); border-right: 1.5px solid rgba(0,166,81,0.4); }
 
-    /* Gold divider */
-    .gold-divider {
-      width:100%;
-      height:3px;
-      background:linear-gradient(90deg,transparent,#C9A227 20%,#f5d97e 50%,#C9A227 80%,transparent);
-      margin:4mm 0;
-    }
-    .thin-divider {
-      width:60%;
-      height:1px;
-      background:linear-gradient(90deg,transparent,#C9A227,transparent);
-      margin:3mm 0;
-    }
+/* ── Header ── */
+.hdr { text-align: center; position: relative; z-index: 1; margin-bottom: 3.5mm; }
+.eyebrow { font-size: 5.5pt; font-weight: 700; letter-spacing: 4.5px; text-transform: uppercase; color: #00A651; margin-bottom: 2.5mm; }
+.ornament { display: flex; align-items: center; justify-content: center; gap: 4mm; margin: 2mm 0; }
+.o-line { flex: 1; max-width: 35mm; height: 0.5px; }
+.o-line.l { background: linear-gradient(to right, transparent, rgba(0,166,81,0.55)); }
+.o-line.r { background: linear-gradient(to left, transparent, rgba(0,166,81,0.55)); }
+.o-dia { font-size: 8pt; color: #00A651; line-height: 1; }
+.main-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 18.5pt; font-weight: 800; color: #0A1628; line-height: 1.1; letter-spacing: 0.5px;
+}
 
-    /* Seal */
-    .seal-row {
-      display:flex;
-      align-items:center;
-      gap:4mm;
-      margin:3mm 0 2mm;
-    }
-    .seal-line { flex:1; height:1px; background:linear-gradient(90deg,transparent,#C9A22760); }
-    .seal {
-      width:18mm; height:18mm;
-      border-radius:50%;
-      border:2px solid #C9A227;
-      background:radial-gradient(circle,#0A1628,#1a2e50);
-      display:flex; flex-direction:column;
-      align-items:center; justify-content:center;
-      gap:0.5mm;
-    }
-    .seal-star { font-size:10pt; color:#C9A227; }
-    .seal-text { font-size:4.5pt; color:#C9A227; letter-spacing:1px; text-transform:uppercase; font-weight:700; }
+/* ── Intro ── */
+.intro { font-size: 7.5pt; color: #777; text-align: center; line-height: 1.85; margin-bottom: 3.5mm; position: relative; z-index: 1; }
+.intro strong { color: #0A1628; font-weight: 700; }
 
-    /* Certificate type */
-    .cert-type {
-      font-family:'Lato',sans-serif;
-      font-size:7pt;
-      letter-spacing:6px;
-      color:#888;
-      text-transform:uppercase;
-      margin:1mm 0;
-    }
+/* ── Name box (guilloché) ── */
+.name-box {
+  position: relative; overflow: hidden;
+  border: 1px solid rgba(0,166,81,0.28);
+  background: #fafffe;
+  padding: 4mm 10mm;
+  margin-bottom: 3.5mm;
+  text-align: center;
+  z-index: 1;
+}
+/* Subtle diamond micro-pattern as fallback / base */
+.name-box::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(0,166,81,0.04) 5px, rgba(0,166,81,0.04) 5.5px),
+    repeating-linear-gradient(-45deg, transparent, transparent 5px, rgba(0,166,81,0.04) 5px, rgba(0,166,81,0.04) 5.5px);
+}
+.name-inner { position: relative; z-index: 1; }
+.nv {
+  font-family: 'Playfair Display', serif;
+  font-size: 22pt; font-weight: 700; color: #0A1628; letter-spacing: 0.5px; line-height: 1.1;
+}
+.nb { width: 45%; height: 2.5px; background: #00A651; margin: 2.5mm auto; }
+.nu { font-size: 7.5pt; color: #999; letter-spacing: 1.2px; }
 
-    /* Main title */
-    .main-title {
-      font-family:'Playfair Display',serif;
-      font-size:22pt;
-      font-weight:700;
-      color:#0A1628;
-      text-align:center;
-      letter-spacing:1px;
-      line-height:1.2;
-      margin:1mm 0 2mm;
-    }
+/* ── Stats row ── */
+.stats {
+  display: flex; align-items: center; justify-content: center; gap: 0;
+  margin-bottom: 3mm; position: relative; z-index: 1;
+}
+.s-item { text-align: center; flex: 1; padding: 0 4mm; }
+.sv {
+  display: block;
+  font-family: 'Playfair Display', serif; font-size: 15pt; font-weight: 700;
+  color: #0A1628; line-height: 1;
+}
+.sl { display: block; font-size: 5pt; color: #bbb; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 1mm; }
+.sd { display: block; font-size: 9pt; font-weight: 700; color: #0A1628; line-height: 1.2; }
+.s-sep { width: 0.7px; height: 10mm; background: rgba(0,166,81,0.2); flex-shrink: 0; }
 
-    /* Body text */
-    .body-text {
-      font-size:9pt;
-      color:#444;
-      text-align:center;
-      line-height:1.7;
-      max-width:155mm;
-      margin:2mm 0;
-    }
+/* ── Footer ── */
+.footer {
+  margin-top: auto; position: relative; z-index: 1;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  border-top: 0.6px solid rgba(0,166,81,0.2); padding-top: 3mm;
+}
+.sig { text-align: center; }
+.sig-line { width: 36mm; border-bottom: 0.8px solid #0A1628; margin-bottom: 2mm; }
+.sig-name { font-size: 6.5pt; font-weight: 700; color: #0A1628; }
+.sig-role { font-size: 5pt; color: #ccc; text-transform: uppercase; letter-spacing: 1px; margin-top: 0.5mm; }
 
-    /* Name block */
-    .name-block {
-      text-align:center;
-      margin:3mm 0;
-    }
-    .name-label {
-      font-size:7pt;
-      color:#888;
-      letter-spacing:3px;
-      text-transform:uppercase;
-      margin-bottom:1mm;
-    }
-    .professor-name {
-      font-family:'Playfair Display',serif;
-      font-size:24pt;
-      font-weight:600;
-      color:#0A1628;
-      letter-spacing:1px;
-    }
-
-    /* Stats table */
-    .stats-row {
-      display:flex;
-      gap:4mm;
-      margin:3mm 0 2mm;
-      width:100%;
-      justify-content:center;
-    }
-    .stat-box {
-      background:#F8F9FC;
-      border:1px solid #e0e4ef;
-      border-top:3px solid #C9A227;
-      padding:3mm 5mm;
-      text-align:center;
-      min-width:35mm;
-    }
-    .stat-val {
-      font-family:'Playfair Display',serif;
-      font-size:16pt;
-      font-weight:700;
-      color:#0A1628;
-      line-height:1;
-    }
-    .stat-lbl {
-      font-size:6.5pt;
-      color:#888;
-      text-transform:uppercase;
-      letter-spacing:1px;
-      margin-top:1mm;
-    }
-    .stat-disc {
-      font-size:8pt;
-      font-weight:600;
-      color:#0A1628;
-      line-height:1;
-    }
-
-    /* Footer row */
-    .footer-row {
-      width:100%;
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-end;
-      margin-top:auto;
-      padding-top:3mm;
-    }
-    .sig-block {
-      text-align:center;
-      min-width:50mm;
-    }
-    .sig-line {
-      border-bottom:1px solid #0A1628;
-      margin-bottom:2mm;
-      width:50mm;
-    }
-    .sig-name { font-size:7.5pt; font-weight:700; color:#0A1628; }
-    .sig-role { font-size:6.5pt; color:#888; letter-spacing:1px; text-transform:uppercase; }
-    .date-block {
-      text-align:center;
-    }
-    .date-label { font-size:6.5pt; color:#888; letter-spacing:2px; text-transform:uppercase; margin-bottom:1mm; }
-    .date-val { font-family:'Playfair Display',serif; font-size:9pt; color:#0A1628; font-weight:600; }
-
-    /* Serial */
-    .serial {
-      margin-top:2mm;
-      font-size:6pt;
-      color:#bbb;
-      letter-spacing:2px;
-      text-transform:uppercase;
-    }
-  </style>
+.seal-col { display: flex; flex-direction: column; align-items: center; gap: 2mm; }
+.date-block { text-align: center; }
+.dl { font-size: 5pt; color: #ccc; text-transform: uppercase; letter-spacing: 2px; }
+.dv { font-size: 7.5pt; font-weight: 700; color: #0A1628; font-family: 'Playfair Display', serif; margin-top: 0.5mm; }
+.ds { font-size: 4pt; color: #ddd; letter-spacing: 1.5px; margin-top: 0.8mm; }
+</style>
 </head>
 <body>
 <div class="page">
-  <!-- Decorative borders -->
-  <div class="border-outer"></div>
-  <div class="border-inner"></div>
 
-  <!-- Corner ornaments -->
-  <div class="corner c-tl">
-    <svg viewBox="0 0 40 40" fill="none">
-      <path d="M2 2 L18 2 M2 2 L2 18" stroke="#C9A227" stroke-width="2"/>
-      <path d="M6 6 L14 6 M6 6 L6 14" stroke="#C9A227" stroke-width="1"/>
-      <circle cx="2" cy="2" r="2" fill="#C9A227"/>
-    </svg>
-  </div>
-  <div class="corner c-tr">
-    <svg viewBox="0 0 40 40" fill="none">
-      <path d="M2 2 L18 2 M2 2 L2 18" stroke="#C9A227" stroke-width="2"/>
-      <path d="M6 6 L14 6 M6 6 L6 14" stroke="#C9A227" stroke-width="1"/>
-      <circle cx="2" cy="2" r="2" fill="#C9A227"/>
-    </svg>
-  </div>
-  <div class="corner c-bl">
-    <svg viewBox="0 0 40 40" fill="none">
-      <path d="M2 2 L18 2 M2 2 L2 18" stroke="#C9A227" stroke-width="2"/>
-      <path d="M6 6 L14 6 M6 6 L6 14" stroke="#C9A227" stroke-width="1"/>
-      <circle cx="2" cy="2" r="2" fill="#C9A227"/>
-    </svg>
-  </div>
-  <div class="corner c-br">
-    <svg viewBox="0 0 40 40" fill="none">
-      <path d="M2 2 L18 2 M2 2 L2 18" stroke="#C9A227" stroke-width="2"/>
-      <path d="M6 6 L14 6 M6 6 L6 14" stroke="#C9A227" stroke-width="1"/>
-      <circle cx="2" cy="2" r="2" fill="#C9A227"/>
-    </svg>
+  <!-- ═══ RIBBON ═══ -->
+  <div class="ribbon">
+    <span class="r-star">✦</span>
+    <span class="r-brand">smart<span class="g">SAE</span></span>
+    <div class="r-divider"></div>
+    <span class="r-sub">Sistema Académico de Aprendizado</span>
+    <div class="r-divider"></div>
+    <span class="r-sub">Moçambique &nbsp;·&nbsp; Nampula</span>
+    <span class="r-star">✦</span>
   </div>
 
-  <!-- Watermark -->
-  <div class="watermark">SAE ACADÉMICO</div>
+  <!-- ═══ NAVY ACCENT ═══ -->
+  <div class="navy-line"></div>
 
-  <!-- Content -->
+  <!-- ═══ CONTENT ═══ -->
   <div class="content">
+    <div class="co tl"></div><div class="co tr"></div>
+    <div class="co bl"></div><div class="co br"></div>
 
-    <!-- Header band -->
-    <div class="header-band" style="width:calc(100% + 0px)">
-      <div class="platform-name">SAE — Sistema Académico de Excelência</div>
-      <div class="platform-sub">Plataforma de Apoio ao Ensino · Angola</div>
-    </div>
-
-    <div class="gold-divider"></div>
-
-    <!-- Seal row -->
-    <div class="seal-row">
-      <div class="seal-line"></div>
-      <div class="seal">
-        <div class="seal-star">★</div>
-        <div class="seal-text">SAE</div>
-        <div class="seal-text">CERT</div>
+    <!-- Header -->
+    <div class="hdr">
+      <div class="eyebrow">Reconhecimento Oficial</div>
+      <div class="ornament">
+        <div class="o-line l"></div><div class="o-dia">✦</div><div class="o-line r"></div>
       </div>
-      <div class="seal-line" style="background:linear-gradient(90deg,#C9A22760,transparent)"></div>
+      <div class="main-title">Certificado de Excelência Académica</div>
+      <div class="ornament">
+        <div class="o-line l"></div><div class="o-dia">✦</div><div class="o-line r"></div>
+      </div>
     </div>
 
-    <!-- Type -->
-    <div class="cert-type">Documento de Reconhecimento Oficial</div>
-
-    <!-- Main title -->
-    <div class="main-title">Certificado de<br/>Excelência Académica</div>
-
-    <div class="thin-divider"></div>
-
-    <!-- Body text -->
-    <div class="body-text">
-      A Plataforma <strong>SAE — Sistema Académico de Excelência</strong> certifica que o/a docente
+    <!-- Intro -->
+    <div class="intro">
+      O <strong>smartSAE</strong> — Sistema Académico de Aprendizado certifica que o(a) docente
+      abaixo identificado(a) demonstrou desempenho excepcional no apoio académico prestado
+      aos estudantes, cumprindo todos os critérios de qualidade estabelecidos pela plataforma.
     </div>
 
-    <!-- Name block -->
-    <div class="name-block">
-      <div class="name-label">Professor(a)</div>
-      <div class="professor-name">${fullName}</div>
-    </div>
-
-    <div class="thin-divider"></div>
-
-    <div class="body-text" style="margin-top:1mm">
-      demonstrou desempenho excepcional no apoio académico aos alunos,
-      respondendo com dedicação e qualidade às questões na área de
-      <strong>${discipline}</strong>, cumprindo todos os critérios de excelência
-      definidos pela plataforma.
+    <!-- Name box -->
+    <div class="name-box">
+      ${gc}
+      <div class="name-inner">
+        <div class="nv">${fullName}</div>
+        <div class="nb"></div>
+        <div class="nu">${school}&nbsp;&nbsp;·&nbsp;&nbsp;Nampula, Moçambique</div>
+      </div>
     </div>
 
     <!-- Stats -->
-    <div class="stats-row">
-      <div class="stat-box">
-        <div class="stat-val">${percent}%</div>
-        <div class="stat-lbl">Taxa de Apoio</div>
+    <div class="stats">
+      <div class="s-item">
+        <span class="sv">${pct}%</span>
+        <span class="sl">Taxa de Apoio</span>
       </div>
-      <div class="stat-box">
-        <div class="stat-val">${cert.totalAnswered}</div>
-        <div class="stat-lbl">Respostas Dadas</div>
+      <div class="s-sep"></div>
+      <div class="s-item">
+        <span class="sv">${cert.totalAnswered}</span>
+        <span class="sl">Respostas Dadas</span>
       </div>
-      <div class="stat-box">
-        <div class="stat-disc">${discipline}</div>
-        <div class="stat-lbl" style="margin-top:2mm">Área Curricular</div>
+      <div class="s-sep"></div>
+      <div class="s-item">
+        <span class="sd">${discipline}</span>
+        <span class="sl">Área Curricular</span>
       </div>
     </div>
 
-    <!-- Gold divider -->
-    <div class="gold-divider" style="margin-top:auto"></div>
-
     <!-- Footer -->
-    <div class="footer-row">
-      <div class="sig-block">
+    <div class="footer">
+      <div class="sig">
         <div class="sig-line"></div>
-        <div class="sig-name">Direcção Académica</div>
-        <div class="sig-role">SAE — Plataforma Educativa</div>
+        <div class="sig-name">Direcção Pedagógica</div>
+        <div class="sig-role">smartSAE · Plataforma Educativa</div>
       </div>
-      <div class="date-block">
-        <div class="date-label">Emitido em</div>
-        <div class="date-val">${issuedDate}</div>
-        <div class="serial">${serial}</div>
+
+      <div class="seal-col">
+        ${seal}
+        <div class="date-block">
+          <div class="dl">Emitido em</div>
+          <div class="dv">${issued}</div>
+          <div class="ds">${serial}</div>
+        </div>
       </div>
-      <div class="sig-block">
+
+      <div class="sig">
         <div class="sig-line"></div>
         <div class="sig-name">Coordenação de Qualidade</div>
         <div class="sig-role">Ensino e Avaliação</div>
       </div>
     </div>
-
   </div>
 </div>
-<script>
-  document.fonts.ready.then(function() {
-    window.print();
-    setTimeout(function() { window.close(); }, 800);
-  });
-</script>
+${ps}
 </body>
 </html>`;
 }
 
-function downloadCertificatePDF(cert: ProfessorCertificate, fullName: string) {
-  const win = window.open('', '_blank', 'width=794,height=1123,scrollbars=no');
-  if (!win) {
-    alert('O browser bloqueou o popup. Permita popups para esta página e tente novamente.');
-    return;
-  }
+// ── PDF export ────────────────────────────────────────────────────────────────
+function downloadPDF(cert: ProfessorCertificate, fullName: string) {
+  const win = window.open('', '_blank', 'width=1200,height=900,scrollbars=no');
+  if (!win) { alert('Permita popups para esta página e tente novamente.'); return; }
   win.document.open();
-  win.document.write(generateCertificateHTML(cert, fullName));
+  win.document.write(buildHTML(cert, fullName, true));
   win.document.close();
 }
 
-// ─── Certificate Preview Modal ─────────────────────────────────────────────────
-
+// ── Preview modal ─────────────────────────────────────────────────────────────
 function CertPreviewModal({
   cert, fullName, open, onClose,
-}: {
-  cert: ProfessorCertificate; fullName: string; open: boolean; onClose: () => void;
-}) {
-  const issuedDate = new Date(cert.issuedAt).toLocaleDateString('pt-PT', {
-    day: 'numeric', month: 'long', year: 'numeric',
-  });
-  const discipline = discLabel(cert.discipline);
-  const serial = `SAE-${cert.id.toString().padStart(6, '0')}-${new Date(cert.issuedAt).getFullYear()}`;
-  const percent = cert.assistancePercentage.toFixed(1);
+}: { cert: ProfessorCertificate; fullName: string; open: boolean; onClose: () => void }) {
+  const [scale, setScale] = useState(1);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const compute = () => {
+      if (containerRef.current) {
+        const avail = containerRef.current.clientWidth - 32;
+        setScale(Math.min(1, avail / CERT_W));
+      }
+    };
+    const t = setTimeout(compute, 80);
+    window.addEventListener('resize', compute);
+    return () => { clearTimeout(t); window.removeEventListener('resize', compute); };
+  }, [open]);
+
+  const html = buildHTML(cert, fullName, false);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="xl"
+      fullWidth
       slotProps={{
-        backdrop: { sx: { backdropFilter: 'blur(6px)', bgcolor: 'rgba(10,22,40,0.7)' } },
-        paper: { sx: { bgcolor: 'transparent', boxShadow: 'none', overflow: 'visible' } },
+        backdrop: { sx: { backdropFilter: 'blur(8px)', bgcolor: 'rgba(10,22,40,0.85)' } },
+        paper:    { sx: { bgcolor: '#0d1e33', borderRadius: 3, overflow: 'hidden', m: 2 } },
+      }}
+    >
+      {/* Top bar */}
+      <Box sx={{
+        bgcolor: NAVY, px: 3, py: 1.5,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        borderBottom: '1px solid rgba(0,166,81,0.2)',
       }}>
-      <DialogContent sx={{ p: 0, overflow: 'visible' }}>
-        <Box sx={{ position: 'relative' }}>
-          {/* Close & Download buttons */}
-          <Stack direction="row" spacing={1} sx={{ position: 'absolute', top: -48, right: 0, zIndex: 10 }}>
-            <Button
-              variant="contained"
-              startIcon={<PdfIcon />}
-              onClick={() => downloadCertificatePDF(cert, fullName)}
-              sx={{
-                bgcolor: '#C9A227', color: '#0A1628', fontWeight: 800, borderRadius: 2,
-                textTransform: 'none', fontSize: 13,
-                '&:hover': { bgcolor: '#b8911e' },
-                boxShadow: '0 4px 14px rgba(201,162,39,0.5)',
-              }}>
-              Baixar PDF
-            </Button>
-            <IconButton onClick={onClose}
-              sx={{ bgcolor: 'rgba(255,255,255,0.12)', color: 'white', '&:hover': { bgcolor: 'rgba(255,255,255,0.22)' } }}>
-              <CloseIcon />
-            </IconButton>
-          </Stack>
+        <Box>
+          <Typography sx={{ color: WHITE, fontWeight: 800, fontSize: 15, lineHeight: 1.2 }}>
+            Pré-visualização do Certificado
+          </Typography>
+          <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, mt: 0.3 }}>
+            {dl(cert.discipline)}&nbsp;&nbsp;·&nbsp;&nbsp;{cert.schoolName ?? 'Escola Pública'}
+          </Typography>
+        </Box>
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Button
+            variant="contained"
+            startIcon={<PdfIcon />}
+            onClick={() => downloadPDF(cert, fullName)}
+            sx={{
+              bgcolor: GREEN, fontWeight: 700, textTransform: 'none',
+              fontSize: 13, borderRadius: 2, px: 2.5,
+              boxShadow: '0 4px 14px rgba(0,166,81,0.4)',
+              '&:hover': { bgcolor: '#008f44' },
+            }}
+          >
+            Baixar PDF
+          </Button>
+          <IconButton onClick={onClose}
+            sx={{ color: 'rgba(255,255,255,0.55)', '&:hover': { color: WHITE } }}>
+            <CloseIcon />
+          </IconButton>
+        </Stack>
+      </Box>
 
-          {/* Certificate preview */}
+      {/* Certificate preview */}
+      <DialogContent sx={{ p: 2, bgcolor: '#0d1e33' }}>
+        <Box ref={containerRef}>
           <Box sx={{
-            bgcolor: 'white',
-            width: '100%',
-            aspectRatio: '210 / 297',
-            position: 'relative',
+            width: CERT_W * scale,
+            height: CERT_H * scale,
+            mx: 'auto',
+            boxShadow: '0 28px 70px rgba(0,0,0,0.6)',
+            borderRadius: 0.5,
             overflow: 'hidden',
-            fontFamily: '"Georgia", "Times New Roman", serif',
-            /* Double gold border */
-            outline: '3px solid #C9A227',
-            outlineOffset: '-8px',
-            boxShadow: 'inset 0 0 0 11px white, inset 0 0 0 12px #C9A227',
+            position: 'relative',
           }}>
-
-            {/* Watermark */}
             <Box sx={{
-              position: 'absolute', top: '50%', left: '50%',
-              transform: 'translate(-50%,-50%) rotate(-35deg)',
-              fontSize: { xs: '3.5vw', md: '2.2vw' },
-              fontWeight: 900, color: 'rgba(10,22,40,0.04)',
-              whiteSpace: 'nowrap', letterSpacing: 6, pointerEvents: 'none',
-              fontFamily: '"Georgia", serif',
+              width: CERT_W,
+              height: CERT_H,
+              transform: `scale(${scale})`,
+              transformOrigin: 'top left',
+              position: 'absolute',
+              top: 0,
+              left: 0,
             }}>
-              SAE ACADÉMICO
+              <iframe
+                srcDoc={html}
+                style={{ width: CERT_W, height: CERT_H, border: 'none', display: 'block' }}
+                title="Certificado Preview"
+                scrolling="no"
+              />
             </Box>
-
-            {/* Corner ornament top-left */}
-            {['tl','tr','bl','br'].map(pos => (
-              <Box key={pos} sx={{
-                position: 'absolute',
-                top: pos.startsWith('t') ? '2%' : 'auto',
-                bottom: pos.startsWith('b') ? '2%' : 'auto',
-                left: pos.endsWith('l') ? '1.5%' : 'auto',
-                right: pos.endsWith('r') ? '1.5%' : 'auto',
-                width: '6%', height: '6%',
-                borderTop: pos.startsWith('t') ? '2px solid #C9A227' : 'none',
-                borderBottom: pos.startsWith('b') ? '2px solid #C9A227' : 'none',
-                borderLeft: pos.endsWith('l') ? '2px solid #C9A227' : 'none',
-                borderRight: pos.endsWith('r') ? '2px solid #C9A227' : 'none',
-              }} />
-            ))}
-
-            {/* Content */}
-            <Stack sx={{ height: '100%', px: '6%', pb: '3%' }} alignItems="center">
-
-              {/* Header band */}
-              <Box sx={{
-                width: '112%', mx: '-6%',
-                bgcolor: '#0A1628', py: '2.5%',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5%',
-              }}>
-                <Typography sx={{
-                  fontSize: { xs: '1.4vw', md: '0.9vw' },
-                  fontFamily: '"Lato", sans-serif', fontWeight: 700,
-                  letterSpacing: 4, color: '#C9A227', textTransform: 'uppercase',
-                }}>
-                  SAE — Sistema Académico de Excelência
-                </Typography>
-                <Typography sx={{
-                  fontSize: { xs: '1vw', md: '0.65vw' },
-                  color: 'rgba(255,255,255,0.5)', letterSpacing: 2, textTransform: 'uppercase',
-                }}>
-                  Plataforma de Apoio ao Ensino · Angola
-                </Typography>
-              </Box>
-
-              {/* Gold divider */}
-              <Box sx={{ width: '100%', height: 2, background: 'linear-gradient(90deg,transparent,#C9A227 20%,#f5d97e 50%,#C9A227 80%,transparent)', my: '1.5%' }} />
-
-              {/* Seal row */}
-              <Stack direction="row" alignItems="center" sx={{ width: '90%', my: '0.5%' }}>
-                <Box sx={{ flex: 1, height: 1, background: 'linear-gradient(90deg,transparent,#C9A22750)' }} />
-                <Box sx={{
-                  width: { xs: '8vw', md: '5.5vw' }, height: { xs: '8vw', md: '5.5vw' },
-                  borderRadius: '50%', border: '2px solid #C9A227',
-                  background: 'radial-gradient(circle,#0A1628,#1a2e50)',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  mx: 2,
-                }}>
-                  <Typography sx={{ color: '#C9A227', fontSize: { xs: '2.5vw', md: '1.6vw' }, lineHeight: 1 }}>★</Typography>
-                  <Typography sx={{ color: '#C9A227', fontSize: { xs: '0.8vw', md: '0.5vw' }, letterSpacing: 1, fontWeight: 700, lineHeight: 1.2 }}>SAE</Typography>
-                </Box>
-                <Box sx={{ flex: 1, height: 1, background: 'linear-gradient(90deg,#C9A22750,transparent)' }} />
-              </Stack>
-
-              {/* Doc type */}
-              <Typography sx={{
-                fontSize: { xs: '1vw', md: '0.65vw' },
-                letterSpacing: 5, color: '#999', textTransform: 'uppercase',
-                fontFamily: '"Lato", sans-serif', mt: '0.5%',
-              }}>
-                Documento de Reconhecimento Oficial
-              </Typography>
-
-              {/* Main title */}
-              <Typography sx={{
-                fontSize: { xs: '3.5vw', md: '2.2vw' },
-                fontFamily: '"Georgia", "Playfair Display", serif', fontWeight: 700,
-                color: '#0A1628', textAlign: 'center', lineHeight: 1.2, mt: '0.5%',
-              }}>
-                Certificado de<br />Excelência Académica
-              </Typography>
-
-              {/* Thin divider */}
-              <Box sx={{ width: '50%', height: 1, background: 'linear-gradient(90deg,transparent,#C9A227,transparent)', my: '1%' }} />
-
-              {/* Body intro */}
-              <Typography sx={{ fontSize: { xs: '1.2vw', md: '0.78vw' }, color: '#555', textAlign: 'center', lineHeight: 1.8 }}>
-                A Plataforma <strong>SAE</strong> certifica que o/a docente
-              </Typography>
-
-              {/* Name */}
-              <Box sx={{ textAlign: 'center', my: '1%' }}>
-                <Typography sx={{ fontSize: { xs: '0.9vw', md: '0.58vw' }, color: '#999', letterSpacing: 3, textTransform: 'uppercase', mb: '0.5%' }}>
-                  Professor(a)
-                </Typography>
-                <Typography sx={{
-                  fontSize: { xs: '4vw', md: '2.6vw' },
-                  fontFamily: '"Georgia", serif', fontWeight: 600,
-                  color: '#0A1628', letterSpacing: 0.5,
-                }}>
-                  {fullName}
-                </Typography>
-              </Box>
-
-              {/* Thin divider */}
-              <Box sx={{ width: '50%', height: 1, background: 'linear-gradient(90deg,transparent,#C9A227,transparent)', mb: '1%' }} />
-
-              {/* Body text */}
-              <Typography sx={{ fontSize: { xs: '1.1vw', md: '0.72vw' }, color: '#555', textAlign: 'center', lineHeight: 1.8, maxWidth: '85%' }}>
-                demonstrou desempenho excepcional no apoio académico, respondendo com dedicação e qualidade
-                às questões na área de <strong>{discipline}</strong>, cumprindo todos os critérios de excelência.
-              </Typography>
-
-              {/* Stats */}
-              <Stack direction="row" spacing={1.5} sx={{ my: '2%' }}>
-                {[
-                  { val: `${percent}%`, lbl: 'Taxa de Apoio' },
-                  { val: String(cert.totalAnswered), lbl: 'Respostas Dadas' },
-                  { val: discipline, lbl: 'Área Curricular', small: true },
-                ].map(s => (
-                  <Box key={s.lbl} sx={{
-                    bgcolor: '#F8F9FC', border: '1px solid #e0e4ef',
-                    borderTop: '3px solid #C9A227', px: '1.5vw', py: '0.8vw',
-                    textAlign: 'center', minWidth: { xs: '15vw', md: '10vw' },
-                  }}>
-                    <Typography sx={{
-                      fontSize: s.small ? { xs: '1.4vw', md: '0.9vw' } : { xs: '2.4vw', md: '1.5vw' },
-                      fontFamily: '"Georgia", serif', fontWeight: 700, color: '#0A1628', lineHeight: 1,
-                    }}>
-                      {s.val}
-                    </Typography>
-                    <Typography sx={{ fontSize: { xs: '0.8vw', md: '0.52vw' }, color: '#999', textTransform: 'uppercase', letterSpacing: 1, mt: '0.4vw' }}>
-                      {s.lbl}
-                    </Typography>
-                  </Box>
-                ))}
-              </Stack>
-
-              {/* Gold divider before footer */}
-              <Box sx={{ width: '100%', height: 2, background: 'linear-gradient(90deg,transparent,#C9A227 20%,#f5d97e 50%,#C9A227 80%,transparent)', mt: 'auto', mb: '1.5%' }} />
-
-              {/* Footer */}
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ width: '100%' }}>
-                {/* Signature left */}
-                <Box sx={{ textAlign: 'center' }}>
-                  <Box sx={{ borderBottom: '1px solid #0A1628', mb: '1%', width: { xs: '18vw', md: '12vw' } }} />
-                  <Typography sx={{ fontSize: { xs: '0.9vw', md: '0.58vw' }, fontWeight: 700, color: '#0A1628' }}>Direcção Académica</Typography>
-                  <Typography sx={{ fontSize: { xs: '0.8vw', md: '0.5vw' }, color: '#999', textTransform: 'uppercase', letterSpacing: 1 }}>SAE — Plataforma Educativa</Typography>
-                </Box>
-
-                {/* Date center */}
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography sx={{ fontSize: { xs: '0.8vw', md: '0.5vw' }, color: '#999', textTransform: 'uppercase', letterSpacing: 2, mb: '1%' }}>Emitido em</Typography>
-                  <Typography sx={{ fontSize: { xs: '1.2vw', md: '0.78vw' }, fontFamily: '"Georgia", serif', fontWeight: 600, color: '#0A1628' }}>
-                    {issuedDate}
-                  </Typography>
-                  <Typography sx={{ fontSize: { xs: '0.8vw', md: '0.5vw' }, color: '#ccc', letterSpacing: 2, mt: '1%' }}>
-                    {serial}
-                  </Typography>
-                </Box>
-
-                {/* Signature right */}
-                <Box sx={{ textAlign: 'center' }}>
-                  <Box sx={{ borderBottom: '1px solid #0A1628', mb: '1%', width: { xs: '18vw', md: '12vw' } }} />
-                  <Typography sx={{ fontSize: { xs: '0.9vw', md: '0.58vw' }, fontWeight: 700, color: '#0A1628' }}>Coordenação de Qualidade</Typography>
-                  <Typography sx={{ fontSize: { xs: '0.8vw', md: '0.5vw' }, color: '#999', textTransform: 'uppercase', letterSpacing: 1 }}>Ensino e Avaliação</Typography>
-                </Box>
-              </Stack>
-
-            </Stack>
           </Box>
         </Box>
       </DialogContent>
@@ -678,17 +439,16 @@ function CertPreviewModal({
   );
 }
 
-// ─── Main Page ─────────────────────────────────────────────────────────────────
-
+// ── Main page ─────────────────────────────────────────────────────────────────
 export default function ProfessorCertificatesPage() {
   const { user } = useAuth();
   const fullName = user?.fullName ?? user?.username ?? 'Professor(a)';
 
-  const [certs, setCerts] = useState<ProfessorCertificate[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [certs,      setCerts]      = useState<ProfessorCertificate[]>([]);
+  const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState('');
   const [publishing, setPublishing] = useState<number | null>(null);
-  const [previewCert, setPreviewCert] = useState<ProfessorCertificate | null>(null);
+  const [preview,    setPreview]    = useState<ProfessorCertificate | null>(null);
 
   useEffect(() => {
     forumService.getMyCertificates()
@@ -697,7 +457,7 @@ export default function ProfessorCertificatesPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleTogglePublish = async (cert: ProfessorCertificate) => {
+  const handleToggle = async (cert: ProfessorCertificate) => {
     setPublishing(cert.id);
     try {
       const updated = await forumService.publishCertificate(cert.id);
@@ -709,24 +469,25 @@ export default function ProfessorCertificatesPage() {
     }
   };
 
-  const formatDate = (iso: string) =>
+  const fmt = (iso: string) =>
     new Date(iso).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' });
 
   return (
     <Box>
-      {/* Header */}
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h5" fontWeight={700} color="#0A1628">Os Meus Certificados</Typography>
+        <Typography variant="h5" fontWeight={700} color={NAVY}>Os Meus Certificados</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
           Emitidos automaticamente ao atingir 70% de taxa de apoio com mínimo de 5 respostas
         </Typography>
       </Box>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>
+      )}
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress sx={{ color: '#00A651' }} />
+          <CircularProgress sx={{ color: GREEN }} />
         </Box>
       ) : certs.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 10 }}>
@@ -739,25 +500,28 @@ export default function ProfessorCertificatesPage() {
           </Typography>
         </Box>
       ) : (
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: '1fr 1fr 1fr' }, gap: 2 }}>
+        <Box sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: '1fr 1fr 1fr' },
+          gap: 2,
+        }}>
           {certs.map(cert => (
-            <Card key={cert.id} variant="outlined" sx={{
-              borderRadius: 3,
-              border: `1px solid ${cert.isPublic ? 'rgba(201,162,39,0.45)' : '#E2E8F0'}`,
-              transition: 'box-shadow 0.2s, transform 0.15s',
-              cursor: 'pointer',
-              '&:hover': {
-                boxShadow: '0 6px 24px rgba(10,22,40,0.12)',
-                transform: 'translateY(-2px)',
-              },
-            }}
-              onClick={() => setPreviewCert(cert)}
+            <Card
+              key={cert.id}
+              variant="outlined"
+              onClick={() => setPreview(cert)}
+              sx={{
+                borderRadius: 3,
+                border: `1px solid ${cert.isPublic ? 'rgba(0,166,81,0.4)' : '#E2E8F0'}`,
+                cursor: 'pointer',
+                transition: 'box-shadow 0.2s, transform 0.15s',
+                '&:hover': { boxShadow: '0 8px 28px rgba(10,22,40,0.12)', transform: 'translateY(-2px)' },
+              }}
             >
               <CardContent sx={{ p: 2.5 }}>
-                {/* Top row: icon + badge */}
                 <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
-                  <Box sx={{ p: 1, bgcolor: '#FBF5E0', borderRadius: 2, display: 'flex', border: '1px solid rgba(201,162,39,0.3)' }}>
-                    <CertIcon sx={{ color: '#C9A227', fontSize: 22 }} />
+                  <Box sx={{ p: 1, bgcolor: '#F0FDF4', borderRadius: 2, display: 'flex', border: '1px solid rgba(0,166,81,0.25)' }}>
+                    <CertIcon sx={{ color: GREEN, fontSize: 22 }} />
                   </Box>
                   <Stack direction="row" spacing={0.8} alignItems="center">
                     {cert.isPublic
@@ -770,7 +534,7 @@ export default function ProfessorCertificatesPage() {
                       <Box sx={{
                         p: 0.5, borderRadius: 1, bgcolor: 'rgba(10,22,40,0.04)',
                         display: 'flex', color: '#64748B',
-                        '&:hover': { bgcolor: 'rgba(10,22,40,0.09)', color: '#0A1628' },
+                        '&:hover': { bgcolor: 'rgba(10,22,40,0.09)', color: NAVY },
                         transition: 'all 0.15s',
                       }}>
                         <PreviewIcon sx={{ fontSize: 16 }} />
@@ -779,17 +543,20 @@ export default function ProfessorCertificatesPage() {
                   </Stack>
                 </Stack>
 
-                {/* Discipline */}
-                <Typography variant="subtitle1" fontWeight={700} color="#0A1628" sx={{ mb: 0.5 }}>
-                  {discLabel(cert.discipline)}
+                <Typography variant="subtitle1" fontWeight={700} color={NAVY} sx={{ mb: 0.5 }}>
+                  {dl(cert.discipline)}
                 </Typography>
+                {cert.schoolName && (
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                    {cert.schoolName}
+                  </Typography>
+                )}
 
-                {/* Stats row */}
                 <Stack direction="row" gap={1.5} mb={1.5} flexWrap="wrap">
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <StatsIcon sx={{ fontSize: 15, color: cert.assistancePercentage >= 80 ? '#00A651' : '#D97706' }} />
+                    <StatsIcon sx={{ fontSize: 15, color: cert.assistancePercentage >= 80 ? GREEN : '#D97706' }} />
                     <Typography variant="body2" fontWeight={700}
-                      sx={{ color: cert.assistancePercentage >= 80 ? '#00A651' : '#D97706' }}>
+                      sx={{ color: cert.assistancePercentage >= 80 ? GREEN : '#D97706' }}>
                       {cert.assistancePercentage.toFixed(1)}% apoio
                     </Typography>
                   </Box>
@@ -798,35 +565,31 @@ export default function ProfessorCertificatesPage() {
                   </Typography>
                 </Stack>
 
-                {/* Issue date */}
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
-                  Emitido em {formatDate(cert.issuedAt)}
+                  Emitido em {fmt(cert.issuedAt)}
                 </Typography>
 
-                {/* Toggle */}
                 <Box onClick={e => e.stopPropagation()}>
-                  <Tooltip title={cert.isPublic ? 'Tornar privado' : 'Publicar no perfil público'}>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={cert.isPublic}
-                          onChange={() => handleTogglePublish(cert)}
-                          disabled={publishing === cert.id}
-                          size="small"
-                          sx={{
-                            '& .MuiSwitch-switchBase.Mui-checked': { color: '#C9A227' },
-                            '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: '#C9A227' },
-                          }}
-                        />
-                      }
-                      label={
-                        <Typography variant="caption" fontWeight={600} color="text.secondary">
-                          {publishing === cert.id ? 'A actualizar…' : 'Visível publicamente'}
-                        </Typography>
-                      }
-                      sx={{ m: 0 }}
-                    />
-                  </Tooltip>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={!!cert.isPublic}
+                        onChange={() => handleToggle(cert)}
+                        disabled={publishing === cert.id}
+                        size="small"
+                        sx={{
+                          '& .MuiSwitch-switchBase.Mui-checked': { color: GREEN },
+                          '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: GREEN },
+                        }}
+                      />
+                    }
+                    label={
+                      <Typography variant="caption" fontWeight={600} color="text.secondary">
+                        {publishing === cert.id ? 'A actualizar…' : 'Visível publicamente'}
+                      </Typography>
+                    }
+                    sx={{ m: 0 }}
+                  />
                 </Box>
               </CardContent>
             </Card>
@@ -835,20 +598,20 @@ export default function ProfessorCertificatesPage() {
       )}
 
       {certs.length > 0 && (
-        <Box sx={{ mt: 3, p: 2, bgcolor: '#FFFBEB', borderRadius: 2, border: '1px solid rgba(201,162,39,0.25)' }}>
-          <Typography variant="body2" color="#92400E" fontWeight={600}>
-            Clique num certificado para o pré-visualizar e transferir em PDF. Certificados públicos ficam visíveis no perfil da plataforma.
+        <Box sx={{ mt: 3, p: 2, bgcolor: '#F0FDF4', borderRadius: 2, border: '1px solid rgba(0,166,81,0.2)' }}>
+          <Typography variant="body2" color="#166534" fontWeight={600}>
+            Clique num certificado para pré-visualizar e transferir em PDF.
+            Certificados públicos ficam visíveis no perfil da plataforma.
           </Typography>
         </Box>
       )}
 
-      {/* Certificate preview modal */}
-      {previewCert && (
+      {preview && (
         <CertPreviewModal
-          cert={previewCert}
+          cert={preview}
           fullName={fullName}
-          open={!!previewCert}
-          onClose={() => setPreviewCert(null)}
+          open={!!preview}
+          onClose={() => setPreview(null)}
         />
       )}
     </Box>

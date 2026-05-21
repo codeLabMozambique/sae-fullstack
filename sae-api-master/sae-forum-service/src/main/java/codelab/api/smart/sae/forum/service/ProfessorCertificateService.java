@@ -4,6 +4,8 @@ import codelab.api.smart.sae.forum.dto.response.ProfessorAssistanceStatsDTO;
 import codelab.api.smart.sae.forum.dto.response.ProfessorCertificateDTO;
 import codelab.api.smart.sae.forum.model.ProfessorCertificateEntity;
 import codelab.api.smart.sae.forum.repository.ProfessorCertificateRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 @Service
 public class ProfessorCertificateService {
 
+    private static final Logger log = LoggerFactory.getLogger(ProfessorCertificateService.class);
     private static final double ASSISTANCE_THRESHOLD = 70.0;
 
     @Autowired private ProfessorCertificateRepository repository;
@@ -39,12 +42,19 @@ public class ProfessorCertificateService {
 
         if (repository.existsByProfessorUsernameAndDiscipline(professorUsername, discipline)) return;
 
+        String schoolName = null;
+        try {
+            Long userId = authServiceClient.getUserIdByUsername(professorUsername);
+            if (userId != null) schoolName = academicServiceClient.getSchoolNameByProfessorId(userId);
+        } catch (Exception ignored) {}
+
         ProfessorCertificateEntity cert = new ProfessorCertificateEntity();
         cert.setProfessorUsername(professorUsername);
         cert.setDiscipline(discipline);
         cert.setAssistancePercentage(stats.getAssistancePercentage());
         cert.setTotalAnswered(stats.getTotalAnswered());
         cert.setIsPublic(false);
+        cert.setSchoolName(schoolName);
         repository.save(cert);
     }
 

@@ -26,11 +26,14 @@ public class SecurityConfig {
     @org.springframework.core.annotation.Order(1)
     public SecurityFilterChain forumFilterChain(HttpSecurity http) throws Exception {
         http
+            .cors(cors -> cors.disable())
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/ws/**", "/ws").permitAll()
                 // Endpoints que requerem autenticação — devem vir ANTES dos permitAll mais genéricos
+                .requestMatchers(HttpMethod.GET, "/questions/mine").authenticated()
                 .requestMatchers(HttpMethod.GET,  "/questions/rooms/expert/**").authenticated()
                 .requestMatchers(HttpMethod.GET,  "/questions/professors/**").permitAll()
                 .requestMatchers(HttpMethod.PATCH, "/questions/*/message").authenticated()
