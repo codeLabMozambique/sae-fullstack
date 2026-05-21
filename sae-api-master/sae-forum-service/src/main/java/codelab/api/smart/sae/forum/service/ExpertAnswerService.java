@@ -55,6 +55,8 @@ public class ExpertAnswerService {
         answer = java.util.Objects.requireNonNull(answerRepository.save(answer));
 
         notificationService.notifyNewAnswer(questionId, "EXPERT");
+        // Notifica o aluno directamente na sua caixa pessoal
+        notificationService.notifyStudentInbox(question.getCreatedBy(), questionId);
 
         try { certificateService.checkAndIssue(professorUsername); }
         catch (Exception ignored) {}

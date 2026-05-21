@@ -282,6 +282,17 @@ public class ForumQuestionService {
         }
         question.setDescricao(descricao.trim());
         questionRepository.save(Objects.requireNonNull(question));
+
+        String area = question.getSubjectId() != null
+            ? "subject-" + question.getSubjectId()
+            : (question.getDisciplina() != null ? question.getDisciplina().name() : "GERAL");
+        notificationService.notifyNewQuestion(question.getId(), area, question.getTitulo());
+
+        // Notificação directa ao professor mencionado (garante entrega mesmo sem subscrição de área)
+        if (question.getMentionedProfessorUsername() != null) {
+            notificationService.notifyProfessorInbox(
+                question.getMentionedProfessorUsername(), question.getId(), question.getTitulo());
+        }
     }
 
     // ── Membros do fórum para @mention ───────────────────────────────────────

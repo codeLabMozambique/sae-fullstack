@@ -1,6 +1,8 @@
 package codelab.api.smart.sae.academic.service;
 
+import codelab.api.smart.sae.academic.catalog.NampulaSchool;
 import codelab.api.smart.sae.academic.dto.*;
+import codelab.api.smart.sae.academic.exception.DuplicateEntityException;
 import codelab.api.smart.sae.academic.model.*;
 import codelab.api.smart.sae.academic.repository.*;
 import codelab.api.smart.sae.framework.jpa.EntityState;
@@ -100,18 +102,47 @@ public class SchoolService {
 
     @Transactional
     public SchoolDTO save(SchoolDTO dto) {
+        NampulaSchool school = NampulaSchool.findByNormalized(dto.getName());
+        if (school == null) {
+            throw new IllegalArgumentException(
+                "Escola \"" + dto.getName() + "\" não reconhecida. Verifique o nome ou contacte o administrador.");
+        }
+        String normalized = school.getNormalizedName();
+        if (schoolRepository.existsByNormalizedName(normalized)) {
+            throw new DuplicateEntityException("Escola já existe: " + school.getDisplayName());
+        }
         SchoolEntity entity = new SchoolEntity();
-        updateEntityFromDTO(entity, dto);
+        entity.setName(school.getDisplayName());
+        entity.setNormalizedName(normalized);
+        entity.setAddress(dto.getAddress());
+        entity.setPhone(dto.getPhone());
+        entity.setEmail(dto.getEmail());
+        entity.setCity(dto.getCity());
         entity.setStatus(EntityState.ACTIVE);
         return convertToDTO(schoolRepository.save(entity));
     }
 
     @Transactional
     public SchoolDTO update(SchoolDTO dto) {
+        NampulaSchool school = NampulaSchool.findByNormalized(dto.getName());
+        if (school == null) {
+            throw new IllegalArgumentException(
+                "Escola \"" + dto.getName() + "\" não reconhecida. Verifique o nome ou contacte o administrador.");
+        }
+        String normalized = school.getNormalizedName();
         return schoolRepository.findById(java.util.Objects.requireNonNull(dto.getId()))
                 .map(entity -> {
-                    updateEntityFromDTO(entity, dto);
-                    return convertToDTO(java.util.Objects.requireNonNull(schoolRepository.save(entity)));
+                    boolean nameChanged = !normalized.equals(entity.getNormalizedName());
+                    if (nameChanged && schoolRepository.existsByNormalizedName(normalized)) {
+                        throw new DuplicateEntityException("Escola já existe: " + school.getDisplayName());
+                    }
+                    entity.setName(school.getDisplayName());
+                    entity.setNormalizedName(normalized);
+                    entity.setAddress(dto.getAddress());
+                    entity.setPhone(dto.getPhone());
+                    entity.setEmail(dto.getEmail());
+                    entity.setCity(dto.getCity());
+                    return convertToDTO(schoolRepository.save(entity));
                 }).orElse(null);
     }
 
@@ -132,14 +163,6 @@ public class SchoolService {
         dto.setEmail(entity.getEmail());
         dto.setCity(entity.getCity());
         return dto;
-    }
-
-    private void updateEntityFromDTO(SchoolEntity entity, SchoolDTO dto) {
-        entity.setName(dto.getName());
-        entity.setAddress(dto.getAddress());
-        entity.setPhone(dto.getPhone());
-        entity.setEmail(dto.getEmail());
-        entity.setCity(dto.getCity());
     }
 
     private ClassroomFullDTO convertToClassroomFullDTO(ClassroomEntity entity) {

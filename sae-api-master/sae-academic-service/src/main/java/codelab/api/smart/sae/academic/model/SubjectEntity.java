@@ -34,6 +34,9 @@ public class SubjectEntity extends UpdatableEntity {
     @Column(name = "SCHOOL_ID")
     private Long schoolId;
 
+    @Column(name = "NORMALIZED_NAME", unique = true)
+    private String normalizedName;
+
     public SubjectEntity() {}
 
     public Long getId() { return id; }
@@ -41,6 +44,9 @@ public class SubjectEntity extends UpdatableEntity {
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
+    public String getNormalizedName() { return normalizedName; }
+    public void setNormalizedName(String normalizedName) { this.normalizedName = normalizedName; }
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }

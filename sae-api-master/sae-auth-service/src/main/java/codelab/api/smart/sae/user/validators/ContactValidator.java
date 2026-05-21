@@ -36,7 +36,7 @@ public final class ContactValidator {
     }
 
     /**
-     * Normaliza o telefone para o formato canónico +258XXXXXXXXX.
+     * Normaliza o telefone para o formato canónico local (9 dígitos, sem prefixo).
      * Lança BusinessException se inválido.
      */
     public static String requireValidPhone(String raw) {
@@ -47,15 +47,15 @@ public final class ContactValidator {
         if (!PHONE_PATTERN.matcher(cleaned).matches()) {
             throw new BusinessException(
                 "Número de telefone inválido. Usa um móvel moçambicano " +
-                "(ex. 841234567 ou +258841234567)."
+                "(ex. 841234567)."
             );
         }
-        // Remove prefixo se presente e reanexa +258
+        // Remove prefixo internacional se presente — armazena apenas os 9 dígitos locais
         String tail = cleaned;
         if (cleaned.startsWith("+258")) tail = cleaned.substring(4);
         else if (cleaned.startsWith("00258")) tail = cleaned.substring(5);
         else if (cleaned.startsWith("258")) tail = cleaned.substring(3);
-        return "+258" + tail;
+        return tail;
     }
 
     /** Devolve true se o email tem estrutura sintacticamente válida. */

@@ -229,6 +229,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       MAIL_ENABLED: ${MAIL_ENABLED:-false}
@@ -244,7 +245,7 @@ services:
       - sae-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:8083/actuator/health | grep -qE '^(200|403)$'"]
+      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:8083/actuator/health | grep -qE '^(200|401|403)$'"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -260,6 +261,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -305,8 +307,6 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: prod
       FRONTEND_URL: ${FRONTEND_URL:-*}
-    ports:
-      - "8080:8080"
     depends_on:
       sae-auth-service:
         condition: service_healthy
@@ -370,11 +370,27 @@ services:
       args:
         VITE_API_GATEWAY_URL: ${VITE_API_GATEWAY_URL:-http://localhost:8080}
     container_name: sae-frontend
-    ports:
-      - "80:80"
     depends_on:
       sae-api-gateway:
         condition: service_healthy
+    networks:
+      - sae-network
+    restart: unless-stopped
+
+  nginx-proxy:
+    image: nginx:1.27-alpine
+    container_name: sae-nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8443:8443"
+    volumes:
+      - ./nginx-proxy.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
+    depends_on:
+      - sae-frontend
+      - sae-api-gateway
     networks:
       - sae-network
     restart: unless-stopped
@@ -390,3 +406,4 @@ volumes:
   minio_data:
   rabbitmq_data:
   ai_chroma_data:
+  certbot_www:

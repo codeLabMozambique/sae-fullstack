@@ -4,8 +4,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -25,8 +31,10 @@ public class AuthServiceClient {
 
     public String[] getProfessorSpecializations(String professorUsername) {
         try {
-            String url = authServiceUrl + "/users/professor/" + professorUsername + "/specializations";
-            return restTemplate.getForObject(url, String[].class);
+            URI uri = UriComponentsBuilder
+                    .fromUriString(authServiceUrl + "/users/professor/{u}/specializations")
+                    .buildAndExpand(professorUsername).encode().toUri();
+            return restTemplate.getForObject(uri, String[].class);
         } catch (Exception e) {
             log.warn("Não foi possível obter especializações do professor '{}': {}", professorUsername, e.getMessage());
             return new String[0];
@@ -34,7 +42,7 @@ public class AuthServiceClient {
     }
 
     public boolean canProfessorAnswerArea(String professorUsername, codelab.api.smart.sae.forum.enums.DisciplinaEnum disciplina) {
-        if (disciplina == null) return true; // sala novo modelo — sem restrição por disciplina legado
+        if (disciplina == null) return true;
         try {
             String[] specializations = getProfessorSpecializations(professorUsername);
             if (specializations == null || specializations.length == 0) return true;
@@ -78,13 +86,14 @@ public class AuthServiceClient {
 
     /**
      * Devolve o userId (sae_user.id) dado um username.
-     * Chama GET /users/user-id-by-username?username=X
+     * Uses UriComponentsBuilder so query param is properly encoded (e.g. + → %2B).
      */
     @SuppressWarnings("unchecked")
     public Long getUserIdByUsername(String username) {
         try {
-            String url = authServiceUrl + "/users/user-id-by-username?username=" + username;
-            Map<String, Object> body = restTemplate.getForObject(url, Map.class);
+            URI uri = URI.create(authServiceUrl + "/users/user-id-by-username?username="
+                    + username.replace("+", "%2B"));
+            Map<String, Object> body = restTemplate.getForObject(uri, Map.class);
             if (body == null) return null;
             Object uid = body.get("userId");
             if (uid instanceof Number) return ((Number) uid).longValue();
@@ -99,13 +108,13 @@ public class AuthServiceClient {
 
     public Long getStudentClassroomId(String username, String jwtToken) {
         try {
-            String url = authServiceUrl + "/users/student-profile-by-username?username=" + username;
-            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            URI uri = URI.create(authServiceUrl + "/users/student-profile-by-username?username="
+                    + username.replace("+", "%2B"));
+            HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", jwtToken);
-            org.springframework.http.HttpEntity<Void> entity = new org.springframework.http.HttpEntity<>(headers);
-            org.springframework.http.ResponseEntity<StudentProfileResponse> response =
-                restTemplate.exchange(url,
-                    java.util.Objects.requireNonNull(org.springframework.http.HttpMethod.GET),
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            ResponseEntity<StudentProfileResponse> response =
+                restTemplate.exchange(uri, java.util.Objects.requireNonNull(HttpMethod.GET),
                     entity, StudentProfileResponse.class);
             StudentProfileResponse bodyResp = response.getBody();
             return bodyResp != null ? bodyResp.getClassroomId() : null;

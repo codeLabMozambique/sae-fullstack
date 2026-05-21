@@ -32,6 +32,8 @@ import TranslateIcon from '@mui/icons-material/Translate';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import ComputerIcon from '@mui/icons-material/Computer';
 import { useAuth } from '../../context/AuthContext';
+import { useWebSocket } from '../../hooks/useWebSocket';
+import { useSubjects } from '../../hooks/useSubjects';
 import { forumService } from '../../services/forumService';
 import api from '../../services/api';
 import { quizService } from '../../services/quizService';
@@ -644,12 +646,18 @@ export default function ProfessorForumPage() {
   const [activeQ, setActiveQ] = useState<ForumQuestion | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [search, setSearch] = useState('');
-  const [subjectsMap, setSubjectsMap] = useState<Map<number, SubjectInfo>>(new Map());
+  const { subjects, subjectsMap } = useSubjects();
+  const { subscribe, unsubscribe } = useWebSocket();
   const [infoOpen, setInfoOpen] = useState(false);
   const [newPendingCount, setNewPendingCount] = useState(0);
   const knownPendingIds = useRef<Set<number>>(new Set());
   const isOnPendingTab = useRef(true);
   const isInitialPendingLoad = useRef(true);
+
+  const activeQRef = useRef(activeQ);
+  useEffect(() => {
+    activeQRef.current = activeQ;
+  }, [activeQ]);
 
   const loadPending = () => {
     setLoadingPending(true);
@@ -677,9 +685,6 @@ export default function ProfessorForumPage() {
 
   useEffect(() => {
     loadPending();
-    forumService.getAllActiveSubjects().then(list => {
-      setSubjectsMap(new Map(list.map(s => [s.id, s])));
-    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -709,8 +714,9 @@ export default function ProfessorForumPage() {
   };
 
   const reloadActiveQ = () => {
-    if (!activeQ) return;
-    forumService.getQuestion(activeQ.id).then(detail => {
+    const currentQ = activeQRef.current;
+    if (!currentQ) return;
+    forumService.getQuestion(currentQ.id).then(detail => {
       setActiveQ(detail);
       setPendingList(prev => prev.map(q => q.id === detail.id ? detail : q));
       setAnsweredList(prev => prev.map(q => q.id === detail.id ? detail : q));
@@ -719,6 +725,78 @@ export default function ProfessorForumPage() {
       loadAnswered();
     });
   };
+
+  const reloadActiveQRef = useRef(reloadActiveQ);
+  useEffect(() => {
+    reloadActiveQRef.current = reloadActiveQ;
+  }, [reloadActiveQ]);
+
+  // Real-time questions alerts for Professors
+  useEffect(() => {
+    const handleNewQuestion = () => {
+      loadPending();
+      loadAnswered();
+    };
+
+    subscribe('/topic/questions/GERAL', handleNewQuestion);
+
+    const disciplines = [
+      'MATEMATICA', 'FISICA', 'QUIMICA', 'BIOLOGIA', 'PORTUGUES',
+      'HISTORIA', 'GEOGRAFIA', 'INGLES', 'FILOSOFIA', 'INFORMATICA'
+    ];
+    disciplines.forEach(d => {
+      subscribe(`/topic/questions/${d}`, handleNewQuestion);
+    });
+
+    subjects.forEach(s => {
+      subscribe(`/topic/questions/subject-${s.id}`, handleNewQuestion);
+    });
+
+    return () => {
+      unsubscribe('/topic/questions/GERAL');
+      disciplines.forEach(d => {
+        unsubscribe(`/topic/questions/${d}`);
+      });
+      subjects.forEach(s => {
+        unsubscribe(`/topic/questions/subject-${s.id}`);
+      });
+    };
+  }, [subjects, subscribe, unsubscribe]);
+
+  // Personal professor inbox topic — receives direct notifications when a student sends a message
+  useEffect(() => {
+    if (!user?.username) return;
+    const personalTopic = `/topic/professor/${user.username}`;
+    const handlePersonal = (payload: any) => {
+      loadPending();
+      loadAnswered();
+      if (activeQRef.current && payload?.id === activeQRef.current.id) {
+        reloadActiveQRef.current();
+      }
+    };
+    subscribe(personalTopic, handlePersonal);
+    return () => unsubscribe(personalTopic);
+  }, [user?.username, subscribe, unsubscribe]);
+
+  // Real-time answers/updates for the active chat room
+  useEffect(() => {
+    if (!activeQ) return;
+
+    const topicAnswers = `/topic/answers/${activeQ.id}`;
+    const topicValids = `/topic/validations/${activeQ.id}`;
+
+    const handleUpdate = () => {
+      reloadActiveQRef.current();
+    };
+
+    subscribe(topicAnswers, handleUpdate);
+    subscribe(topicValids, handleUpdate);
+
+    return () => {
+      unsubscribe(topicAnswers);
+      unsubscribe(topicValids);
+    };
+  }, [activeQ?.id, subscribe, unsubscribe]);
 
   const currentList = (sidebarTab === 'pending' ? pendingList : answeredList)
     .filter(q => !search || q.titulo.toLowerCase().includes(search.toLowerCase())

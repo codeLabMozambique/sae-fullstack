@@ -37,16 +37,13 @@ class OpenAIService:
         api_messages = [{"role": "system", "content": system}]
         api_messages.extend(messages)
 
-        try:
-            response = await _get_client().chat.completions.create(
-                model=settings.OPENAI_MODEL,
-                messages=api_messages,
-                max_tokens=settings.OPENAI_MAX_TOKENS,
-                temperature=settings.OPENAI_TEMPERATURE,
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            return f"Erro ao contactar a IA: {str(e)}"
+        response = await _get_client().chat.completions.create(
+            model=settings.OPENAI_MODEL,
+            messages=api_messages,
+            max_tokens=settings.OPENAI_MAX_TOKENS,
+            temperature=settings.OPENAI_TEMPERATURE,
+        )
+        return response.choices[0].message.content or ""
 
     @staticmethod
     async def generate_quiz(topic: str, difficulty: str, num_questions: int) -> dict:

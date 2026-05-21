@@ -39,4 +39,22 @@ public class NotificationService {
             Map.of("event", "ANSWER_VALIDATED", "id", java.util.Objects.requireNonNull(answerId), "questionId", java.util.Objects.requireNonNull(questionId))
         );
     }
+
+    /** Notifica a caixa de entrada pessoal do professor (nova pergunta ou follow-up do aluno). */
+    public void notifyProfessorInbox(String professorUsername, Long questionId, String summary) {
+        if (professorUsername == null || professorUsername.isBlank()) return;
+        messagingTemplate.convertAndSend(
+            "/topic/professor/" + professorUsername,
+            Map.of("event", "NEW_QUESTION", "id", java.util.Objects.requireNonNull(questionId), "summary", summary != null ? summary : "")
+        );
+    }
+
+    /** Notifica o aluno directamente quando o professor responde à sua pergunta. */
+    public void notifyStudentInbox(String studentUsername, Long questionId) {
+        if (studentUsername == null || studentUsername.isBlank()) return;
+        messagingTemplate.convertAndSend(
+            "/topic/student/" + studentUsername,
+            Map.of("event", "NEW_ANSWER", "id", java.util.Objects.requireNonNull(questionId))
+        );
+    }
 }

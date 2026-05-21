@@ -1,6 +1,8 @@
 package codelab.api.smart.sae.academic.service;
 
+import codelab.api.smart.sae.academic.catalog.CurriculumSubject;
 import codelab.api.smart.sae.academic.dto.SubjectDTO;
+import codelab.api.smart.sae.academic.exception.DuplicateEntityException;
 import codelab.api.smart.sae.academic.model.ClassLevelSubjectEntity;
 import codelab.api.smart.sae.academic.model.ClassroomEntity;
 import codelab.api.smart.sae.academic.model.SubjectEntity;
@@ -64,18 +66,47 @@ public class SubjectService {
 
     @Transactional
     public SubjectDTO save(SubjectDTO dto) {
+        CurriculumSubject cs = CurriculumSubject.findByNormalized(dto.getName());
+        if (cs == null) {
+            throw new IllegalArgumentException(
+                "Disciplina \"" + dto.getName() + "\" não reconhecida no currículo MEC do ensino secundário.");
+        }
+        String normalized = cs.getNormalizedName();
+        if (subjectRepository.existsByNormalizedName(normalized)) {
+            throw new DuplicateEntityException("Disciplina já existe: " + cs.getDisplayName());
+        }
         SubjectEntity entity = new SubjectEntity();
-        updateEntityFromDTO(entity, dto);
+        entity.setName(cs.getDisplayName());
+        entity.setNormalizedName(normalized);
+        entity.setDescription(dto.getDescription());
+        entity.setCode(dto.getCode());
+        entity.setClassLevelId(dto.getClassLevelId());
+        entity.setSchoolId(dto.getSchoolId());
         entity.setStatus(EntityState.ACTIVE);
         return convertToDTO(subjectRepository.save(entity));
     }
 
     @Transactional
     public SubjectDTO update(SubjectDTO dto) {
+        CurriculumSubject cs = CurriculumSubject.findByNormalized(dto.getName());
+        if (cs == null) {
+            throw new IllegalArgumentException(
+                "Disciplina \"" + dto.getName() + "\" não reconhecida no currículo MEC do ensino secundário.");
+        }
+        String normalized = cs.getNormalizedName();
         return subjectRepository.findById(java.util.Objects.requireNonNull(dto.getId()))
                 .map(entity -> {
-                    updateEntityFromDTO(entity, dto);
-                    return convertToDTO(java.util.Objects.requireNonNull(subjectRepository.save(entity)));
+                    boolean nameChanged = !normalized.equals(entity.getNormalizedName());
+                    if (nameChanged && subjectRepository.existsByNormalizedName(normalized)) {
+                        throw new DuplicateEntityException("Disciplina já existe: " + cs.getDisplayName());
+                    }
+                    entity.setName(cs.getDisplayName());
+                    entity.setNormalizedName(normalized);
+                    entity.setDescription(dto.getDescription());
+                    entity.setCode(dto.getCode());
+                    entity.setClassLevelId(dto.getClassLevelId());
+                    entity.setSchoolId(dto.getSchoolId());
+                    return convertToDTO(subjectRepository.save(entity));
                 }).orElse(null);
     }
 
@@ -137,11 +168,5 @@ public class SubjectService {
         return dto;
     }
 
-    private void updateEntityFromDTO(SubjectEntity entity, SubjectDTO dto) {
-        entity.setName(dto.getName());
-        entity.setDescription(dto.getDescription());
-        entity.setCode(dto.getCode());
-        entity.setClassLevelId(dto.getClassLevelId());
-        entity.setSchoolId(dto.getSchoolId());
-    }
+
 }

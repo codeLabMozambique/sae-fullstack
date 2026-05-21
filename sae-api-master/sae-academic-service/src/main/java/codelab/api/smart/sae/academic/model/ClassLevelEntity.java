@@ -26,6 +26,9 @@ public class ClassLevelEntity extends UpdatableEntity {
     @Column(name = "CYCLE")
     private String cycle;
 
+    @Column(name = "NORMALIZED_NAME", unique = true)
+    private String normalizedName;
+
     public ClassLevelEntity() {}
 
     public Long getId() { return id; }
@@ -36,4 +39,7 @@ public class ClassLevelEntity extends UpdatableEntity {
 
     public String getCycle() { return cycle; }
     public void setCycle(String cycle) { this.cycle = cycle; }
+
+    public String getNormalizedName() { return normalizedName; }
+    public void setNormalizedName(String normalizedName) { this.normalizedName = normalizedName; }
 }

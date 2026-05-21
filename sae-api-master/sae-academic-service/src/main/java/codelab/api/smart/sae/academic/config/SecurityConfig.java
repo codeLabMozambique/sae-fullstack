@@ -33,6 +33,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/subject/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/classroom/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/school/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/class-level/**").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)

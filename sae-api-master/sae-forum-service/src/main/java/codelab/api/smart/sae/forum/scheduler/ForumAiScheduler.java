@@ -17,8 +17,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * A cada hora verifica perguntas ESPECIALIZADAS abertas sem resposta de
- * professor há mais de N horas e gera automaticamente uma resposta via IA.
+ * Verifica periodicamente perguntas ESPECIALIZADAS abertas sem resposta de
+ * professor há mais de N minutos e gera automaticamente uma resposta via IA.
  */
 @Component
 public class ForumAiScheduler {
@@ -28,18 +28,18 @@ public class ForumAiScheduler {
     @Value("${forum.ai.auto-answer.enabled:true}")
     private boolean autoAnswerEnabled;
 
-    @Value("${forum.ai.auto-answer.delay-hours:2}")
-    private int delayHours;
+    @Value("${forum.ai.auto-answer.delay-minutes:5}")
+    private int delayMinutes;
 
     @Autowired private ForumQuestionRepository questionRepository;
     @Autowired private ExpertAnswerRepository expertAnswerRepository;
     @Autowired private AIAnswerService aiAnswerService;
 
-    @Scheduled(fixedDelayString = "${forum.ai.auto-answer.check-interval-ms:3600000}")
+    @Scheduled(fixedDelayString = "${forum.ai.auto-answer.check-interval-ms:30000}")
     public void autoAnswerPendingQuestions() {
         if (!autoAnswerEnabled) return;
 
-        LocalDateTime cutoff = LocalDateTime.now().minusHours(delayHours);
+        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(delayMinutes);
 
         List<ForumQuestionEntity> unanswered = questionRepository
             .findByQuestionTypeAndStatus(QuestionType.ESPECIALIZADO, QuestionStatus.ABERTA)
@@ -49,11 +49,11 @@ public class ForumAiScheduler {
             .toList();
 
         if (unanswered.isEmpty()) {
-            log.debug("Nenhuma pergunta sem resposta após {}h", delayHours);
+            log.debug("Nenhuma pergunta sem resposta após {}min", delayMinutes);
             return;
         }
 
-        log.info("Auto-resposta IA: {} perguntas sem resposta há mais de {}h", unanswered.size(), delayHours);
+        log.info("Auto-resposta IA: {} perguntas sem resposta há mais de {}min", unanswered.size(), delayMinutes);
         for (ForumQuestionEntity q : unanswered) {
             try {
                 aiAnswerService.generateAndSave(q.getId());

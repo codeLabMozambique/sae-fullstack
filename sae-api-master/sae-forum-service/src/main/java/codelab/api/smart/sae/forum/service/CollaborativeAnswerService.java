@@ -57,6 +57,13 @@ public class CollaborativeAnswerService {
 
         notificationService.notifyNewAnswer(questionId, "COLLABORATIVE");
 
+        // Em salas expert, notifica o professor directamente (follow-up do aluno)
+        if (QuestionType.ESPECIALIZADO.equals(question.getQuestionType())
+                && question.getMentionedProfessorUsername() != null) {
+            notificationService.notifyProfessorInbox(
+                question.getMentionedProfessorUsername(), questionId, question.getTitulo());
+        }
+
         return CollaborativeAnswerResponseDTO.from(answer);
     }
 

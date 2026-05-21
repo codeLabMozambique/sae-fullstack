@@ -238,9 +238,15 @@ const LandingPage: React.FC = () => {
 
       {/* ═══════════════════════════════════ HERO ═══════════════════════════════════ */}
       <Box sx={{
-        background: 'linear-gradient(150deg,#001220 0%,#002B14 55%,#001220 100%)',
+        background: [
+          'linear-gradient(to right, rgba(0,18,32,0.96) 0%, rgba(0,18,32,0.82) 50%, rgba(0,18,32,0.52) 100%)',
+          "url('/hero_image_001.png')",
+        ].join(', '),
+        backgroundSize: 'cover',
+        backgroundPosition: { xs: 'center', md: 'center right' },
+        backgroundRepeat: 'no-repeat',
         position: 'relative', overflow: 'hidden',
-        pt: { xs: 8, md: 10 }, pb: { xs: 8, md: 12 },
+        pt: { xs: 8, md: 10 }, pb: { xs: 14, md: 20 },
       }}>
         {/* Decorative floating circles */}
         {[180, 260, 340, 420].map((size, i) => (
@@ -834,6 +840,9 @@ const LandingPage: React.FC = () => {
           <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems="center" gap={1.5}>
             <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.18)', fontSize: '0.72rem' }}>
               © {new Date().getFullYear()} SmartSAE · Todos os direitos reservados
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.72rem' }}>
+              Desenvolvido por <Box component="span" sx={{ color: 'rgba(255,255,255,0.45)', fontWeight: 600 }}>CodeLab</Box>
             </Typography>
             <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.18)', fontSize: '0.72rem' }}>
               Abraço Digital · Terre des Hommes · União Europeia · Agência Italiana

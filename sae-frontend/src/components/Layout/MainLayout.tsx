@@ -320,14 +320,21 @@ const MainLayout: React.FC<Props> = ({ children }) => {
 
   const rawMenus = (user?.menus ?? []) as MenuDTO[];
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'Administrador' || user?.role === 'SCHOOL_ADMIN';
-  const dynamicMenus: MenuDTO[] = isAdmin && rawMenus.length > 0 && !rawMenus.some(m => m.code === 'ADM-CERT')
-    ? [...rawMenus, {
-        code: 'ADM-CERT',
-        label: 'Certificados',
-        routerLink: '/admin/certificates',
-        items: [{ code: 'ADM-CERT-001', label: 'Certificados de Professores', routerLink: '/admin/certificates' }],
-      }]
-    : rawMenus;
+  const dynamicMenus: MenuDTO[] = (() => {
+    if (!isAdmin || rawMenus.length === 0) return rawMenus;
+
+    // Remove entradas legacy de dashboard (qualquer rota que contenha "dashboard")
+    const withoutDash = rawMenus.filter(m => !m.routerLink.includes('dashboard'));
+
+    // Prepend Dashboard, append Certificados se necessário
+    const dashItem: MenuDTO = { code: 'ADM-DASH', label: 'Dashboard', routerLink: '/admin/dashboard', items: [] };
+    const certItem: MenuDTO = {
+      code: 'ADM-CERT', label: 'Certificados', routerLink: '/admin/certificates',
+      items: [{ code: 'ADM-CERT-001', label: 'Certificados de Professores', routerLink: '/admin/certificates' }],
+    };
+    const hasCert = withoutDash.some(m => m.code === 'ADM-CERT');
+    return [dashItem, ...withoutDash, ...(hasCert ? [] : [certItem])];
+  })();
   const hasDynamicMenus = dynamicMenus.length > 0;
 
   const userInitials = user?.fullName
