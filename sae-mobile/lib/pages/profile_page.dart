@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../services/connectivity_service.dart';
@@ -72,7 +73,23 @@ class _ProfilePageState extends State<ProfilePage> {
     final offline = context.watch<OfflineService>();
     final name = _me?.fullName ?? auth.user?.fullName ?? '-';
 
-    return ListView(
+    return Scaffold(
+      backgroundColor: SaeColors.bg,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        systemOverlayStyle: SystemUiOverlayStyle.light,
+        iconTheme: const IconThemeData(color: Colors.white),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Voltar',
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+      ),
+      body: ListView(
       padding: EdgeInsets.zero,
       children: [
         Container(
@@ -169,6 +186,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ],
+      ),
     );
   }
 
@@ -212,6 +230,11 @@ class _ProfilePageState extends State<ProfilePage> {
     final username = _me?.username ?? auth.user?.username ?? '-';
     final email = _me?.email;
     final role = _me?.role ?? auth.user?.role ?? '-';
+    final roleLabel = role.toUpperCase() == 'STUDENT'
+        ? 'Estudante'
+        : role.toUpperCase() == 'PROFESSOR'
+            ? 'Professor'
+            : role;
     return NeuCard(
       child: Column(
         children: [
@@ -221,10 +244,10 @@ class _ProfilePageState extends State<ProfilePage> {
               child: LinearProgressIndicator(minHeight: 2),
             ),
           _row(Icons.person_outline, 'Utilizador', username),
-          const Divider(height: 22),
+          const Divider(height: 18),
           _row(Icons.mail_outline, 'E-mail', email ?? '—'),
-          const Divider(height: 22),
-          _row(Icons.verified_user_outlined, 'Role', role),
+          const Divider(height: 18),
+          _row(Icons.verified_user_outlined, 'Tipo de conta', roleLabel),
         ],
       ),
     );
@@ -295,21 +318,40 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _row(IconData icon, String label, String value) {
-    return Row(children: [
-      Icon(icon, color: SaeColors.textSecondary, size: 20),
-      const SizedBox(width: 10),
-      Expanded(
-        child: Text(label,
-            style: const TextStyle(
-                color: SaeColors.textSecondary, fontSize: 13)),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(icon, color: SaeColors.textSecondary, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: SaeColors.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  softWrap: true,
+                  style: const TextStyle(
+                    color: SaeColors.textPrimary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
-      Flexible(
-        child: Text(value,
-            textAlign: TextAlign.right,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-                color: SaeColors.textPrimary, fontWeight: FontWeight.w700)),
-      ),
-    ]);
+    );
   }
 }

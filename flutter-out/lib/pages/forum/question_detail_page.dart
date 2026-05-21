@@ -225,6 +225,7 @@ class _QuestionDetailPageState extends State<QuestionDetailPage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           color: SaeColors.bg,
+          margin: const EdgeInsets.symmetric(horizontal: -18),
           child: Text(
             answers.isEmpty
               ? 'SEM RESPOSTAS AINDA'

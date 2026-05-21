@@ -86,6 +86,7 @@ ThemeData buildSaeTheme() {
       outlineVariant: SaeColors.line2,
     ),
     scaffoldBackgroundColor: SaeColors.bg,
+    fontFamily: 'Roboto',
 
     // Text — tight + dark + balanced
     textTheme: base.textTheme.apply(

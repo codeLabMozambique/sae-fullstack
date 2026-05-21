@@ -447,25 +447,28 @@ class _TypingDotsState extends State<_TypingDots>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _c,
-      builder: (_, __) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: List.generate(3, (i) {
-          final t = ((_c.value * 3) - i).clamp(0.0, 1.0);
-          final scale = 0.6 + (t < 0.5 ? t : 1 - t) * 0.8;
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: Transform.scale(
-              scale: scale,
-              child: Container(
-                width: 6, height: 6,
-                decoration: const BoxDecoration(
-                  color: SaeColors.primary,
-                  shape: BoxShape.circle,
+      builder: (_, __) => FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(3, (i) {
+            final t = ((_c.value * 3) - i).clamp(0.0, 1.0);
+            final scale = 0.6 + (t < 0.5 ? t : 1 - t) * 0.8;
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 1),
+              child: Transform.scale(
+                scale: scale,
+                child: Container(
+                  width: 5, height: 5,
+                  decoration: const BoxDecoration(
+                    color: SaeColors.primary,
+                    shape: BoxShape.circle,
+                  ),
                 ),
               ),
-            ),
-          );
-        }),
+            );
+          }),
+        ),
       ),
     );
   }

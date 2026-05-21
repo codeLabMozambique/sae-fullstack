@@ -16,7 +16,6 @@ import 'categorias_page.dart';
 import 'favoritos_page.dart';
 import 'continuar_ler_page.dart';
 import 'historico_page.dart';
-import 'offline_page.dart';
 
 /// Biblioteca — tabs por role + grid de capas com gradiente por disciplina.
 /// Comporta-se igual ao original (mesmas APIs), só muda visual.
@@ -39,10 +38,9 @@ class _BibliotecaPageState extends State<BibliotecaPage> {
     return const [
       (label: 'Pesquisar', page: BibliotecaPesquisar()),
       (label: 'Categorias', page: CategoriasPage()),
-      (label: 'Offline',    page: OfflinePage()),
-      (label: 'Favoritos',  page: FavoritosPage()),
-      (label: 'Continuar',  page: ContinuarLerPage()),
-      (label: 'Histórico',  page: HistoricoPage()),
+      (label: 'Favoritos', page: FavoritosPage()),
+      (label: 'Continuar', page: ContinuarLerPage()),
+      (label: 'Histórico', page: HistoricoPage()),
     ];
   }
 
@@ -330,7 +328,7 @@ class BookCard extends StatelessWidget {
                   right: 6, top: 6,
                   child: Row(children: [
                     if (OfflineService.instance.isDownloaded(content.id))
-                      _badge(LucideIcons.downloadCloud, SaeColors.primary),
+                      _badge(LucideIcons.cloudDownload, SaeColors.primary),
                     const SizedBox(width: 4),
                     InkWell(
                       onTap: () {

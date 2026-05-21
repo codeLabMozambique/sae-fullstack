@@ -39,7 +39,6 @@ class _HomePageState extends State<HomePage> {
         _Tab('Tarefas',    LucideIcons.clipboardList, ProfessorTasksPage(), 'Gestão e avaliação'),
         _Tab('Fórum',      LucideIcons.messageSquare,  ForumPage(),         'Perguntas e respostas'),
         _Tab('Quizzes',    LucideIcons.helpCircle,     ProfessorQuizPage(), 'Gerir e criar quizzes'),
-        _Tab('Chat IA',    LucideIcons.sparkles,       ChatIaPage(),        'Assistente de ensino'),
         _Tab('Biblioteca', LucideIcons.library,        BibliotecaPage(),    'Repositório de conteúdos'),
       ];
     }
@@ -55,7 +54,6 @@ class _HomePageState extends State<HomePage> {
       _Tab('Submissões', LucideIcons.uploadCloud,    StudentSubmissionsPage(), 'Histórico e notas'),
       _Tab('Fórum',      LucideIcons.messageSquare,  ForumPage(),              'Discussões da turma'),
       _Tab('Quizzes',    LucideIcons.helpCircle,     StudentQuizPage(),        'Os meus quizzes'),
-      _Tab('Chat IA',    LucideIcons.sparkles,       ChatIaPage(),             'Assistente de estudo'),
       _Tab('Biblioteca', LucideIcons.library,        BibliotecaPage(),         'Biblioteca digital'),
     ];
   }

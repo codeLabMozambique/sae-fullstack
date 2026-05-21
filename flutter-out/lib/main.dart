@@ -3,8 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'pages/home_page.dart';
 import 'pages/login_page.dart';
-import 'services/connectivity_service.dart';
-import 'services/offline_service.dart';
 import 'state/auth_state.dart';
 import 'theme.dart';
 
@@ -24,16 +22,8 @@ class SaeApp extends StatelessWidget {
   const SaeApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthState()..bootstrap()),
-        ChangeNotifierProvider<ConnectivityService>.value(
-          value: ConnectivityService.instance,
-        ),
-        ChangeNotifierProvider<OfflineService>.value(
-          value: OfflineService.instance,
-        ),
-      ],
+    return ChangeNotifierProvider(
+      create: (_) => AuthState()..bootstrap(),
       child: MaterialApp(
         title: 'SAE',
         debugShowCheckedModeBanner: false,
