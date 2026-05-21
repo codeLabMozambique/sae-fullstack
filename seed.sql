@@ -541,12 +541,19 @@ ALTER TABLE IF EXISTS professor_profile
     ADD COLUMN IF NOT EXISTS teaching_cycle VARCHAR(10);
 
 -- =============================================================================
--- BLOCO 23 — Actualizar estudante de teste para a 10ª Classe (ESG Nampula)
--- Login: +258841111101
+-- BLOCO 23 — Migrar usernames do formato +258XXXXXXXXX para XXXXXXXXX (9 dígitos)
+--            e actualizar estudante de teste para a 10ª Classe (ESG Nampula)
+-- Login do estudante de teste: 841111101
 -- =============================================================================
+
+-- Migração segura: strip do prefixo +258 em usernames existentes
+UPDATE sae_user
+SET username = SUBSTRING(username FROM 5)
+WHERE username LIKE '+258%';
+
 UPDATE student_profile
 SET classroom_id = 105, school_id = 4, grade = '10ª Classe'
-WHERE user_id = (SELECT id FROM sae_user WHERE username = '+258841111101');
+WHERE user_id = (SELECT id FROM sae_user WHERE username = '841111101');
 
 -- =============================================================================
 -- BLOCO 24 — Quiz: migração de disciplina (enum) → subject_id (FK académico)
