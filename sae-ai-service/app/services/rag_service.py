@@ -62,9 +62,15 @@ async def ingest(content_id: str, file_url: str, title: str, discipline: str = "
     return len(chunks)
 
 
-def search(query: str, discipline: Optional[str] = None, n: int = 5) -> list[dict]:
+def search(query: str, discipline: Optional[str] = None, content_id: Optional[str] = None, n: int = 5) -> list[dict]:
     col = get_collection()
-    where = {"discipline": discipline} if discipline else None
+    # content_id filter takes priority — search only that specific book
+    if content_id:
+        where = {"content_id": content_id}
+    elif discipline:
+        where = {"discipline": discipline}
+    else:
+        where = None
     try:
         results = col.query(query_texts=[query], n_results=n, where=where)
     except Exception:

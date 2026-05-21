@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_client.dart';
 
@@ -11,12 +10,9 @@ class ChatMessage {
 }
 
 class AiService {
-  final _dio = Dio(BaseOptions(
-    baseUrl: ApiClient.aiBaseUrl,
-    connectTimeout: const Duration(seconds: 30),
-    receiveTimeout: const Duration(seconds: 60),
-    headers: {'Content-Type': 'application/json'},
-  ));
+  // Usa o mesmo Dio do ApiClient para herdar o interceptor JWT
+  // e bater no gateway com prefixo /ai (igual ao frontend web).
+  final _dio = ApiClient.instance.dio;
 
   /// session_id persistido por dispositivo. Garante que o histórico
   /// no Redis do AI-service mantém continuidade entre sessões.
@@ -37,7 +33,7 @@ class AiService {
     String? subject,
   }) async {
     final sid = await sessionId();
-    final res = await _dio.post('/api/v1/chat', data: {
+    final res = await _dio.post('/ai/api/v1/chat', data: {
       'session_id': sid,
       'message': message,
       if (subject != null && subject.isNotEmpty) 'subject': subject,
@@ -49,7 +45,7 @@ class AiService {
   Future<List<ChatMessage>> history() async {
     final sid = await sessionId();
     try {
-      final res = await _dio.get('/api/v1/chat/history/$sid');
+      final res = await _dio.get('/ai/api/v1/chat/history/$sid');
       final list = (res.data['messages'] as List? ?? []).cast<Map<String, dynamic>>();
       return list.map(ChatMessage.fromJson).toList();
     } catch (_) {
@@ -60,7 +56,7 @@ class AiService {
   Future<void> clearHistory() async {
     final sid = await sessionId();
     try {
-      await _dio.delete('/api/v1/chat/history/$sid');
+      await _dio.delete('/ai/api/v1/chat/history/$sid');
     } catch (_) {}
   }
 

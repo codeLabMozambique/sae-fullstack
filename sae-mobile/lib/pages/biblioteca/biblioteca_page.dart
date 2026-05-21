@@ -1,21 +1,25 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import '../../services/content_service.dart';
 import '../../services/offline_service.dart';
 import '../../services/speech_service.dart';
 import '../../state/auth_state.dart';
 import '../../theme.dart';
-import '../../widgets/neumorphic.dart';
+import '../../widgets/sae_book_cover.dart';
+import '../../widgets/sae_components.dart';
+import '../../widgets/sae_skeleton.dart';
+import '../../widgets/sae_tokens.dart';
 import 'leitor_page.dart';
 import 'categorias_page.dart';
 import 'favoritos_page.dart';
 import 'continuar_ler_page.dart';
 import 'historico_page.dart';
+import 'offline_page.dart';
 
-/// Biblioteca — replica exactamente os menus do seed.sql:
-///  - STUDENT/PROFESSOR/ADMIN: Pesquisar · Categorias · Favoritos · Continuar a Ler · Histórico
-///  - GUEST: Pesquisar · Categorias (sem favoritos/histórico — endpoints exigem auth)
+/// Biblioteca — tabs por role + grid de capas com gradiente por disciplina.
+/// Comporta-se igual ao original (mesmas APIs), só muda visual.
 class BibliotecaPage extends StatefulWidget {
   const BibliotecaPage({super.key});
   @override
@@ -25,44 +29,35 @@ class BibliotecaPage extends StatefulWidget {
 class _BibliotecaPageState extends State<BibliotecaPage> {
   int _tab = 0;
 
-  List<({String label, IconData icon, Widget page})> _tabsFor(BuildContext ctx) {
-    final auth = ctx.read<AuthState>();
+  List<({String label, Widget page})> _tabsFor(AuthState auth) {
     if (auth.isGuestRole) {
-      return [
-        (label: 'Pesquisar', icon: Icons.search, page: const BibliotecaPesquisar()),
-        (label: 'Categorias', icon: Icons.category, page: const CategoriasPage()),
+      return const [
+        (label: 'Pesquisar',  page: BibliotecaPesquisar()),
+        (label: 'Categorias', page: CategoriasPage()),
       ];
     }
-    return [
-      (label: 'Pesquisar', icon: Icons.search, page: const BibliotecaPesquisar()),
-      (label: 'Categorias', icon: Icons.category, page: const CategoriasPage()),
-      (label: 'Favoritos', icon: Icons.bookmark, page: const FavoritosPage()),
-      (label: 'Continuar', icon: Icons.menu_book, page: const ContinuarLerPage()),
-      (label: 'Histórico', icon: Icons.history, page: const HistoricoPage()),
+    return const [
+      (label: 'Pesquisar', page: BibliotecaPesquisar()),
+      (label: 'Categorias', page: CategoriasPage()),
+      (label: 'Offline',    page: OfflinePage()),
+      (label: 'Favoritos',  page: FavoritosPage()),
+      (label: 'Continuar',  page: ContinuarLerPage()),
+      (label: 'Histórico',  page: HistoricoPage()),
     ];
   }
 
   @override
   Widget build(BuildContext context) {
-    final tabs = _tabsFor(context);
+    final auth = context.watch<AuthState>();
+    final tabs = _tabsFor(auth);
     if (_tab >= tabs.length) _tab = 0;
     return Column(
       children: [
-        SizedBox(
-          height: 56,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            itemCount: tabs.length,
-            itemBuilder: (_, i) => Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: NeuChip(
-                label: tabs[i].label,
-                selected: i == _tab,
-                onTap: () => setState(() => _tab = i),
-              ),
-            ),
-          ),
+        SaeChipRow(
+          items: tabs.map((t) => t.label).toList(),
+          active: tabs[_tab].label,
+          onPick: (l) => setState(() => _tab = tabs.indexWhere((t) => t.label == l)),
+          dark: true,
         ),
         Expanded(child: tabs[_tab].page),
       ],
@@ -70,6 +65,9 @@ class _BibliotecaPageState extends State<BibliotecaPage> {
   }
 }
 
+/// ───────────────────────────────────────────────────────────────────────────
+/// Pesquisar — grid principal
+/// ───────────────────────────────────────────────────────────────────────────
 class BibliotecaPesquisar extends StatefulWidget {
   const BibliotecaPesquisar({super.key});
   @override
@@ -91,6 +89,12 @@ class _BibliotecaPesquisarState extends State<BibliotecaPesquisar> {
     _load();
   }
 
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
   Future<void> _load() async {
     setState(() {
       _loading = true;
@@ -103,16 +107,14 @@ class _BibliotecaPesquisarState extends State<BibliotecaPesquisar> {
           : await _service.listContents(discipline: _disciplineFilter);
       List<String> disc = _disciplines;
       if (disc.isEmpty) {
-        try {
-          disc = await _service.listDisciplines();
-        } catch (_) {}
+        try { disc = await _service.listDisciplines(); } catch (_) {}
       }
       setState(() {
         _items = res;
         _disciplines = disc;
         _loading = false;
       });
-    } catch (e) {
+    } catch (_) {
       setState(() {
         _error = 'Não foi possível carregar a biblioteca.';
         _loading = false;
@@ -125,17 +127,19 @@ class _BibliotecaPesquisarState extends State<BibliotecaPesquisar> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-          child: NeuTextField(
+          padding: const EdgeInsets.fromLTRB(16, 6, 16, 4),
+          child: SaeSearchField(
             controller: _searchCtrl,
-            hintText: 'Pesquisar título, disciplina...',
-            prefixIcon: Icons.search,
-            suffixIcon: Row(
+            hint: 'Pesquisar título, autor, disciplina…',
+            onSubmitted: (_) => _load(),
+            onChanged: (_) => setState(() {}),
+            trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (_searchCtrl.text.isNotEmpty)
                   IconButton(
-                    icon: const Icon(Icons.clear),
+                    icon: const Icon(LucideIcons.x, size: 16),
+                    color: SaeColors.textMuted,
                     onPressed: () {
                       _searchCtrl.clear();
                       _load();
@@ -144,10 +148,11 @@ class _BibliotecaPesquisarState extends State<BibliotecaPesquisar> {
                 IconButton(
                   tooltip: 'Pesquisar por voz',
                   icon: Icon(
-                    VoiceSearch.instance.isListening ? Icons.mic : Icons.mic_none,
+                    VoiceSearch.instance.isListening ? LucideIcons.mic : LucideIcons.mic,
+                    size: 17,
                     color: VoiceSearch.instance.isListening
-                        ? SaeColors.primary
-                        : SaeColors.textSecondary,
+                        ? SaeColors.error
+                        : SaeColors.primary,
                   ),
                   onPressed: () async {
                     await VoiceSearch.instance.start(onResult: (t) {
@@ -165,67 +170,104 @@ class _BibliotecaPesquisarState extends State<BibliotecaPesquisar> {
                 ),
               ],
             ),
-            onSubmitted: (_) => _load(),
-            onChanged: (_) => setState(() {}),
           ),
         ),
-        if (_disciplines.isNotEmpty)
+        if (_disciplines.isNotEmpty) ...[
+          const SizedBox(height: 6),
           SizedBox(
-            height: 50,
-            child: ListView(
+            height: 36,
+            child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              children: [
-                NeuChip(
-                  label: 'Todas',
-                  selected: _disciplineFilter == null,
-                  onTap: () {
-                    setState(() => _disciplineFilter = null);
-                    _load();
-                  },
-                ),
-                ..._disciplines.map((d) => NeuChip(
-                      label: d,
-                      selected: _disciplineFilter == d,
-                      onTap: () {
-                        setState(() => _disciplineFilter = d);
-                        _load();
-                      },
-                    )),
-              ],
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: _disciplines.length + 1,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (_, i) {
+                if (i == 0) {
+                  return SaeChip(
+                    label: 'Todas',
+                    selected: _disciplineFilter == null,
+                    onTap: () { setState(() => _disciplineFilter = null); _load(); },
+                    dark: true,
+                  );
+                }
+                final d = _disciplines[i - 1];
+                return SaeChip(
+                  label: d,
+                  selected: _disciplineFilter == d,
+                  onTap: () { setState(() => _disciplineFilter = d); _load(); },
+                  dark: true,
+                );
+              },
             ),
           ),
+        ],
+        const SizedBox(height: 6),
         Expanded(child: _body()),
       ],
     );
   }
 
   Widget _body() {
-    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_loading) {
+      return GridView.builder(
+        padding: const EdgeInsets.all(14),
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 200, childAspectRatio: 0.66,
+          crossAxisSpacing: 12, mainAxisSpacing: 12,
+        ),
+        itemCount: 6,
+        itemBuilder: (_, __) => Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: SaeColors.line),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: const [
+              Expanded(child: SaeSkeleton(radius: 14)),
+              Padding(
+                padding: EdgeInsets.all(10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SaeSkeleton(height: 12),
+                    SizedBox(height: 6),
+                    SaeSkeleton(height: 10, width: 80),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_error!),
-            const SizedBox(height: 8),
-            NeuPrimaryButton(label: 'Tentar novamente', onPressed: _load, expanded: false),
-          ],
+      return SaeEmpty(
+        icon: LucideIcons.wifiOff,
+        title: _error!,
+        action: OutlinedButton.icon(
+          onPressed: _load,
+          icon: const Icon(LucideIcons.refreshCw, size: 14),
+          label: const Text('Tentar novamente'),
         ),
       );
     }
     if (_items.isEmpty) {
-      return const Center(child: Text('Sem conteúdos.'));
+      return const SaeEmpty(
+        icon: LucideIcons.bookOpen,
+        title: 'Nenhum conteúdo encontrado',
+        subtitle: 'Experimenta outra pesquisa ou filtro.',
+      );
     }
     return RefreshIndicator(
       onRefresh: _load,
+      color: SaeColors.primary,
       child: GridView.builder(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.fromLTRB(14, 6, 14, 24),
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 190,
-          childAspectRatio: 0.66,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
+          maxCrossAxisExtent: 200, childAspectRatio: 0.62,
+          crossAxisSpacing: 12, mainAxisSpacing: 12,
         ),
         itemCount: _items.length,
         itemBuilder: (_, i) => BookCard(content: _items[i]),
@@ -234,6 +276,9 @@ class _BibliotecaPesquisarState extends State<BibliotecaPesquisar> {
   }
 }
 
+/// ───────────────────────────────────────────────────────────────────────────
+/// BookCard — cartão de livro (capa gradiente + título + chips)
+/// ───────────────────────────────────────────────────────────────────────────
 class BookCard extends StatelessWidget {
   final Content content;
   const BookCard({super.key, required this.content});
@@ -241,63 +286,53 @@ class BookCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final service = ContentService();
-    final thumb = service.absoluteUrl(content.thumbnailUrl);
-    return NeuCard(
+    final thumbUrl = service.absoluteUrl(content.thumbnailUrl);
+
+    return SaeCard(
       padding: EdgeInsets.zero,
-      radius: 18,
-      onTap: () {
-        Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => LeitorPage(content: content),
-        ));
-      },
+      radius: 14,
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => LeitorPage(content: content),
+      )),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
+          // Cover
+          AspectRatio(
+            aspectRatio: 0.85,
             child: Stack(
               fit: StackFit.expand,
               children: [
-                ClipRRect(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(18)),
-                  child: Container(
-                    color: const Color(0xFFE6ECEA),
-                    alignment: Alignment.center,
-                    child: thumb == null
-                        ? const Icon(Icons.menu_book,
-                            color: SaeColors.primary, size: 42)
-                        : CachedNetworkImage(
-                            imageUrl: thumb,
-                            fit: BoxFit.cover,
-                            placeholder: (_, __) => const Center(
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2)),
-                            errorWidget: (_, __, ___) => const Icon(
-                                Icons.menu_book,
-                                color: SaeColors.primary,
-                                size: 42),
-                          ),
-                  ),
-                ),
-              Positioned(
-                right: 6, top: 6,
-                child: Row(children: [
-                  if (OfflineService.instance.isDownloaded(content.id))
-                    Container(
-                      padding: const EdgeInsets.all(5),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        shape: BoxShape.circle,
+                if (thumbUrl != null)
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                    child: CachedNetworkImage(
+                      imageUrl: thumbUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => Container(color: SaeColors.line2),
+                      errorWidget: (_, __, ___) => SaeBookCover(
+                        discipline: content.discipline,
+                        title: content.title,
+                        author: content.uploadedNameOrNull(),
+                        compact: true,
                       ),
-                      child: const Icon(Icons.offline_pin,
-                          size: 14, color: SaeColors.primary),
                     ),
-                  const SizedBox(width: 4),
-                  Material(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    shape: const CircleBorder(),
-                    child: InkWell(
-                      customBorder: const CircleBorder(),
+                  )
+                else
+                  SaeBookCover(
+                    discipline: content.discipline,
+                    title: content.title,
+                    author: content.uploadedNameOrNull(),
+                    compact: true,
+                  ),
+                // Top-right icons
+                Positioned(
+                  right: 6, top: 6,
+                  child: Row(children: [
+                    if (OfflineService.instance.isDownloaded(content.id))
+                      _badge(LucideIcons.downloadCloud, SaeColors.primary),
+                    const SizedBox(width: 4),
+                    InkWell(
                       onTap: () {
                         Tts.instance.speak([
                           content.title,
@@ -305,15 +340,11 @@ class BookCard extends StatelessWidget {
                           if (content.description != null) content.description,
                         ].whereType<String>().join('. '));
                       },
-                      child: const Padding(
-                        padding: EdgeInsets.all(6),
-                        child: Icon(Icons.volume_up,
-                            size: 16, color: SaeColors.primary),
-                      ),
+                      borderRadius: BorderRadius.circular(999),
+                      child: _badge(LucideIcons.volume2, SaeColors.primary),
                     ),
-                  ),
-                ]),
-              ),
+                  ]),
+                ),
               ],
             ),
           ),
@@ -322,26 +353,77 @@ class BookCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  content.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                Text(content.title,
+                  maxLines: 2, overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12.5,
+                    color: SaeColors.textPrimary,
+                    height: 1.3,
+                  ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  [content.discipline, content.level]
-                      .where((e) => e != null && e.isNotEmpty)
-                      .join(' • '),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: SaeColors.textSecondary, fontSize: 11),
-                ),
+                if (content.discipline != null)
+                  _disciplineChip(content.discipline!),
+                const SizedBox(height: 3),
+                Row(children: [
+                  if (content.year != null)
+                    Text('${content.year}',
+                      style: const TextStyle(color: SaeColors.textMuted, fontSize: 10.5),
+                    ),
+                  if (content.year != null && content.totalPages != null)
+                    const Text(' · ', style: TextStyle(color: SaeColors.textMuted, fontSize: 10.5)),
+                  if (content.totalPages != null)
+                    Text('${content.totalPages} pág.',
+                      style: const TextStyle(color: SaeColors.textMuted, fontSize: 10.5),
+                    ),
+                ]),
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _badge(IconData icon, Color color) => Container(
+        padding: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.92),
+          shape: BoxShape.circle,
+          boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 4)],
+        ),
+        child: Icon(icon, size: 13, color: color),
+      );
+
+  Widget _disciplineChip(String text) {
+    final s = Disciplines.of(text);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+      decoration: BoxDecoration(
+        color: s.chipBg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(text, style: TextStyle(
+        color: s.chipFg,
+        fontSize: 10,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.1,
+      )),
+    );
+  }
+}
+
+/// Helper to read uploadedBy name from Content (model has `uploadedByName?` ou `uploadedBy?`).
+/// O Content original tem `uploadedBy` / `uploadedByName` em alguns places — caímos em null silenciosamente.
+extension on Content {
+  String? uploadedNameOrNull() {
+    try {
+      // ignore: avoid_dynamic_calls
+      final dyn = this as dynamic;
+      return (dyn.uploadedByName ?? dyn.uploadedBy) as String?;
+    } catch (_) {
+      return null;
+    }
   }
 }

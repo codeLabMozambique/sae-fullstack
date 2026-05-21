@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import {
-  Box, Typography, TextField, Button, Card, CardActionArea,
+  Box, Typography, TextField, Button,
   Select, MenuItem, InputAdornment, IconButton, Link, Alert, CircularProgress
 } from '@mui/material';
 import {
-  School as SchoolIcon, Edit as EditIcon,
-  Visibility, VisibilityOff, Check as CheckIcon, ArrowForward as ArrowIcon
+  Visibility, VisibilityOff, ArrowForward as ArrowIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -19,9 +18,8 @@ const SCHOOLS = [
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
-  const { signupStudent, signupProfessor } = useAuth();
+  const { signupStudent } = useAuth();
 
-  const [role, setRole] = useState<'student' | 'professor'>('student');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -31,15 +29,8 @@ const Register: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [schoolId, setSchoolId] = useState<number | ''>('');
-
-  // Student-specific
-  const [classroomId] = useState<number | ''>('');
   const [grade, setGrade] = useState('');
   const [age, setAge] = useState<number | ''>('');
-
-  // Professor-specific
-  const [department, setDepartment] = useState('');
-  const [specialization, setSpecialization] = useState('');
 
   const phoneCheck = validatePhone(nTelefone, { required: true });
   const emailCheck = validateEmail(email, { required: true });
@@ -55,28 +46,16 @@ const Register: React.FC = () => {
     setError('');
     setLoading(true);
     try {
-      if (role === 'student') {
-        await signupStudent({
-          nTelefone,
-          email,
-          password,
-          fullname,
-          schoolId: schoolId as number,
-          classroomId: classroomId !== '' ? (classroomId as number) : null,
-          grade: grade || undefined,
-          age: age !== '' ? (age as number) : undefined,
-        });
-      } else {
-        await signupProfessor({
-          nTelefone,
-          email,
-          password,
-          fullname,
-          schoolId: schoolId as number,
-          department: department || undefined,
-          specialization: specialization || undefined,
-        });
-      }
+      await signupStudent({
+        nTelefone,
+        email,
+        password,
+        fullname,
+        schoolId: schoolId as number,
+        classroomId: null,
+        grade: grade || undefined,
+        age: age !== '' ? (age as number) : undefined,
+      });
       navigate('/login');
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.response?.data || 'Erro ao criar conta. Tente novamente.';
@@ -89,45 +68,37 @@ const Register: React.FC = () => {
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f0f2f5', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
       <Box sx={{
-        display: 'flex',
-        maxWidth: 1100,
-        width: '100%',
-        borderRadius: 4,
-        overflow: 'hidden',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+        display: 'flex', maxWidth: 1100, width: '100%',
+        borderRadius: 4, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
       }}>
         {/* Left Panel */}
         <Box sx={{
           width: '45%',
           background: 'linear-gradient(160deg, #001B33 0%, #002B50 50%, #003D2E 100%)',
-          p: 5,
-          display: { xs: 'none', md: 'flex' },
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          color: 'white',
-          py: 4, px: 5
+          p: 5, display: { xs: 'none', md: 'flex' }, flexDirection: 'column',
+          justifyContent: 'space-between', color: 'white', py: 4, px: 5,
         }}>
           <Box>
             <Typography variant="h5" fontWeight={800} letterSpacing={-0.5}>
-              smart<span style={{ color: '#00A651' }}>SAE</span>
+              smart<Box component="span" sx={{ color: '#00A651' }}>SAE</Box>
             </Typography>
             <Typography variant="body2" sx={{ mt: 2, opacity: 0.7, lineHeight: 1.7 }}>
-              A plataforma editorial que conecta o conhecimento moçambicano à excelência acadêmica mundial.
+              A plataforma que conecta o conhecimento moçambicano à excelência académica.
             </Typography>
           </Box>
           <Box>
             <Box sx={{ mb: 4 }}>
               <Typography variant="h2" sx={{ color: 'rgba(0,166,81,0.3)', fontWeight: 900, fontSize: '4rem', lineHeight: 1 }}>01</Typography>
-              <Typography variant="h6" fontWeight={700} sx={{ mt: 1 }}>Ambiente Imersivo</Typography>
+              <Typography variant="h6" fontWeight={700} sx={{ mt: 1 }}>Biblioteca Digital</Typography>
               <Typography variant="body2" sx={{ mt: 1, opacity: 0.6 }}>
-                Uma interface limpa que prioriza a leitura e o foco, eliminando o ruído das ferramentas tradicionais.
+                Acesso a livros, resumos e materiais de estudo do currículo nacional.
               </Typography>
             </Box>
             <Box>
               <Typography variant="h2" sx={{ color: 'rgba(0,166,81,0.3)', fontWeight: 900, fontSize: '4rem', lineHeight: 1 }}>02</Typography>
-              <Typography variant="h6" fontWeight={700} sx={{ mt: 1 }}>Acesso Regional</Typography>
+              <Typography variant="h6" fontWeight={700} sx={{ mt: 1 }}>Assistente IA</Typography>
               <Typography variant="body2" sx={{ mt: 1, opacity: 0.6 }}>
-                Conteúdo curado especificamente para as necessidades das instituições de ensino em Moçambique.
+                IA académica para tirar dúvidas, gerar resumos e preparar exames.
               </Typography>
             </Box>
           </Box>
@@ -136,73 +107,22 @@ const Register: React.FC = () => {
         {/* Right Panel */}
         <Box sx={{ flex: 1, bgcolor: '#f8f9fa', p: { xs: 3, md: 5 }, overflowY: 'auto' }}>
           <Typography variant="h4" fontWeight={800} color="#0A1628" gutterBottom>
-            Criar conta
+            Criar conta de Estudante
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            Junte-se à nova era da educação.
+            Registe-se para aceder à biblioteca, aos quizzes e ao assistente IA.
           </Typography>
 
-          {/* Role Selection */}
-          <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-            <Card
-              onClick={() => setRole('student')}
-              sx={{
-                flex: 1, cursor: 'pointer',
-                border: role === 'student' ? '2px solid #00A651' : '2px solid #e0e0e0',
-                bgcolor: 'white', borderRadius: 3,
-                boxShadow: role === 'student' ? '0 4px 20px rgba(0,166,81,0.15)' : 'none',
-                transition: 'all 0.2s', position: 'relative',
-              }}
-            >
-              <CardActionArea sx={{ p: 2.5 }}>
-                {role === 'student' && (
-                  <CheckIcon sx={{ position: 'absolute', top: 12, right: 12, color: '#00A651', fontSize: 20 }} />
-                )}
-                <Box sx={{ width: 48, height: 48, bgcolor: '#e8f5e9', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1.5 }}>
-                  <SchoolIcon sx={{ color: '#00A651', fontSize: 28 }} />
-                </Box>
-                <Typography fontWeight={700} color="#0A1628">Sou Estudante</Typography>
-                <Typography variant="caption" color="text.secondary">Acesso a cursos e notas</Typography>
-              </CardActionArea>
-            </Card>
-
-            <Card
-              onClick={() => setRole('professor')}
-              sx={{
-                flex: 1, cursor: 'pointer',
-                border: role === 'professor' ? '2px solid #00A651' : '2px solid #e0e0e0',
-                bgcolor: 'white', borderRadius: 3,
-                boxShadow: role === 'professor' ? '0 4px 20px rgba(0,166,81,0.15)' : 'none',
-                transition: 'all 0.2s', position: 'relative',
-              }}
-            >
-              <CardActionArea sx={{ p: 2.5 }}>
-                {role === 'professor' && (
-                  <CheckIcon sx={{ position: 'absolute', top: 12, right: 12, color: '#00A651', fontSize: 20 }} />
-                )}
-                <Box sx={{ width: 48, height: 48, bgcolor: '#f5f5f5', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1.5 }}>
-                  <EditIcon sx={{ color: '#9e9e9e', fontSize: 24 }} />
-                </Box>
-                <Typography fontWeight={700} color="#0A1628">Painel do Professor</Typography>
-                <Typography variant="caption" color="text.secondary">Gestão de turmas e notas</Typography>
-              </CardActionArea>
-            </Card>
-          </Box>
-
           {error && (
-            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
-              {error}
-            </Alert>
+            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
           )}
 
-          {/* Common Fields */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <FieldLabel label="Nome Completo">
               <TextField
-                fullWidth placeholder="Ex: Alex Alfai"
+                fullWidth placeholder="Ex: Maria António"
                 value={fullname} onChange={(e) => setFullname(e.target.value)}
-                disabled={loading}
-                sx={fieldStyle}
+                disabled={loading} sx={fieldStyle}
               />
             </FieldLabel>
 
@@ -213,11 +133,9 @@ const Register: React.FC = () => {
                 disabled={loading}
                 error={!!nTelefone && !phoneCheck.ok}
                 helperText={
-                  !nTelefone
-                    ? 'Moçambique · prefixos 82–87'
-                    : phoneCheck.ok
-                      ? `Válido · ${carrier ?? 'Operadora desconhecida'}`
-                      : phoneCheck.message
+                  !nTelefone ? 'Moçambique · prefixos 82–87'
+                    : phoneCheck.ok ? `Válido · ${carrier ?? 'Operadora desconhecida'}`
+                    : phoneCheck.message
                 }
                 sx={fieldStyle}
               />
@@ -225,22 +143,18 @@ const Register: React.FC = () => {
 
             <FieldLabel label="Email">
               <TextField
-                fullWidth placeholder="nome@dominio.com"
-                type="email"
+                fullWidth placeholder="nome@dominio.com" type="email"
                 value={email} onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
                 error={!!email && !emailCheck.ok}
-                helperText={
-                  !email ? ' ' : (emailCheck.ok ? 'Email válido' : emailCheck.message)
-                }
+                helperText={!email ? ' ' : (emailCheck.ok ? 'Email válido' : emailCheck.message)}
                 sx={fieldStyle}
               />
             </FieldLabel>
 
             <FieldLabel label="Instituição de Ensino">
               <Select
-                fullWidth displayEmpty
-                value={schoolId}
+                fullWidth displayEmpty value={schoolId}
                 onChange={(e) => setSchoolId(e.target.value as number)}
                 disabled={loading}
                 sx={{ bgcolor: '#eaecef', borderRadius: 2.5, '& .MuiOutlinedInput-notchedOutline': { border: 'none' } }}
@@ -252,63 +166,34 @@ const Register: React.FC = () => {
               </Select>
             </FieldLabel>
 
-            {/* Student-specific fields */}
-            {role === 'student' && (
-              <>
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <Box sx={{ flex: 1 }}>
-                    <FieldLabel label="Ano/Classe (opcional)">
-                      <TextField
-                        fullWidth placeholder="Ex: 12ª"
-                        value={grade} onChange={(e) => setGrade(e.target.value)}
-                        disabled={loading}
-                        sx={fieldStyle}
-                      />
-                    </FieldLabel>
-                  </Box>
-                  <Box sx={{ flex: 1 }}>
-                    <FieldLabel label="Idade (opcional)">
-                      <TextField
-                        fullWidth placeholder="Ex: 20"
-                        type="number"
-                        value={age}
-                        onChange={(e) => setAge(e.target.value ? Number(e.target.value) : '')}
-                        disabled={loading}
-                        sx={fieldStyle}
-                      />
-                    </FieldLabel>
-                  </Box>
-                </Box>
-              </>
-            )}
-
-            {/* Professor-specific fields */}
-            {role === 'professor' && (
-              <>
-                <FieldLabel label="Departamento (opcional)">
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Box sx={{ flex: 1 }}>
+                <FieldLabel label="Ano/Classe (opcional)">
                   <TextField
-                    fullWidth placeholder="Ex: Matemática"
-                    value={department} onChange={(e) => setDepartment(e.target.value)}
-                    disabled={loading}
-                    sx={fieldStyle}
+                    fullWidth placeholder="Ex: 12ª"
+                    value={grade} onChange={(e) => setGrade(e.target.value)}
+                    disabled={loading} sx={fieldStyle}
                   />
                 </FieldLabel>
-                <FieldLabel label="Especialização (opcional)">
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <FieldLabel label="Idade (opcional)">
                   <TextField
-                    fullWidth placeholder="Ex: Álgebra Linear"
-                    value={specialization} onChange={(e) => setSpecialization(e.target.value)}
-                    disabled={loading}
-                    sx={fieldStyle}
+                    fullWidth placeholder="Ex: 20" type="number"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value ? Number(e.target.value) : '')}
+                    disabled={loading} sx={fieldStyle}
                   />
                 </FieldLabel>
-              </>
-            )}
+              </Box>
+            </Box>
 
             <FieldLabel label="Senha">
               <TextField
                 fullWidth placeholder="Mínimo 6 caracteres"
                 type={showPassword ? 'text' : 'password'}
                 value={password} onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleRegister(); }}
                 disabled={loading}
                 InputProps={{
                   endAdornment: (

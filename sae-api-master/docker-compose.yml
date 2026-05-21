@@ -1,121 +1,294 @@
 version: '3.8'
 
+# ============================================================
+# SAE Fullstack — Docker Compose (Produção)
+# Execução: docker compose up -d --build
+# Variáveis:  cp .env.example .env && editar .env antes de subir
+# ============================================================
+
 services:
-  # Base de Dados Relacional (PostgreSQL)
+
+  # ─── INFRAESTRUTURA ─────────────────────────────────────
+
   postgres:
-    image: postgres:15
+    image: postgres:15-alpine
     container_name: sae-postgres
     environment:
-      - POSTGRES_DB=sae_db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    ports:
-      - "5432:5432"
-    networks:
-      - sae-network
+      POSTGRES_DB: sae_db
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
-  # Base de Dados Documental (MongoDB)
-  mongodb:
-    image: mongo:latest
-    container_name: sae-mongodb
-    ports:
-      - "27017:27017"
     networks:
       - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d sae_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  mongodb:
+    image: mongo:7
+    container_name: sae-mongodb
     volumes:
       - mongodb_data:/data/db
-
-  # Camada de Cache (Redis)
-  redis:
-    image: redis:alpine
-    container_name: sae-redis
-    ports:
-      - "6379:6379"
     networks:
       - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
-  # Object Storage (MinIO)
+  redis:
+    image: redis:7-alpine
+    container_name: sae-redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   minio:
     image: minio/minio
     container_name: sae-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-admin123}
     ports:
       - "9000:9000"
       - "9001:9001"
-    environment:
-      - MINIO_ROOT_USER=admin
-      - MINIO_ROOT_PASSWORD=admin123
     volumes:
       - minio_data:/data
-    command: server /data --console-address ":9001"
     networks:
       - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
-  # Message Broker (RabbitMQ)
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:3-management-alpine
     container_name: sae-rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
     environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - sae-network
-  # Microserviços
-  # sae-auth-service:
-  #   build: ./sae-auth-service
-  #   container_name: sae-auth-service
-  #   ports:
-  #     - "8081:8081"
-  #   environment:
-  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/sae_db
-  #     - SPRING_DATASOURCE_USERNAME=postgres
-  #     - SPRING_DATASOURCE_PASSWORD=postgres
-  #     - SPRING_DATA_REDIS_HOST=redis
-  #   depends_on:
-  #     - postgres
-  #     - redis
-  #   networks:
-  #     - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
-  # sae-content-service:
-  #   build: ./sae-content-service
-  #   container_name: sae-content-service
-  #   ports:
-  #     - "8082:8082"
-  #   environment:
-  #     - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/sae_content
-  #   depends_on:
-  #     - mongodb
-  #   networks:
-  #     - sae-network
+  # ─── MICROSERVIÇOS ──────────────────────────────────────
 
-  # sae-forum-service:
-  #   build: ./sae-forum-service
-  #   container_name: sae-forum-service
-  #   ports:
-  #     - "8083:8083"
-  #   environment:
-  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/sae_db
-  #     - SPRING_DATASOURCE_USERNAME=postgres
-  #     - SPRING_DATASOURCE_PASSWORD=postgres
-  #   depends_on:
-  #     - postgres
-  #   networks:
-  #     - sae-network
+  sae-auth-service:
+    build:
+      context: .
+      dockerfile: sae-auth-service/Dockerfile
+    container_name: sae-auth-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      OZEKI_URL: ${OZEKI_URL:-localhost}
+      OZEKI_PORT: ${OZEKI_PORT:-9500}
+      FRONTEND_URL: ${FRONTEND_URL:-*}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
 
-  # sae-api-gateway:
-  #   build: ./sae-api-gateway
-  #   container_name: sae-api-gateway
-  #   ports:
-  #     - "8080:8080"
-  #   depends_on:
-  #     - sae-auth-service
-  #   networks:
-  #     - sae-network
+  sae-academic-service:
+    build:
+      context: .
+      dockerfile: sae-academic-service/Dockerfile
+    container_name: sae-academic-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  sae-content-service:
+    build:
+      context: .
+      dockerfile: sae-content-service/Dockerfile
+    container_name: sae-content-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-admin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-admin123}
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  sae-forum-service:
+    build:
+      context: .
+      dockerfile: sae-forum-service/Dockerfile
+    container_name: sae-forum-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_ENABLED: ${MAIL_ENABLED:-false}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      sae-auth-service:
+        condition: service_healthy
+      sae-academic-service:
+        condition: service_healthy
+    networks:
+      - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  sae-quiz-service:
+    build:
+      context: .
+      dockerfile: sae-quiz-service/Dockerfile
+    container_name: sae-quiz-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      sae-content-service:
+        condition: service_healthy
+      sae-academic-service:
+        condition: service_healthy
+    networks:
+      - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  sae-api-gateway:
+    build:
+      context: .
+      dockerfile: sae-api-gateway/Dockerfile
+    container_name: sae-api-gateway
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      FRONTEND_URL: ${FRONTEND_URL:-*}
+    ports:
+      - "8080:8080"
+    depends_on:
+      sae-auth-service:
+        condition: service_healthy
+      sae-content-service:
+        condition: service_healthy
+      sae-forum-service:
+        condition: service_healthy
+      sae-quiz-service:
+        condition: service_healthy
+      sae-academic-service:
+        condition: service_healthy
+    networks:
+      - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  sae-frontend:
+    build:
+      context: ../sae-frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_GATEWAY_URL: ${VITE_API_GATEWAY_URL:-http://localhost:8080}
+    container_name: sae-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      sae-api-gateway:
+        condition: service_healthy
+    networks:
+      - sae-network
+    restart: unless-stopped
 
 networks:
   sae-network:
@@ -124,4 +297,6 @@ networks:
 volumes:
   postgres_data:
   mongodb_data:
+  redis_data:
   minio_data:
+  rabbitmq_data:

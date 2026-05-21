@@ -292,6 +292,7 @@ const Leitor: React.FC = () => {
             const chatPath = isAuthed ? '/chat' : '/biblioteca/chat';
             navigate(chatPath, {
               state: {
+                contentId: content.id,
                 bookTitle: content.title,
                 subject: content.discipline ?? undefined,
                 initialMessage: `Tenho uma dúvida sobre o livro "${content.title}"${content.discipline ? ` (${content.discipline})` : ''}. `,

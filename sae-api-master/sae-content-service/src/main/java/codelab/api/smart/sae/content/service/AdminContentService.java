@@ -6,6 +6,7 @@ import codelab.api.smart.sae.content.model.jpa.ContentLog;
 import codelab.api.smart.sae.content.repository.ContentRepository;
 import codelab.api.smart.sae.content.repository.jpa.ContentLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
@@ -28,16 +29,18 @@ public class AdminContentService {
     @Autowired
     private EventPublisherService eventPublisherService;
 
+    @Autowired
+    private AiIngestService aiIngestService;
 
     public Content uploadContent(MultipartFile file, Content metadata, String adminUser) {
         try {
             byte[] fileBytes = file.getBytes();
             String fileName = fileStorageService.saveFile(fileBytes, file.getOriginalFilename(), file.getContentType());
-            
+
             // Processamento Automático do PDF
             int pages = pdfProcessorService.getPageCount(fileBytes);
             byte[] thumbBytes = pdfProcessorService.generateThumbnail(fileBytes);
-            
+
             String thumbName = null;
             if (thumbBytes != null) {
                 String safeBase = (file.getOriginalFilename() == null ? "cover" : file.getOriginalFilename())
@@ -53,9 +56,9 @@ public class AdminContentService {
             metadata.setUploadedBy(adminUser);
             metadata.setUploadedByRole("ADMIN");
             metadata.setUploadedByName("admin");
-            
+
             Content saved = contentRepository.save(metadata);
-            
+
             // Log de Auditoria
             ContentLog log = new ContentLog();
             log.setContentId(saved.getId());
@@ -65,6 +68,10 @@ public class AdminContentService {
             contentLogRepository.save(log);
 
             eventPublisherService.publishContentCreated(saved.getId(), saved.getTitle(), "admin");
+
+            // Indexar PDF no AI service (ChromaDB) para RAG
+            aiIngestService.ingestAsync(saved);
+
             return saved;
         } catch (Exception e) {
             throw new RuntimeException("Erro ao processar upload: " + e.getMessage(), e);
@@ -80,5 +87,16 @@ public class AdminContentService {
             uploadedContents.add(uploadContent(file, metadata, adminUser));
         }
         return uploadedContents;
+    }
+
+    /** Re-indexa todos os PDFs existentes no AI service (ChromaDB). Assíncrono. */
+    public int reindexAllInAi() {
+        List<Content> all = contentRepository.findAll();
+        for (Content c : all) {
+            if (c.getFileUrl() != null) {
+                aiIngestService.ingestAsync(c);
+            }
+        }
+        return (int) all.stream().filter(c -> c.getFileUrl() != null).count();
     }
 }

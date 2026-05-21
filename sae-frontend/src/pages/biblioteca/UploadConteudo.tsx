@@ -14,21 +14,20 @@ import {
   LocalLibrary as EditorialIcon, Visibility as ReviewIcon,
 } from '@mui/icons-material';
 import {
-  uploadAsProfessor, uploadAsAdmin, listDisciplines,
-  type ContentMetadata, type Discipline, type Content,
+  uploadAsProfessor, uploadAsAdmin,
+  type ContentMetadata, type Content,
 } from '../../services/contentService';
+import {
+  classLevelService, subjectService,
+  type ClassLevelDTO, type SubjectDTO,
+} from '../../services/academicService';
 import { useAuth } from '../../context/AuthContext';
 
-// Níveis alinhados ao Sistema Nacional de Educação de Moçambique (SNE)
-const SNE_LEVELS = [
-  { value: 'Primário 1º Ciclo',   label: 'Primário · 1º Ciclo (1ª-2ª)' },
-  { value: 'Primário 2º Ciclo',   label: 'Primário · 2º Ciclo (3ª-5ª)' },
-  { value: 'Primário 3º Ciclo',   label: 'Primário · 3º Ciclo (6ª-7ª)' },
-  { value: 'Secundário 1º Ciclo', label: 'Secundário · 1º Ciclo (8ª-10ª)' },
-  { value: 'Secundário 2º Ciclo', label: 'Secundário · 2º Ciclo (11ª-12ª)' },
-  { value: 'Universitário',       label: 'Universitário' },
-  { value: 'EAD',                 label: 'Ensino à Distância (EAD)' },
-];
+// PDF.js v5 — worker bundled via Vite (?url) e API moderna.
+import * as pdfjs from 'pdfjs-dist';
+// @ts-expect-error - Vite resolve este import como URL no build
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl as string;
 
 const STEPS = [
   { label: 'Ficheiro',     icon: <DocIcon /> },
@@ -48,44 +47,96 @@ const UploadConteudo: React.FC = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [file, setFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [coverError, setCoverError] = useState<string | null>(null);
   const [meta, setMeta] = useState<ContentMetadata>({
-    title: '', description: '', discipline: '', level: 'Secundário 2º Ciclo',
+    title: '', description: '', discipline: '', level: '',
     year: new Date().getFullYear(), publisher: '',
     targetClassroomIds: [], targetForumIds: [],
   });
   const [tagsInput, setTagsInput] = useState('');
   const [classroomsInput, setClassroomsInput] = useState('');
 
-  const [disciplines, setDisciplines] = useState<Discipline[]>([]);
+  // Currículo (vindo da BD)
+  const [classLevels, setClassLevels] = useState<ClassLevelDTO[]>([]);
+  const [classLevelId, setClassLevelId] = useState<number | ''>('');
+  const [subjects, setSubjects] = useState<SubjectDTO[]>([]);
+  const [loadingLevels, setLoadingLevels] = useState(true);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<Content | null>(null);
 
+  // 1) Buscar níveis de ensino da BD
   useEffect(() => {
-    listDisciplines().then(setDisciplines).catch(() => undefined);
+    setLoadingLevels(true);
+    classLevelService.findAll()
+      .then(levels => {
+        setClassLevels(levels);
+      })
+      .catch(err => {
+        console.error('Falha ao carregar níveis:', err);
+        setError('Não foi possível carregar os níveis de ensino.');
+      })
+      .finally(() => setLoadingLevels(false));
   }, []);
 
-  // Gera preview da capa (1ª página) usando pdf.js logo após upload
+  // 2) Cascade — quando muda o nível, buscar as disciplinas (subjects) desse nível
   useEffect(() => {
-    if (!file) { setCoverPreview(null); return; }
+    if (classLevelId === '') {
+      setSubjects([]);
+      return;
+    }
+    setLoadingSubjects(true);
+    subjectService.findByClassLevel(classLevelId as number)
+      .then(subs => {
+        // Distinct por nome (a BD pode ter o mesmo subject ligado a vários classLevels)
+        const seen = new Set<string>();
+        const unique = subs.filter(s => {
+          const key = s.name.toLowerCase();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        setSubjects(unique);
+      })
+      .catch(err => {
+        console.error('Falha ao carregar disciplinas:', err);
+        setSubjects([]);
+      })
+      .finally(() => setLoadingSubjects(false));
+  }, [classLevelId]);
+
+  // Gera preview da capa (1ª página) usando PDF.js v5
+  useEffect(() => {
+    if (!file) { setCoverPreview(null); setCoverError(null); return; }
     let cancelled = false;
+    setCoverPreview(null);
+    setCoverError(null);
     (async () => {
       try {
-        const pdfjs: any = await import('pdfjs-dist');
-        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
         const buf = await file.arrayBuffer();
         const pdf = await pdfjs.getDocument({ data: buf }).promise;
         const page = await pdf.getPage(1);
-        const viewport = page.getViewport({ scale: 0.6 });
+        const viewport = page.getViewport({ scale: 0.8 });
         const canvas = document.createElement('canvas');
         canvas.width = viewport.width;
         canvas.height = viewport.height;
         const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        await page.render({ canvasContext: ctx, viewport }).promise;
+        if (!ctx) throw new Error('Canvas não suportado');
+        // PDF.js v5 — passa o canvas DOM E o canvasContext (ambos exigidos consoante a versão)
+        await page.render({
+          canvas,
+          canvasContext: ctx,
+          viewport,
+        } as any).promise;
         if (!cancelled) setCoverPreview(canvas.toDataURL('image/jpeg', 0.85));
-      } catch {
-        if (!cancelled) setCoverPreview(null);
+      } catch (err: any) {
+        console.error('Falha ao gerar capa:', err);
+        if (!cancelled) {
+          setCoverPreview(null);
+          setCoverError(err?.message || 'Não foi possível gerar a capa');
+        }
       }
     })();
     return () => { cancelled = true; };
@@ -142,10 +193,11 @@ const UploadConteudo: React.FC = () => {
       setSuccess(result);
       // Reset
       setActiveStep(0);
-      setFile(null); setCoverPreview(null);
+      setFile(null); setCoverPreview(null); setCoverError(null);
       setTagsInput(''); setClassroomsInput('');
+      setClassLevelId(''); setSubjects([]);
       setMeta({
-        title: '', description: '', discipline: '', level: 'Secundário 2º Ciclo',
+        title: '', description: '', discipline: '', level: '',
         year: new Date().getFullYear(), publisher: '',
         targetClassroomIds: [], targetForumIds: [],
       });
@@ -260,10 +312,26 @@ const UploadConteudo: React.FC = () => {
                         {!coverPreview && (
                           <Box sx={{
                             position: 'absolute', inset: 0,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            display: 'flex', flexDirection: 'column',
+                            alignItems: 'center', justifyContent: 'center',
                             color: '#fff', fontSize: '0.75rem', textAlign: 'center', p: 2,
+                            gap: 1,
                           }}>
-                            A gerar capa…
+                            {coverError ? (
+                              <>
+                                <Typography variant="caption" sx={{ color: '#FCA5A5', fontWeight: 700 }}>
+                                  Falha ao gerar capa
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: '#fff', opacity: 0.7, fontSize: '0.65rem' }}>
+                                  {coverError}
+                                </Typography>
+                              </>
+                            ) : (
+                              <>
+                                <LinearProgress sx={{ width: '60%', bgcolor: 'rgba(255,255,255,0.2)' }} />
+                                <Typography variant="caption">A gerar capa…</Typography>
+                              </>
+                            )}
                           </Box>
                         )}
                         <Chip
@@ -346,24 +414,52 @@ const UploadConteudo: React.FC = () => {
                 <Box>
                   <Typography variant="h6" fontWeight={700} mb={0.5}>3. Currículo (SNE)</Typography>
                   <Typography variant="body2" color="text.secondary" mb={2}>
-                    Sistema Nacional de Educação de Moçambique — define disciplina e nível de ensino.
+                    Define primeiro o nível de ensino — as disciplinas disponíveis para esse nível são carregadas
+                    automaticamente da base de dados.
                   </Typography>
                   <Stack spacing={2}>
                     <TextField
-                      select label="Disciplina" fullWidth value={meta.discipline ?? ''}
+                      select label="Nível de Ensino" fullWidth
+                      value={classLevelId === '' ? '' : String(classLevelId)}
+                      disabled={loadingLevels}
+                      helperText={loadingLevels ? 'A carregar níveis…' : `${classLevels.length} níveis na BD`}
+                      onChange={e => {
+                        const id = e.target.value === '' ? '' : Number(e.target.value);
+                        setClassLevelId(id);
+                        const found = classLevels.find(l => l.id === id);
+                        setMeta(m => ({
+                          ...m,
+                          level: found?.name ?? '',
+                          discipline: '', // reset disciplina quando muda o nível
+                        }));
+                      }}
+                    >
+                      <MenuItem value="">— Selecciona o nível —</MenuItem>
+                      {classLevels.map(l => (
+                        <MenuItem key={l.id} value={String(l.id)}>
+                          {l.name}{l.cycle ? ` · ${l.cycle}` : ''}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+
+                    <TextField
+                      select label="Disciplina" fullWidth
+                      value={meta.discipline ?? ''}
+                      disabled={classLevelId === '' || loadingSubjects}
+                      helperText={
+                        classLevelId === ''
+                          ? 'Escolhe primeiro o nível'
+                          : loadingSubjects
+                            ? 'A carregar disciplinas…'
+                            : subjects.length === 0
+                              ? 'Sem disciplinas para este nível na BD'
+                              : `${subjects.length} disciplinas para este nível`
+                      }
                       onChange={e => setMeta({ ...meta, discipline: e.target.value })}
                     >
                       <MenuItem value="">— Nenhuma —</MenuItem>
-                      {disciplines.map(d => (
-                        <MenuItem key={d.id} value={d.name}>{d.name}</MenuItem>
-                      ))}
-                    </TextField>
-                    <TextField
-                      select label="Nível de Ensino" fullWidth value={meta.level ?? ''}
-                      onChange={e => setMeta({ ...meta, level: e.target.value })}
-                    >
-                      {SNE_LEVELS.map(l => (
-                        <MenuItem key={l.value} value={l.value}>{l.label}</MenuItem>
+                      {subjects.map(s => (
+                        <MenuItem key={s.id} value={s.name}>{s.name}</MenuItem>
                       ))}
                     </TextField>
                   </Stack>

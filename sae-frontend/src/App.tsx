@@ -8,6 +8,7 @@ import theme from './styles/theme';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Register from './pages/auth/Register';
 import Login from './pages/auth/Login';
+import ResetPassword from './pages/auth/ResetPassword';
 import MainApp from './pages/app/MainApp';
 import MainLayout from './components/Layout/MainLayout';
 import PublicLibraryLayout from './components/Layout/PublicLibraryLayout';
@@ -104,6 +105,7 @@ function App() {
             <Route path="/home" element={<RootRedirect />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* ── Acesso público (sem login) — TdR ─────────────── */}
             <Route path="/biblioteca" element={

@@ -282,14 +282,17 @@ JOIN app_transaction a ON a.code = v.tx_code
 ON CONFLICT (role, app_transaction_id) DO NOTHING;
 
 -- =============================================================================
--- BLOCO 15 — Escola de teste (ESG)
+-- BLOCO 15 — Escolas de Nampula
 -- =============================================================================
 ALTER TABLE IF EXISTS ac_subject ADD COLUMN IF NOT EXISTS class_level_id BIGINT NULL;
 ALTER TABLE IF EXISTS ac_subject ADD COLUMN IF NOT EXISTS school_id       BIGINT NULL;
 
-INSERT INTO ac_school (id, status, created_by, created_date, last_modified_by, last_modified_date, name, city)
-VALUES (4, 1, 0, NOW(), 0, NOW(), 'Escola Secundária SAE', 'Maputo')
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO ac_school (id, status, created_by, created_date, last_modified_by, last_modified_date, name, city) VALUES
+(4, 1, 0, NOW(), 0, NOW(), 'Escola Secundária Geral de Nampula', 'Nampula'),
+(5, 1, 0, NOW(), 0, NOW(), 'Escola Secundária Josina Machel',    'Nampula'),
+(6, 1, 0, NOW(), 0, NOW(), 'Escola Secundária Napipine',         'Nampula'),
+(7, 1, 0, NOW(), 0, NOW(), 'Escola Secundária Mutauanha',        'Nampula')
+ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, city = EXCLUDED.city;
 
 -- =============================================================================
 -- BLOCO 16 — Níveis de Ensino ESG (8ª–12ª Classe) com campo de ciclo
@@ -315,6 +318,7 @@ ON CONFLICT (id) DO NOTHING;
 SELECT setval(pg_get_serial_sequence('ac_class_level', 'id'), GREATEST((SELECT MAX(id) FROM ac_class_level), 15));
 
 INSERT INTO ac_classroom (id, status, created_by, created_date, last_modified_by, last_modified_date, name, school_id, class_level_id, shift, turma_group) VALUES
+-- ESG Nampula (id=4)
 (21, 1, 0, NOW(), 0, NOW(), 'Turma A - 8ª Classe',                      4, 11, 'Manhã', NULL),
 (22, 1, 0, NOW(), 0, NOW(), 'Turma A - 9ª Classe',                      4, 12, 'Manhã', NULL),
 (23, 1, 0, NOW(), 0, NOW(), 'Turma A - 10ª Classe',                     4, 13, 'Manhã', NULL),
@@ -323,7 +327,37 @@ INSERT INTO ac_classroom (id, status, created_by, created_date, last_modified_by
 (26, 1, 0, NOW(), 0, NOW(), 'Turma C - 11ª Classe (Ciências Exactas)', 4, 14, 'Manhã', 'C'),
 (27, 1, 0, NOW(), 0, NOW(), 'Turma A - 12ª Classe (Letras)',            4, 15, 'Manhã', 'A'),
 (28, 1, 0, NOW(), 0, NOW(), 'Turma B - 12ª Classe (Ciências Bio)',      4, 15, 'Manhã', 'B'),
-(29, 1, 0, NOW(), 0, NOW(), 'Turma C - 12ª Classe (Ciências Exactas)', 4, 15, 'Manhã', 'C')
+(29, 1, 0, NOW(), 0, NOW(), 'Turma C - 12ª Classe (Ciências Exactas)', 4, 15, 'Manhã', 'C'),
+-- ES Josina Machel (id=5)
+(31, 1, 0, NOW(), 0, NOW(), 'Turma A - 8ª Classe',                      5, 11, 'Manhã', NULL),
+(32, 1, 0, NOW(), 0, NOW(), 'Turma A - 9ª Classe',                      5, 12, 'Manhã', NULL),
+(33, 1, 0, NOW(), 0, NOW(), 'Turma A - 10ª Classe',                     5, 13, 'Manhã', NULL),
+(34, 1, 0, NOW(), 0, NOW(), 'Turma A - 11ª Classe (Letras)',            5, 14, 'Manhã', 'A'),
+(35, 1, 0, NOW(), 0, NOW(), 'Turma B - 11ª Classe (Ciências Bio)',      5, 14, 'Manhã', 'B'),
+(36, 1, 0, NOW(), 0, NOW(), 'Turma C - 11ª Classe (Ciências Exactas)', 5, 14, 'Manhã', 'C'),
+(37, 1, 0, NOW(), 0, NOW(), 'Turma A - 12ª Classe (Letras)',            5, 15, 'Manhã', 'A'),
+(38, 1, 0, NOW(), 0, NOW(), 'Turma B - 12ª Classe (Ciências Bio)',      5, 15, 'Manhã', 'B'),
+(39, 1, 0, NOW(), 0, NOW(), 'Turma C - 12ª Classe (Ciências Exactas)', 5, 15, 'Manhã', 'C'),
+-- ES Napipine (id=6)
+(41, 1, 0, NOW(), 0, NOW(), 'Turma A - 8ª Classe',                      6, 11, 'Manhã', NULL),
+(42, 1, 0, NOW(), 0, NOW(), 'Turma A - 9ª Classe',                      6, 12, 'Manhã', NULL),
+(43, 1, 0, NOW(), 0, NOW(), 'Turma A - 10ª Classe',                     6, 13, 'Manhã', NULL),
+(44, 1, 0, NOW(), 0, NOW(), 'Turma A - 11ª Classe (Letras)',            6, 14, 'Manhã', 'A'),
+(45, 1, 0, NOW(), 0, NOW(), 'Turma B - 11ª Classe (Ciências Bio)',      6, 14, 'Manhã', 'B'),
+(46, 1, 0, NOW(), 0, NOW(), 'Turma C - 11ª Classe (Ciências Exactas)', 6, 14, 'Manhã', 'C'),
+(47, 1, 0, NOW(), 0, NOW(), 'Turma A - 12ª Classe (Letras)',            6, 15, 'Manhã', 'A'),
+(48, 1, 0, NOW(), 0, NOW(), 'Turma B - 12ª Classe (Ciências Bio)',      6, 15, 'Manhã', 'B'),
+(49, 1, 0, NOW(), 0, NOW(), 'Turma C - 12ª Classe (Ciências Exactas)', 6, 15, 'Manhã', 'C'),
+-- ES Mutauanha (id=7)
+(51, 1, 0, NOW(), 0, NOW(), 'Turma A - 8ª Classe',                      7, 11, 'Manhã', NULL),
+(52, 1, 0, NOW(), 0, NOW(), 'Turma A - 9ª Classe',                      7, 12, 'Manhã', NULL),
+(53, 1, 0, NOW(), 0, NOW(), 'Turma A - 10ª Classe',                     7, 13, 'Manhã', NULL),
+(54, 1, 0, NOW(), 0, NOW(), 'Turma A - 11ª Classe (Letras)',            7, 14, 'Manhã', 'A'),
+(55, 1, 0, NOW(), 0, NOW(), 'Turma B - 11ª Classe (Ciências Bio)',      7, 14, 'Manhã', 'B'),
+(56, 1, 0, NOW(), 0, NOW(), 'Turma C - 11ª Classe (Ciências Exactas)', 7, 14, 'Manhã', 'C'),
+(57, 1, 0, NOW(), 0, NOW(), 'Turma A - 12ª Classe (Letras)',            7, 15, 'Manhã', 'A'),
+(58, 1, 0, NOW(), 0, NOW(), 'Turma B - 12ª Classe (Ciências Bio)',      7, 15, 'Manhã', 'B'),
+(59, 1, 0, NOW(), 0, NOW(), 'Turma C - 12ª Classe (Ciências Exactas)', 7, 15, 'Manhã', 'C')
 ON CONFLICT (id) DO NOTHING;
 
 -- Garante que níveis já existentes ficam com o ciclo correcto
@@ -349,9 +383,9 @@ CREATE TABLE IF NOT EXISTS ac_academic_group (
 );
 
 INSERT INTO ac_academic_group (id, status, created_by, created_date, last_modified_by, last_modified_date, name, code, school_id) VALUES
-(1, 1, 0, NOW(), 0, NOW(), 'Grupo A — Letras com Matemática',  'A', 4),
-(2, 1, 0, NOW(), 0, NOW(), 'Grupo B — Ciências com Biologia',  'B', 4),
-(3, 1, 0, NOW(), 0, NOW(), 'Grupo C — Ciências Exactas',        'C', 4)
+(1, 1, 0, NOW(), 0, NOW(), 'Grupo A — Letras com Matemática',  'A', NULL),
+(2, 1, 0, NOW(), 0, NOW(), 'Grupo B — Ciências com Biologia',  'B', NULL),
+(3, 1, 0, NOW(), 0, NOW(), 'Grupo C — Ciências Exactas',        'C', NULL)
 ON CONFLICT (id) DO NOTHING;
 
 SELECT setval(pg_get_serial_sequence('ac_academic_group', 'id'), 10);
@@ -366,6 +400,7 @@ ALTER TABLE IF EXISTS ac_classroom ADD COLUMN IF NOT EXISTS academic_year     VA
 
 INSERT INTO ac_classroom (id, status, created_by, created_date, last_modified_by, last_modified_date,
                           name, school_id, class_level_id, shift, academic_year, turma_group, academic_group_id) VALUES
+-- ESG Nampula (id=4)
 (21, 1, 0, NOW(), 0, NOW(), 'Turma A - 8ª Classe',                      4, 11, 'Manhã', '2025', NULL, NULL),
 (22, 1, 0, NOW(), 0, NOW(), 'Turma A - 9ª Classe',                      4, 12, 'Manhã', '2025', NULL, NULL),
 (23, 1, 0, NOW(), 0, NOW(), 'Turma A - 10ª Classe',                     4, 13, 'Manhã', '2025', NULL, NULL),
@@ -374,15 +409,48 @@ INSERT INTO ac_classroom (id, status, created_by, created_date, last_modified_by
 (26, 1, 0, NOW(), 0, NOW(), 'Turma C - 11ª Classe (Ciências Exactas)', 4, 14, 'Manhã', '2025', 'C',  3),
 (27, 1, 0, NOW(), 0, NOW(), 'Turma A - 12ª Classe (Letras)',            4, 15, 'Manhã', '2025', 'A',  1),
 (28, 1, 0, NOW(), 0, NOW(), 'Turma B - 12ª Classe (Ciências Bio)',      4, 15, 'Manhã', '2025', 'B',  2),
-(29, 1, 0, NOW(), 0, NOW(), 'Turma C - 12ª Classe (Ciências Exactas)', 4, 15, 'Manhã', '2025', 'C',  3)
-ON CONFLICT (id) DO NOTHING;
+(29, 1, 0, NOW(), 0, NOW(), 'Turma C - 12ª Classe (Ciências Exactas)', 4, 15, 'Manhã', '2025', 'C',  3),
+-- ES Josina Machel (id=5)
+(31, 1, 0, NOW(), 0, NOW(), 'Turma A - 8ª Classe',                      5, 11, 'Manhã', '2025', NULL, NULL),
+(32, 1, 0, NOW(), 0, NOW(), 'Turma A - 9ª Classe',                      5, 12, 'Manhã', '2025', NULL, NULL),
+(33, 1, 0, NOW(), 0, NOW(), 'Turma A - 10ª Classe',                     5, 13, 'Manhã', '2025', NULL, NULL),
+(34, 1, 0, NOW(), 0, NOW(), 'Turma A - 11ª Classe (Letras)',            5, 14, 'Manhã', '2025', 'A',  1),
+(35, 1, 0, NOW(), 0, NOW(), 'Turma B - 11ª Classe (Ciências Bio)',      5, 14, 'Manhã', '2025', 'B',  2),
+(36, 1, 0, NOW(), 0, NOW(), 'Turma C - 11ª Classe (Ciências Exactas)', 5, 14, 'Manhã', '2025', 'C',  3),
+(37, 1, 0, NOW(), 0, NOW(), 'Turma A - 12ª Classe (Letras)',            5, 15, 'Manhã', '2025', 'A',  1),
+(38, 1, 0, NOW(), 0, NOW(), 'Turma B - 12ª Classe (Ciências Bio)',      5, 15, 'Manhã', '2025', 'B',  2),
+(39, 1, 0, NOW(), 0, NOW(), 'Turma C - 12ª Classe (Ciências Exactas)', 5, 15, 'Manhã', '2025', 'C',  3),
+-- ES Napipine (id=6)
+(41, 1, 0, NOW(), 0, NOW(), 'Turma A - 8ª Classe',                      6, 11, 'Manhã', '2025', NULL, NULL),
+(42, 1, 0, NOW(), 0, NOW(), 'Turma A - 9ª Classe',                      6, 12, 'Manhã', '2025', NULL, NULL),
+(43, 1, 0, NOW(), 0, NOW(), 'Turma A - 10ª Classe',                     6, 13, 'Manhã', '2025', NULL, NULL),
+(44, 1, 0, NOW(), 0, NOW(), 'Turma A - 11ª Classe (Letras)',            6, 14, 'Manhã', '2025', 'A',  1),
+(45, 1, 0, NOW(), 0, NOW(), 'Turma B - 11ª Classe (Ciências Bio)',      6, 14, 'Manhã', '2025', 'B',  2),
+(46, 1, 0, NOW(), 0, NOW(), 'Turma C - 11ª Classe (Ciências Exactas)', 6, 14, 'Manhã', '2025', 'C',  3),
+(47, 1, 0, NOW(), 0, NOW(), 'Turma A - 12ª Classe (Letras)',            6, 15, 'Manhã', '2025', 'A',  1),
+(48, 1, 0, NOW(), 0, NOW(), 'Turma B - 12ª Classe (Ciências Bio)',      6, 15, 'Manhã', '2025', 'B',  2),
+(49, 1, 0, NOW(), 0, NOW(), 'Turma C - 12ª Classe (Ciências Exactas)', 6, 15, 'Manhã', '2025', 'C',  3),
+-- ES Mutauanha (id=7)
+(51, 1, 0, NOW(), 0, NOW(), 'Turma A - 8ª Classe',                      7, 11, 'Manhã', '2025', NULL, NULL),
+(52, 1, 0, NOW(), 0, NOW(), 'Turma A - 9ª Classe',                      7, 12, 'Manhã', '2025', NULL, NULL),
+(53, 1, 0, NOW(), 0, NOW(), 'Turma A - 10ª Classe',                     7, 13, 'Manhã', '2025', NULL, NULL),
+(54, 1, 0, NOW(), 0, NOW(), 'Turma A - 11ª Classe (Letras)',            7, 14, 'Manhã', '2025', 'A',  1),
+(55, 1, 0, NOW(), 0, NOW(), 'Turma B - 11ª Classe (Ciências Bio)',      7, 14, 'Manhã', '2025', 'B',  2),
+(56, 1, 0, NOW(), 0, NOW(), 'Turma C - 11ª Classe (Ciências Exactas)', 7, 14, 'Manhã', '2025', 'C',  3),
+(57, 1, 0, NOW(), 0, NOW(), 'Turma A - 12ª Classe (Letras)',            7, 15, 'Manhã', '2025', 'A',  1),
+(58, 1, 0, NOW(), 0, NOW(), 'Turma B - 12ª Classe (Ciências Bio)',      7, 15, 'Manhã', '2025', 'B',  2),
+(59, 1, 0, NOW(), 0, NOW(), 'Turma C - 12ª Classe (Ciências Exactas)', 7, 15, 'Manhã', '2025', 'C',  3)
+ON CONFLICT (id) DO UPDATE SET
+    academic_year     = EXCLUDED.academic_year,
+    academic_group_id = EXCLUDED.academic_group_id,
+    turma_group       = EXCLUDED.turma_group;
 
 -- Migra turmas já existentes que ainda não têm academic_group_id preenchido
 UPDATE ac_classroom
 SET academic_group_id = CASE turma_group WHEN 'A' THEN 1 WHEN 'B' THEN 2 WHEN 'C' THEN 3 END
 WHERE turma_group IS NOT NULL AND academic_group_id IS NULL;
 
-SELECT setval(pg_get_serial_sequence('ac_classroom', 'id'), 30);
+SELECT setval(pg_get_serial_sequence('ac_classroom', 'id'), 60);
 
 -- =============================================================================
 -- BLOCO 19 — Codes das disciplinas existentes
@@ -427,15 +495,17 @@ ALTER TABLE IF EXISTS ac_class_level_subject
 ALTER TABLE IF EXISTS ac_class_level_subject
     ADD COLUMN IF NOT EXISTS academic_group_id BIGINT REFERENCES ac_academic_group(id);
 
--- school_id=4 = Escola Secundária SAE (ESG)
+-- IDs 1–57: ESG Nampula (school_id=4)  |  101–157: Josina Machel (5)
+-- IDs 201–257: Napipine (6)            |  301–357: Mutauanha (7)
 INSERT INTO ac_class_level_subject (id, school_id, class_level_id, subject_id, turma_group, academic_group_id) VALUES
--- 8ª Classe — comum a todos (sem grupo)
+-- ─── ESG Nampula (school_id=4) ───────────────────────────────────────────────
+-- 8ª Classe — Mat, Port, Ingl, Hist, Geo, Bio
 ( 1, 4, 11,  1, NULL, NULL), ( 2, 4, 11,  2, NULL, NULL), ( 3, 4, 11,  7, NULL, NULL),
 ( 4, 4, 11,  5, NULL, NULL), ( 5, 4, 11, 11, NULL, NULL), ( 6, 4, 11,  6, NULL, NULL),
--- 9ª Classe — comum a todos
+-- 9ª Classe
 ( 7, 4, 12,  1, NULL, NULL), ( 8, 4, 12,  2, NULL, NULL), ( 9, 4, 12,  7, NULL, NULL),
 (10, 4, 12,  5, NULL, NULL), (11, 4, 12, 11, NULL, NULL), (12, 4, 12,  6, NULL, NULL),
--- 10ª Classe — comum + Física, Química, Informática
+-- 10ª Classe — + Fís, Quím, Inf
 (13, 4, 13,  1, NULL, NULL), (14, 4, 13,  2, NULL, NULL), (15, 4, 13,  7, NULL, NULL),
 (16, 4, 13,  5, NULL, NULL), (17, 4, 13, 11, NULL, NULL), (18, 4, 13,  6, NULL, NULL),
 (19, 4, 13,  3, NULL, NULL), (20, 4, 13,  4, NULL, NULL), (21, 4, 13,  8, NULL, NULL),
@@ -456,7 +526,94 @@ INSERT INTO ac_class_level_subject (id, school_id, class_level_id, subject_id, t
 (48, 4, 15, 12, 'B', 2), (49, 4, 15,  3, 'B', 2), (50, 4, 15,  4, 'B', 2), (51, 4, 15,  6, 'B', 2),
 -- 12ª Grupo C — Ciências Exactas
 (52, 4, 15,  2, 'C', 3), (53, 4, 15,  1, 'C', 3), (54, 4, 15,  7, 'C', 3),
-(55, 4, 15, 12, 'C', 3), (56, 4, 15,  3, 'C', 3), (57, 4, 15,  4, 'C', 3)
+(55, 4, 15, 12, 'C', 3), (56, 4, 15,  3, 'C', 3), (57, 4, 15,  4, 'C', 3),
+-- ─── ES Josina Machel (school_id=5) ──────────────────────────────────────────
+-- 8ª Classe
+(101, 5, 11,  1, NULL, NULL), (102, 5, 11,  2, NULL, NULL), (103, 5, 11,  7, NULL, NULL),
+(104, 5, 11,  5, NULL, NULL), (105, 5, 11, 11, NULL, NULL), (106, 5, 11,  6, NULL, NULL),
+-- 9ª Classe
+(107, 5, 12,  1, NULL, NULL), (108, 5, 12,  2, NULL, NULL), (109, 5, 12,  7, NULL, NULL),
+(110, 5, 12,  5, NULL, NULL), (111, 5, 12, 11, NULL, NULL), (112, 5, 12,  6, NULL, NULL),
+-- 10ª Classe
+(113, 5, 13,  1, NULL, NULL), (114, 5, 13,  2, NULL, NULL), (115, 5, 13,  7, NULL, NULL),
+(116, 5, 13,  5, NULL, NULL), (117, 5, 13, 11, NULL, NULL), (118, 5, 13,  6, NULL, NULL),
+(119, 5, 13,  3, NULL, NULL), (120, 5, 13,  4, NULL, NULL), (121, 5, 13,  8, NULL, NULL),
+-- 11ª Grupo A — Letras
+(122, 5, 14,  2, 'A', 1), (123, 5, 14,  1, 'A', 1), (124, 5, 14,  7, 'A', 1),
+(125, 5, 14, 12, 'A', 1), (126, 5, 14,  5, 'A', 1),
+-- 11ª Grupo B — Ciências Bio
+(127, 5, 14,  2, 'B', 2), (128, 5, 14,  1, 'B', 2), (129, 5, 14,  7, 'B', 2),
+(130, 5, 14, 12, 'B', 2), (131, 5, 14,  3, 'B', 2), (132, 5, 14,  4, 'B', 2), (133, 5, 14,  6, 'B', 2),
+-- 11ª Grupo C — Ciências Exactas
+(134, 5, 14,  2, 'C', 3), (135, 5, 14,  1, 'C', 3), (136, 5, 14,  7, 'C', 3),
+(137, 5, 14, 12, 'C', 3), (138, 5, 14,  3, 'C', 3), (139, 5, 14,  4, 'C', 3),
+-- 12ª Grupo A — Letras
+(140, 5, 15,  2, 'A', 1), (141, 5, 15,  1, 'A', 1), (142, 5, 15,  7, 'A', 1),
+(143, 5, 15, 12, 'A', 1), (144, 5, 15,  5, 'A', 1),
+-- 12ª Grupo B — Ciências Bio
+(145, 5, 15,  2, 'B', 2), (146, 5, 15,  1, 'B', 2), (147, 5, 15,  7, 'B', 2),
+(148, 5, 15, 12, 'B', 2), (149, 5, 15,  3, 'B', 2), (150, 5, 15,  4, 'B', 2), (151, 5, 15,  6, 'B', 2),
+-- 12ª Grupo C — Ciências Exactas
+(152, 5, 15,  2, 'C', 3), (153, 5, 15,  1, 'C', 3), (154, 5, 15,  7, 'C', 3),
+(155, 5, 15, 12, 'C', 3), (156, 5, 15,  3, 'C', 3), (157, 5, 15,  4, 'C', 3),
+-- ─── ES Napipine (school_id=6) ───────────────────────────────────────────────
+-- 8ª Classe
+(201, 6, 11,  1, NULL, NULL), (202, 6, 11,  2, NULL, NULL), (203, 6, 11,  7, NULL, NULL),
+(204, 6, 11,  5, NULL, NULL), (205, 6, 11, 11, NULL, NULL), (206, 6, 11,  6, NULL, NULL),
+-- 9ª Classe
+(207, 6, 12,  1, NULL, NULL), (208, 6, 12,  2, NULL, NULL), (209, 6, 12,  7, NULL, NULL),
+(210, 6, 12,  5, NULL, NULL), (211, 6, 12, 11, NULL, NULL), (212, 6, 12,  6, NULL, NULL),
+-- 10ª Classe
+(213, 6, 13,  1, NULL, NULL), (214, 6, 13,  2, NULL, NULL), (215, 6, 13,  7, NULL, NULL),
+(216, 6, 13,  5, NULL, NULL), (217, 6, 13, 11, NULL, NULL), (218, 6, 13,  6, NULL, NULL),
+(219, 6, 13,  3, NULL, NULL), (220, 6, 13,  4, NULL, NULL), (221, 6, 13,  8, NULL, NULL),
+-- 11ª Grupo A — Letras
+(222, 6, 14,  2, 'A', 1), (223, 6, 14,  1, 'A', 1), (224, 6, 14,  7, 'A', 1),
+(225, 6, 14, 12, 'A', 1), (226, 6, 14,  5, 'A', 1),
+-- 11ª Grupo B — Ciências Bio
+(227, 6, 14,  2, 'B', 2), (228, 6, 14,  1, 'B', 2), (229, 6, 14,  7, 'B', 2),
+(230, 6, 14, 12, 'B', 2), (231, 6, 14,  3, 'B', 2), (232, 6, 14,  4, 'B', 2), (233, 6, 14,  6, 'B', 2),
+-- 11ª Grupo C — Ciências Exactas
+(234, 6, 14,  2, 'C', 3), (235, 6, 14,  1, 'C', 3), (236, 6, 14,  7, 'C', 3),
+(237, 6, 14, 12, 'C', 3), (238, 6, 14,  3, 'C', 3), (239, 6, 14,  4, 'C', 3),
+-- 12ª Grupo A — Letras
+(240, 6, 15,  2, 'A', 1), (241, 6, 15,  1, 'A', 1), (242, 6, 15,  7, 'A', 1),
+(243, 6, 15, 12, 'A', 1), (244, 6, 15,  5, 'A', 1),
+-- 12ª Grupo B — Ciências Bio
+(245, 6, 15,  2, 'B', 2), (246, 6, 15,  1, 'B', 2), (247, 6, 15,  7, 'B', 2),
+(248, 6, 15, 12, 'B', 2), (249, 6, 15,  3, 'B', 2), (250, 6, 15,  4, 'B', 2), (251, 6, 15,  6, 'B', 2),
+-- 12ª Grupo C — Ciências Exactas
+(252, 6, 15,  2, 'C', 3), (253, 6, 15,  1, 'C', 3), (254, 6, 15,  7, 'C', 3),
+(255, 6, 15, 12, 'C', 3), (256, 6, 15,  3, 'C', 3), (257, 6, 15,  4, 'C', 3),
+-- ─── ES Mutauanha (school_id=7) ──────────────────────────────────────────────
+-- 8ª Classe
+(301, 7, 11,  1, NULL, NULL), (302, 7, 11,  2, NULL, NULL), (303, 7, 11,  7, NULL, NULL),
+(304, 7, 11,  5, NULL, NULL), (305, 7, 11, 11, NULL, NULL), (306, 7, 11,  6, NULL, NULL),
+-- 9ª Classe
+(307, 7, 12,  1, NULL, NULL), (308, 7, 12,  2, NULL, NULL), (309, 7, 12,  7, NULL, NULL),
+(310, 7, 12,  5, NULL, NULL), (311, 7, 12, 11, NULL, NULL), (312, 7, 12,  6, NULL, NULL),
+-- 10ª Classe
+(313, 7, 13,  1, NULL, NULL), (314, 7, 13,  2, NULL, NULL), (315, 7, 13,  7, NULL, NULL),
+(316, 7, 13,  5, NULL, NULL), (317, 7, 13, 11, NULL, NULL), (318, 7, 13,  6, NULL, NULL),
+(319, 7, 13,  3, NULL, NULL), (320, 7, 13,  4, NULL, NULL), (321, 7, 13,  8, NULL, NULL),
+-- 11ª Grupo A — Letras
+(322, 7, 14,  2, 'A', 1), (323, 7, 14,  1, 'A', 1), (324, 7, 14,  7, 'A', 1),
+(325, 7, 14, 12, 'A', 1), (326, 7, 14,  5, 'A', 1),
+-- 11ª Grupo B — Ciências Bio
+(327, 7, 14,  2, 'B', 2), (328, 7, 14,  1, 'B', 2), (329, 7, 14,  7, 'B', 2),
+(330, 7, 14, 12, 'B', 2), (331, 7, 14,  3, 'B', 2), (332, 7, 14,  4, 'B', 2), (333, 7, 14,  6, 'B', 2),
+-- 11ª Grupo C — Ciências Exactas
+(334, 7, 14,  2, 'C', 3), (335, 7, 14,  1, 'C', 3), (336, 7, 14,  7, 'C', 3),
+(337, 7, 14, 12, 'C', 3), (338, 7, 14,  3, 'C', 3), (339, 7, 14,  4, 'C', 3),
+-- 12ª Grupo A — Letras
+(340, 7, 15,  2, 'A', 1), (341, 7, 15,  1, 'A', 1), (342, 7, 15,  7, 'A', 1),
+(343, 7, 15, 12, 'A', 1), (344, 7, 15,  5, 'A', 1),
+-- 12ª Grupo B — Ciências Bio
+(345, 7, 15,  2, 'B', 2), (346, 7, 15,  1, 'B', 2), (347, 7, 15,  7, 'B', 2),
+(348, 7, 15, 12, 'B', 2), (349, 7, 15,  3, 'B', 2), (350, 7, 15,  4, 'B', 2), (351, 7, 15,  6, 'B', 2),
+-- 12ª Grupo C — Ciências Exactas
+(352, 7, 15,  2, 'C', 3), (353, 7, 15,  1, 'C', 3), (354, 7, 15,  7, 'C', 3),
+(355, 7, 15, 12, 'C', 3), (356, 7, 15,  3, 'C', 3), (357, 7, 15,  4, 'C', 3)
 ON CONFLICT (id) DO NOTHING;
 
 -- Migra linhas já existentes sem school_id ou academic_group_id
@@ -470,7 +627,7 @@ WHERE turma_group IS NOT NULL
   AND class_level_id IN (14, 15)
   AND academic_group_id IS NULL;
 
-SELECT setval(pg_get_serial_sequence('ac_class_level_subject', 'id'), 100);
+SELECT setval(pg_get_serial_sequence('ac_class_level_subject', 'id'), 400);
 
 -- =============================================================================
 -- BLOCO 22 — Perfil do professor: ciclo de ensino

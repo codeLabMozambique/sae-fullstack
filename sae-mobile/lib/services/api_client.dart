@@ -5,10 +5,11 @@ class ApiClient {
   ApiClient._();
   static final ApiClient instance = ApiClient._();
 
-  // Para emulador Android usa-se 10.0.2.2 em vez de localhost.
-  static const String defaultBaseUrl = 'http://10.0.2.2:8080';
-  /// Serviço Python (sae-ai-service) — corre directo (sem gateway).
-  static const String aiBaseUrl = 'http://10.0.2.2:8000';
+  // Produção: gateway HTTPS em smartsae.co.mz:8443 (mesmo URL que o
+  // frontend web usa). O IP 187.77.71.198:8080 não é exposto publicamente.
+  static const String defaultBaseUrl = 'https://smartsae.co.mz:8443';
+  /// Serviço Python (sae-ai-service) — acedido pelo mesmo gateway.
+  static const String aiBaseUrl = 'https://smartsae.co.mz:8443';
   static const String tokenKey = 'sae_token';
   static const String userKey = 'sae_user';
   static const String sessionKey = 'sae_chat_session_id';
@@ -24,10 +25,18 @@ class ApiClient {
     ));
     d.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final prefs = await SharedPreferences.getInstance();
-        final token = prefs.getString(tokenKey);
-        if (token != null && token.isNotEmpty) {
-          options.headers['Authorization'] = 'Bearer $token';
+        // Endpoints públicos: NUNCA mandar Authorization (um token velho
+        // faria o filtro JWT do Spring rejeitar o pedido antes do endpoint
+        // sequer validar as credenciais — o cliente interpretava como
+        // "credenciais inválidas").
+        if (!_isPublicAuthPath(options.path)) {
+          final prefs = await SharedPreferences.getInstance();
+          final token = prefs.getString(tokenKey);
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+        } else {
+          options.headers.remove('Authorization');
         }
         handler.next(options);
       },
@@ -36,6 +45,15 @@ class ApiClient {
       },
     ));
     return d;
+  }
+
+  /// Endpoints que NÃO devem receber `Authorization`.
+  static bool _isPublicAuthPath(String path) {
+    return path.contains('/auth/users/login') ||
+        path.contains('/auth/users/signup') ||
+        path.contains('/auth/users/forgot-password') ||
+        path.contains('/auth/users/reset-password') ||
+        path.contains('/auth/health');
   }
 
   String get baseUrl => dio.options.baseUrl;

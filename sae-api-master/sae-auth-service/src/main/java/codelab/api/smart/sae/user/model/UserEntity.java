@@ -53,6 +53,12 @@ public class UserEntity extends UpdatableEntity implements UserDetails {
     @Column(name = "MUST_CHANGE_PASSWORD")
     private Boolean mustChangePassword = false;
 
+    @Column(name = "PASSWORD_RESET_TOKEN", length = 100)
+    private String passwordResetToken;
+
+    @Column(name = "PASSWORD_RESET_EXPIRY")
+    private java.time.LocalDateTime passwordResetExpiry;
+
     @ManyToOne
     @JoinColumn(name = "roleT_id")
     private RoleTransactionEntity role;
@@ -129,6 +135,12 @@ public class UserEntity extends UpdatableEntity implements UserDetails {
 
     public boolean isMustChangePassword() { return mustChangePassword != null && mustChangePassword; }
     public void setMustChangePassword(boolean mustChangePassword) { this.mustChangePassword = mustChangePassword; }
+
+    public String getPasswordResetToken() { return passwordResetToken; }
+    public void setPasswordResetToken(String passwordResetToken) { this.passwordResetToken = passwordResetToken; }
+
+    public java.time.LocalDateTime getPasswordResetExpiry() { return passwordResetExpiry; }
+    public void setPasswordResetExpiry(java.time.LocalDateTime passwordResetExpiry) { this.passwordResetExpiry = passwordResetExpiry; }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

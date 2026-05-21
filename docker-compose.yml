@@ -1,0 +1,392 @@
+# ============================================================
+# SAE Fullstack — Docker Compose (Produção)
+#
+# Estrutura do projecto:
+#   sae-api-master/   → microserviços Java (Spring Boot)
+#   sae-ai-service/   → serviço de IA Python (FastAPI + ChromaDB)
+#   sae-frontend/     → frontend React (Vite + Nginx)
+#
+# Execução:
+#   cp .env.example .env
+#   Editar .env com os valores correctos
+#   docker compose up -d --build
+#
+# Após o primeiro arranque — carregar dados iniciais:
+#   docker compose exec postgres psql -U postgres -d sae_db -f /docker-entrypoint-initdb.d/seed.sql
+# ============================================================
+
+services:
+
+  # ─── INFRAESTRUTURA ─────────────────────────────────────────
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: sae-postgres
+    environment:
+      POSTGRES_DB: sae_db
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+    networks:
+      - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d sae_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  mongodb:
+    image: mongo:7
+    container_name: sae-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USER:-mongo}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD:-mongo123}
+      MONGO_INITDB_DATABASE: sae_content
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "-u", "${MONGODB_USER:-mongo}", "-p", "${MONGODB_PASSWORD:-mongo123}", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  mongo-express:
+    image: mongo-express:1.0.2-20
+    container_name: sae-mongo-express
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGODB_USER:-mongo}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGODB_PASSWORD:-mongo123}
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGODB_USER:-mongo}:${MONGODB_PASSWORD:-mongo123}@sae-mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGOEXPRESS_USER:-admin}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGOEXPRESS_PASSWORD:-admin123}
+    ports:
+      - "8081:8081"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - sae-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: sae-redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio
+    container_name: sae-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-admin123}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: sae-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ─── MICROSERVIÇOS JAVA (sae-api-master/) ───────────────────
+
+  sae-auth-service:
+    build:
+      context: ./sae-api-master
+      dockerfile: sae-auth-service/Dockerfile
+    container_name: sae-auth-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      OZEKI_URL: ${OZEKI_URL:-localhost}
+      OZEKI_PORT: ${OZEKI_PORT:-9500}
+      FRONTEND_URL: ${FRONTEND_URL:-*}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:8081/actuator/health | grep -qE '^(200|403)$'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  sae-academic-service:
+    build:
+      context: ./sae-api-master
+      dockerfile: sae-academic-service/Dockerfile
+    container_name: sae-academic-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  sae-content-service:
+    build:
+      context: ./sae-api-master
+      dockerfile: sae-content-service/Dockerfile
+    container_name: sae-content-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      MONGODB_USER: ${MONGODB_USER:-mongo}
+      MONGODB_PASSWORD: ${MONGODB_PASSWORD:-mongo123}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-admin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-admin123}
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:8082/actuator/health | grep -qE '^(200|403)$'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  sae-forum-service:
+    build:
+      context: ./sae-api-master
+      dockerfile: sae-forum-service/Dockerfile
+    container_name: sae-forum-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_ENABLED: ${MAIL_ENABLED:-false}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      sae-auth-service:
+        condition: service_healthy
+      sae-academic-service:
+        condition: service_healthy
+    networks:
+      - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:8083/actuator/health | grep -qE '^(200|403)$'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  sae-quiz-service:
+    build:
+      context: ./sae-api-master
+      dockerfile: sae-quiz-service/Dockerfile
+    container_name: sae-quiz-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      sae-content-service:
+        condition: service_healthy
+      sae-academic-service:
+        condition: service_healthy
+    networks:
+      - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:8084/actuator/health | grep -qE '^(200|403)$'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  sae-ai-service:
+    build:
+      context: ./sae-api-master
+      dockerfile: sae-ai-service/Dockerfile
+    container_name: sae-ai-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:8086/actuator/health | grep -qE '^(200|403)$'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  sae-api-gateway:
+    build:
+      context: ./sae-api-master
+      dockerfile: sae-api-gateway/Dockerfile
+    container_name: sae-api-gateway
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      FRONTEND_URL: ${FRONTEND_URL:-*}
+    ports:
+      - "8080:8080"
+    depends_on:
+      sae-auth-service:
+        condition: service_healthy
+      sae-content-service:
+        condition: service_healthy
+      sae-forum-service:
+        condition: service_healthy
+      sae-quiz-service:
+        condition: service_healthy
+      sae-academic-service:
+        condition: service_healthy
+      sae-ai-python:
+        condition: service_healthy
+    networks:
+      - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/actuator/health | grep -qE '^(200|403)$'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ─── SERVIÇO DE IA PYTHON (sae-ai-service/) ─────────────────
+
+  sae-ai-python:
+    build:
+      context: ./sae-ai-service
+      dockerfile: Dockerfile
+    container_name: sae-ai-python
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      REDIS_URL: redis://sae-redis:6379
+      CONTENT_SERVICE_URL: http://sae-content-service:8082
+      CHROMA_PERSIST_DIR: /data/chroma
+      ALLOWED_ORIGINS: '["${FRONTEND_URL:-http://localhost}", "http://localhost:5173"]'
+    volumes:
+      - ai_chroma_data:/data/chroma
+    depends_on:
+      redis:
+        condition: service_healthy
+      sae-content-service:
+        condition: service_healthy
+    networks:
+      - sae-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8087/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ─── FRONTEND (sae-frontend/) ────────────────────────────────
+
+  sae-frontend:
+    build:
+      context: ./sae-frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_GATEWAY_URL: ${VITE_API_GATEWAY_URL:-http://localhost:8080}
+    container_name: sae-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      sae-api-gateway:
+        condition: service_healthy
+    networks:
+      - sae-network
+    restart: unless-stopped
+
+networks:
+  sae-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
+  minio_data:
+  rabbitmq_data:
+  ai_chroma_data:

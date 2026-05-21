@@ -88,6 +88,9 @@ public interface ForumQuestionRepository extends JpaRepository<ForumQuestionEnti
     List<ForumQuestionEntity> findByQuestionTypeAndSubjectIdInAndClassroomIdAndStatus(
         QuestionType questionType, List<Long> subjectIds, Long classroomId, QuestionStatus status);
 
+    /** Scheduler AI: perguntas por tipo e estado (para auto-resposta IA) */
+    List<ForumQuestionEntity> findByQuestionTypeAndStatus(QuestionType questionType, QuestionStatus status);
+
     /** Perguntas de uma escola específica */
     List<ForumQuestionEntity> findBySchoolId(Long schoolId);
 
