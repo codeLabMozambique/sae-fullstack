@@ -94,6 +94,10 @@ public interface ForumQuestionRepository extends JpaRepository<ForumQuestionEnti
     /** Perguntas de uma escola específica */
     List<ForumQuestionEntity> findBySchoolId(Long schoolId);
 
+    /** Salas expert directamente endereçadas a um professor (via mentionedProfessorUsername) */
+    List<ForumQuestionEntity> findByMentionedProfessorUsernameAndQuestionTypeAndStatus(
+        String mentionedProfessorUsername, QuestionType questionType, QuestionStatus status);
+
     /** Perguntas num intervalo de datas */
     @Query(value = "SELECT * FROM forum_question WHERE created_at >= :from AND created_at <= :to " +
                    "AND (:schoolId IS NULL OR school_id = :schoolId) " +

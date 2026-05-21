@@ -46,6 +46,9 @@ public class ForumQuestionEntity implements Serializable {
     @Column(name = "SUBJECT_ID")
     private Long subjectId;
 
+    @Column(name = "SUBJECT_NAME", length = 200)
+    private String subjectName;
+
     // ── Turma e escola (populados apenas quando forumScope = TURMA) ──────────
     @Column(name = "CLASSROOM_ID")
     private Long classroomId;
@@ -113,6 +116,9 @@ public class ForumQuestionEntity implements Serializable {
 
     public Long getSubjectId() { return subjectId; }
     public void setSubjectId(Long subjectId) { this.subjectId = subjectId; }
+
+    public String getSubjectName() { return subjectName; }
+    public void setSubjectName(String subjectName) { this.subjectName = subjectName; }
 
     public Long getClassroomId() { return classroomId; }
     public void setClassroomId(Long classroomId) { this.classroomId = classroomId; }

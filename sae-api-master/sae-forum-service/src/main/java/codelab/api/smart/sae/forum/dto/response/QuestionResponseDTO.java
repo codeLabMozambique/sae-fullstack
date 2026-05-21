@@ -18,6 +18,7 @@ public class QuestionResponseDTO {
     // ── Novo modelo ──────────────────────────────────────────────────────────
     private ForumScope forumScope;
     private Long subjectId;
+    private String subjectName;
     private Long classroomId;
     private Long schoolId;
     private String mentionedProfessorUsername;
@@ -43,6 +44,7 @@ public class QuestionResponseDTO {
         dto.tags        = e.getTags();
         dto.forumScope  = e.getForumScope();
         dto.subjectId   = e.getSubjectId();
+        dto.subjectName = e.getSubjectName();
         dto.classroomId = e.getClassroomId();
         dto.schoolId    = e.getSchoolId();
         dto.mentionedProfessorUsername = e.getMentionedProfessorUsername();
@@ -63,6 +65,7 @@ public class QuestionResponseDTO {
     public String getTags() { return tags; }
     public ForumScope getForumScope() { return forumScope; }
     public Long getSubjectId() { return subjectId; }
+    public String getSubjectName() { return subjectName; }
     public Long getClassroomId() { return classroomId; }
     public Long getSchoolId() { return schoolId; }
     public String getMentionedProfessorUsername() { return mentionedProfessorUsername; }

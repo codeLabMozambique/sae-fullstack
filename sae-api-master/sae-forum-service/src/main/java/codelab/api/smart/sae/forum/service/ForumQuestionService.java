@@ -136,10 +136,13 @@ public class ForumQuestionService {
         if (existing.isPresent()) {
             return enrichWithAnswers(existing.get());
         }
+        String subjectName = academicServiceClient.getSubjectNameById(subjectId);
+        String label = subjectName != null ? subjectName : "Disciplina #" + subjectId;
         ForumQuestionEntity room = new ForumQuestionEntity();
-        room.setTitulo("Chat da Turma - Disciplina #" + subjectId);
+        room.setTitulo("Chat da Turma - " + label);
         room.setDescricao("Sala de chat colaborativo para a turma");
         room.setSubjectId(subjectId);
+        room.setSubjectName(subjectName);
         room.setClassroomId(classroomId);
         room.setForumScope(ForumScope.TURMA);
         room.setQuestionType(QuestionType.COLABORATIVO);
@@ -156,10 +159,13 @@ public class ForumQuestionService {
                 subjectId, QuestionType.COLABORATIVO)
             .map(QuestionResponseDTO::from)
             .orElseGet(() -> {
+                String subjectName = academicServiceClient.getSubjectNameById(subjectId);
+                String label = subjectName != null ? subjectName : "Disciplina #" + subjectId;
                 ForumQuestionEntity room = new ForumQuestionEntity();
-                room.setTitulo("Chat Global - Disciplina #" + subjectId);
+                room.setTitulo("Chat Global - " + label);
                 room.setDescricao("Sala de chat colaborativo geral para a disciplina");
                 room.setSubjectId(subjectId);
+                room.setSubjectName(subjectName);
                 room.setForumScope(ForumScope.DISCIPLINA);
                 room.setQuestionType(QuestionType.COLABORATIVO);
                 room.setStatus(QuestionStatus.ABERTA);
@@ -178,10 +184,13 @@ public class ForumQuestionService {
                 subjectId, classroomId, QuestionType.ESPECIALIZADO, studentUsername)
             .map(QuestionResponseDTO::from)
             .orElseGet(() -> {
+                String subjectName = academicServiceClient.getSubjectNameById(subjectId);
+                String label = subjectName != null ? subjectName : "Disciplina #" + subjectId;
                 ForumQuestionEntity room = new ForumQuestionEntity();
-                room.setTitulo("Chat com Professor - Disciplina #" + subjectId);
+                room.setTitulo("Chat com Professor - " + label);
                 room.setDescricao("_");
                 room.setSubjectId(subjectId);
+                room.setSubjectName(subjectName);
                 room.setClassroomId(classroomId);
                 room.setForumScope(ForumScope.TURMA);
                 room.setQuestionType(QuestionType.ESPECIALIZADO);
@@ -202,10 +211,13 @@ public class ForumQuestionService {
                 subjectId, QuestionType.ESPECIALIZADO, studentUsername)
             .map(QuestionResponseDTO::from)
             .orElseGet(() -> {
+                String subjectName = academicServiceClient.getSubjectNameById(subjectId);
+                String label = subjectName != null ? subjectName : "Disciplina #" + subjectId;
                 ForumQuestionEntity room = new ForumQuestionEntity();
-                room.setTitulo("Chat com Professor - Disciplina #" + subjectId);
+                room.setTitulo("Chat com Professor - " + label);
                 room.setDescricao("_");
                 room.setSubjectId(subjectId);
+                room.setSubjectName(subjectName);
                 room.setForumScope(ForumScope.DISCIPLINA);
                 room.setQuestionType(QuestionType.ESPECIALIZADO);
                 room.setStatus(QuestionStatus.ABERTA);
@@ -338,6 +350,16 @@ public class ForumQuestionService {
                 .filter(q -> seen.add(q.getId()))
                 .forEach(combined::add);
         }
+
+        // Path 3: salas expert endereçadas directamente via mentionedProfessorUsername
+        // (garante que o professor vê as suas perguntas mesmo que a resolução de subjectIds falhe)
+        questionRepository
+            .findByMentionedProfessorUsernameAndQuestionTypeAndStatus(
+                professorUsername, QuestionType.ESPECIALIZADO, QuestionStatus.ABERTA)
+            .stream()
+            .filter(q -> !expertAnswerRepository.existsByQuestionIdAndAnsweredBy(q.getId(), professorUsername))
+            .filter(q -> seen.add(q.getId()))
+            .forEach(combined::add);
 
         combined.sort(Comparator.comparing(ForumQuestionEntity::getCreatedAt).reversed());
         return combined.stream().map(this::enrichWithAnswers).collect(Collectors.toList());

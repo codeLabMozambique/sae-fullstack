@@ -79,4 +79,16 @@ public class JwtUtil {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
+
+    // Extracts username even from an expired token (signature is still validated).
+    // Used by the /refresh endpoint so clients can renew a session without re-entering credentials.
+    public String extractUsernameIgnoreExpiry(String token) {
+        try {
+            return extractUsername(token);
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            return e.getClaims().getSubject();
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

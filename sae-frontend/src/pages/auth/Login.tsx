@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, TextField, Button, InputAdornment, IconButton,
   Link, Alert, CircularProgress, Dialog, DialogTitle, DialogContent,
@@ -32,6 +32,14 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  useEffect(() => {
+    if (sessionStorage.getItem('session_expired')) {
+      setSessionExpired(true);
+      sessionStorage.removeItem('session_expired');
+    }
+  }, []);
 
   // Forgot password dialog
   const [forgotOpen, setForgotOpen] = useState(false);
@@ -58,12 +66,14 @@ const Login: React.FC = () => {
       else if (authUser.role === 'Administrador') navigate('/admin/dashboard');
       else if (authUser.role === 'Visitante') navigate('/student/library');
       else navigate('/app');
-    } catch (err: any) {
-      const status = err?.response?.status;
+    } catch (err: unknown) {
+      const e = err as { response?: { status?: number; data?: Record<string, string> | string }; message?: string };
+      const status = e.response?.status;
       if (status === 401 || status === 403) {
         setError('Credenciais inválidas. Verifique o contacto e a palavra-passe.');
       } else {
-        const backendMsg = err?.response?.data?.message || err?.response?.data || err?.message;
+        const data = e.response?.data;
+        const backendMsg = typeof data === 'object' && data !== null ? data['message'] : (data ?? e.message);
         setError(typeof backendMsg === 'string' ? backendMsg : 'Falha ao iniciar sessão. Tente novamente.');
       }
     } finally {
@@ -125,16 +135,16 @@ const Login: React.FC = () => {
     }}>
 
       {/* Decorative blobs */}
-      {[
-        { size: 420, top: '-10%', left: '-8%',  color: 'rgba(0,166,81,0.04)',  delay: '0s',    dur: '7s'  },
-        { size: 300, top: '60%',  left: '-4%',  color: 'rgba(20,30,50,0.5)',    delay: '1.2s',  dur: '9s'  },
-        { size: 380, top: '-5%',  right: '-6%', color: 'rgba(0,166,81,0.03)',  delay: '0.6s',  dur: '8s'  },
-        { size: 260, top: '65%',  right: '-2%', color: 'rgba(20,30,50,0.4)',    delay: '2s',    dur: '6.5s'},
-      ].map((b, i) => (
+      {([
+        { size: 420, top: '-10%', left: '-8%',  right: undefined, color: 'rgba(0,166,81,0.04)',  delay: '0s',    dur: '7s'  },
+        { size: 300, top: '60%',  left: '-4%',  right: undefined, color: 'rgba(20,30,50,0.5)',    delay: '1.2s',  dur: '9s'  },
+        { size: 380, top: '-5%',  left: undefined, right: '-6%',  color: 'rgba(0,166,81,0.03)',  delay: '0.6s',  dur: '8s'  },
+        { size: 260, top: '65%',  left: undefined, right: '-2%',  color: 'rgba(20,30,50,0.4)',    delay: '2s',    dur: '6.5s'},
+      ] as { size: number; top: string; left?: string; right?: string; color: string; delay: string; dur: string }[]).map((b, i) => (
         <Box key={i} sx={{
           position: 'absolute', borderRadius: '50%', pointerEvents: 'none',
           width: b.size, height: b.size,
-          top: b.top, left: (b as any).left, right: (b as any).right,
+          top: b.top, left: b.left, right: b.right,
           bgcolor: b.color,
           filter: 'blur(60px)',
           animation: `${floatBlob} ${b.dur} ease-in-out infinite`,
@@ -233,6 +243,12 @@ const Login: React.FC = () => {
           <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.45)', mb: 4 }}>
             Introduza as suas credenciais para continuar
           </Typography>
+
+          {sessionExpired && (
+            <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
+              A sua sessão expirou. Por favor, faça login novamente.
+            </Alert>
+          )}
 
           {error && (
             <Alert severity="error" sx={{ mb: 3, borderRadius: 2, bgcolor: 'rgba(211,47,47,0.15)', color: '#ff8a80', border: '1px solid rgba(211,47,47,0.3)', '& .MuiAlert-icon': { color: '#ff8a80' } }}>

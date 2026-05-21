@@ -107,6 +107,7 @@ function formatWait(min: number) {
 }
 
 function getSubjectLabel(q: ForumQuestion, subjectsMap: Map<number, SubjectInfo>): string {
+  if (q.subjectName) return q.subjectName;
   if (q.subjectId != null) return subjectsMap.get(q.subjectId)?.name ?? `Disciplina #${q.subjectId}`;
   if (q.disciplina) return DISCIPLINA_LABELS[q.disciplina] ?? q.disciplina;
   return 'Geral';
