@@ -1,6 +1,8 @@
 package codelab.api.smart.sae.academic.service;
 
+import codelab.api.smart.sae.academic.catalog.ClassLevelDefinition;
 import codelab.api.smart.sae.academic.dto.ClassLevelDTO;
+import codelab.api.smart.sae.academic.exception.DuplicateEntityException;
 import codelab.api.smart.sae.academic.model.ClassLevelEntity;
 import codelab.api.smart.sae.academic.repository.ClassLevelRepository;
 import codelab.api.smart.sae.framework.jpa.EntityState;
@@ -31,19 +33,40 @@ public class ClassLevelService {
 
     @Transactional
     public ClassLevelDTO save(ClassLevelDTO dto) {
+        ClassLevelDefinition def = ClassLevelDefinition.findByNormalized(dto.getName());
+        if (def == null) {
+            throw new IllegalArgumentException(
+                "Nível de classe não reconhecido: \"" + dto.getName() + "\". Use um dos níveis predefinidos do sistema.");
+        }
+        String normalized = def.getNormalizedName();
+        if (classLevelRepository.existsByNormalizedName(normalized)) {
+            throw new DuplicateEntityException("Nível de classe já existe: " + def.getDisplayName());
+        }
         ClassLevelEntity entity = new ClassLevelEntity();
-        entity.setName(dto.getName());
-        entity.setCycle(dto.getCycle());
+        entity.setName(def.getDisplayName());
+        entity.setNormalizedName(normalized);
+        entity.setCycle(def.getCycle());
         entity.setStatus(EntityState.ACTIVE);
         return convertToDTO(classLevelRepository.save(entity));
     }
 
     @Transactional
     public ClassLevelDTO update(ClassLevelDTO dto) {
-        return classLevelRepository.findById(dto.getId())
+        ClassLevelDefinition def = ClassLevelDefinition.findByNormalized(dto.getName());
+        if (def == null) {
+            throw new IllegalArgumentException(
+                "Nível de classe não reconhecido: \"" + dto.getName() + "\". Use um dos níveis predefinidos do sistema.");
+        }
+        String normalized = def.getNormalizedName();
+        return classLevelRepository.findById(java.util.Objects.requireNonNull(dto.getId()))
                 .map(entity -> {
-                    entity.setName(dto.getName());
-                    entity.setCycle(dto.getCycle());
+                    boolean nameChanged = !normalized.equals(entity.getNormalizedName());
+                    if (nameChanged && classLevelRepository.existsByNormalizedName(normalized)) {
+                        throw new DuplicateEntityException("Nível de classe já existe: " + def.getDisplayName());
+                    }
+                    entity.setName(def.getDisplayName());
+                    entity.setNormalizedName(normalized);
+                    entity.setCycle(def.getCycle());
                     return convertToDTO(classLevelRepository.save(entity));
                 }).orElse(null);
     }

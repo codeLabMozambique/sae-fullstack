@@ -34,6 +34,9 @@ public class SchoolEntity extends UpdatableEntity {
     @Column(name = "CITY")
     private String city = "Nampula";
 
+    @Column(name = "NORMALIZED_NAME", unique = true)
+    private String normalizedName;
+
     public SchoolEntity() {}
 
     public Long getId() { return id; }
@@ -41,6 +44,9 @@ public class SchoolEntity extends UpdatableEntity {
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
+    public String getNormalizedName() { return normalizedName; }
+    public void setNormalizedName(String normalizedName) { this.normalizedName = normalizedName; }
 
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }

@@ -126,14 +126,16 @@ const SubjectsPage: React.FC = () => {
       setSubmitting(true); setError(null);
       editing?.id ? await subjectService.update({ ...form, id: editing.id }) : await subjectService.save(form);
       closeDialog(); await load();
-    } catch { setError('Erro ao salvar disciplina.'); }
+    } catch (e: any) {
+      setError(e?.response?.data?.error || e?.response?.data?.message || e?.message || 'Erro ao salvar disciplina.');
+    }
     finally { setSubmitting(false); }
   };
 
   const handleDeactivate = async (id: number) => {
     if (!window.confirm('Desativar esta disciplina?')) return;
     try { setError(null); await subjectService.deactivate(id); await load(); }
-    catch { setError('Erro ao desativar disciplina.'); }
+    catch (e: any) { setError(e?.response?.data?.error || e?.response?.data?.message || e?.message || 'Erro ao desativar disciplina.'); }
   };
 
   /* code badge colour derived from the code string */

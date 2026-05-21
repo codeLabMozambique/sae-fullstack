@@ -80,14 +80,16 @@ const ClassLevelsPage: React.FC = () => {
       setSubmitting(true); setError(null);
       editing?.id ? await classLevelService.update({ ...form, id: editing.id }) : await classLevelService.save(form);
       closeDialog(); await load();
-    } catch { setError('Erro ao salvar nível.'); }
+    } catch (e: any) {
+      setError(e?.response?.data?.error || e?.response?.data?.message || e?.message || 'Erro ao salvar nível.');
+    }
     finally { setSubmitting(false); }
   };
 
   const handleDeactivate = async (id: number) => {
     if (!window.confirm('Desativar este nível?')) return;
     try { setError(null); await classLevelService.deactivate(id); await load(); }
-    catch { setError('Erro ao desativar nível.'); }
+    catch (e: any) { setError(e?.response?.data?.error || e?.response?.data?.message || e?.message || 'Erro ao desativar nível.'); }
   };
 
   /* palette for row badge */
